@@ -21,6 +21,7 @@ kotlin {
                 implementation project(':data:location')
                 implementation project(':data:nominatim')
                 implementation project(':data:place')
+                implementation project(':data:pollen')
                 implementation project(':data:radar')
                 implementation project(':data:theme')
                 implementation project(':data:weatherforecast')

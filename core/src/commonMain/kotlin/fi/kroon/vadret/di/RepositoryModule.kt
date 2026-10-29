@@ -6,6 +6,7 @@ import fi.kroon.vadret.language.LanguageRepository
 import fi.kroon.vadret.library.LibraryRepository
 import fi.kroon.vadret.nominatim.NominatimRepository
 import fi.kroon.vadret.place.PlaceRepository
+import fi.kroon.vadret.pollen.PollenRepository
 import fi.kroon.vadret.radar.RadarRepository
 import fi.kroon.vadret.theme.ThemeRepository
 import fi.kroon.vadret.weatherforecast.WeatherForecastRepository
@@ -24,6 +25,7 @@ val repositoryModule: Module = module {
     }
     single<LibraryRepository> { LibraryRepository() }
     single<NominatimRepository> { NominatimRepository(httpClient = inject()) }
+    single<PollenRepository> { PollenRepository(httpClient = inject()) }
     single<RadarRepository> {
         RadarRepository(
             httpClient = inject(),
