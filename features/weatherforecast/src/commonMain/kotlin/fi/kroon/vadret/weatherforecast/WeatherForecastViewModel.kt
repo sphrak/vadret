@@ -82,43 +82,28 @@ class WeatherForecastViewModel internal constructor(
     fun onEvent(event: WeatherForecastEvent) {
         when (event) {
             WeatherForecastEvent.OnShown -> onShown()
-
             WeatherForecastEvent.OnResumed -> onResumed()
-
             is WeatherForecastEvent.OnLocaleChanged -> onLocaleChanged(languageTag = event.languageTag)
-
             WeatherForecastEvent.OnRefresh -> onRefresh()
-
             WeatherForecastEvent.OnErrorShown -> state.update { state: WeatherForecastState ->
                 state.copy(errorMessageResource = null)
             }
-
             is WeatherForecastEvent.OnForecastViewSelected -> state.update { state: WeatherForecastState ->
                 state.withForecastView(forecastView = event.forecastView)
             }
-
             is WeatherForecastEvent.OnDayToggled -> onDayToggled(dayKey = event.dayKey)
-
             is WeatherForecastEvent.OnLocationPermissionResult -> onLocationPermissionResult(isGranted = event.isGranted)
-
             WeatherForecastEvent.OnAutomaticLocationClicked -> state.update { state: WeatherForecastState ->
                 state.copy(isLocationPermissionRequested = true)
             }
-
             is WeatherForecastEvent.OnFavoriteClicked -> onFavoriteClicked(favorite = event.favorite)
-
             is WeatherForecastEvent.OnFavoriteRemoveClicked -> onFavoriteRemoveClicked(favoriteId = event.favoriteId)
-
             WeatherForecastEvent.OnAddPlaceClicked -> state.update { state: WeatherForecastState ->
                 state.copy(search = SearchState())
             }
-
             WeatherForecastEvent.OnSearchDismissed -> onSearchDismissed()
-
             WeatherForecastEvent.OnSearchSubmitted -> onSearchSubmitted()
-
             is WeatherForecastEvent.OnSearchQueryChanged -> onSearchQueryChanged(query = event.query)
-
             is WeatherForecastEvent.OnSuggestionClicked -> onSuggestionClicked(place = event.place)
         }
     }

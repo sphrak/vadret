@@ -14,11 +14,9 @@ private val logger: Logger = LoggerFactory.getLogger(tag = "fi.kroon.vadret.favo
 internal fun Exception.toFailure(): Failure =
     when (this) {
         is CancellationException -> throw this
-
         is SQLiteException -> toKnownFailure(
             errorCode = ErrorCode.STORAGE_FAILED,
             logger = logger
         )
-
         else -> toUnknownFailure(logger = logger)
     }

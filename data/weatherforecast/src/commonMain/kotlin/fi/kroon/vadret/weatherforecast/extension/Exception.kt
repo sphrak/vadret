@@ -15,16 +15,13 @@ private val logger: Logger = LoggerFactory.getLogger(tag = "fi.kroon.vadret.weat
 internal fun Exception.toFailure(notFoundErrorCode: ErrorCode): Failure =
     when {
         this is CancellationException -> throw this
-
         this is ClientRequestException && response.status == HttpStatusCode.NotFound -> toKnownFailure(
             errorCode = notFoundErrorCode,
             logger = logger
         )
-
         this is IllegalArgumentException -> toKnownFailure(
             errorCode = ErrorCode.INVALID_RESPONSE,
             logger = logger
         )
-
         else -> toNetworkFailure(logger = logger)
     }

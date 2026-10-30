@@ -27,25 +27,18 @@ fun Instant.toElapsedTime(now: Instant): ElapsedTime {
     val elapsed: Duration = now - this
     return when {
         elapsed.isNegative() -> ElapsedTime(resource = Res.string.in_the_future)
-
         elapsed < momentsAgoLimit -> ElapsedTime(resource = Res.string.moments_ago)
-
         elapsed < aMinuteAgoLimit -> ElapsedTime(resource = Res.string.a_minute_ago)
-
         elapsed < minutesAgoLimit -> ElapsedTime(
             resource = Res.string.minutes_ago,
             count = elapsed.inWholeMinutes
         )
-
         elapsed < anHourAgoLimit -> ElapsedTime(resource = Res.string.an_hour_ago)
-
         elapsed < hoursAgoLimit -> ElapsedTime(
             resource = Res.string.hours_ago,
             count = elapsed.inWholeHours
         )
-
         elapsed < yesterdayLimit -> ElapsedTime(resource = Res.string.yesterday)
-
         else -> ElapsedTime(
             resource = Res.string.days_ago,
             count = elapsed.inWholeDays

@@ -15,17 +15,14 @@ private val logger: Logger = LoggerFactory.getLogger(tag = "fi.kroon.vadret.wind
 internal fun Exception.toFailure(): Failure =
     when (this) {
         is CancellationException -> throw this
-
         is WindNotAvailableException -> toKnownFailure(
             errorCode = ErrorCode.WIND_NOT_AVAILABLE,
             logger = logger
         )
-
         is InvalidWindGridException,
         is IllegalArgumentException -> toKnownFailure(
             errorCode = ErrorCode.INVALID_RESPONSE,
             logger = logger
         )
-
         else -> toNetworkFailure(logger = logger)
     }

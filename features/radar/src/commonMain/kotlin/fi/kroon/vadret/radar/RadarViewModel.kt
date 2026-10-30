@@ -87,27 +87,18 @@ class RadarViewModel internal constructor(
     internal fun onEvent(event: RadarEvent) {
         when (event) {
             is RadarEvent.OnStart -> onStart(initialImageUrl = event.initialImageUrl)
-
             RadarEvent.OnLeft -> stopPlaying()
-
             is RadarEvent.OnLocaleChanged -> onLocaleChanged(languageTag = event.languageTag)
-
             is RadarEvent.OnDarkThemeChanged -> onDarkThemeChanged(isDarkTheme = event.isDarkTheme)
-
             RadarEvent.OnMapLoaded -> state.update { state: RadarState ->
                 state.copy(isMapLoaded = true)
             }
-
             RadarEvent.OnPlayButtonClicked -> onPlayButtonClicked()
-
             RadarEvent.OnErrorShown -> state.update { state: RadarState ->
                 state.copy(errorMessageResource = null)
             }
-
             is RadarEvent.OnIndexChanged -> onIndexChanged(index = event.index)
-
             is RadarEvent.OnLayerSelected -> onLayerSelected(layer = event.layer)
-
             RadarEvent.OnRadarStationsToggled -> state.update { state: RadarState ->
                 state.copy(areRadarStationsShown = !state.areRadarStationsShown)
             }
@@ -302,7 +293,6 @@ class RadarViewModel internal constructor(
                     isMoving = false
                 )
             )
-
             RadarLayer.WIND -> loadWindFrame(index = index)
         }
 

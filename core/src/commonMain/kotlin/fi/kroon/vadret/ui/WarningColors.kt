@@ -29,17 +29,14 @@ fun warningColors(
             container = VadretTheme.colors.warningYellow,
             content = VadretTheme.colors.onWarningYellow
         )
-
         WarningLevel.ORANGE -> WarningColors(
             container = VadretTheme.colors.warningOrange,
             content = VadretTheme.colors.onWarningOrange
         )
-
         WarningLevel.RED -> WarningColors(
             container = VadretTheme.colors.warningRed,
             content = VadretTheme.colors.onWarningRed
         )
-
         WarningLevel.MESSAGE,
         null -> WarningColors(
             container = VadretTheme.colors.warningMessage,

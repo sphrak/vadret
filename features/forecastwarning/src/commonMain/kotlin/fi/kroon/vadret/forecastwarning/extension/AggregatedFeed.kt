@@ -109,31 +109,24 @@ private fun FeedDetail.toWarningDetail(): WarningDetail =
             labelResource = Res.string.warning_detail_what_happens,
             text = text
         )
-
         FeedDetailKind.DESCRIPTION -> WarningDetail.Labelled(
             labelResource = Res.string.warning_detail_description,
             text = text
         )
-
         FeedDetailKind.WHERE -> WarningDetail.Labelled(
             labelResource = Res.string.warning_detail_where,
             text = text
         )
-
         FeedDetailKind.ADVICE -> WarningDetail.Labelled(
             labelResource = Res.string.warning_detail_advice,
             text = text
         )
-
         FeedDetailKind.COMMENT -> WarningDetail.Labelled(
             labelResource = Res.string.warning_detail_comment,
             text = text
         )
-
         FeedDetailKind.SUMMARY -> WarningDetail.Paragraph(text = text.withSpacedCommas())
-
         FeedDetailKind.BODY -> WarningDetail.Paragraph(text = text)
-
         FeedDetailKind.OTHER -> WarningDetail.Titled(
             title = title,
             text = text

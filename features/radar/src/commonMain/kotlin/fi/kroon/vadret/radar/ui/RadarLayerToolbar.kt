@@ -117,7 +117,6 @@ private fun RadarLayer.iconResource(isSelected: Boolean): DrawableResource =
         } else {
             Res.drawable.ic_rainy
         }
-
         RadarLayer.WIND -> Res.drawable.ic_air
     }
 

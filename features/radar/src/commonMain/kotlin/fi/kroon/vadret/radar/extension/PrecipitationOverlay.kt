@@ -5,7 +5,6 @@ import fi.kroon.vadret.radar.precipitation.PrecipitationOverlay
 internal fun PrecipitationOverlay.withoutMotion(): PrecipitationOverlay =
     when (this) {
         is PrecipitationOverlay.Colored -> this
-
         is PrecipitationOverlay.Echoes -> if (motion == null) {
             this
         } else {

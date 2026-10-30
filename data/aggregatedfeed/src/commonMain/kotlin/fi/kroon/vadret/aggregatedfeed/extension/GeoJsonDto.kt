@@ -34,16 +34,12 @@ internal fun GeoJsonDto.toGeoLineEntities(): List<GeoLineEntity> =
     geometries().flatMap { geometryDto: GeoJsonGeometryDto ->
         when (geometryDto.type) {
             POINT -> listOfNotNull(geometryDto.coordinates.toGeoPositionEntity()).toGeoLineEntities()
-
             MULTI_POINT -> geometryDto.coordinates.toGeoPositionEntities().toGeoLineEntities()
-
             LINE_STRING -> geometryDto.coordinates.toGeoPositionEntities().toGeoLineEntities()
-
             MULTI_LINE_STRING ->
                 geometryDto.coordinates
                     .elements()
                     .flatMap { line: JsonElement -> line.toGeoPositionEntities().toGeoLineEntities() }
-
             else -> emptyList()
         }
     }

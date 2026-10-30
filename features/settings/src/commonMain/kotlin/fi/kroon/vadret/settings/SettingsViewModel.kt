@@ -44,51 +44,38 @@ class SettingsViewModel internal constructor(
     internal fun onEvent(event: SettingsEvent) {
         when (event) {
             SettingsEvent.OnStart -> onStart()
-
             is SettingsEvent.OnLocationModeToggled -> onLocationModeToggled(
                 isAutomaticLocation = event.isAutomaticLocation
             )
-
             is SettingsEvent.OnHourlyForecastToggled -> onHourlyForecastToggled(
                 isHourlyForecastEnabled = event.isHourlyForecastEnabled
             )
-
             is SettingsEvent.OnExpandOnceToggled -> onExpandOnceToggled(
                 isExpandOnceEnabled = event.isExpandOnceEnabled
             )
-
             SettingsEvent.OnThemeRowClicked -> state.update { state: SettingsState ->
                 state.copy(isThemeDialogVisible = true)
             }
-
             SettingsEvent.OnThemeDialogDismissed -> state.update { state: SettingsState ->
                 state.copy(isThemeDialogVisible = false)
             }
-
             is SettingsEvent.OnThemeSelected -> onThemeSelected(theme = event.theme)
-
             SettingsEvent.OnLanguageRowClicked -> state.update { state: SettingsState ->
                 state.copy(isLanguageDialogVisible = true)
             }
-
             SettingsEvent.OnLanguageDialogDismissed -> state.update { state: SettingsState ->
                 state.copy(isLanguageDialogVisible = false)
             }
-
             is SettingsEvent.OnLanguageSelected -> onLanguageSelected(language = event.language)
-
             is SettingsEvent.OnLibraryClicked -> state.update { state: SettingsState ->
                 state.copy(selectedLibrary = event.library)
             }
-
             SettingsEvent.OnLibraryDismissed -> state.update { state: SettingsState ->
                 state.copy(selectedLibrary = null)
             }
-
             SettingsEvent.OnChangelogClicked -> state.update { state: SettingsState ->
                 state.copy(isChangelogVisible = state.changelog != null)
             }
-
             SettingsEvent.OnChangelogDismissed -> state.update { state: SettingsState ->
                 state.copy(isChangelogVisible = false)
             }

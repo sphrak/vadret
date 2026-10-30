@@ -31,7 +31,6 @@ fun Instant.toDayTimeText(
     val daysAway: Int = today.daysUntil(other = localDateTime.date)
     return when {
         daysAway == TODAY -> timeText
-
         daysAway.absoluteValue < DAYS_IN_A_WEEK -> {
             val weekdayText: String = dateText(
                 dateTextStyle = DateTextStyle.SHORT_WEEKDAY,
@@ -40,7 +39,6 @@ fun Instant.toDayTimeText(
             )
             "$weekdayText $timeText"
         }
-
         else -> dateText(
             dateTextStyle = DateTextStyle.DAY_AND_SHORT_MONTH,
             timeZone = timeZone,

@@ -50,9 +50,7 @@ internal object WindColorScale {
         val upperIndex: Int = colorStops.indexOfFirst { colorStop: ColorStop -> colorStop.windSpeed >= windSpeed }
         return when (upperIndex) {
             -1 -> colorStops.last().argb()
-
             0 -> colorStops.first().argb()
-
             else -> {
                 val lower: ColorStop = colorStops[upperIndex - 1]
                 val upper: ColorStop = colorStops[upperIndex]

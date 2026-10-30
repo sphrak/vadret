@@ -47,9 +47,7 @@ private fun FeedArea.isAtSea(): Boolean = regions.isNotEmpty() && regions.all { 
 private fun FeedRegion.covers(warningPlace: WarningPlace): Boolean {
     val placeName: String? = when (kind) {
         FeedRegionKind.COUNTY -> warningPlace.county
-
         FeedRegionKind.MUNICIPALITY -> warningPlace.municipality
-
         FeedRegionKind.COUNTRY,
         FeedRegionKind.SEA,
         FeedRegionKind.OTHER -> null

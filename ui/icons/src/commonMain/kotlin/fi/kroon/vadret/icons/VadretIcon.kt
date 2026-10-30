@@ -221,7 +221,6 @@ private fun DrawScope.drawShape(
 ) {
     val style = when (paint) {
         IconPaint.Fill -> Fill
-
         is IconPaint.Stroke -> Stroke(
             width = paint.width,
             cap = paint.cap,
@@ -234,7 +233,6 @@ private fun DrawScope.drawShape(
             color = color,
             style = style
         )
-
         is IconShape.Circle -> drawCircle(
             color = color,
             radius = shape.radius,

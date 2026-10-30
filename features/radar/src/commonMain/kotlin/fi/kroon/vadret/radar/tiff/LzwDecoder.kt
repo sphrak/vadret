@@ -35,13 +35,11 @@ internal class LzwDecoder(
             val code: Int = readCode()
             when {
                 code == END_OF_INFORMATION -> throw TiffFormatException(message = "LZW data ended after $outputPosition of ${output.size} bytes")
-
                 code == CLEAR_CODE -> {
                     nextCode = FIRST_FREE_CODE
                     codeWidth = MINIMUM_CODE_WIDTH
                     previousCode = NO_CODE
                 }
-
                 previousCode == NO_CODE -> {
                     if (code >= LITERAL_COUNT) {
                         throw TiffFormatException(message = "LZW code $code follows a clear code")
@@ -49,19 +47,16 @@ internal class LzwDecoder(
                     write(code = code)
                     previousCode = code
                 }
-
                 code < nextCode -> {
                     write(code = code)
                     addEntry(prefixCode = previousCode, suffix = firstBytes[code])
                     previousCode = code
                 }
-
                 code == nextCode -> {
                     addEntry(prefixCode = previousCode, suffix = firstBytes[previousCode])
                     write(code = code)
                     previousCode = code
                 }
-
                 else -> throw TiffFormatException(message = "LZW code $code is not in the table")
             }
         }

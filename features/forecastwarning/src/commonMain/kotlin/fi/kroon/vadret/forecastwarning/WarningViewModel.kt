@@ -42,13 +42,10 @@ class WarningViewModel internal constructor(
     internal fun onEvent(event: WarningEvent) {
         when (event) {
             WarningEvent.OnStart -> onStart()
-
             WarningEvent.OnRefresh -> onRefresh()
-
             WarningEvent.OnErrorShown -> state.update { state: WarningState ->
                 state.copy(errorMessageResource = null)
             }
-
             is WarningEvent.OnLocaleChanged -> onLocaleChanged(languageTag = event.languageTag)
         }
     }

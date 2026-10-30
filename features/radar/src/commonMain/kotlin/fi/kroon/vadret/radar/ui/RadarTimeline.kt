@@ -29,7 +29,6 @@ internal fun radarTimeline(state: RadarState): RadarTimeline? =
             frames = state.precipitationFrames,
             index = state.precipitationIndex
         )
-
         RadarLayer.WIND -> windTimeline(
             frames = state.windFrames,
             index = state.windIndex

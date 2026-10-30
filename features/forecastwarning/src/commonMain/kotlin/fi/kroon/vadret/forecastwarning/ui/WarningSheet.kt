@@ -197,17 +197,14 @@ internal fun periodText(warning: WarningItem): String? {
             startsAtText,
             endsAtText
         )
-
         endsAtText != null -> stringResource(
             resource = Res.string.warning_until,
             endsAtText
         ).capitalized()
-
         startsAtText != null -> stringResource(
             resource = Res.string.warning_from,
             startsAtText
         ).capitalized()
-
         else -> null
     }
 }

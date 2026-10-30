@@ -76,35 +76,29 @@ internal fun IconMotion.poseAt(timeMilliseconds: Long): IconPose {
     val wave: Double = FULL_TURN_RADIANS * eased
     return when (kind) {
         IconMotionKind.DRIFT -> IconPose(offsetX = DRIFT_DISTANCE * (HALF - HALF * cos(x = wave).toFloat()))
-
         IconMotionKind.FALL -> IconPose(
             offsetY = FALL_DISTANCE * eased,
             alpha = fadeInAndOut(progress = eased)
         )
-
         IconMotionKind.SLANTED_FALL -> IconPose(
             offsetX = SLANT * FALL_DISTANCE * eased,
             offsetY = FALL_DISTANCE * eased,
             alpha = fadeInAndOut(progress = eased)
         )
-
         IconMotionKind.FLAKE -> IconPose(
             offsetX = FLAKE_SWAY * sin(x = wave).toFloat(),
             offsetY = FLAKE_DISTANCE * eased,
             alpha = fadeInAndOut(progress = eased)
         )
-
         IconMotionKind.SLANTED_FLAKE -> IconPose(
             offsetX = SLANT * FLAKE_DISTANCE * eased + FLAKE_SWAY * sin(x = wave).toFloat(),
             offsetY = FLAKE_DISTANCE * eased,
             alpha = fadeInAndOut(progress = eased)
         )
-
         IconMotionKind.FOG -> IconPose(
             offsetX = FOG_DISTANCE * sin(x = wave).toFloat(),
             alpha = FOG_LOWEST_ALPHA + (FULL_ALPHA - FOG_LOWEST_ALPHA) * (HALF + HALF * cos(x = wave).toFloat())
         )
-
         IconMotionKind.BOLT -> IconPose(alpha = boltAlpha(progress = eased))
     }
 }

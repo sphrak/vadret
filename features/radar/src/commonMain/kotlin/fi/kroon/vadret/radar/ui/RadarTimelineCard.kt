@@ -371,7 +371,6 @@ private fun Legend(
             labels = precipitationLegendRainRates,
             modifier = modifier
         )
-
         RadarLayer.WIND -> ScaleLegend(
             colors = if (VadretTheme.isDark) {
                 nightWindLegend

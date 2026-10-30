@@ -23,37 +23,23 @@ import org.jetbrains.compose.resources.StringResource
 fun Failure.messageResource(): StringResource =
     when (errorCode) {
         ErrorCode.NETWORK_UNAVAILABLE -> Res.string.no_network_available
-
         ErrorCode.NETWORK_FAILURE,
         ErrorCode.HTTP_NOT_FOUND,
         ErrorCode.HTTP_UNEXPECTED_STATUS,
         ErrorCode.INVALID_RESPONSE -> Res.string.network_failure
-
         ErrorCode.HTTP_BAD_REQUEST -> Res.string.http_bad_request_400
-
         ErrorCode.HTTP_FORBIDDEN -> Res.string.http_forbidden_403
-
         ErrorCode.HTTP_INTERNAL_SERVER_ERROR -> Res.string.http_internal_server_error_500
-
         ErrorCode.HTTP_SERVICE_UNAVAILABLE -> Res.string.http_service_unavailable_503
-
         ErrorCode.HTTP_GATEWAY_TIMEOUT -> Res.string.http_gateway_timeout_504
-
         ErrorCode.LOCATION_PROVIDER_DISABLED -> Res.string.location_provider_disabled
-
         ErrorCode.LOCATION_NOT_AVAILABLE -> Res.string.location_failure
-
         ErrorCode.LOCATION_PERMISSION_MISSING -> Res.string.no_location_permission
-
         ErrorCode.FILE_READ_FAILED -> Res.string.failed_loading_file
-
         ErrorCode.WEATHER_FORECAST_NOT_AVAILABLE_FOR_LOCATION,
         ErrorCode.WEATHER_ANALYSIS_NOT_AVAILABLE_FOR_LOCATION -> Res.string.data_not_available_at_this_location
-
         ErrorCode.RADAR_NOT_AVAILABLE -> Res.string.no_radar_available
-
         ErrorCode.WIND_NOT_AVAILABLE -> Res.string.no_wind_available
-
         ErrorCode.STORAGE_FAILED,
         ErrorCode.UNKNOWN -> Res.string.unhandled_error
     }

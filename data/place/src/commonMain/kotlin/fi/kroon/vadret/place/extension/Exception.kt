@@ -14,13 +14,11 @@ private val logger: Logger = LoggerFactory.getLogger(tag = "fi.kroon.vadret.plac
 internal fun Exception.toFailure(): Failure =
     when (this) {
         is CancellationException -> throw this
-
         is IOException,
         is IllegalArgumentException,
         is IllegalStateException -> toKnownFailure(
             errorCode = ErrorCode.FILE_READ_FAILED,
             logger = logger
         )
-
         else -> toUnknownFailure(logger = logger)
     }

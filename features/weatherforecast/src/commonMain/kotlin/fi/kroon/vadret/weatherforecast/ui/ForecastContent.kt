@@ -76,7 +76,6 @@ internal fun ForecastContent(
                 comingDays = forecast.comingDays,
                 onEvent = onEvent
             )
-
             ForecastView.HOURS -> ForecastDaysContent(forecastDays = forecast.days)
         }
     }

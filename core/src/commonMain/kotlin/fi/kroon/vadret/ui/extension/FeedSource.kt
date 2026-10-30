@@ -20,12 +20,10 @@ fun FeedSource.displayName(): String =
 fun FeedSource.iconResource(warningLevel: WarningLevel?): DrawableResource =
     when (this) {
         FeedSource.KRISINFORMATION -> Res.drawable.ic_campaign
-
         FeedSource.SMHI -> when (warningLevel) {
             WarningLevel.YELLOW,
             WarningLevel.ORANGE,
             WarningLevel.RED -> Res.drawable.ic_warning
-
             WarningLevel.MESSAGE,
             null -> Res.drawable.ic_info
         }

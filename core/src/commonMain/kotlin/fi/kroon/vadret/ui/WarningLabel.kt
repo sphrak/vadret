@@ -28,10 +28,8 @@ fun warningTag(
 ): String? =
     when {
         isPublicAlert -> PUBLIC_ALERT_LABEL
-
         warningLevel == WarningLevel.YELLOW ||
             warningLevel == WarningLevel.ORANGE ||
             warningLevel == WarningLevel.RED -> stringResource(resource = warningLevel.labelResource())
-
         else -> null
     }

@@ -15,12 +15,10 @@ private val logger: Logger = LoggerFactory.getLogger(tag = "fi.kroon.vadret.fore
 internal fun Exception.toFailure(): Failure =
     when (this) {
         is CancellationException -> throw this
-
         is DataStoreIOException,
         is FileIOException -> toKnownFailure(
             errorCode = ErrorCode.STORAGE_FAILED,
             logger = logger
         )
-
         else -> toUnknownFailure(logger = logger)
     }

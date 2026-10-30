@@ -14,17 +14,14 @@ internal expect fun IOException.isNetworkUnavailable(): Boolean
 internal fun Exception.networkErrorCode(): ErrorCode? =
     when (this) {
         is ResponseException -> response.status.value.toHttpErrorCode()
-
         is IOException -> if (isNetworkUnavailable()) {
             ErrorCode.NETWORK_UNAVAILABLE
         } else {
             ErrorCode.NETWORK_FAILURE
         }
-
         is ContentConvertException,
         is NoTransformationFoundException,
         is SerializationException -> ErrorCode.INVALID_RESPONSE
-
         else -> null
     }
 

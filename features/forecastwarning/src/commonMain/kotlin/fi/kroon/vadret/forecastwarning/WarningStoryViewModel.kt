@@ -44,9 +44,7 @@ class WarningStoryViewModel internal constructor(
     internal fun onEvent(event: WarningStoryEvent) {
         when (event) {
             is WarningStoryEvent.OnStart -> onStart(warningIdentifiers = event.warningIdentifiers)
-
             is WarningStoryEvent.OnStoryShown -> onStoryShown(index = event.index)
-
             WarningStoryEvent.OnNext -> step { state: WarningStoryState ->
                 if (state.currentIndex < state.warnings.lastIndex) {
                     state.copy(currentIndex = state.currentIndex + 1)
@@ -54,11 +52,9 @@ class WarningStoryViewModel internal constructor(
                     state.copy(isFinished = true)
                 }
             }
-
             WarningStoryEvent.OnPrevious -> step { state: WarningStoryState ->
                 state.copy(currentIndex = (state.currentIndex - 1).coerceAtLeast(minimumValue = FIRST_INDEX))
             }
-
             is WarningStoryEvent.OnLocaleChanged -> onLocaleChanged(languageTag = event.languageTag)
         }
     }

@@ -123,7 +123,6 @@ private fun AboutRowAction.onClick(onChangelogClick: () -> Unit): () -> Unit {
             val openUrl: () -> Unit = { uriHandler.openUri(uri = url) }
             openUrl
         }
-
         AboutRowAction.ShowChangelog -> onChangelogClick
     }
 }

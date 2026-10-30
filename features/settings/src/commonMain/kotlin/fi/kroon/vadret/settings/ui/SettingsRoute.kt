@@ -78,19 +78,16 @@ internal fun SettingsScreen(
                     state = state,
                     onEvent = onEvent
                 )
-
                 SettingsPage.LIBRARIES -> LibrariesPage(
                     libraryGroups = state.libraryGroups,
                     onLibraryClick = { library: Library ->
                         onEvent(SettingsEvent.OnLibraryClicked(library = library))
                     }
                 )
-
                 SettingsPage.ABOUT -> AboutPage(
                     aboutRows = state.aboutRows,
                     onChangelogClick = { onEvent(SettingsEvent.OnChangelogClicked) }
                 )
-
                 SettingsPage.DEVELOPER -> DeveloperPage(
                     state = state,
                     onEvent = onEvent

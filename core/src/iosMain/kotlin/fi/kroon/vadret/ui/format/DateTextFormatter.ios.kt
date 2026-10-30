@@ -23,11 +23,8 @@ actual fun DateTextFormatter(
     dateFormatter.timeZone = timeZone.toNSTimeZone()
     when (dateTextStyle) {
         DateTextStyle.WEEKDAY -> dateFormatter.dateFormat = WEEKDAY_PATTERN
-
         DateTextStyle.SHORT_WEEKDAY -> dateFormatter.dateFormat = SHORT_WEEKDAY_PATTERN
-
         DateTextStyle.DAY_AND_SHORT_MONTH -> dateFormatter.dateFormat = DAY_AND_SHORT_MONTH_PATTERN
-
         DateTextStyle.LONG_DATE -> {
             dateFormatter.dateStyle = NSDateFormatterLongStyle
             dateFormatter.timeStyle = NSDateFormatterNoStyle
