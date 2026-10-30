@@ -104,6 +104,9 @@ internal fun RadarScreen(
     DisposableEffect(Unit) {
         onDispose { onEvent(RadarEvent.OnLeft) }
     }
+    if (state.isPollenHibernationNoticeVisible) {
+        PollenHibernationDialog(onDismiss = { onEvent(RadarEvent.OnPollenHibernationNoticeDismissed) })
+    }
     val errorMessageResource: StringResource? = state.errorMessageResource
     if (errorMessageResource != null) {
         val message: String = stringResource(resource = errorMessageResource)
@@ -163,7 +166,8 @@ internal fun RadarScreen(
                 .statusBarsPadding()
         )
         RadarLayerToolbar(
-            selectedLayer = state.layer,
+            layers = state.layers,
+            selectedLayerIndex = state.layerIndex,
             onLayerSelected = { layer: RadarLayer -> onEvent(RadarEvent.OnLayerSelected(layer = layer)) },
             modifier = Modifier
                 .align(alignment = Alignment.TopCenter)

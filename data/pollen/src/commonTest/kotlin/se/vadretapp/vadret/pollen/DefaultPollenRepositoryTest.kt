@@ -3,6 +3,7 @@ package se.vadretapp.vadret.pollen
 import io.github.sphrak.either.Either
 import io.github.sphrak.either.extension.asLeft
 import io.github.sphrak.either.extension.asRight
+import io.github.sphrak.either.extension.successOrNull
 import io.ktor.client.engine.mock.MockRequestHandler
 import io.ktor.client.engine.mock.respond
 import io.ktor.client.request.HttpRequestData
@@ -40,7 +41,8 @@ private val repositoryCalls: List<suspend (PollenRepository) -> Either<Failure, 
             startDate = LocalDate.parse(input = "2026-07-10"),
             endDate = LocalDate.parse(input = "2026-07-16")
         )
-    }
+    },
+    { pollenRepository: PollenRepository -> pollenRepository.getCurrentForecasts() }
 )
 
 class DefaultPollenRepositoryTest {
@@ -83,6 +85,11 @@ class DefaultPollenRepositoryTest {
                     "https://api.pollenrapporten.se/v1/forecasts" to mapOf(
                         "start_date" to "2026-07-10",
                         "end_date" to "2026-07-16",
+                        "limit" to "100",
+                        "offset" to "0"
+                    ),
+                    "https://api.pollenrapporten.se/v1/forecasts" to mapOf(
+                        "current" to "true",
                         "limit" to "100"
                     )
                 ),
@@ -123,21 +130,28 @@ class DefaultPollenRepositoryTest {
         }
 
     @Test
-    fun `pollen types keep their names`() =
+    fun `pollen types keep their names and whether they have forecasts`() =
         runTest {
             assertEquals(
                 expected = listOf(
                     PollenType(
                         pollenId = "hazel",
-                        name = "Hassel"
+                        name = "Hassel",
+                        hasForecasts = true
                     ),
                     PollenType(
                         pollenId = "birch",
-                        name = "Björk"
+                        name = "Björk",
+                        hasForecasts = true
+                    ),
+                    PollenType(
+                        pollenId = "alternaria",
+                        name = "Alternaria",
+                        hasForecasts = false
                     )
                 ).asRight(),
                 actual = respondingWith(
-                    body = """{"items":[{"id":"hazel","name":"Hassel","hasForecasts":true,"thresholdLow":10},{"id":"birch","name":"Björk"}]}"""
+                    body = """{"items":[{"id":"hazel","name":"Hassel","hasForecasts":true,"thresholdLow":10},{"id":"birch","name":"Björk"},{"id":"alternaria","name":"Alternaria","hasForecasts":false}]}"""
                 ).getPollenTypes()
             )
         }
@@ -175,6 +189,85 @@ class DefaultPollenRepositoryTest {
                     startDate = LocalDate.parse(input = "2026-05-01"),
                     endDate = LocalDate.parse(input = "2026-09-30")
                 )
+            )
+        }
+
+    private fun forecastPage(
+        offset: Int,
+        size: Int,
+        totalRecords: Int
+    ): String {
+        val items: String = List(size = size) { index: Int ->
+            """{"id":"forecast-${offset + index}","regionId":"stockholm","startDate":"2026-05-01","endDate":"2026-05-07"}"""
+        }.joinToString(separator = ",")
+        return """{"_meta":{"totalRecords":$totalRecords,"offset":$offset,"limit":100,"count":$size},"items":[$items]}"""
+    }
+
+    private fun pagedRepository(totalRecords: Int): PollenRepository =
+        repository { request: HttpRequestData ->
+            val offset: Int = request.url.parameters["offset"].orEmpty().toInt()
+            respond(
+                content = forecastPage(
+                    offset = offset,
+                    size = minOf(100, totalRecords - offset),
+                    totalRecords = totalRecords
+                ),
+                headers = jsonHeaders
+            )
+        }
+
+    @Test
+    fun `forecasts are asked for page by page until every record is read`() =
+        runTest {
+            val forecastIds: List<String> = pagedRepository(totalRecords = 159)
+                .getForecasts(
+                    startDate = LocalDate.parse(input = "2026-05-01"),
+                    endDate = LocalDate.parse(input = "2026-05-14")
+                ).successOrNull
+                .orEmpty()
+                .map { pollenForecast: PollenForecast -> pollenForecast.forecastId }
+
+            assertEquals(
+                expected = List(size = 159) { index: Int -> "forecast-$index" } to listOf("0", "100"),
+                actual = forecastIds to requests.map { request: HttpRequestData -> request.url.parameters["offset"] }
+            )
+        }
+
+    @Test
+    fun `forecasts stop after ten pages however many records are claimed`() =
+        runTest {
+            val forecastCount: Int = pagedRepository(totalRecords = 1_000_000)
+                .getForecasts(
+                    startDate = LocalDate.parse(input = "2026-05-01"),
+                    endDate = LocalDate.parse(input = "2026-05-14")
+                ).successOrNull
+                .orEmpty()
+                .size
+
+            assertEquals(
+                expected = 1_000 to 10,
+                actual = forecastCount to requests.size
+            )
+        }
+
+    @Test
+    fun `current forecasts keep the end of season flag`() =
+        runTest {
+            assertEquals(
+                expected = listOf(
+                    PollenForecast(
+                        forecastId = "autumn",
+                        regionId = "stockholm",
+                        startDate = LocalDate.parse(input = "2026-09-18"),
+                        endDate = LocalDate.parse(input = "2026-09-18"),
+                        text = "Säsongen är slut.",
+                        isEndOfSeason = true,
+                        dailyLevels = emptyList()
+                    )
+                ).asRight(),
+                actual = respondingWith(
+                    body = """{"items":[{"id":"autumn","regionId":"stockholm","startDate":"2026-09-18","endDate":"2026-09-18","text":"Säsongen är slut.","isEndOfSeason":true,"levelSeries":[]}]}"""
+                ).getCurrentForecasts()
             )
         }
 

@@ -24,11 +24,13 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.todayIn
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.location.model.Location
+import se.vadretapp.vadret.pollenpreference.model.PollenPreferences
 import se.vadretapp.vadret.radar.extension.markersFor
+import se.vadretapp.vadret.radar.extension.pollenTypesWithAllergensFirst
 import se.vadretapp.vadret.radar.extension.strongestPollenId
 import se.vadretapp.vadret.radar.extension.toDateText
 import se.vadretapp.vadret.radar.extension.toDayText
@@ -37,6 +39,7 @@ import se.vadretapp.vadret.radar.extension.toWindTimeFrames
 import se.vadretapp.vadret.radar.extension.withoutMotion
 import se.vadretapp.vadret.radar.model.PollenMap
 import se.vadretapp.vadret.radar.model.PollenMarker
+import se.vadretapp.vadret.radar.model.PollenSeasonStatus
 import se.vadretapp.vadret.radar.model.Radar
 import se.vadretapp.vadret.radar.model.RadarFrame
 import se.vadretapp.vadret.radar.model.RadarLayer
@@ -64,12 +67,6 @@ private const val PRELOADED_FRAME_DISTANCE = 3
 private val frameDuration: Duration = 128.milliseconds
 private const val WIND_STEPS_PER_FRAME = 4
 
-private val pollenMapDate: LocalDate = LocalDate(
-    year = 2026,
-    month = 7,
-    day = 13
-)
-
 private class PreparedWindField(
     val index: Int,
     val windField: Deferred<WindField>
@@ -81,6 +78,9 @@ class RadarViewModel internal constructor(
     private val getWindForecastTask: GetWindForecastTask,
     private val getDeviceLocationTask: GetDeviceLocationTask,
     private val getPollenMapTask: GetPollenMapTask,
+    private val observePollenPreferencesTask: ObservePollenPreferencesTask,
+    private val observePollenInSeasonTask: ObservePollenInSeasonTask,
+    private val setPollenHibernationNoticeShownTask: SetPollenHibernationNoticeShownTask,
     private val radarImageLoader: RadarImageLoader,
     private val precipitationRenderer: PrecipitationRenderer,
     private val windFieldRenderer: WindFieldRenderer,
@@ -93,6 +93,9 @@ class RadarViewModel internal constructor(
         field = MutableStateFlow(value = RadarState())
 
     private val isStarted: AtomicBoolean = AtomicBoolean(value = false)
+    private val pollenPreferences: AtomicReference<PollenPreferences?> = AtomicReference(value = null)
+    private val pollenSeasonStatus: AtomicReference<PollenSeasonStatus> = AtomicReference(value = PollenSeasonStatus.UNKNOWN)
+    private val isHibernationNoticeDismissed: AtomicBoolean = AtomicBoolean(value = false)
     private val isWindRequested: AtomicBoolean = AtomicBoolean(value = false)
     private val isPollenRequested: AtomicBoolean = AtomicBoolean(value = false)
     private val pollenMap: AtomicReference<PollenMap?> = AtomicReference(value = null)
@@ -123,7 +126,7 @@ class RadarViewModel internal constructor(
             RadarEvent.OnRadarStationsToggled -> state.update { state: RadarState ->
                 state.copy(areRadarStationsShown = !state.areRadarStationsShown)
             }
-
+            RadarEvent.OnPollenHibernationNoticeDismissed -> onPollenHibernationNoticeDismissed()
             is RadarEvent.OnPollenTypeSelected -> onPollenTypeSelected(pollenId = event.pollenId)
         }
     }
@@ -132,6 +135,93 @@ class RadarViewModel internal constructor(
         if (isStarted.compareAndSet(expectedValue = false, newValue = true)) {
             loadPrecipitation(initialImageUrl = initialImageUrl)
             loadDeviceLocation()
+            observePollenPreferences()
+            observePollenSeasonStatus()
+        }
+    }
+
+    private fun observePollenSeasonStatus() {
+        viewModelScope.launch(context = coroutineDispatcher) {
+            observePollenInSeasonTask().collect { result: Either<Failure, Boolean> ->
+                pollenSeasonStatus.store(
+                    newValue = result.onResult(
+                        onError = { _: Failure -> PollenSeasonStatus.UNKNOWN },
+                        onSuccess = { isInSeason: Boolean ->
+                            if (isInSeason) {
+                                PollenSeasonStatus.IN_SEASON
+                            } else {
+                                PollenSeasonStatus.OFF_SEASON
+                            }
+                        }
+                    )
+                )
+                showPollenAvailability()
+            }
+        }
+    }
+
+    private fun observePollenPreferences() {
+        viewModelScope.launch(context = coroutineDispatcher) {
+            observePollenPreferencesTask().collect { result: Either<Failure, PollenPreferences> ->
+                result.onResult(
+                    onError = { _: Failure -> },
+                    onSuccess = { pollenPreferences: PollenPreferences -> onPollenPreferencesChanged(pollenPreferences = pollenPreferences) }
+                )
+            }
+        }
+    }
+
+    private fun onPollenPreferencesChanged(pollenPreferences: PollenPreferences) {
+        this.pollenPreferences.store(newValue = pollenPreferences)
+        if (pollenPreferences.isHibernationNoticeShown) {
+            isHibernationNoticeDismissed.store(newValue = false)
+        }
+        showPollenAvailability()
+        val loadedPollenMap: PollenMap? = pollenMap.load()
+        if (loadedPollenMap != null) {
+            state.update { state: RadarState ->
+                state.copy(pollenTypes = loadedPollenMap.pollenTypesWithAllergensFirst(allergenPollenIds = pollenPreferences.allergenPollenIds))
+            }
+        }
+    }
+
+    private fun showPollenAvailability() {
+        val storedPollenPreferences: PollenPreferences? = pollenPreferences.load()
+        val isPollenShown: Boolean = storedPollenPreferences?.isPollenEnabled != false && pollenSeasonStatus.load() == PollenSeasonStatus.IN_SEASON
+        if (!isPollenShown && state.value.layer == RadarLayer.POLLEN) {
+            onLayerSelected(layer = RadarLayer.PRECIPITATION)
+        }
+        if (storedPollenPreferences?.isHibernationNoticeShown == true && pollenSeasonStatus.load() == PollenSeasonStatus.IN_SEASON) {
+            viewModelScope.launch(context = coroutineDispatcher) {
+                setPollenHibernationNoticeShownTask(isShown = false)
+            }
+        }
+        state.update { state: RadarState ->
+            state.copy(
+                layers = if (isPollenShown) {
+                    layersWithPollen
+                } else {
+                    layersWithoutPollen
+                },
+                isPollenHibernationNoticeVisible = isPollenHibernationNoticeVisible(pollenPreferences = storedPollenPreferences)
+            )
+        }
+    }
+
+    private fun isPollenHibernationNoticeVisible(pollenPreferences: PollenPreferences?): Boolean =
+        pollenPreferences != null &&
+            pollenPreferences.isPollenEnabled &&
+            !pollenPreferences.isHibernationNoticeShown &&
+            pollenSeasonStatus.load() == PollenSeasonStatus.OFF_SEASON &&
+            !isHibernationNoticeDismissed.load()
+
+    private fun onPollenHibernationNoticeDismissed() {
+        isHibernationNoticeDismissed.store(newValue = true)
+        state.update { state: RadarState ->
+            state.copy(isPollenHibernationNoticeVisible = false)
+        }
+        viewModelScope.launch(context = coroutineDispatcher) {
+            setPollenHibernationNoticeShownTask(isShown = true)
         }
     }
 
@@ -284,7 +374,7 @@ class RadarViewModel internal constructor(
             state.copy(isLoading = true)
         }
         viewModelScope.launch(context = coroutineDispatcher) {
-            getPollenMapTask(date = pollenMapDate)
+            getPollenMapTask(date = clock.todayIn(timeZone = TimeZone.currentSystemDefault()))
                 .onResult(
                     onError = { failure: Failure ->
                         isPollenRequested.store(newValue = false)
@@ -292,10 +382,11 @@ class RadarViewModel internal constructor(
                     },
                     onSuccess = { loadedPollenMap: PollenMap ->
                         pollenMap.store(newValue = loadedPollenMap)
-                        val selectedPollenId: String? = loadedPollenMap.strongestPollenId()
+                        val allergenPollenIds: Set<String> = pollenPreferences.load()?.allergenPollenIds.orEmpty()
+                        val selectedPollenId: String? = loadedPollenMap.strongestPollenId(allergenPollenIds = allergenPollenIds)
                         val updatedState: RadarState = state.updateAndGet { state: RadarState ->
                             state.copy(
-                                pollenTypes = loadedPollenMap.pollenTypes.toImmutableList(),
+                                pollenTypes = loadedPollenMap.pollenTypesWithAllergensFirst(allergenPollenIds = allergenPollenIds),
                                 selectedPollenId = selectedPollenId,
                                 pollenMarkers = loadedPollenMap.markersFor(pollenId = selectedPollenId),
                                 pollenDayText = loadedPollenMap.dayText(),

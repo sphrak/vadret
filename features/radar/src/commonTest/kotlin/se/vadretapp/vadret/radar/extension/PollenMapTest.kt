@@ -30,12 +30,14 @@ private fun pollenMap(
 
 private val birch = PollenType(
     pollenId = "birch",
-    name = "Björk"
+    name = "Björk",
+    hasForecasts = true
 )
 
 private val grass = PollenType(
     pollenId = "grass",
-    name = "Gräs"
+    name = "Gräs",
+    hasForecasts = true
 )
 
 class PollenMapTest {
@@ -48,7 +50,7 @@ class PollenMapTest {
                 pollenTypes = listOf(birch, grass),
                 mapOf("birch" to PollenLevel.MODERATE, "grass" to PollenLevel.LOW),
                 mapOf("grass" to PollenLevel.HIGH)
-            ).strongestPollenId()
+            ).strongestPollenId(allergenPollenIds = emptySet())
         )
     }
 
@@ -59,9 +61,55 @@ class PollenMapTest {
             actual = pollenMap(
                 pollenTypes = listOf(birch, grass),
                 mapOf("birch" to PollenLevel.LOW, "grass" to PollenLevel.LOW)
-            ).strongestPollenId()
+            ).strongestPollenId(allergenPollenIds = emptySet())
         )
-        assertNull(actual = pollenMap(pollenTypes = emptyList()).strongestPollenId())
+        assertNull(actual = pollenMap(pollenTypes = emptyList()).strongestPollenId(allergenPollenIds = emptySet()))
+    }
+
+    @Test
+    fun `the strongest allergen that is flying wins over stronger types`() {
+        val pollenTypes: List<PollenType> = listOf(birch, grass)
+
+        assertEquals(
+            expected = listOf("birch", "grass", "grass"),
+            actual = listOf(
+                pollenMap(
+                    pollenTypes = pollenTypes,
+                    mapOf("birch" to PollenLevel.LOW, "grass" to PollenLevel.VERY_HIGH)
+                ).strongestPollenId(allergenPollenIds = setOf("birch")),
+                pollenMap(
+                    pollenTypes = pollenTypes,
+                    mapOf("birch" to PollenLevel.NONE, "grass" to PollenLevel.LOW)
+                ).strongestPollenId(allergenPollenIds = setOf("birch")),
+                pollenMap(
+                    pollenTypes = pollenTypes,
+                    mapOf("birch" to PollenLevel.MODERATE, "grass" to PollenLevel.HIGH)
+                ).strongestPollenId(allergenPollenIds = setOf("oak"))
+            )
+        )
+    }
+
+    @Test
+    fun `allergens are listed first and the other types keep their order`() {
+        val hazel = PollenType(
+            pollenId = "hazel",
+            name = "Hassel",
+            hasForecasts = true
+        )
+        val threeTypes: PollenMap = pollenMap(pollenTypes = listOf(birch, grass, hazel))
+
+        assertEquals(
+            expected = listOf(
+                listOf(hazel, birch, grass),
+                listOf(grass, hazel, birch),
+                listOf(birch, grass, hazel)
+            ),
+            actual = listOf(
+                threeTypes.pollenTypesWithAllergensFirst(allergenPollenIds = setOf("hazel")),
+                threeTypes.pollenTypesWithAllergensFirst(allergenPollenIds = setOf("hazel", "grass")),
+                threeTypes.pollenTypesWithAllergensFirst(allergenPollenIds = emptySet())
+            )
+        )
     }
 
     @Test

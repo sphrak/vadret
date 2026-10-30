@@ -28,6 +28,7 @@ import se.vadretapp.vadret.settings.model.AboutRowAction
 import se.vadretapp.vadret.settings.model.AboutRowHint
 import se.vadretapp.vadret.settings.model.LibraryGroup
 import se.vadretapp.vadret.settings.model.LocationRow
+import se.vadretapp.vadret.settings.model.PollenAllergenRow
 import se.vadretapp.vadret.settings.ui.SettingsPage
 
 internal fun aboutRows(appVersion: String): ImmutableList<AboutRow> =
@@ -84,5 +85,9 @@ internal data class SettingsState(
     val isThemeDialogVisible: Boolean = false,
     val isLanguageDialogVisible: Boolean = false,
     val changelog: Changelog? = null,
-    val isChangelogVisible: Boolean = false
+    val isChangelogVisible: Boolean = false,
+    val pollenAllergenCount: Int = 0,
+    val pollenAllergenRows: ImmutableList<PollenAllergenRow> = persistentListOf(),
+    val isPollenAllergenDialogVisible: Boolean = false,
+    val arePollenTypesUnavailable: Boolean = false
 )

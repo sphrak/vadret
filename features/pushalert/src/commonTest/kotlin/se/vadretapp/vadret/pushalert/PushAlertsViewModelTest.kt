@@ -933,11 +933,13 @@ class PushAlertsViewModelTest {
 
 private val BIRCH = PollenType(
     pollenId = "2a2a2a2a-2a2a-4a2a-aa2a-2a313a323236",
-    name = "Björk"
+    name = "Björk",
+    hasForecasts = true
 )
 private val GRASS = PollenType(
     pollenId = "2a2a2a2a-2a2a-4a2a-aa2a-2a313a323237",
-    name = "Gräs"
+    name = "Gräs",
+    hasForecasts = true
 )
 private val WARNINGS_FROM_YELLOW = PushAlertChoices(
     warningLowestLevel = WarningAlertLevel.YELLOW,

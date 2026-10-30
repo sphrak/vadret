@@ -304,4 +304,20 @@
     <string name="push_place_off">No pushes for this place</string>
     <string name="push_places_limit">At most 4 saved places</string>
     <string name="push_places_limit_text">At most 4 saved places can have push alerts. Turn off another place first.</string>
+    <string name="show_pollen">Show pollen</string>
+    <string name="pollen_is_shown">The pollen map is on</string>
+    <string name="pollen_is_hidden">Pollen is hidden</string>
+    <string name="pollen_allergies">Allergies</string>
+    <string name="pollen_no_allergies">None chosen</string>
+    <plurals name="pollen_allergens_selected">
+        <item quantity="one">%1$d chosen</item>
+        <item quantity="other">%1$d chosen</item>
+    </plurals>
+    <string name="pollen_allergies_description">Choose what you\'re allergic to. The map opens on it.</string>
+    <string name="pollen_types_not_available">The pollen types could not be loaded. Try again later.</string>
+    <string name="pollen_hibernating_title">Pollen has gone into hibernation</string>
+    <string name="pollen_hibernating_text">The pollen reports return when the season starts again, usually around February.</string>
+    <string name="simulate_end_of_season">Simulate end of season on the radar</string>
+    <string name="end_of_season_is_simulated">Pollen is hidden and the hibernation notice shows on the next radar visit</string>
+    <string name="end_of_season_is_not_simulated">The radar follows the real season</string>
 </resources>

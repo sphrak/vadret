@@ -46,4 +46,11 @@ internal class DefaultPollenRepository(
                     endDate = endDate
                 ).mapNotNull { pollenForecastDto: PollenForecastDto -> pollenForecastDto.toPollenForecast() }
         }.catch { exception: Exception -> exception.toFailure() }
+
+    override suspend fun getCurrentForecasts(): Either<Failure, List<PollenForecast>> =
+        either {
+            pollenRemoteDataSource
+                .getCurrentForecasts()
+                .mapNotNull { pollenForecastDto: PollenForecastDto -> pollenForecastDto.toPollenForecast() }
+        }.catch { exception: Exception -> exception.toFailure() }
 }

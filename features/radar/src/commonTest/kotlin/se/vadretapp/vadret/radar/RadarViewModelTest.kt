@@ -6,6 +6,8 @@ import io.github.sphrak.either.extension.asLeft
 import io.github.sphrak.either.extension.asRight
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -16,6 +18,8 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.todayIn
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.core.resources.Res
@@ -25,6 +29,7 @@ import se.vadretapp.vadret.core.resources.no_wind_available
 import se.vadretapp.vadret.location.model.Location
 import se.vadretapp.vadret.pollen.model.PollenLevel
 import se.vadretapp.vadret.pollen.model.PollenType
+import se.vadretapp.vadret.pollenpreference.model.PollenPreferences
 import se.vadretapp.vadret.radar.model.PollenMap
 import se.vadretapp.vadret.radar.model.PollenMarker
 import se.vadretapp.vadret.radar.model.PollenStation
@@ -130,11 +135,44 @@ private class FakeGetPollenMapTask(
 ) : GetPollenMapTask {
 
     var requestCount: Int = 0
+    val requestedDates = mutableListOf<LocalDate>()
 
     override suspend fun invoke(date: LocalDate): Either<Failure, PollenMap> {
         requestCount++
+        requestedDates.add(date)
         return result
     }
+}
+
+private val defaultPollenPreferences = PollenPreferences(
+    isPollenEnabled = true,
+    allergenPollenIds = emptySet(),
+    isHibernationNoticeShown = false,
+    isEndOfSeasonSimulated = false
+)
+
+private class FakeObservePollenInSeasonTask : ObservePollenInSeasonTask {
+
+    val isInSeason = MutableStateFlow<Either<Failure, Boolean>>(value = true.asRight())
+
+    override fun invoke(): Flow<Either<Failure, Boolean>> = isInSeason
+}
+
+private class RecordingSetPollenHibernationNoticeShownTask : SetPollenHibernationNoticeShownTask {
+
+    val shownValues = mutableListOf<Boolean>()
+
+    override suspend fun invoke(isShown: Boolean): Either<Failure, Unit> {
+        shownValues.add(isShown)
+        return Unit.asRight()
+    }
+}
+
+private class FakeObservePollenPreferencesTask : ObservePollenPreferencesTask {
+
+    val pollenPreferences = MutableStateFlow<Either<Failure, PollenPreferences>>(value = defaultPollenPreferences.asRight())
+
+    override fun invoke(): Flow<Either<Failure, PollenPreferences>> = pollenPreferences
 }
 
 private class FakePollenCloudRenderer : PollenCloudRenderer {
@@ -212,12 +250,14 @@ private val windForecast = WindForecast(
 
 private val birch = PollenType(
     pollenId = "birch",
-    name = "Björk"
+    name = "Björk",
+    hasForecasts = true
 )
 
 private val grass = PollenType(
     pollenId = "grass",
-    name = "Gräs"
+    name = "Gräs",
+    hasForecasts = true
 )
 
 private val pollenMap = PollenMap(
@@ -265,6 +305,10 @@ class RadarViewModelTest {
     private val getDeviceLocationTask = FakeGetDeviceLocationTask(result = Location(latitude = 59.3, longitude = 18.0).asRight())
     private val radarImageLoader = FakeRadarImageLoader()
     private val windFieldRenderer = FakeWindFieldRenderer()
+    private val observePollenPreferencesTask = FakeObservePollenPreferencesTask()
+    private val observePollenInSeasonTask = FakeObservePollenInSeasonTask()
+    private val setPollenHibernationNoticeShownTask = RecordingSetPollenHibernationNoticeShownTask()
+    private val clock = FixedClock(now = Instant.parse(input = "2026-10-24T12:45:00Z"))
 
     @BeforeTest
     fun setUp() {
@@ -285,11 +329,14 @@ class RadarViewModelTest {
             getWindForecastTask = getWindForecastTask,
             getDeviceLocationTask = getDeviceLocationTask,
             getPollenMapTask = getPollenMapTask,
+            observePollenPreferencesTask = observePollenPreferencesTask,
+            observePollenInSeasonTask = observePollenInSeasonTask,
+            setPollenHibernationNoticeShownTask = setPollenHibernationNoticeShownTask,
             radarImageLoader = radarImageLoader,
             precipitationRenderer = FakePrecipitationRenderer(),
             windFieldRenderer = windFieldRenderer,
             pollenCloudRenderer = pollenCloudRenderer,
-            clock = FixedClock(now = Instant.parse(input = "2026-10-24T12:45:00Z")),
+            clock = clock,
             coroutineDispatcher = testDispatcher
         )
         if (isStarted) {
@@ -622,7 +669,10 @@ class RadarViewModelTest {
             advanceUntilIdle()
 
             val state: RadarState = radarViewModel.state.value
-            assertEquals(expected = 1, actual = getPollenMapTask.requestCount)
+            assertEquals(
+                expected = listOf(clock.todayIn(timeZone = TimeZone.currentSystemDefault())),
+                actual = getPollenMapTask.requestedDates
+            )
             assertEquals(expected = listOf(birch, grass), actual = state.pollenTypes)
             assertEquals(expected = "grass", actual = state.selectedPollenId)
             assertEquals(
@@ -1020,5 +1070,206 @@ class RadarViewModelTest {
                 }
 
             assertEquals(expected = listOf(false, true, false), actual = shown)
+        }
+
+    @Test
+    fun `turning pollen off hides the pollen layer and leaves it when it is shown`() =
+        testScope.runTest {
+            val radarViewModel: RadarViewModel = viewModel()
+            advanceUntilIdle()
+            radarViewModel.onEvent(event = RadarEvent.OnLayerSelected(layer = RadarLayer.POLLEN))
+            advanceUntilIdle()
+            val layersWithPollen: List<RadarLayer> = radarViewModel.state.value.layers
+
+            observePollenPreferencesTask.pollenPreferences.value = defaultPollenPreferences.copy(isPollenEnabled = false).asRight()
+            advanceUntilIdle()
+
+            assertEquals(
+                expected = listOf(
+                    RadarLayer.PRECIPITATION,
+                    RadarLayer.WIND,
+                    RadarLayer.POLLEN
+                ),
+                actual = layersWithPollen
+            )
+            assertEquals(
+                expected = Triple(
+                    listOf(
+                        RadarLayer.PRECIPITATION,
+                        RadarLayer.WIND
+                    ),
+                    RadarLayer.PRECIPITATION,
+                    0
+                ),
+                actual = Triple(
+                    radarViewModel.state.value.layers,
+                    radarViewModel.state.value.layer,
+                    radarViewModel.state.value.layerIndex
+                )
+            )
+        }
+
+    @Test
+    fun `allergens are listed first and the map opens on the strongest of them that is flying`() =
+        testScope.runTest {
+            observePollenPreferencesTask.pollenPreferences.value = defaultPollenPreferences.copy(allergenPollenIds = setOf("birch")).asRight()
+            val radarViewModel: RadarViewModel = viewModel()
+            advanceUntilIdle()
+
+            radarViewModel.onEvent(event = RadarEvent.OnLayerSelected(layer = RadarLayer.POLLEN))
+            advanceUntilIdle()
+            val opened: Pair<List<PollenType>, String?> = radarViewModel.state.value.pollenTypes to radarViewModel.state.value.selectedPollenId
+            observePollenPreferencesTask.pollenPreferences.value = defaultPollenPreferences.copy(allergenPollenIds = setOf("grass")).asRight()
+            advanceUntilIdle()
+
+            assertEquals(
+                expected = listOf<Pair<List<PollenType>, String?>>(
+                    listOf(birch, grass) to "birch",
+                    listOf(grass, birch) to "birch"
+                ),
+                actual = listOf(
+                    opened,
+                    radarViewModel.state.value.pollenTypes to radarViewModel.state.value.selectedPollenId
+                )
+            )
+        }
+
+    @Test
+    fun `off season hides the pollen layer and tells once that pollen hibernates`() =
+        testScope.runTest {
+            observePollenInSeasonTask.isInSeason.value = false.asRight()
+            val radarViewModel: RadarViewModel = viewModel()
+            advanceUntilIdle()
+            val isVisibleOnArrival: Boolean = radarViewModel.state.value.isPollenHibernationNoticeVisible
+
+            radarViewModel.onEvent(event = RadarEvent.OnPollenHibernationNoticeDismissed)
+            advanceUntilIdle()
+            observePollenPreferencesTask.pollenPreferences.value = defaultPollenPreferences.copy(allergenPollenIds = setOf("birch")).asRight()
+            advanceUntilIdle()
+            val isVisibleBeforeStored: Boolean = radarViewModel.state.value.isPollenHibernationNoticeVisible
+            observePollenPreferencesTask.pollenPreferences.value = defaultPollenPreferences.copy(isHibernationNoticeShown = true).asRight()
+            advanceUntilIdle()
+
+            assertEquals(
+                expected = listOf(true, false, false),
+                actual = listOf(
+                    isVisibleOnArrival,
+                    isVisibleBeforeStored,
+                    radarViewModel.state.value.isPollenHibernationNoticeVisible
+                )
+            )
+            assertEquals<List<Any>>(
+                expected = listOf(
+                    listOf(true),
+                    listOf(RadarLayer.PRECIPITATION, RadarLayer.WIND)
+                ),
+                actual = listOf(
+                    setPollenHibernationNoticeShownTask.shownValues,
+                    radarViewModel.state.value.layers
+                )
+            )
+        }
+
+    @Test
+    fun `a season that ends while the radar is open hides pollen and a readied notice shows again after dismissal`() =
+        testScope.runTest {
+            val radarViewModel: RadarViewModel = viewModel()
+            advanceUntilIdle()
+            radarViewModel.onEvent(event = RadarEvent.OnLayerSelected(layer = RadarLayer.POLLEN))
+            advanceUntilIdle()
+
+            observePollenInSeasonTask.isInSeason.value = false.asRight()
+            advanceUntilIdle()
+            val afterEnd: Triple<RadarLayer, List<RadarLayer>, Boolean> = Triple(
+                radarViewModel.state.value.layer,
+                radarViewModel.state.value.layers,
+                radarViewModel.state.value.isPollenHibernationNoticeVisible
+            )
+            radarViewModel.onEvent(event = RadarEvent.OnPollenHibernationNoticeDismissed)
+            observePollenPreferencesTask.pollenPreferences.value = defaultPollenPreferences.copy(isHibernationNoticeShown = true).asRight()
+            advanceUntilIdle()
+            val afterDismissal: Boolean = radarViewModel.state.value.isPollenHibernationNoticeVisible
+            observePollenPreferencesTask.pollenPreferences.value = defaultPollenPreferences.asRight()
+            advanceUntilIdle()
+
+            assertEquals(
+                expected = Triple(
+                    RadarLayer.PRECIPITATION,
+                    listOf(RadarLayer.PRECIPITATION, RadarLayer.WIND),
+                    true
+                ),
+                actual = afterEnd
+            )
+            assertEquals(
+                expected = false to true,
+                actual = afterDismissal to radarViewModel.state.value.isPollenHibernationNoticeVisible
+            )
+        }
+
+    @Test
+    fun `an off season says nothing when pollen is off or the notice was already shown`() =
+        testScope.runTest {
+            observePollenInSeasonTask.isInSeason.value = false.asRight()
+            val noticesShown: List<Boolean> = listOf(
+                defaultPollenPreferences.copy(isPollenEnabled = false),
+                defaultPollenPreferences.copy(isHibernationNoticeShown = true)
+            ).map { pollenPreferences: PollenPreferences ->
+                observePollenPreferencesTask.pollenPreferences.value = pollenPreferences.asRight()
+                val radarViewModel: RadarViewModel = viewModel()
+                advanceUntilIdle()
+                radarViewModel.state.value.isPollenHibernationNoticeVisible
+            }
+
+            assertEquals(
+                expected = listOf(false, false),
+                actual = noticesShown
+            )
+            assertEquals(
+                expected = emptyList(),
+                actual = setPollenHibernationNoticeShownTask.shownValues
+            )
+        }
+
+    @Test
+    fun `a season that is back readies the notice for the next off season`() =
+        testScope.runTest {
+            observePollenPreferencesTask.pollenPreferences.value = defaultPollenPreferences.copy(isHibernationNoticeShown = true).asRight()
+            val radarViewModel: RadarViewModel = viewModel()
+            advanceUntilIdle()
+
+            assertEquals(
+                expected = listOf(false) to false,
+                actual = setPollenHibernationNoticeShownTask.shownValues to radarViewModel.state.value.isPollenHibernationNoticeVisible
+            )
+            assertEquals<List<RadarLayer>>(
+                expected = RadarLayer.entries,
+                actual = radarViewModel.state.value.layers
+            )
+        }
+
+    @Test
+    fun `a season that cannot be told keeps the pollen layer hidden and says nothing`() =
+        testScope.runTest {
+            observePollenInSeasonTask.isInSeason.value = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft()
+            val radarViewModel: RadarViewModel = viewModel()
+            advanceUntilIdle()
+
+            assertEquals(
+                expected = listOf(RadarLayer.PRECIPITATION, RadarLayer.WIND) to false,
+                actual = radarViewModel.state.value.layers to radarViewModel.state.value.isPollenHibernationNoticeVisible
+            )
+        }
+
+    @Test
+    fun `pollen preferences that cannot be read keep every layer`() =
+        testScope.runTest {
+            observePollenPreferencesTask.pollenPreferences.value = Failure(errorCode = ErrorCode.STORAGE_FAILED).asLeft()
+            val radarViewModel: RadarViewModel = viewModel()
+            advanceUntilIdle()
+
+            assertEquals<List<RadarLayer>>(
+                expected = RadarLayer.entries,
+                actual = radarViewModel.state.value.layers
+            )
         }
 }

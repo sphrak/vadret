@@ -66,7 +66,10 @@ internal fun settingsPreviewState(theme: Theme): SettingsState {
         language = AppLanguage.SYSTEM,
         isHourlyForecastEnabled = false,
         isExpandOnceEnabled = true,
-        storedLocation = previewLocation
+        storedLocation = previewLocation,
+        isPollenEnabled = true,
+        allergenPollenIds = emptySet(),
+        isEndOfSeasonSimulated = false
     )
     return SettingsState(
         settings = settings,

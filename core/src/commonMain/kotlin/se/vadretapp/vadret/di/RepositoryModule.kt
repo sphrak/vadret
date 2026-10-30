@@ -9,6 +9,7 @@ import se.vadretapp.vadret.library.LibraryRepository
 import se.vadretapp.vadret.nominatim.NominatimRepository
 import se.vadretapp.vadret.place.PlaceRepository
 import se.vadretapp.vadret.pollen.PollenRepository
+import se.vadretapp.vadret.pollenpreference.PollenPreferenceRepository
 import se.vadretapp.vadret.radar.RadarRepository
 import se.vadretapp.vadret.theme.ThemeRepository
 import se.vadretapp.vadret.weatherforecast.WeatherForecastRepository
@@ -26,6 +27,7 @@ val repositoryModule: Module = module {
     single<LibraryRepository> { LibraryRepository() }
     single<NominatimRepository> { NominatimRepository(httpClient = inject()) }
     single<PollenRepository> { PollenRepository(httpClient = inject()) }
+    single<PollenPreferenceRepository> { PollenPreferenceRepository(dataStore = get()) }
     single<RadarRepository> {
         RadarRepository(
             httpClient = inject(),

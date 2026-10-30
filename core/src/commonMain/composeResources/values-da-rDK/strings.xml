@@ -106,4 +106,17 @@
     <string name="warning_when">Hvornår</string>
     <string name="close">Luk</string>
     <string name="back">Tilbage</string>
+    <string name="show_pollen">Vis pollen</string>
+    <string name="pollen_is_shown">Pollenkortet er slået til</string>
+    <string name="pollen_is_hidden">Pollen er skjult</string>
+    <string name="pollen_allergies">Allergier</string>
+    <string name="pollen_no_allergies">Ingen valgt</string>
+    <plurals name="pollen_allergens_selected">
+        <item quantity="one">%1$d valgt</item>
+        <item quantity="other">%1$d valgt</item>
+    </plurals>
+    <string name="pollen_allergies_description">Vælg, hvad du er allergisk over. Kortet åbner på det.</string>
+    <string name="pollen_types_not_available">Pollentyperne kunne ikke hentes. Prøv igen senere.</string>
+    <string name="pollen_hibernating_title">Pollen er gået i hi</string>
+    <string name="pollen_hibernating_text">Pollenrapporterne vender tilbage, når sæsonen starter igen, typisk omkring februar.</string>
 </resources>

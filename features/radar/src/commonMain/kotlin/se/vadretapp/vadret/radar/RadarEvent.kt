@@ -14,4 +14,5 @@ internal sealed interface RadarEvent {
     data class OnLayerSelected(val layer: RadarLayer) : RadarEvent
     data object OnRadarStationsToggled : RadarEvent
     data class OnPollenTypeSelected(val pollenId: String) : RadarEvent
+    data object OnPollenHibernationNoticeDismissed : RadarEvent
 }

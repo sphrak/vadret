@@ -13,10 +13,13 @@ import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.language.model.AppLanguage
 import se.vadretapp.vadret.library.model.Library
 import se.vadretapp.vadret.model.AppInfo
+import se.vadretapp.vadret.pollen.model.PollenType
 import se.vadretapp.vadret.settings.extension.toLibraryGroups
 import se.vadretapp.vadret.settings.extension.toLocationRows
+import se.vadretapp.vadret.settings.extension.toPollenAllergenRows
 import se.vadretapp.vadret.theme.model.Theme
 import kotlin.concurrent.atomics.AtomicBoolean
+import kotlin.concurrent.atomics.AtomicReference
 
 class SettingsViewModel internal constructor(
     private val getSettingsTask: GetSettingsTask,
@@ -27,6 +30,10 @@ class SettingsViewModel internal constructor(
     private val setExpandOnceTask: SetExpandOnceTask,
     private val getLibrariesTask: GetLibrariesTask,
     private val getChangelogTask: GetChangelogTask,
+    private val setPollenEnabledTask: SetPollenEnabledTask,
+    private val setPollenAllergenTask: SetPollenAllergenTask,
+    private val getPollenTypesTask: GetPollenTypesTask,
+    private val setEndOfSeasonSimulatedTask: SetEndOfSeasonSimulatedTask,
     appInfo: AppInfo,
     private val coroutineDispatcher: CoroutineDispatcher
 ) : ViewModel() {
@@ -40,6 +47,7 @@ class SettingsViewModel internal constructor(
         )
 
     private val isStarted: AtomicBoolean = AtomicBoolean(value = false)
+    private val pollenTypes: AtomicReference<List<PollenType>> = AtomicReference(value = emptyList())
 
     internal fun onEvent(event: SettingsEvent) {
         when (event) {
@@ -79,6 +87,18 @@ class SettingsViewModel internal constructor(
             SettingsEvent.OnChangelogDismissed -> state.update { state: SettingsState ->
                 state.copy(isChangelogVisible = false)
             }
+            is SettingsEvent.OnPollenToggled -> onPollenToggled(isPollenEnabled = event.isPollenEnabled)
+            SettingsEvent.OnPollenAllergensRowClicked -> onPollenAllergensRowClicked()
+            SettingsEvent.OnPollenAllergensDialogDismissed -> state.update { state: SettingsState ->
+                state.copy(isPollenAllergenDialogVisible = false)
+            }
+            is SettingsEvent.OnPollenAllergenToggled -> onPollenAllergenToggled(
+                pollenId = event.pollenId,
+                isAllergen = event.isAllergen
+            )
+            is SettingsEvent.OnEndOfSeasonSimulationToggled -> onEndOfSeasonSimulationToggled(
+                isEndOfSeasonSimulated = event.isEndOfSeasonSimulated
+            )
         }
     }
 
@@ -99,7 +119,9 @@ class SettingsViewModel internal constructor(
                 state.update { state: SettingsState ->
                     state.copy(
                         settings = settings,
-                        locationRows = settings.toLocationRows()
+                        locationRows = settings.toLocationRows(),
+                        pollenAllergenCount = settings.allergenPollenIds.size,
+                        pollenAllergenRows = pollenTypes.load().toPollenAllergenRows(allergenPollenIds = settings.allergenPollenIds)
                     )
                 }
             }
@@ -173,6 +195,71 @@ class SettingsViewModel internal constructor(
         }
         viewModelScope.launch(context = coroutineDispatcher) {
             setThemeTask(theme = theme).onResult(
+                onError = { _: Failure -> },
+                onSuccess = { loadSettings() }
+            )
+        }
+    }
+
+    private fun onPollenToggled(isPollenEnabled: Boolean) {
+        viewModelScope.launch(context = coroutineDispatcher) {
+            setPollenEnabledTask(isPollenEnabled = isPollenEnabled).onResult(
+                onError = { _: Failure -> },
+                onSuccess = {
+                    loadSettings()
+                }
+            )
+        }
+    }
+
+    private fun onPollenAllergensRowClicked() {
+        state.update { state: SettingsState ->
+            state.copy(isPollenAllergenDialogVisible = true)
+        }
+        if (pollenTypes.load().isEmpty()) {
+            viewModelScope.launch(context = coroutineDispatcher) {
+                loadPollenTypes()
+            }
+        }
+    }
+
+    private suspend fun loadPollenTypes() {
+        getPollenTypesTask().onResult(
+            onError = { _: Failure ->
+                state.update { state: SettingsState ->
+                    state.copy(arePollenTypesUnavailable = true)
+                }
+            },
+            onSuccess = { loadedPollenTypes: List<PollenType> ->
+                pollenTypes.store(newValue = loadedPollenTypes)
+                state.update { state: SettingsState ->
+                    state.copy(
+                        pollenAllergenRows = loadedPollenTypes.toPollenAllergenRows(allergenPollenIds = state.settings?.allergenPollenIds.orEmpty()),
+                        arePollenTypesUnavailable = false
+                    )
+                }
+            }
+        )
+    }
+
+    private fun onPollenAllergenToggled(
+        pollenId: String,
+        isAllergen: Boolean
+    ) {
+        viewModelScope.launch(context = coroutineDispatcher) {
+            setPollenAllergenTask(
+                pollenId = pollenId,
+                isAllergen = isAllergen
+            ).onResult(
+                onError = { _: Failure -> },
+                onSuccess = { loadSettings() }
+            )
+        }
+    }
+
+    private fun onEndOfSeasonSimulationToggled(isEndOfSeasonSimulated: Boolean) {
+        viewModelScope.launch(context = coroutineDispatcher) {
+            setEndOfSeasonSimulatedTask(isEndOfSeasonSimulated = isEndOfSeasonSimulated).onResult(
                 onError = { _: Failure -> },
                 onSuccess = { loadSettings() }
             )

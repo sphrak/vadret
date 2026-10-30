@@ -12,4 +12,6 @@ internal interface PollenRemoteDataSource {
         startDate: LocalDate,
         endDate: LocalDate
     ): List<PollenForecastDto>
+
+    suspend fun getCurrentForecasts(): List<PollenForecastDto>
 }

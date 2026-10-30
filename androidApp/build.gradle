@@ -188,6 +188,7 @@ dependencies {
     implementation project(':core')
     implementation project(':core:logging')
     implementation project(':data:common')
+    implementation project(':data:language')
     implementation project(':data:location')
     implementation project(':data:theme')
     implementation project(':features:forecastwarning')
@@ -198,10 +199,12 @@ dependencies {
 
     // Android
     implementation libs.androidx.activity.compose
+    implementation libs.androidx.core.ktx
     implementation libs.coroutines.core
     implementation libs.either
     implementation libs.kotlinx.serialization.json
     implementation libs.ktor.client.core
+    implementation libs.multiplatform.compose.components.resources
 
     // Dependency Injection
     implementation libs.koin.core

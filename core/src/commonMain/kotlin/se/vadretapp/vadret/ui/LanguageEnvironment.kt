@@ -26,4 +26,4 @@ fun LanguageEnvironment(
     }
 }
 
-internal expect fun applyLanguage(languageTag: String?)
+expect fun applyLanguage(languageTag: String?)

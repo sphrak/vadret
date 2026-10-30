@@ -27,11 +27,13 @@ internal fun pushAlertsPreviewState(): PushAlertsState = PushAlertsState(
     pollenTypes = listOf(
         PollenType(
             pollenId = PREVIEW_BIRCH_ID,
-            name = "Björk"
+            name = "Björk",
+            hasForecasts = true
         ),
         PollenType(
             pollenId = PREVIEW_GRASS_ID,
-            name = "Gräs"
+            name = "Gräs",
+            hasForecasts = true
         )
     ),
     favoriteRows = persistentListOf(

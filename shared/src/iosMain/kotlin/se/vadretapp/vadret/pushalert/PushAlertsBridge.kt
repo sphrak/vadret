@@ -6,9 +6,9 @@ import kotlinx.coroutines.launch
 import org.koin.core.qualifier.named
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.di.PUSH_ALERT_SCOPE
+import se.vadretapp.vadret.di.koinApplication
 import se.vadretapp.vadret.logging.Logger
 import se.vadretapp.vadret.logging.LoggerFactory
-import se.vadretapp.vadret.main.koinApplication
 import se.vadretapp.vadret.pushalert.model.PushAlertMessage
 import se.vadretapp.vadret.pushalert.usecase.OpenPushAlertTask
 import se.vadretapp.vadret.pushalert.usecase.SyncPushAlertsTask

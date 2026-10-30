@@ -43,17 +43,20 @@ private val visby = PollenRegion(
 
 private val birch = PollenType(
     pollenId = "birch",
-    name = "Björk"
+    name = "Björk",
+    hasForecasts = true
 )
 
 private val grass = PollenType(
     pollenId = "grass",
-    name = "Gräs"
+    name = "Gräs",
+    hasForecasts = true
 )
 
 private val hazel = PollenType(
     pollenId = "hazel",
-    name = "Hassel"
+    name = "Hassel",
+    hasForecasts = true
 )
 
 private fun forecast(
@@ -101,6 +104,8 @@ private class FakePollenRepository(
         requestedWindows.add(startDate to endDate)
         return forecasts
     }
+
+    override suspend fun getCurrentForecasts(): Either<Failure, List<PollenForecast>> = error("The pollen map never asks for current forecasts")
 }
 
 class DefaultGetPollenMapTaskTest {

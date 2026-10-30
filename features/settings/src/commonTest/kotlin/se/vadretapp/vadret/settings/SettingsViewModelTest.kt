@@ -3,6 +3,7 @@ package se.vadretapp.vadret.settings
 import io.github.sphrak.either.Either
 import io.github.sphrak.either.extension.asLeft
 import io.github.sphrak.either.extension.asRight
+import io.github.sphrak.either.extension.successOrNull
 import io.github.sphrak.either.map
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.Dispatchers
@@ -16,6 +17,7 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.datetime.LocalDate
 import se.vadretapp.vadret.changelog.ChangelogRepository
 import se.vadretapp.vadret.changelog.model.Changelog
 import se.vadretapp.vadret.common.ErrorCode
@@ -39,10 +41,17 @@ import se.vadretapp.vadret.location.model.Location
 import se.vadretapp.vadret.location.model.LocationPreference
 import se.vadretapp.vadret.location.model.StoredLocation
 import se.vadretapp.vadret.model.AppInfo
+import se.vadretapp.vadret.pollen.PollenRepository
+import se.vadretapp.vadret.pollen.model.PollenForecast
+import se.vadretapp.vadret.pollen.model.PollenRegion
+import se.vadretapp.vadret.pollen.model.PollenType
+import se.vadretapp.vadret.pollenpreference.PollenPreferenceRepository
+import se.vadretapp.vadret.pollenpreference.model.PollenPreferences
 import se.vadretapp.vadret.settings.model.AboutRowAction
 import se.vadretapp.vadret.settings.model.AboutRowHint
 import se.vadretapp.vadret.settings.model.LibraryGroup
 import se.vadretapp.vadret.settings.model.LocationRow
+import se.vadretapp.vadret.settings.model.PollenAllergenRow
 import se.vadretapp.vadret.settings.ui.SettingsPage
 import se.vadretapp.vadret.theme.ThemeRepository
 import se.vadretapp.vadret.theme.model.Theme
@@ -85,7 +94,11 @@ private class FakeThemeRepository(
 private class FakeLocationRepository(
     var isAutomatic: Either<Failure, Boolean> = true.asRight()
 ) : LocationRepository {
-    override suspend fun getDeviceLocation(): Either<Failure, Location> = error("Settings never ask for the device location")
+    override suspend fun getDeviceLocation(): Either<Failure, Location> =
+        Location(
+            latitude = 59.33,
+            longitude = 18.07
+        ).asRight()
     override suspend fun isAutomatic(): Either<Failure, Boolean> = isAutomatic
     override suspend fun setAutomatic(isAutomatic: Boolean): Either<Failure, Unit> {
         this.isAutomatic = isAutomatic.asRight()
@@ -112,6 +125,82 @@ private class FakeForecastPreferenceRepository(
         forecastPreferences = forecastPreferences.map { stored: ForecastPreferences -> stored.copy(isExpandOnceEnabled = isEnabled) }
         return Unit.asRight()
     }
+}
+
+private class FakePollenPreferenceRepository(
+    var pollenPreferences: Either<Failure, PollenPreferences> = PollenPreferences(
+        isPollenEnabled = true,
+        allergenPollenIds = emptySet(),
+        isHibernationNoticeShown = true,
+        isEndOfSeasonSimulated = false
+    ).asRight()
+) : PollenPreferenceRepository {
+    override suspend fun getPollenPreferences(): Either<Failure, PollenPreferences> = pollenPreferences
+    override fun observePollenPreferences(): Flow<Either<Failure, PollenPreferences>> = error("Settings never observe the pollen preferences")
+    override suspend fun setPollenEnabled(isEnabled: Boolean): Either<Failure, Unit> {
+        pollenPreferences = pollenPreferences.map { stored: PollenPreferences -> stored.copy(isPollenEnabled = isEnabled) }
+        return Unit.asRight()
+    }
+    override suspend fun setAllergen(
+        pollenId: String,
+        isAllergen: Boolean
+    ): Either<Failure, Unit> {
+        pollenPreferences = pollenPreferences.map { stored: PollenPreferences ->
+            stored.copy(
+                allergenPollenIds = if (isAllergen) {
+                    stored.allergenPollenIds + pollenId
+                } else {
+                    stored.allergenPollenIds - pollenId
+                }
+            )
+        }
+        return Unit.asRight()
+    }
+    override suspend fun setHibernationNoticeShown(isShown: Boolean): Either<Failure, Unit> {
+        pollenPreferences = pollenPreferences.map { stored: PollenPreferences -> stored.copy(isHibernationNoticeShown = isShown) }
+        return Unit.asRight()
+    }
+    override suspend fun setEndOfSeasonSimulated(isSimulated: Boolean): Either<Failure, Unit> {
+        pollenPreferences = pollenPreferences.map { stored: PollenPreferences -> stored.copy(isEndOfSeasonSimulated = isSimulated) }
+        return Unit.asRight()
+    }
+}
+
+private val hazelType = PollenType(
+    pollenId = "hazel",
+    name = "Hassel",
+    hasForecasts = true
+)
+
+private val alternariaType = PollenType(
+    pollenId = "alternaria",
+    name = "Alternaria",
+    hasForecasts = false
+)
+
+private val birchType = PollenType(
+    pollenId = "birch",
+    name = "Björk",
+    hasForecasts = true
+)
+
+private class FakePollenRepository(
+    var pollenTypes: Either<Failure, List<PollenType>> = listOf(hazelType, alternariaType, birchType).asRight()
+) : PollenRepository {
+
+    var pollenTypeCalls: Int = 0
+
+    override suspend fun getRegions(): Either<Failure, List<PollenRegion>> = error("Settings never ask for regions")
+    override suspend fun getPollenTypes(): Either<Failure, List<PollenType>> {
+        pollenTypeCalls += 1
+        return pollenTypes
+    }
+
+    override suspend fun getForecasts(
+        startDate: LocalDate,
+        endDate: LocalDate
+    ): Either<Failure, List<PollenForecast>> = error("Settings never ask for forecasts")
+    override suspend fun getCurrentForecasts(): Either<Failure, List<PollenForecast>> = error("Settings never ask for forecasts")
 }
 
 private class FakeLibraryRepository : LibraryRepository {
@@ -159,6 +248,8 @@ class SettingsViewModelTest {
     private val locationRepository = FakeLocationRepository()
     private val changelogRepository = FakeChangelogRepository()
     private val forecastPreferenceRepository = FakeForecastPreferenceRepository()
+    private val pollenPreferenceRepository = FakePollenPreferenceRepository()
+    private val pollenRepository = FakePollenRepository()
 
     @BeforeTest
     fun setUp() {
@@ -176,7 +267,8 @@ class SettingsViewModelTest {
                 locationRepository = locationRepository,
                 themeRepository = themeRepository,
                 languageRepository = languageRepository,
-                forecastPreferenceRepository = forecastPreferenceRepository
+                forecastPreferenceRepository = forecastPreferenceRepository,
+                pollenPreferenceRepository = pollenPreferenceRepository
             ),
             setLocationModeTask = DefaultSetLocationModeTask(locationRepository = locationRepository),
             setThemeTask = DefaultSetThemeTask(themeRepository = themeRepository),
@@ -185,6 +277,10 @@ class SettingsViewModelTest {
             setExpandOnceTask = DefaultSetExpandOnceTask(forecastPreferenceRepository = forecastPreferenceRepository),
             getLibrariesTask = DefaultGetLibrariesTask(libraryRepository = FakeLibraryRepository()),
             getChangelogTask = DefaultGetChangelogTask(changelogRepository = changelogRepository),
+            setPollenEnabledTask = DefaultSetPollenEnabledTask(pollenPreferenceRepository = pollenPreferenceRepository),
+            setPollenAllergenTask = DefaultSetPollenAllergenTask(pollenPreferenceRepository = pollenPreferenceRepository),
+            getPollenTypesTask = DefaultGetPollenTypesTask(pollenRepository = pollenRepository),
+            setEndOfSeasonSimulatedTask = DefaultSetEndOfSeasonSimulatedTask(pollenPreferenceRepository = pollenPreferenceRepository),
             appInfo = appInfo,
             coroutineDispatcher = testDispatcher
         )
@@ -206,7 +302,10 @@ class SettingsViewModelTest {
                     language = AppLanguage.SYSTEM,
                     isHourlyForecastEnabled = false,
                     isExpandOnceEnabled = true,
-                    storedLocation = stockholm
+                    storedLocation = stockholm,
+                    isPollenEnabled = true,
+                    allergenPollenIds = emptySet(),
+                    isEndOfSeasonSimulated = false
                 ),
                 actual = state.settings
             )
@@ -430,5 +529,170 @@ class SettingsViewModelTest {
 
             assertNull(actual = settingsViewModel.state.value.changelog)
             assertEquals(expected = false, actual = settingsViewModel.state.value.isChangelogVisible)
+        }
+
+    @Test
+    fun `turning pollen off is stored and shown`() =
+        testScope.runTest {
+            val settingsViewModel: SettingsViewModel = viewModel()
+            advanceUntilIdle()
+
+            settingsViewModel.onEvent(event = SettingsEvent.OnPollenToggled(isPollenEnabled = false))
+            advanceUntilIdle()
+
+            assertEquals(
+                expected = false,
+                actual = settingsViewModel.state.value.settings?.isPollenEnabled
+            )
+        }
+
+    @Test
+    fun `the pollen types with forecasts are loaded once in flowering order when the allergy dialog is first opened`() =
+        testScope.runTest {
+            val settingsViewModel: SettingsViewModel = viewModel()
+            advanceUntilIdle()
+            val pollenTypeCallsBeforeOpening: Int = pollenRepository.pollenTypeCalls
+
+            settingsViewModel.onEvent(event = SettingsEvent.OnPollenAllergensRowClicked)
+            advanceUntilIdle()
+            settingsViewModel.onEvent(event = SettingsEvent.OnPollenAllergensDialogDismissed)
+            val isVisibleAfterDismiss: Boolean = settingsViewModel.state.value.isPollenAllergenDialogVisible
+            settingsViewModel.onEvent(event = SettingsEvent.OnPollenAllergensRowClicked)
+            advanceUntilIdle()
+
+            assertEquals(
+                expected = listOf(0, 1),
+                actual = listOf(
+                    pollenTypeCallsBeforeOpening,
+                    pollenRepository.pollenTypeCalls
+                )
+            )
+            assertEquals(
+                expected = listOf(
+                    PollenAllergenRow(
+                        pollenId = "hazel",
+                        name = "Hassel",
+                        isAllergen = false
+                    ),
+                    PollenAllergenRow(
+                        pollenId = "birch",
+                        name = "Björk",
+                        isAllergen = false
+                    )
+                ),
+                actual = settingsViewModel.state.value.pollenAllergenRows
+            )
+            assertEquals(
+                expected = false to true,
+                actual = isVisibleAfterDismiss to settingsViewModel.state.value.isPollenAllergenDialogVisible
+            )
+        }
+
+    @Test
+    fun `pollen types that cannot be loaded are told apart and loaded again on the next opening`() =
+        testScope.runTest {
+            pollenRepository.pollenTypes = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft()
+            val settingsViewModel: SettingsViewModel = viewModel()
+            advanceUntilIdle()
+
+            settingsViewModel.onEvent(event = SettingsEvent.OnPollenAllergensRowClicked)
+            advanceUntilIdle()
+            val isUnavailable: Boolean = settingsViewModel.state.value.arePollenTypesUnavailable
+            pollenRepository.pollenTypes = listOf(birchType).asRight()
+            settingsViewModel.onEvent(event = SettingsEvent.OnPollenAllergensRowClicked)
+            advanceUntilIdle()
+
+            assertEquals(
+                expected = listOf(true, false),
+                actual = listOf(
+                    isUnavailable,
+                    settingsViewModel.state.value.arePollenTypesUnavailable
+                )
+            )
+            assertEquals(
+                expected = listOf("birch"),
+                actual = settingsViewModel.state.value.pollenAllergenRows.map { pollenAllergenRow: PollenAllergenRow -> pollenAllergenRow.pollenId }
+            )
+        }
+
+    @Test
+    fun `marked allergens are stored and counted`() =
+        testScope.runTest {
+            val settingsViewModel: SettingsViewModel = viewModel()
+            advanceUntilIdle()
+            val countBefore: Int = settingsViewModel.state.value.pollenAllergenCount
+
+            settingsViewModel.onEvent(event = SettingsEvent.OnPollenAllergensRowClicked)
+            listOf("hazel", "birch").forEach { pollenId: String ->
+                settingsViewModel.onEvent(
+                    event = SettingsEvent.OnPollenAllergenToggled(
+                        pollenId = pollenId,
+                        isAllergen = true
+                    )
+                )
+                advanceUntilIdle()
+            }
+            val countWithBoth: Int = settingsViewModel.state.value.pollenAllergenCount
+            settingsViewModel.onEvent(
+                event = SettingsEvent.OnPollenAllergenToggled(
+                    pollenId = "hazel",
+                    isAllergen = false
+                )
+            )
+            advanceUntilIdle()
+
+            assertEquals(
+                expected = listOf(0, 2, 1),
+                actual = listOf(
+                    countBefore,
+                    countWithBoth,
+                    settingsViewModel.state.value.pollenAllergenCount
+                )
+            )
+            assertEquals(
+                expected = listOf(false, true),
+                actual = settingsViewModel.state.value.pollenAllergenRows.map { pollenAllergenRow: PollenAllergenRow -> pollenAllergenRow.isAllergen }
+            )
+            assertEquals(
+                expected = setOf("birch"),
+                actual = pollenPreferenceRepository.pollenPreferences.successOrNull?.allergenPollenIds
+            )
+        }
+
+    @Test
+    fun `simulating the end of season is stored and readies the hibernation notice while ending it keeps the notice`() =
+        testScope.runTest {
+            val settingsViewModel: SettingsViewModel = viewModel()
+            advanceUntilIdle()
+
+            settingsViewModel.onEvent(event = SettingsEvent.OnEndOfSeasonSimulationToggled(isEndOfSeasonSimulated = true))
+            advanceUntilIdle()
+            val simulated: Pair<Boolean?, Boolean?> = settingsViewModel.state.value.settings?.isEndOfSeasonSimulated to
+                pollenPreferenceRepository.pollenPreferences.successOrNull?.isHibernationNoticeShown
+            pollenPreferenceRepository.setHibernationNoticeShown(isShown = true)
+            settingsViewModel.onEvent(event = SettingsEvent.OnEndOfSeasonSimulationToggled(isEndOfSeasonSimulated = false))
+            advanceUntilIdle()
+
+            assertEquals(
+                expected = listOf<Pair<Boolean?, Boolean?>>(
+                    true to false,
+                    false to true
+                ),
+                actual = listOf(
+                    simulated,
+                    settingsViewModel.state.value.settings?.isEndOfSeasonSimulated to pollenPreferenceRepository.pollenPreferences.successOrNull?.isHibernationNoticeShown
+                )
+            )
+        }
+
+    @Test
+    fun `pollen preferences that cannot be read hide the settings`() =
+        testScope.runTest {
+            pollenPreferenceRepository.pollenPreferences = Failure(errorCode = ErrorCode.STORAGE_FAILED).asLeft()
+
+            val settingsViewModel: SettingsViewModel = viewModel()
+            advanceUntilIdle()
+
+            assertNull(actual = settingsViewModel.state.value.settings)
         }
 }

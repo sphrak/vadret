@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import kotlinx.collections.immutable.ImmutableList
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.painterResource
@@ -50,7 +51,8 @@ private val layerPadding = PaddingValues(
 
 @Composable
 internal fun RadarLayerToolbar(
-    selectedLayer: RadarLayer,
+    layers: ImmutableList<RadarLayer>,
+    selectedLayerIndex: Int,
     onLayerSelected: (RadarLayer) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -66,15 +68,15 @@ internal fun RadarLayerToolbar(
         modifier = modifier.height(height = toolbarHeight)
     ) {
         VadretSlidingSelector(
-            optionCount = RadarLayer.entries.size,
-            selectedIndex = selectedLayer.ordinal,
-            onOptionSelected = { index: Int -> onLayerSelected(RadarLayer.entries[index]) },
+            optionCount = layers.size,
+            selectedIndex = selectedLayerIndex,
+            onOptionSelected = { index: Int -> onLayerSelected(layers[index]) },
             role = Role.RadioButton,
             modifier = Modifier.fillMaxHeight(),
             unselectedContentColor = VadretTheme.colorScheme.onSurface
         ) { index: Int, contentColor: Color, coverage: Float ->
             LayerLabel(
-                layer = RadarLayer.entries[index],
+                layer = layers[index],
                 coverage = coverage,
                 contentColor = contentColor
             )

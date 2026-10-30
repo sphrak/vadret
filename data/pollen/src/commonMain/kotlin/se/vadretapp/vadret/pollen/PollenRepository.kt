@@ -19,6 +19,8 @@ interface PollenRepository {
         startDate: LocalDate,
         endDate: LocalDate
     ): Either<Failure, List<PollenForecast>>
+
+    suspend fun getCurrentForecasts(): Either<Failure, List<PollenForecast>>
 }
 
 fun PollenRepository(httpClient: Lazy<HttpClient>): PollenRepository =

@@ -32,6 +32,7 @@ kotlin {
                 implementation project(':data:common')
                 implementation project(':data:location')
                 implementation project(':data:pollen')
+                implementation project(':data:pollenpreference')
                 implementation project(':data:radar')
                 implementation project(':data:wind')
 

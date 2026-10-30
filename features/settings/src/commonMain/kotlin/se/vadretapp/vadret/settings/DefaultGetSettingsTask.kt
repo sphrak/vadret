@@ -10,6 +10,8 @@ import se.vadretapp.vadret.language.LanguageRepository
 import se.vadretapp.vadret.language.model.AppLanguage
 import se.vadretapp.vadret.location.LocationRepository
 import se.vadretapp.vadret.location.model.StoredLocation
+import se.vadretapp.vadret.pollenpreference.PollenPreferenceRepository
+import se.vadretapp.vadret.pollenpreference.model.PollenPreferences
 import se.vadretapp.vadret.theme.ThemeRepository
 import se.vadretapp.vadret.theme.model.Theme
 
@@ -17,7 +19,8 @@ internal class DefaultGetSettingsTask(
     private val locationRepository: LocationRepository,
     private val themeRepository: ThemeRepository,
     private val languageRepository: LanguageRepository,
-    private val forecastPreferenceRepository: ForecastPreferenceRepository
+    private val forecastPreferenceRepository: ForecastPreferenceRepository,
+    private val pollenPreferenceRepository: PollenPreferenceRepository
 ) : GetSettingsTask {
 
     override suspend fun invoke(): Either<Failure, Settings> =
@@ -35,15 +38,22 @@ internal class DefaultGetSettingsTask(
                                     .flatMap { forecastPreferences: ForecastPreferences ->
                                         locationRepository
                                             .getStoredLocation()
-                                            .map { storedLocation: StoredLocation ->
-                                                Settings(
-                                                    isAutomaticLocation = isAutomaticLocation,
-                                                    theme = theme,
-                                                    language = language,
-                                                    isHourlyForecastEnabled = forecastPreferences.isHourlyForecastEnabled,
-                                                    isExpandOnceEnabled = forecastPreferences.isExpandOnceEnabled,
-                                                    storedLocation = storedLocation
-                                                )
+                                            .flatMap { storedLocation: StoredLocation ->
+                                                pollenPreferenceRepository
+                                                    .getPollenPreferences()
+                                                    .map { pollenPreferences: PollenPreferences ->
+                                                        Settings(
+                                                            isAutomaticLocation = isAutomaticLocation,
+                                                            theme = theme,
+                                                            language = language,
+                                                            isHourlyForecastEnabled = forecastPreferences.isHourlyForecastEnabled,
+                                                            isExpandOnceEnabled = forecastPreferences.isExpandOnceEnabled,
+                                                            storedLocation = storedLocation,
+                                                            isPollenEnabled = pollenPreferences.isPollenEnabled,
+                                                            allergenPollenIds = pollenPreferences.allergenPollenIds,
+                                                            isEndOfSeasonSimulated = pollenPreferences.isEndOfSeasonSimulated
+                                                        )
+                                                    }
                                             }
                                     }
                             }

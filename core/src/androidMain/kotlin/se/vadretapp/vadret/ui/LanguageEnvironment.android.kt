@@ -3,7 +3,7 @@ package se.vadretapp.vadret.ui
 import android.content.res.Resources
 import java.util.Locale
 
-internal actual fun applyLanguage(languageTag: String?) {
+actual fun applyLanguage(languageTag: String?) {
     val locale: Locale = if (languageTag != null) {
         Locale.forLanguageTag(languageTag)
     } else {

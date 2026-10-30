@@ -10,5 +10,8 @@ internal data class Settings(
     val language: AppLanguage,
     val isHourlyForecastEnabled: Boolean,
     val isExpandOnceEnabled: Boolean,
-    val storedLocation: StoredLocation
+    val storedLocation: StoredLocation,
+    val isPollenEnabled: Boolean,
+    val allergenPollenIds: Set<String>,
+    val isEndOfSeasonSimulated: Boolean
 )

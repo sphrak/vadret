@@ -19,4 +19,12 @@ internal sealed interface SettingsEvent {
     data object OnLibraryDismissed : SettingsEvent
     data object OnChangelogClicked : SettingsEvent
     data object OnChangelogDismissed : SettingsEvent
+    data class OnPollenToggled(val isPollenEnabled: Boolean) : SettingsEvent
+    data object OnPollenAllergensRowClicked : SettingsEvent
+    data object OnPollenAllergensDialogDismissed : SettingsEvent
+    data class OnPollenAllergenToggled(
+        val pollenId: String,
+        val isAllergen: Boolean
+    ) : SettingsEvent
+    data class OnEndOfSeasonSimulationToggled(val isEndOfSeasonSimulated: Boolean) : SettingsEvent
 }

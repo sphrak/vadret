@@ -140,6 +140,21 @@ internal fun SettingsScreen(
             onDismiss = { onEvent(SettingsEvent.OnLanguageDialogDismissed) }
         )
     }
+    if (state.isPollenAllergenDialogVisible) {
+        PollenAllergenDialog(
+            pollenAllergenRows = state.pollenAllergenRows,
+            arePollenTypesUnavailable = state.arePollenTypesUnavailable,
+            onAllergenToggled = { pollenId: String, isAllergen: Boolean ->
+                onEvent(
+                    SettingsEvent.OnPollenAllergenToggled(
+                        pollenId = pollenId,
+                        isAllergen = isAllergen
+                    )
+                )
+            },
+            onDismiss = { onEvent(SettingsEvent.OnPollenAllergensDialogDismissed) }
+        )
+    }
 }
 
 @Preview(device = Devices.PHONE)

@@ -98,4 +98,17 @@
     <string name="warning_when">Quand</string>
     <string name="close">Fermer</string>
     <string name="back">Retour</string>
+    <string name="show_pollen">Afficher les pollens</string>
+    <string name="pollen_is_shown">La carte des pollens est activée</string>
+    <string name="pollen_is_hidden">Les pollens sont masqués</string>
+    <string name="pollen_allergies">Allergies</string>
+    <string name="pollen_no_allergies">Aucune choisie</string>
+    <plurals name="pollen_allergens_selected">
+        <item quantity="one">%1$d choisie</item>
+        <item quantity="other">%1$d choisies</item>
+    </plurals>
+    <string name="pollen_allergies_description">Choisissez ce à quoi vous êtes allergique. La carte s\'ouvre dessus.</string>
+    <string name="pollen_types_not_available">Impossible de charger les types de pollen. Réessayez plus tard.</string>
+    <string name="pollen_hibernating_title">Les pollens hibernent</string>
+    <string name="pollen_hibernating_text">Les bulletins polliniques reviendront au début de la saison, généralement vers février.</string>
 </resources>

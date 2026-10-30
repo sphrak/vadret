@@ -12,10 +12,18 @@ import se.vadretapp.vadret.radar.model.PollenStation
 import se.vadretapp.vadret.ui.format.DateTextFormatter
 import se.vadretapp.vadret.ui.format.DateTextStyle
 
-internal fun PollenMap.strongestPollenId(): String? =
-    pollenTypes
+internal fun PollenMap.strongestPollenId(allergenPollenIds: Set<String>): String? {
+    val strongestAllergen: PollenType? = pollenTypes
+        .filter { pollenType: PollenType -> pollenType.pollenId in allergenPollenIds && strongestLevel(pollenId = pollenType.pollenId) > PollenLevel.NONE }
         .maxByOrNull { pollenType: PollenType -> strongestLevel(pollenId = pollenType.pollenId) }
-        ?.pollenId
+    val strongest: PollenType? = strongestAllergen ?: pollenTypes.maxByOrNull { pollenType: PollenType -> strongestLevel(pollenId = pollenType.pollenId) }
+    return strongest?.pollenId
+}
+
+internal fun PollenMap.pollenTypesWithAllergensFirst(allergenPollenIds: Set<String>): ImmutableList<PollenType> =
+    pollenTypes
+        .sortedByDescending { pollenType: PollenType -> pollenType.pollenId in allergenPollenIds }
+        .toImmutableList()
 
 internal fun PollenMap.markersFor(pollenId: String?): ImmutableList<PollenMarker> =
     stations

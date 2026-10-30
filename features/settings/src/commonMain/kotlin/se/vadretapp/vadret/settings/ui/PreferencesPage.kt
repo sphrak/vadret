@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import kotlinx.collections.immutable.ImmutableList
+import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import se.vadretapp.vadret.core.resources.Res
 import se.vadretapp.vadret.core.resources.display
@@ -17,10 +18,17 @@ import se.vadretapp.vadret.core.resources.gps_is_not_being_used
 import se.vadretapp.vadret.core.resources.hourly_forecast_is_disabled
 import se.vadretapp.vadret.core.resources.hourly_forecast_is_enabled
 import se.vadretapp.vadret.core.resources.ic_chevron_right
+import se.vadretapp.vadret.core.resources.pollen
+import se.vadretapp.vadret.core.resources.pollen_allergens_selected
+import se.vadretapp.vadret.core.resources.pollen_allergies
+import se.vadretapp.vadret.core.resources.pollen_is_hidden
+import se.vadretapp.vadret.core.resources.pollen_is_shown
+import se.vadretapp.vadret.core.resources.pollen_no_allergies
 import se.vadretapp.vadret.core.resources.select_a_language
 import se.vadretapp.vadret.core.resources.select_a_theme
 import se.vadretapp.vadret.core.resources.setting_current_location
 import se.vadretapp.vadret.core.resources.setting_location_title
+import se.vadretapp.vadret.core.resources.show_pollen
 import se.vadretapp.vadret.core.resources.use_gps_by_default
 import se.vadretapp.vadret.settings.Settings
 import se.vadretapp.vadret.settings.SettingsEvent
@@ -41,6 +49,8 @@ private const val LOCATION_HEADER_KEY = "location-header"
 private const val GPS_KEY = "gps"
 private const val DISPLAY_HEADER_KEY = "display-header"
 private const val DISPLAY_KEY = "display"
+private const val POLLEN_HEADER_KEY = "pollen-header"
+private const val POLLEN_KEY = "pollen"
 private const val CURRENT_LOCATION_HEADER_KEY = "current-location-header"
 private const val CURRENT_LOCATION_KEY = "current-location"
 
@@ -113,6 +123,16 @@ internal fun PreferencesPage(
                 )
             }
         }
+        item(key = POLLEN_HEADER_KEY, contentType = PreferenceContentType.HEADER) {
+            SettingsSectionHeader(text = stringResource(resource = Res.string.pollen))
+        }
+        item(key = POLLEN_KEY, contentType = PreferenceContentType.CARD) {
+            PollenCard(
+                isPollenEnabled = settings.isPollenEnabled,
+                pollenAllergenCount = state.pollenAllergenCount,
+                onEvent = onEvent
+            )
+        }
         item(key = CURRENT_LOCATION_HEADER_KEY, contentType = PreferenceContentType.HEADER) {
             SettingsSectionHeader(text = stringResource(resource = Res.string.setting_current_location))
         }
@@ -131,6 +151,47 @@ internal fun PreferencesPage(
         }
     }
 }
+
+@Composable
+private fun PollenCard(
+    isPollenEnabled: Boolean,
+    pollenAllergenCount: Int,
+    onEvent: (SettingsEvent) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    VadretCard(modifier = modifier) {
+        SwitchRow(
+            title = stringResource(resource = Res.string.show_pollen),
+            checkedSummary = stringResource(resource = Res.string.pollen_is_shown),
+            uncheckedSummary = stringResource(resource = Res.string.pollen_is_hidden),
+            isChecked = isPollenEnabled,
+            onCheckedChange = { isChecked: Boolean ->
+                onEvent(SettingsEvent.OnPollenToggled(isPollenEnabled = isChecked))
+            }
+        )
+        if (isPollenEnabled) {
+            SettingsRowDivider()
+            SettingsValueRow(
+                title = stringResource(resource = Res.string.pollen_allergies),
+                value = pollenAllergenSummaryText(pollenAllergenCount = pollenAllergenCount),
+                trailingIconResource = Res.drawable.ic_chevron_right,
+                onClick = { onEvent(SettingsEvent.OnPollenAllergensRowClicked) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun pollenAllergenSummaryText(pollenAllergenCount: Int): String =
+    if (pollenAllergenCount == 0) {
+        stringResource(resource = Res.string.pollen_no_allergies)
+    } else {
+        pluralStringResource(
+            resource = Res.plurals.pollen_allergens_selected,
+            quantity = pollenAllergenCount,
+            pollenAllergenCount
+        )
+    }
 
 @Composable
 private fun LocationCard(
