@@ -130,6 +130,8 @@ internal fun RadarScreen(
             windAtLocation = windAtLocation,
             windSpeedText = windAtLocation?.windSpeedText(unit = stringResource(resource = Res.string.m_s)),
             areRadarStationsShown = state.areRadarStationsShown,
+            pollenMarkers = state.pollenMarkers,
+            pollenClouds = state.pollenClouds,
             obscuredBottom = dockHeight,
             onMapLoaded = { onEvent(RadarEvent.OnMapLoaded) },
             modifier = Modifier.fillMaxSize()
@@ -220,7 +222,16 @@ private fun RadarBottomPanel(
                 ).padding(paddingValues = attributionPadding)
         )
         val timeline: RadarTimeline? = radarTimeline(state = state)
-        if (timeline != null || state.isLoading || state.isInitialLoading) {
+        if (state.layer == RadarLayer.POLLEN) {
+            PollenCard(
+                pollenTypes = state.pollenTypes,
+                selectedPollenId = state.selectedPollenId,
+                dayText = state.pollenDayText,
+                dateText = state.pollenDateText,
+                onPollenTypeSelected = { pollenId: String -> onEvent(RadarEvent.OnPollenTypeSelected(pollenId = pollenId)) },
+                modifier = dockModifier
+            )
+        } else if (timeline != null || state.isLoading || state.isInitialLoading) {
             RadarTimelineCard(
                 layer = state.layer,
                 timeline = timeline,

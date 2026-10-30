@@ -35,7 +35,12 @@ private const val EMPTY_PAGE = """{"items":[]}"""
 private val repositoryCalls: List<suspend (PollenRepository) -> Either<Failure, Any>> = listOf(
     { pollenRepository: PollenRepository -> pollenRepository.getRegions() },
     { pollenRepository: PollenRepository -> pollenRepository.getPollenTypes() },
-    { pollenRepository: PollenRepository -> pollenRepository.getCurrentForecasts(regionId = "stockholm") }
+    { pollenRepository: PollenRepository ->
+        pollenRepository.getForecasts(
+            startDate = LocalDate.parse(input = "2026-07-10"),
+            endDate = LocalDate.parse(input = "2026-07-16")
+        )
+    }
 )
 
 class DefaultPollenRepositoryTest {
@@ -76,8 +81,8 @@ class DefaultPollenRepositoryTest {
                     "https://api.pollenrapporten.se/v1/regions" to mapOf("limit" to "100"),
                     "https://api.pollenrapporten.se/v1/pollen-types" to mapOf("limit" to "100"),
                     "https://api.pollenrapporten.se/v1/forecasts" to mapOf(
-                        "region_id" to "stockholm",
-                        "current" to "true",
+                        "start_date" to "2026-07-10",
+                        "end_date" to "2026-07-16",
                         "limit" to "100"
                     )
                 ),
@@ -166,7 +171,10 @@ class DefaultPollenRepositoryTest {
                     body = """
                     {"items":[{"id":"spring","regionId":"stockholm","startDate":"2026-05-01","endDate":"2026-05-08","text":"Björken blommar.\r\nGräs väntas.\r","isEndOfSeason":false,"images":[],"levelSeries":[$levelSeries]}]}
                     """
-                ).getCurrentForecasts(regionId = "stockholm")
+                ).getForecasts(
+                    startDate = LocalDate.parse(input = "2026-05-01"),
+                    endDate = LocalDate.parse(input = "2026-09-30")
+                )
             )
         }
 
@@ -213,7 +221,10 @@ class DefaultPollenRepositoryTest {
                             ]}
                         ]}
                         """
-                    ).getCurrentForecasts(regionId = "stockholm")
+                    ).getForecasts(
+                        startDate = LocalDate.parse(input = "2026-05-01"),
+                        endDate = LocalDate.parse(input = "2026-09-30")
+                    )
                 )
                 assertEquals(
                     expected = List(size = 3) { "se.vadretapp.vadret.pollen" to LogLevel.WARN },

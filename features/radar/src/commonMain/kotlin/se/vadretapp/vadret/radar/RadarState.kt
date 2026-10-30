@@ -1,9 +1,12 @@
 package se.vadretapp.vadret.radar
 
+import androidx.compose.ui.graphics.ImageBitmap
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import org.jetbrains.compose.resources.StringResource
 import se.vadretapp.vadret.location.model.Location
+import se.vadretapp.vadret.pollen.model.PollenType
+import se.vadretapp.vadret.radar.model.PollenMarker
 import se.vadretapp.vadret.radar.model.RadarFrame
 import se.vadretapp.vadret.radar.model.RadarLayer
 import se.vadretapp.vadret.radar.model.WindTimeFrame
@@ -25,6 +28,12 @@ internal data class RadarState(
     val isMapLoaded: Boolean = false,
     val isPrecipitationUnavailable: Boolean = false,
     val areRadarStationsShown: Boolean = false,
+    val pollenTypes: ImmutableList<PollenType> = persistentListOf(),
+    val selectedPollenId: String? = null,
+    val pollenMarkers: ImmutableList<PollenMarker> = persistentListOf(),
+    val pollenClouds: ImageBitmap? = null,
+    val pollenDayText: String? = null,
+    val pollenDateText: String? = null,
     val errorMessageResource: StringResource? = null
 ) {
 

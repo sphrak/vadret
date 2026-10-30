@@ -1,6 +1,7 @@
 package se.vadretapp.vadret.pollen
 
 import io.github.sphrak.either.Either
+import kotlinx.datetime.LocalDate
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.common.catch
 import se.vadretapp.vadret.common.either
@@ -34,10 +35,15 @@ internal class DefaultPollenRepository(
                 .map { pollenTypeDto: PollenTypeDto -> pollenTypeDto.toPollenType() }
         }.catch { exception: Exception -> exception.toFailure() }
 
-    override suspend fun getCurrentForecasts(regionId: String): Either<Failure, List<PollenForecast>> =
+    override suspend fun getForecasts(
+        startDate: LocalDate,
+        endDate: LocalDate
+    ): Either<Failure, List<PollenForecast>> =
         either {
             pollenRemoteDataSource
-                .getCurrentForecasts(regionId = regionId)
-                .mapNotNull { pollenForecastDto: PollenForecastDto -> pollenForecastDto.toPollenForecast() }
+                .getForecasts(
+                    startDate = startDate,
+                    endDate = endDate
+                ).mapNotNull { pollenForecastDto: PollenForecastDto -> pollenForecastDto.toPollenForecast() }
         }.catch { exception: Exception -> exception.toFailure() }
 }

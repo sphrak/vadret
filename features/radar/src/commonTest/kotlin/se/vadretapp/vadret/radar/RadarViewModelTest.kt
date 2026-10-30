@@ -15,6 +15,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.datetime.LocalDate
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.core.resources.Res
@@ -22,11 +23,17 @@ import se.vadretapp.vadret.core.resources.network_failure
 import se.vadretapp.vadret.core.resources.no_radar_available
 import se.vadretapp.vadret.core.resources.no_wind_available
 import se.vadretapp.vadret.location.model.Location
+import se.vadretapp.vadret.pollen.model.PollenLevel
+import se.vadretapp.vadret.pollen.model.PollenType
+import se.vadretapp.vadret.radar.model.PollenMap
+import se.vadretapp.vadret.radar.model.PollenMarker
+import se.vadretapp.vadret.radar.model.PollenStation
 import se.vadretapp.vadret.radar.model.Radar
 import se.vadretapp.vadret.radar.model.RadarFrame
 import se.vadretapp.vadret.radar.model.RadarImage
 import se.vadretapp.vadret.radar.model.RadarLayer
 import se.vadretapp.vadret.radar.model.WindTimeFrame
+import se.vadretapp.vadret.radar.pollen.PollenCloudRenderer
 import se.vadretapp.vadret.radar.precipitation.PrecipitationMotion
 import se.vadretapp.vadret.radar.precipitation.PrecipitationOverlay
 import se.vadretapp.vadret.radar.precipitation.PrecipitationRenderer
@@ -118,6 +125,29 @@ private class FakeGetWindForecastTask(
     }
 }
 
+private class FakeGetPollenMapTask(
+    var result: Either<Failure, PollenMap>
+) : GetPollenMapTask {
+
+    var requestCount: Int = 0
+
+    override suspend fun invoke(date: LocalDate): Either<Failure, PollenMap> {
+        requestCount++
+        return result
+    }
+}
+
+private class FakePollenCloudRenderer : PollenCloudRenderer {
+
+    val renderedMarkers = mutableListOf<List<PollenMarker>>()
+    val pollenClouds = FakeImageBitmap()
+
+    override suspend fun render(pollenMarkers: List<PollenMarker>): ImageBitmap {
+        renderedMarkers.add(pollenMarkers)
+        return pollenClouds
+    }
+}
+
 private class FakeGetDeviceLocationTask(
     var result: Either<Failure, Location>
 ) : GetDeviceLocationTask {
@@ -180,6 +210,40 @@ private val windForecast = WindForecast(
     }
 )
 
+private val birch = PollenType(
+    pollenId = "birch",
+    name = "Björk"
+)
+
+private val grass = PollenType(
+    pollenId = "grass",
+    name = "Gräs"
+)
+
+private val pollenMap = PollenMap(
+    date = LocalDate.parse(input = "2026-07-13"),
+    pollenTypes = listOf(birch, grass),
+    stations = listOf(
+        PollenStation(
+            regionId = "stockholm",
+            name = "Stockholm",
+            latitude = 59.37,
+            longitude = 18.06,
+            pollenLevels = mapOf(
+                "birch" to PollenLevel.LOW,
+                "grass" to PollenLevel.HIGH
+            )
+        ),
+        PollenStation(
+            regionId = "kiruna",
+            name = "Kiruna",
+            latitude = 67.85,
+            longitude = 20.3,
+            pollenLevels = mapOf("grass" to PollenLevel.MODERATE)
+        )
+    )
+)
+
 private val radar = Radar(
     images = (0..2).map { minute: Int ->
         RadarImage(
@@ -196,6 +260,8 @@ class RadarViewModelTest {
     private val testScope = TestScope(testDispatcher)
     private val getRadarTask = FakeGetRadarTask(result = radar.asRight())
     private val getWindForecastTask = FakeGetWindForecastTask(result = windForecast.asRight())
+    private val getPollenMapTask = FakeGetPollenMapTask(result = pollenMap.asRight())
+    private val pollenCloudRenderer = FakePollenCloudRenderer()
     private val getDeviceLocationTask = FakeGetDeviceLocationTask(result = Location(latitude = 59.3, longitude = 18.0).asRight())
     private val radarImageLoader = FakeRadarImageLoader()
     private val windFieldRenderer = FakeWindFieldRenderer()
@@ -218,9 +284,11 @@ class RadarViewModelTest {
             getRadarTask = getRadarTask,
             getWindForecastTask = getWindForecastTask,
             getDeviceLocationTask = getDeviceLocationTask,
+            getPollenMapTask = getPollenMapTask,
             radarImageLoader = radarImageLoader,
             precipitationRenderer = FakePrecipitationRenderer(),
             windFieldRenderer = windFieldRenderer,
+            pollenCloudRenderer = pollenCloudRenderer,
             clock = FixedClock(now = Instant.parse(input = "2026-10-24T12:45:00Z")),
             coroutineDispatcher = testDispatcher
         )
@@ -538,6 +606,134 @@ class RadarViewModelTest {
             radarViewModel.onEvent(event = RadarEvent.OnLayerSelected(layer = RadarLayer.WIND))
             advanceUntilIdle()
             assertEquals(expected = 2, actual = getWindForecastTask.requestCount)
+        }
+
+    @Test
+    fun `choosing pollen loads the map once and shows the strongest type`() =
+        testScope.runTest {
+            val radarViewModel: RadarViewModel = viewModel()
+            radarViewModel.onEvent(event = RadarEvent.OnLocaleChanged(languageTag = "en"))
+            advanceUntilIdle()
+
+            radarViewModel.onEvent(event = RadarEvent.OnLayerSelected(layer = RadarLayer.POLLEN))
+            advanceUntilIdle()
+            radarViewModel.onEvent(event = RadarEvent.OnLayerSelected(layer = RadarLayer.PRECIPITATION))
+            radarViewModel.onEvent(event = RadarEvent.OnLayerSelected(layer = RadarLayer.POLLEN))
+            advanceUntilIdle()
+
+            val state: RadarState = radarViewModel.state.value
+            assertEquals(expected = 1, actual = getPollenMapTask.requestCount)
+            assertEquals(expected = listOf(birch, grass), actual = state.pollenTypes)
+            assertEquals(expected = "grass", actual = state.selectedPollenId)
+            assertEquals(
+                expected = listOf(
+                    PollenMarker(
+                        latitude = 59.37,
+                        longitude = 18.06,
+                        pollenLevel = PollenLevel.HIGH
+                    ),
+                    PollenMarker(
+                        latitude = 67.85,
+                        longitude = 20.3,
+                        pollenLevel = PollenLevel.MODERATE
+                    )
+                ),
+                actual = state.pollenMarkers
+            )
+            assertEquals(expected = "Monday", actual = state.pollenDayText)
+            assertEquals(expected = "July 13, 2026", actual = state.pollenDateText)
+            assertEquals(expected = false, actual = state.isLoading)
+        }
+
+    @Test
+    fun `choosing another pollen type shows it at the stations that forecast it`() =
+        testScope.runTest {
+            val radarViewModel: RadarViewModel = viewModel()
+            radarViewModel.onEvent(event = RadarEvent.OnLayerSelected(layer = RadarLayer.POLLEN))
+            advanceUntilIdle()
+
+            radarViewModel.onEvent(event = RadarEvent.OnPollenTypeSelected(pollenId = "birch"))
+            advanceUntilIdle()
+
+            assertEquals(expected = "birch", actual = radarViewModel.state.value.selectedPollenId)
+            assertEquals(
+                expected = listOf(
+                    PollenMarker(
+                        latitude = 59.37,
+                        longitude = 18.06,
+                        pollenLevel = PollenLevel.LOW
+                    )
+                ),
+                actual = radarViewModel.state.value.pollenMarkers
+            )
+        }
+
+    @Test
+    fun `pollen clouds are drawn for the shown type and again for the next`() =
+        testScope.runTest {
+            val radarViewModel: RadarViewModel = viewModel()
+            radarViewModel.onEvent(event = RadarEvent.OnLayerSelected(layer = RadarLayer.POLLEN))
+            advanceUntilIdle()
+            val grassMarkers: List<PollenMarker> = radarViewModel.state.value.pollenMarkers
+
+            radarViewModel.onEvent(event = RadarEvent.OnPollenTypeSelected(pollenId = "birch"))
+            advanceUntilIdle()
+
+            assertEquals(
+                expected = listOf(grassMarkers, radarViewModel.state.value.pollenMarkers),
+                actual = pollenCloudRenderer.renderedMarkers
+            )
+            assertSame(expected = pollenCloudRenderer.pollenClouds, actual = radarViewModel.state.value.pollenClouds)
+        }
+
+    @Test
+    fun `a new language rewrites the pollen day`() =
+        testScope.runTest {
+            val radarViewModel: RadarViewModel = viewModel()
+            radarViewModel.onEvent(event = RadarEvent.OnLocaleChanged(languageTag = "en"))
+            radarViewModel.onEvent(event = RadarEvent.OnLayerSelected(layer = RadarLayer.POLLEN))
+            advanceUntilIdle()
+
+            radarViewModel.onEvent(event = RadarEvent.OnLocaleChanged(languageTag = "sv-SE"))
+            advanceUntilIdle()
+
+            assertEquals(expected = "Måndag", actual = radarViewModel.state.value.pollenDayText)
+            assertEquals(expected = "13 juli 2026", actual = radarViewModel.state.value.pollenDateText)
+        }
+
+    @Test
+    fun `a pollen map that fails shows its message and is asked again next time`() =
+        testScope.runTest {
+            getPollenMapTask.result = Failure(errorCode = ErrorCode.NETWORK_FAILURE).asLeft()
+            val radarViewModel: RadarViewModel = viewModel()
+            advanceUntilIdle()
+
+            radarViewModel.onEvent(event = RadarEvent.OnLayerSelected(layer = RadarLayer.POLLEN))
+            advanceUntilIdle()
+            assertEquals(expected = Res.string.network_failure, actual = radarViewModel.state.value.errorMessageResource)
+            assertEquals(expected = false, actual = radarViewModel.state.value.isLoading)
+            assertEquals(expected = emptyList(), actual = radarViewModel.state.value.pollenMarkers)
+
+            radarViewModel.onEvent(event = RadarEvent.OnLayerSelected(layer = RadarLayer.PRECIPITATION))
+            radarViewModel.onEvent(event = RadarEvent.OnLayerSelected(layer = RadarLayer.POLLEN))
+            advanceUntilIdle()
+            assertEquals(expected = 2, actual = getPollenMapTask.requestCount)
+        }
+
+    @Test
+    fun `the pollen layer has nothing to play or scrub`() =
+        testScope.runTest {
+            val radarViewModel: RadarViewModel = viewModel()
+            advanceUntilIdle()
+            radarViewModel.onEvent(event = RadarEvent.OnLayerSelected(layer = RadarLayer.POLLEN))
+            advanceUntilIdle()
+
+            radarViewModel.onEvent(event = RadarEvent.OnIndexChanged(index = 0))
+            radarViewModel.onEvent(event = RadarEvent.OnPlayButtonClicked)
+            advanceUntilIdle()
+
+            assertEquals(expected = false, actual = radarViewModel.state.value.isPlaying)
+            assertEquals(expected = 2, actual = radarViewModel.state.value.precipitationIndex)
         }
 
     @Test

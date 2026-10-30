@@ -23,10 +23,12 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.sp
+import kotlinx.collections.immutable.ImmutableList
 import org.jetbrains.compose.resources.painterResource
 import se.vadretapp.vadret.core.resources.Res
 import se.vadretapp.vadret.core.resources.ic_north
 import se.vadretapp.vadret.location.model.Location
+import se.vadretapp.vadret.radar.model.PollenMarker
 import se.vadretapp.vadret.radar.model.RadarLayer
 import se.vadretapp.vadret.radar.precipitation.PrecipitationMotion
 import se.vadretapp.vadret.radar.precipitation.PrecipitationOverlay
@@ -59,6 +61,7 @@ internal fun RadarOverlay(
     windAtLocation: WindAtLocation?,
     windSpeedText: String?,
     areRadarStationsShown: Boolean,
+    pollenMarkers: ImmutableList<PollenMarker>,
     modifier: Modifier = Modifier
 ) {
     val isWindShown: Boolean = layer == RadarLayer.WIND
@@ -97,6 +100,7 @@ internal fun RadarOverlay(
             surfaceColor = surfaceColor
         )
     }
+    val pollenMarkerLayer: PollenMarkerLayer = remember(surfaceColor) { PollenMarkerLayer(borderColor = surfaceColor) }
     val canvasSize: CanvasSize = remember { CanvasSize() }
     ParticleAnimationEffect(
         isAnimating = isWindShown && windField != null,
@@ -143,6 +147,13 @@ internal fun RadarOverlay(
                         opacity = windOpacity
                     )
                 }
+            }
+        } else if (layer == RadarLayer.POLLEN) {
+            with(receiver = pollenMarkerLayer) {
+                drawPollenMarkers(
+                    screenProjection = currentScreenProjection,
+                    pollenMarkers = pollenMarkers
+                )
             }
         } else {
             val echoesOverlay: PrecipitationOverlay.Echoes? = precipitationOverlay as? PrecipitationOverlay.Echoes

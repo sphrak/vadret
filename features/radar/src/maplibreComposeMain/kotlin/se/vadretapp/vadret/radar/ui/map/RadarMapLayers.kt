@@ -20,6 +20,8 @@ private const val PRECIPITATION_LAYER_ID = "vadret-precipitation"
 private const val WIND_LAYER_ID = "vadret-wind"
 private const val PRECIPITATION_OPACITY = 1f
 private const val WIND_OPACITY = 0.8f
+private const val POLLEN_LAYER_ID = "vadret-pollen"
+private const val POLLEN_OPACITY = 1f
 private const val SYMBOL_LAYER_TYPE = "symbol"
 
 private val radarArea = PositionQuad(
@@ -33,7 +35,8 @@ internal data class RadarMapLayers(
     val layer: RadarLayer,
     val coloredPrecipitation: PreparedImage?,
     val windImage: PreparedImage?,
-    val windOpacity: Float
+    val windOpacity: Float,
+    val pollenImage: PreparedImage?
 )
 
 @Composable
@@ -41,6 +44,7 @@ internal data class RadarMapLayers(
 internal fun RadarRasterLayers(radarMapLayers: RadarMapLayers) {
     val coloredPrecipitation: PreparedImage? = radarMapLayers.coloredPrecipitation
     val windImage: PreparedImage? = radarMapLayers.windImage
+    val pollenImage: PreparedImage? = radarMapLayers.pollenImage
     Anchor.Above(predicate = { layerSummary: LayerSummary -> layerSummary.type != SYMBOL_LAYER_TYPE }) {
         if (coloredPrecipitation != null) {
             RasterLayer(
@@ -62,6 +66,17 @@ internal fun RadarRasterLayers(radarMapLayers: RadarMapLayers) {
                 ),
                 visible = radarMapLayers.layer == RadarLayer.WIND,
                 opacity = const(WIND_OPACITY * radarMapLayers.windOpacity)
+            )
+        }
+        if (pollenImage != null) {
+            RasterLayer(
+                id = POLLEN_LAYER_ID,
+                source = rememberImageSource(
+                    position = radarArea,
+                    image = pollenImage
+                ),
+                visible = radarMapLayers.layer == RadarLayer.POLLEN,
+                opacity = const(POLLEN_OPACITY)
             )
         }
     }

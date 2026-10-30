@@ -18,6 +18,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
+import kotlinx.collections.immutable.ImmutableList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.maplibre.compose.camera.CameraPosition
@@ -29,6 +30,7 @@ import org.maplibre.compose.map.StyleLoadState
 import org.maplibre.compose.util.PreparedImage
 import org.maplibre.spatialk.geojson.BoundingBox
 import se.vadretapp.vadret.location.model.Location
+import se.vadretapp.vadret.radar.model.PollenMarker
 import se.vadretapp.vadret.radar.model.RadarLayer
 import se.vadretapp.vadret.radar.precipitation.PrecipitationOverlay
 import se.vadretapp.vadret.radar.ui.map.RadarCameraLimits
@@ -62,6 +64,8 @@ internal actual fun RadarMap(
     windAtLocation: WindAtLocation?,
     windSpeedText: String?,
     areRadarStationsShown: Boolean,
+    pollenMarkers: ImmutableList<PollenMarker>,
+    pollenClouds: ImageBitmap?,
     obscuredBottom: Int,
     onMapLoaded: () -> Unit,
     modifier: Modifier
@@ -71,13 +75,15 @@ internal actual fun RadarMap(
     val currentOnMapLoaded: () -> Unit by rememberUpdatedState(newValue = onMapLoaded)
     val coloredPrecipitation: PreparedImage? = rememberPreparedImage(image = (precipitationOverlay as? PrecipitationOverlay.Colored)?.image)
     val windImage: PreparedImage? = rememberPreparedImage(image = windField?.image)
+    val pollenImage: PreparedImage? = rememberPreparedImage(image = pollenClouds)
     val windOpacity: Float = rememberWindOpacity(isWindShown = layer == RadarLayer.WIND && windField != null)
     SideEffect {
         retainedRadarMap.radarMapLayers.value = RadarMapLayers(
             layer = layer,
             coloredPrecipitation = coloredPrecipitation,
             windImage = windImage,
-            windOpacity = windOpacity
+            windOpacity = windOpacity,
+            pollenImage = pollenImage
         )
     }
     val styleLoadState: StyleLoadState = mapState.style.loadState
@@ -127,6 +133,7 @@ internal actual fun RadarMap(
             windAtLocation = windAtLocation,
             windSpeedText = windSpeedText,
             areRadarStationsShown = areRadarStationsShown,
+            pollenMarkers = pollenMarkers,
             modifier = Modifier.fillMaxSize()
         )
     }

@@ -42,7 +42,12 @@ import se.vadretapp.vadret.core.resources.ic_pause_filled
 import se.vadretapp.vadret.core.resources.ic_play_arrow_filled
 import se.vadretapp.vadret.core.resources.pause
 import se.vadretapp.vadret.core.resources.play
+import se.vadretapp.vadret.core.resources.pollen_level_high
+import se.vadretapp.vadret.core.resources.pollen_level_low
+import se.vadretapp.vadret.core.resources.pollen_level_moderate
+import se.vadretapp.vadret.core.resources.pollen_level_very_high
 import se.vadretapp.vadret.radar.model.RadarLayer
+import se.vadretapp.vadret.radar.pollen.PollenColorScale
 import se.vadretapp.vadret.ui.VadretTheme
 import kotlin.math.roundToInt
 
@@ -210,7 +215,7 @@ private fun RowScope.TimelinePlaceholder(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun TimelineCardSurface(
+internal fun TimelineCardSurface(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
 ) {
@@ -361,7 +366,7 @@ private fun TimelineLabel(
 }
 
 @Composable
-private fun Legend(
+internal fun Legend(
     layer: RadarLayer,
     modifier: Modifier = Modifier
 ) {
@@ -378,6 +383,17 @@ private fun Legend(
                 dayWindLegend
             },
             labels = windLegendSpeeds,
+            modifier = modifier
+        )
+
+        RadarLayer.POLLEN -> ScaleLegend(
+            colors = PollenColorScale.legendColors,
+            labels = persistentListOf(
+                stringResource(resource = Res.string.pollen_level_low),
+                stringResource(resource = Res.string.pollen_level_moderate),
+                stringResource(resource = Res.string.pollen_level_high),
+                stringResource(resource = Res.string.pollen_level_very_high)
+            ),
             modifier = modifier
         )
     }

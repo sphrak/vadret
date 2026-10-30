@@ -33,6 +33,8 @@ internal fun radarTimeline(state: RadarState): RadarTimeline? =
             frames = state.windFrames,
             index = state.windIndex
         )
+
+        RadarLayer.POLLEN -> null
     }
 
 @Composable

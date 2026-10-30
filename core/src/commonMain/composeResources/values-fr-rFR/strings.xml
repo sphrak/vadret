@@ -64,6 +64,11 @@
     <string name="selected">Sélectionné</string>
     <string name="humidity">Humidité</string>
     <string name="precipitation">Précipitations</string>
+    <string name="pollen">Pollen</string>
+    <string name="pollen_level_low">Faible</string>
+    <string name="pollen_level_moderate">Modéré</string>
+    <string name="pollen_level_high">Élevé</string>
+    <string name="pollen_level_very_high">Très élevé</string>
     <string name="now">Maintenant</string>
     <string name="almost_there">Presque..</string>
     <string name="warning_level_yellow">Vigilance jaune</string>

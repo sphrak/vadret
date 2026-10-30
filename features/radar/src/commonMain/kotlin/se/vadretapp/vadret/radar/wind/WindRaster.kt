@@ -85,7 +85,7 @@ internal class WindRaster(
 }
 
 internal fun WindGrid.toWindRaster(width: Int): WindRaster {
-    val height: Int = (width * (mercatorNorth - mercatorSouth) / LONGITUDE_SPAN.toRadians()).roundToInt()
+    val height: Int = radarRasterHeight(width = width)
     val rasterXs = FloatArray(size = longitudes.size) { index: Int -> rasterX(longitude = longitudes[index], width = width) }
     val rasterYs = FloatArray(size = latitudes.size) { index: Int -> rasterY(latitude = latitudes[index], height = height) }
     val pointIndices = IntArray(size = width * height * CORNER_COUNT) { NO_POINT }
@@ -125,6 +125,8 @@ internal fun rasterY(
     latitude: Double,
     height: Int
 ): Float = ((mercatorNorth - WebMercator.y(latitude = latitude)) / (mercatorNorth - mercatorSouth) * height).toFloat()
+
+internal fun radarRasterHeight(width: Int): Int = (width * (mercatorNorth - mercatorSouth) / LONGITUDE_SPAN.toRadians()).roundToInt()
 
 internal fun rasterLongitude(
     x: Float,

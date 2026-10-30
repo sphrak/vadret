@@ -25,8 +25,11 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import se.vadretapp.vadret.core.resources.Res
 import se.vadretapp.vadret.core.resources.ic_air
+import se.vadretapp.vadret.core.resources.ic_local_florist
+import se.vadretapp.vadret.core.resources.ic_local_florist_filled
 import se.vadretapp.vadret.core.resources.ic_rainy
 import se.vadretapp.vadret.core.resources.ic_rainy_filled
+import se.vadretapp.vadret.core.resources.pollen
 import se.vadretapp.vadret.core.resources.precipitation
 import se.vadretapp.vadret.core.resources.wind
 import se.vadretapp.vadret.radar.model.RadarLayer
@@ -118,10 +121,17 @@ private fun RadarLayer.iconResource(isSelected: Boolean): DrawableResource =
             Res.drawable.ic_rainy
         }
         RadarLayer.WIND -> Res.drawable.ic_air
+
+        RadarLayer.POLLEN -> if (isSelected) {
+            Res.drawable.ic_local_florist_filled
+        } else {
+            Res.drawable.ic_local_florist
+        }
     }
 
 private fun RadarLayer.labelResource(): StringResource =
     when (this) {
         RadarLayer.PRECIPITATION -> Res.string.precipitation
         RadarLayer.WIND -> Res.string.wind
+        RadarLayer.POLLEN -> Res.string.pollen
     }

@@ -13,11 +13,13 @@ internal class RadarOverlayView(
     context: Context,
     private val windParticleDrawer: WindParticleDrawer,
     private val radarStationBeamDrawer: RadarStationBeamDrawer,
-    private val locationMarkerDrawer: LocationMarkerDrawer
+    private val locationMarkerDrawer: LocationMarkerDrawer,
+    private val pollenMarkerDrawer: PollenMarkerDrawer
 ) : View(context) {
 
     var map: MapLibreMap? = null
     var isWindShown: Boolean = false
+    var isPollenShown: Boolean = false
     var areRadarStationsShown: Boolean = false
     var precipitationEchoes: PrecipitationOverlay.Echoes? = null
     var precipitationProgress: Float = NO_PROGRESS
@@ -49,6 +51,11 @@ internal class RadarOverlayView(
         }
         if (isWindShown) {
             windParticleDrawer.draw(
+                canvas = canvas,
+                projection = currentMap.projection
+            )
+        } else if (isPollenShown) {
+            pollenMarkerDrawer.draw(
                 canvas = canvas,
                 projection = currentMap.projection
             )

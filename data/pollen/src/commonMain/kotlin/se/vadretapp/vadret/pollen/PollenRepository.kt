@@ -2,6 +2,7 @@ package se.vadretapp.vadret.pollen
 
 import io.github.sphrak.either.Either
 import io.ktor.client.HttpClient
+import kotlinx.datetime.LocalDate
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.pollen.model.PollenForecast
 import se.vadretapp.vadret.pollen.model.PollenRegion
@@ -14,7 +15,10 @@ interface PollenRepository {
 
     suspend fun getPollenTypes(): Either<Failure, List<PollenType>>
 
-    suspend fun getCurrentForecasts(regionId: String): Either<Failure, List<PollenForecast>>
+    suspend fun getForecasts(
+        startDate: LocalDate,
+        endDate: LocalDate
+    ): Either<Failure, List<PollenForecast>>
 }
 
 fun PollenRepository(httpClient: Lazy<HttpClient>): PollenRepository =

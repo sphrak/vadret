@@ -5,8 +5,10 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
 import android.widget.FrameLayout
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.lifecycle.Lifecycle
+import kotlinx.collections.immutable.ImmutableList
 import org.maplibre.android.MapLibre
 import org.maplibre.android.geometry.LatLngBounds
 import org.maplibre.android.maps.MapLibreMap
@@ -17,6 +19,7 @@ import org.maplibre.android.style.layers.PropertyFactory
 import org.maplibre.android.style.layers.SymbolLayer
 import se.vadretapp.vadret.location.model.Location
 import se.vadretapp.vadret.radar.R
+import se.vadretapp.vadret.radar.model.PollenMarker
 import se.vadretapp.vadret.radar.model.RadarLayer
 import se.vadretapp.vadret.radar.precipitation.PrecipitationOverlay
 import se.vadretapp.vadret.radar.ui.map.extension.toCameraPosition
@@ -36,6 +39,8 @@ private const val PRECIPITATION_LAYER_ID = "vadret-precipitation"
 private const val PRECIPITATION_OPACITY = 1f
 private const val WIND_LAYER_ID = "vadret-wind"
 private const val WIND_OPACITY = 0.8f
+private const val POLLEN_LAYER_ID = "vadret-pollen"
+private const val POLLEN_OPACITY = 1f
 private const val BACKGROUND_LAYER_ID = "background"
 private const val WATER_LAYER_ID = "water"
 private const val DARK_LAND_COLOR = "#181512"
@@ -57,15 +62,19 @@ internal class RadarMapView(
         scaledDensity = density * resources.configuration.fontScale,
         arrow = mutableArrow(context = context)
     )
+    private val pollenMarkerDrawer = PollenMarkerDrawer(density = density)
     private val overlayView = RadarOverlayView(
         context = context,
         windParticleDrawer = windParticleDrawer,
         radarStationBeamDrawer = radarStationBeamDrawer,
-        locationMarkerDrawer = locationMarkerDrawer
+        locationMarkerDrawer = locationMarkerDrawer,
+        pollenMarkerDrawer = pollenMarkerDrawer
     )
     private val mapView: MapView = createMapView(context = context)
     private var precipitationLayer: RadarImageLayer? = null
     private var windLayer: RadarImageLayer? = null
+    private var pollenLayer: RadarImageLayer? = null
+    private var pollenClouds: ImageBitmap? = null
     private var layer: RadarLayer = RadarLayer.PRECIPITATION
     private var precipitationOverlay: PrecipitationOverlay? = null
     private var windField: WindField? = null
@@ -124,6 +133,7 @@ internal class RadarMapView(
             surfaceColor = radarMapAppearance.surfaceColor,
             labelTextColor = radarMapAppearance.labelTextColor
         )
+        pollenMarkerDrawer.setBorderColor(borderColor = radarMapAppearance.surfaceColor)
         windParticleDrawer.particleColor = radarMapAppearance.particleColor
         if (radarMapAppearance.isDark != isDark) {
             isDark = radarMapAppearance.isDark
@@ -142,7 +152,9 @@ internal class RadarMapView(
         deviceLocation: Location?,
         windAtLocation: WindAtLocation?,
         windSpeedText: String?,
-        areRadarStationsShown: Boolean
+        areRadarStationsShown: Boolean,
+        pollenMarkers: ImmutableList<PollenMarker>,
+        pollenClouds: ImageBitmap?
     ) {
         this.layer = layer
         if (precipitationOverlay !== this.precipitationOverlay) {
@@ -156,6 +168,9 @@ internal class RadarMapView(
         locationMarkerDrawer.windAtLocation = windAtLocation
         locationMarkerDrawer.windSpeedText = windSpeedText
         overlayView.isWindShown = layer == RadarLayer.WIND
+        overlayView.isPollenShown = layer == RadarLayer.POLLEN
+        pollenMarkerDrawer.pollenMarkers = pollenMarkers
+        this.pollenClouds = pollenClouds
         overlayView.areRadarStationsShown = areRadarStationsShown
         if (layer == RadarLayer.WIND && windField != null && !hasWindFadedIn) {
             hasWindFadedIn = true
@@ -250,6 +265,7 @@ internal class RadarMapView(
     private fun loadStyle(map: MapLibreMap) {
         precipitationLayer = null
         windLayer = null
+        pollenLayer = null
         val styleUri: String = if (isDark) {
             "https://tiles.openfreemap.org/styles/dark"
         } else {
@@ -273,6 +289,12 @@ internal class RadarMapView(
                 opacity = WIND_OPACITY,
                 belowLayerId = labelLayerId
             )
+            pollenLayer = RadarImageLayer(
+                style = style,
+                layerId = POLLEN_LAYER_ID,
+                opacity = POLLEN_OPACITY,
+                belowLayerId = labelLayerId
+            )
             windLayer?.setOpacityFraction(opacityFraction = windOpacity)
             showImageLayers()
             overlayView.invalidate()
@@ -280,15 +302,19 @@ internal class RadarMapView(
     }
 
     private fun showImageLayers() {
-        val isWind: Boolean = layer == RadarLayer.WIND
         val coloredPrecipitation: Bitmap? = (precipitationOverlay as? PrecipitationOverlay.Colored)?.image?.asAndroidBitmap()
         precipitationLayer?.show(
             bitmap = coloredPrecipitation,
-            isVisible = !isWind && coloredPrecipitation != null
+            isVisible = layer == RadarLayer.PRECIPITATION && coloredPrecipitation != null
         )
         windLayer?.show(
             bitmap = windField?.image?.asAndroidBitmap(),
-            isVisible = isWind
+            isVisible = layer == RadarLayer.WIND
+        )
+        val pollenBitmap: Bitmap? = pollenClouds?.asAndroidBitmap()
+        pollenLayer?.show(
+            bitmap = pollenBitmap,
+            isVisible = layer == RadarLayer.POLLEN && pollenBitmap != null
         )
     }
 

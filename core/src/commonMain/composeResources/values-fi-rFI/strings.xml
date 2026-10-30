@@ -74,6 +74,11 @@
     <string name="selected">Valittu</string>
     <string name="humidity">Kosteus</string>
     <string name="precipitation">Sade</string>
+    <string name="pollen">Siitepöly</string>
+    <string name="pollen_level_low">Matala</string>
+    <string name="pollen_level_moderate">Kohtalainen</string>
+    <string name="pollen_level_high">Korkea</string>
+    <string name="pollen_level_very_high">Erittäin korkea</string>
     <string name="now">Nyt</string>
     <string name="almost_there">Melkein perillä..</string>
     <string name="warning_level_yellow">Keltainen varoitus</string>

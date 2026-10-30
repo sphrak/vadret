@@ -70,6 +70,11 @@
     <string name="selected">Valgt</string>
     <string name="humidity">Luftfuktighet</string>
     <string name="precipitation">Nedbør</string>
+    <string name="pollen">Pollen</string>
+    <string name="pollen_level_low">Lav</string>
+    <string name="pollen_level_moderate">Moderat</string>
+    <string name="pollen_level_high">Høy</string>
+    <string name="pollen_level_very_high">Svært høy</string>
     <string name="now">Nå</string>
     <string name="almost_there">Nesten der..</string>
     <string name="warning_level_yellow">Gult farevarsel</string>

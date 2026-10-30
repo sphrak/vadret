@@ -5,9 +5,9 @@ import io.ktor.client.call.body
 import io.ktor.client.plugins.expectSuccess
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
+import kotlinx.datetime.LocalDate
 
 private const val PAGE_LIMIT = 100
-private const val CURRENT_FORECASTS_ONLY = true
 
 internal class DefaultPollenRemoteDataSource(
     private val httpClient: Lazy<HttpClient>
@@ -25,11 +25,14 @@ internal class DefaultPollenRemoteDataSource(
             parameter(key = "limit", value = PAGE_LIMIT)
         }.body<PollenPageDto<PollenTypeDto>>().items
 
-    override suspend fun getCurrentForecasts(regionId: String): List<PollenForecastDto> =
+    override suspend fun getForecasts(
+        startDate: LocalDate,
+        endDate: LocalDate
+    ): List<PollenForecastDto> =
         httpClient.value.get(urlString = "https://api.pollenrapporten.se/v1/forecasts") {
             expectSuccess = true
-            parameter(key = "region_id", value = regionId)
-            parameter(key = "current", value = CURRENT_FORECASTS_ONLY)
+            parameter(key = "start_date", value = startDate)
+            parameter(key = "end_date", value = endDate)
             parameter(key = "limit", value = PAGE_LIMIT)
         }.body<PollenPageDto<PollenForecastDto>>().items
 }

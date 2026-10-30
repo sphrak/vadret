@@ -1,6 +1,7 @@
 package se.vadretapp.vadret.radar
 
 import androidx.compose.runtime.Immutable
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.sphrak.either.Either
@@ -9,6 +10,7 @@ import io.github.sphrak.either.extension.asRight
 import io.github.sphrak.either.extension.onResult
 import io.github.sphrak.either.extension.successOrNull
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -22,16 +24,24 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.location.model.Location
+import se.vadretapp.vadret.radar.extension.markersFor
+import se.vadretapp.vadret.radar.extension.strongestPollenId
+import se.vadretapp.vadret.radar.extension.toDateText
+import se.vadretapp.vadret.radar.extension.toDayText
 import se.vadretapp.vadret.radar.extension.toRadarFrames
 import se.vadretapp.vadret.radar.extension.toWindTimeFrames
 import se.vadretapp.vadret.radar.extension.withoutMotion
+import se.vadretapp.vadret.radar.model.PollenMap
+import se.vadretapp.vadret.radar.model.PollenMarker
 import se.vadretapp.vadret.radar.model.Radar
 import se.vadretapp.vadret.radar.model.RadarFrame
 import se.vadretapp.vadret.radar.model.RadarLayer
 import se.vadretapp.vadret.radar.model.WindTimeFrame
+import se.vadretapp.vadret.radar.pollen.PollenCloudRenderer
 import se.vadretapp.vadret.radar.precipitation.PrecipitationOverlay
 import se.vadretapp.vadret.radar.precipitation.PrecipitationRenderer
 import se.vadretapp.vadret.radar.precipitation.RadarEchoes
@@ -54,6 +64,12 @@ private const val PRELOADED_FRAME_DISTANCE = 3
 private val frameDuration: Duration = 128.milliseconds
 private const val WIND_STEPS_PER_FRAME = 4
 
+private val pollenMapDate: LocalDate = LocalDate(
+    year = 2026,
+    month = 7,
+    day = 13
+)
+
 private class PreparedWindField(
     val index: Int,
     val windField: Deferred<WindField>
@@ -64,9 +80,11 @@ class RadarViewModel internal constructor(
     private val getRadarTask: GetRadarTask,
     private val getWindForecastTask: GetWindForecastTask,
     private val getDeviceLocationTask: GetDeviceLocationTask,
+    private val getPollenMapTask: GetPollenMapTask,
     private val radarImageLoader: RadarImageLoader,
     private val precipitationRenderer: PrecipitationRenderer,
     private val windFieldRenderer: WindFieldRenderer,
+    private val pollenCloudRenderer: PollenCloudRenderer,
     private val clock: Clock,
     private val coroutineDispatcher: CoroutineDispatcher
 ) : ViewModel() {
@@ -76,6 +94,9 @@ class RadarViewModel internal constructor(
 
     private val isStarted: AtomicBoolean = AtomicBoolean(value = false)
     private val isWindRequested: AtomicBoolean = AtomicBoolean(value = false)
+    private val isPollenRequested: AtomicBoolean = AtomicBoolean(value = false)
+    private val pollenMap: AtomicReference<PollenMap?> = AtomicReference(value = null)
+    private val pollenCloudJob: AtomicReference<Job?> = AtomicReference(value = null)
     private val languageTag: AtomicReference<String> = AtomicReference(value = currentLanguageTag())
     private val windPalette: AtomicReference<WindPalette> = AtomicReference(value = WindPalette.DAY)
     private val radar: AtomicReference<Radar?> = AtomicReference(value = null)
@@ -102,6 +123,8 @@ class RadarViewModel internal constructor(
             RadarEvent.OnRadarStationsToggled -> state.update { state: RadarState ->
                 state.copy(areRadarStationsShown = !state.areRadarStationsShown)
             }
+
+            is RadarEvent.OnPollenTypeSelected -> onPollenTypeSelected(pollenId = event.pollenId)
         }
     }
 
@@ -147,7 +170,9 @@ class RadarViewModel internal constructor(
             state.update { state: RadarState ->
                 state.copy(
                     precipitationFrames = radar.load()?.toFrames() ?: state.precipitationFrames,
-                    windFrames = windForecast.load()?.toTimeFrames() ?: state.windFrames
+                    windFrames = windForecast.load()?.toTimeFrames() ?: state.windFrames,
+                    pollenDayText = pollenMap.load()?.dayText() ?: state.pollenDayText,
+                    pollenDateText = pollenMap.load()?.dateText() ?: state.pollenDateText
                 )
             }
         }
@@ -212,6 +237,9 @@ class RadarViewModel internal constructor(
         if (layer == RadarLayer.WIND && isWindRequested.compareAndSet(expectedValue = false, newValue = true)) {
             loadWind()
         }
+        if (layer == RadarLayer.POLLEN && isPollenRequested.compareAndSet(expectedValue = false, newValue = true)) {
+            loadPollen()
+        }
         if (updatedState.isFrameMissing(layer = layer)) {
             showFrame(
                 layer = layer,
@@ -251,6 +279,72 @@ class RadarViewModel internal constructor(
         }
     }
 
+    private fun loadPollen() {
+        state.update { state: RadarState ->
+            state.copy(isLoading = true)
+        }
+        viewModelScope.launch(context = coroutineDispatcher) {
+            getPollenMapTask(date = pollenMapDate)
+                .onResult(
+                    onError = { failure: Failure ->
+                        isPollenRequested.store(newValue = false)
+                        displayError(failure = failure)
+                    },
+                    onSuccess = { loadedPollenMap: PollenMap ->
+                        pollenMap.store(newValue = loadedPollenMap)
+                        val selectedPollenId: String? = loadedPollenMap.strongestPollenId()
+                        val updatedState: RadarState = state.updateAndGet { state: RadarState ->
+                            state.copy(
+                                pollenTypes = loadedPollenMap.pollenTypes.toImmutableList(),
+                                selectedPollenId = selectedPollenId,
+                                pollenMarkers = loadedPollenMap.markersFor(pollenId = selectedPollenId),
+                                pollenDayText = loadedPollenMap.dayText(),
+                                pollenDateText = loadedPollenMap.dateText(),
+                                isLoading = state.isLoading && state.layer == RadarLayer.WIND && state.windField == null
+                            )
+                        }
+                        renderPollenClouds(pollenMarkers = updatedState.pollenMarkers)
+                    }
+                )
+        }
+    }
+
+    private fun onPollenTypeSelected(pollenId: String) {
+        viewModelScope.launch(context = coroutineDispatcher) {
+            val updatedState: RadarState = state.updateAndGet { state: RadarState ->
+                state.copy(
+                    selectedPollenId = pollenId,
+                    pollenMarkers = pollenMap.load()?.markersFor(pollenId = pollenId) ?: persistentListOf()
+                )
+            }
+            renderPollenClouds(pollenMarkers = updatedState.pollenMarkers)
+        }
+    }
+
+    private fun renderPollenClouds(pollenMarkers: ImmutableList<PollenMarker>) {
+        viewModelScope.launchReplacing(
+            currentJob = pollenCloudJob,
+            context = coroutineDispatcher
+        ) {
+            val pollenClouds: ImageBitmap = pollenCloudRenderer.render(pollenMarkers = pollenMarkers)
+            state.update { state: RadarState ->
+                state.copy(pollenClouds = pollenClouds)
+            }
+        }
+    }
+
+    private fun PollenMap.dayText(): String =
+        toDayText(
+            timeZone = TimeZone.currentSystemDefault(),
+            languageTag = languageTag.load()
+        )
+
+    private fun PollenMap.dateText(): String =
+        toDateText(
+            timeZone = TimeZone.currentSystemDefault(),
+            languageTag = languageTag.load()
+        )
+
     private fun onIndexChanged(index: Int) {
         stopPlaying()
         val layer: RadarLayer = state.value.layer
@@ -258,6 +352,7 @@ class RadarViewModel internal constructor(
             when (layer) {
                 RadarLayer.PRECIPITATION -> state.copy(precipitationIndex = index)
                 RadarLayer.WIND -> state.copy(windIndex = index)
+                RadarLayer.POLLEN -> state
             }
         }
         showFrame(
@@ -294,6 +389,8 @@ class RadarViewModel internal constructor(
                 )
             )
             RadarLayer.WIND -> loadWindFrame(index = index)
+
+            RadarLayer.POLLEN -> false
         }
 
     private suspend fun precipitationOverlay(
@@ -426,6 +523,7 @@ class RadarViewModel internal constructor(
             val isShown: Boolean = when (layer) {
                 RadarLayer.PRECIPITATION -> playPrecipitationFrame(index = index)
                 RadarLayer.WIND -> playWindFrame(index = index)
+                RadarLayer.POLLEN -> false
             }
             if (!isShown) {
                 stopPlaying()
@@ -578,12 +676,14 @@ class RadarViewModel internal constructor(
         when (layer) {
             RadarLayer.PRECIPITATION -> precipitationFrames.size
             RadarLayer.WIND -> windFrames.size
+            RadarLayer.POLLEN -> 0
         }
 
     private fun RadarState.index(layer: RadarLayer): Int =
         when (layer) {
             RadarLayer.PRECIPITATION -> precipitationIndex
             RadarLayer.WIND -> windIndex
+            RadarLayer.POLLEN -> 0
         }
 
     private fun RadarState.isFrameMissing(layer: RadarLayer): Boolean =
@@ -591,5 +691,6 @@ class RadarViewModel internal constructor(
             when (layer) {
                 RadarLayer.PRECIPITATION -> precipitationOverlay == null
                 RadarLayer.WIND -> windField == null
+                RadarLayer.POLLEN -> false
             }
 }

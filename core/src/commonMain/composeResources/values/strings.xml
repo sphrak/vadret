@@ -224,6 +224,11 @@
     <string name="warning_detail_advice">Advice</string>
     <string name="warning_detail_comment">Comment</string>
     <string name="precipitation">Precipitation</string>
+    <string name="pollen">Pollen</string>
+    <string name="pollen_level_low">Low</string>
+    <string name="pollen_level_moderate">Moderate</string>
+    <string name="pollen_level_high">High</string>
+    <string name="pollen_level_very_high">Very high</string>
     <string name="now">Now</string>
     <string name="almost_there">Almost there..</string>
     <string name="day_forecast">%1$s forecast</string>
@@ -284,13 +289,9 @@
     <string name="lowest_pollen_level">Lowest pollen level</string>
     <string name="notifications_are_off">Notifications are turned off</string>
     <string name="notifications_are_off_text">Allow notifications for Vädret in the system settings to get push alerts.</string>
-    <string name="pollen_level_low">Low</string>
     <string name="pollen_level_low_to_moderate">Low to moderate</string>
-    <string name="pollen_level_moderate">Moderate</string>
     <string name="pollen_level_moderate_to_high">Moderate to high</string>
-    <string name="pollen_level_high">High</string>
     <string name="pollen_level_high_to_very_high">High to very high</string>
-    <string name="pollen_level_very_high">Very high</string>
     <string name="push_alerts_not_sent">Your choices are not sent yet. Vädret tries again the next time it starts.</string>
     <string name="push_alerts_only_in_sweden">Push alerts cover Sweden only</string>
     <string name="push_alerts_only_in_sweden_text">Vädret sends push alerts for places in Sweden only, and this place is outside Sweden.</string>

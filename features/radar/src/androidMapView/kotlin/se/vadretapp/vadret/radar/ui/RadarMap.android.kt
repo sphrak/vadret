@@ -9,9 +9,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.viewinterop.AndroidView
+import kotlinx.collections.immutable.ImmutableList
 import se.vadretapp.vadret.location.model.Location
+import se.vadretapp.vadret.radar.model.PollenMarker
 import se.vadretapp.vadret.radar.model.RadarLayer
 import se.vadretapp.vadret.radar.precipitation.PrecipitationMotion
 import se.vadretapp.vadret.radar.precipitation.PrecipitationOverlay
@@ -37,6 +40,8 @@ internal actual fun RadarMap(
     windAtLocation: WindAtLocation?,
     windSpeedText: String?,
     areRadarStationsShown: Boolean,
+    pollenMarkers: ImmutableList<PollenMarker>,
+    pollenClouds: ImageBitmap?,
     obscuredBottom: Int,
     onMapLoaded: () -> Unit,
     modifier: Modifier
@@ -82,7 +87,9 @@ internal actual fun RadarMap(
                 deviceLocation = deviceLocation,
                 windAtLocation = windAtLocation,
                 windSpeedText = windSpeedText,
-                areRadarStationsShown = areRadarStationsShown
+                areRadarStationsShown = areRadarStationsShown,
+                pollenMarkers = pollenMarkers,
+                pollenClouds = pollenClouds
             )
         },
         onRelease = { view: RadarMapView ->
