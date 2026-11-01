@@ -4,7 +4,7 @@ plugins {
 
 kotlin {
     android {
-        namespace = 'fi.kroon.vadret.data.location'
+        namespace = 'se.vadretapp.vadret.data.location'
     }
     sourceSets {
         commonMain {

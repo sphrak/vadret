@@ -5,7 +5,7 @@ plugins {
 
 kotlin {
     android {
-        namespace = 'fi.kroon.vadret.data.weatherforecast'
+        namespace = 'se.vadretapp.vadret.data.weatherforecast'
     }
     sourceSets {
         commonMain {

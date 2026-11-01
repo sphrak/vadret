@@ -4,6 +4,6 @@ plugins {
 
 kotlin {
     android {
-        namespace = 'fi.kroon.vadret.geohash'
+        namespace = 'se.vadretapp.vadret.geohash'
     }
 }

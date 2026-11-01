@@ -6,7 +6,7 @@ plugins {
 
 kotlin {
     android {
-        namespace = 'fi.kroon.vadret.data.aggregatedfeed'
+        namespace = 'se.vadretapp.vadret.data.aggregatedfeed'
     }
     [iosArm64(), iosSimulatorArm64()].each { target ->
         target.binaries.configureEach { binary ->

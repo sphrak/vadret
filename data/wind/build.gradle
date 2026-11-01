@@ -5,7 +5,7 @@ plugins {
 
 kotlin {
     android {
-        namespace = 'fi.kroon.vadret.data.wind'
+        namespace = 'se.vadretapp.vadret.data.wind'
     }
     sourceSets {
         commonMain {

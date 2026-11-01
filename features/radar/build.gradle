@@ -23,7 +23,7 @@ kotlin {
         }
     }
     android {
-        namespace = 'fi.kroon.vadret.radar'
+        namespace = 'se.vadretapp.vadret.radar'
     }
     sourceSets {
         commonMain {

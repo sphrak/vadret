@@ -5,7 +5,7 @@ plugins {
 
 kotlin {
     android {
-        namespace = 'fi.kroon.vadret.core'
+        namespace = 'se.vadretapp.vadret.core'
     }
     sourceSets {
         commonMain {
@@ -59,6 +59,6 @@ kotlin {
 
 compose.resources {
     publicResClass = true
-    packageOfResClass = 'fi.kroon.vadret.core.resources'
+    packageOfResClass = 'se.vadretapp.vadret.core.resources'
     generateResClass = always
 }

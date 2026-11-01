@@ -51,7 +51,7 @@ This project uses [ktlint](https://github.com/pinterest/ktlint) for linting.
 #### Running
 
 ```sh
-./gradlew :androidApp:installFdroidLocalRelease && adb shell am start -n se.vadretapp.vadret/fi.kroon.vadret.main.MainActivity
+./gradlew :androidApp:installFdroidLocalRelease && adb shell am start -n se.vadretapp.vadret/se.vadretapp.vadret.main.MainActivity
 ```
 
 The radar uses the shared maplibre-compose map by default. To build Android with the older MapLibre Android map instead, for comparison:

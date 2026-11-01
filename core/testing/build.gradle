@@ -4,7 +4,7 @@ plugins {
 
 kotlin {
     android {
-        namespace = 'fi.kroon.vadret.testing'
+        namespace = 'se.vadretapp.vadret.testing'
     }
     sourceSets {
         commonMain {

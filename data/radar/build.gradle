@@ -5,7 +5,7 @@ plugins {
 
 kotlin {
     android {
-        namespace = 'fi.kroon.vadret.data.radar'
+        namespace = 'se.vadretapp.vadret.data.radar'
     }
     sourceSets {
         commonMain {

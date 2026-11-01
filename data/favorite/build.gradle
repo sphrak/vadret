@@ -5,7 +5,7 @@ plugins {
 
 kotlin {
     android {
-        namespace = 'fi.kroon.vadret.data.favorite'
+        namespace = 'se.vadretapp.vadret.data.favorite'
     }
     [iosArm64(), iosSimulatorArm64()].each { target ->
         target.binaries.configureEach { binary ->

@@ -4,6 +4,6 @@ plugins {
 
 kotlin {
     android {
-        namespace = 'fi.kroon.vadret.idgenerator'
+        namespace = 'se.vadretapp.vadret.idgenerator'
     }
 }

@@ -5,7 +5,7 @@ plugins {
 
 kotlin {
     android {
-        namespace = 'fi.kroon.vadret.data.pollen'
+        namespace = 'se.vadretapp.vadret.data.pollen'
     }
     sourceSets {
         commonMain {

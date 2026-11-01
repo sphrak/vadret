@@ -5,8 +5,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.3.0] -- 2026-11-dd
+
+> [!IMPORTANT]
+> In 3.3.0 the package name has changed to `se.vadretapp.vadret` to prepare for re-release on Google Play since `fi.kroon.vadret` got blackedlisted by Google due to account inactivity.
+
 ### Changed
 
+- App package name changed from `fi.kroon.vadret` to `se.vadretapp.vadret`
 - Add intervals to wind map legend
 - Improved the precipitation radar legend
 - New app icon 📸
@@ -327,7 +333,8 @@ they did not work very well and weren't used a lot. The release includes a total
 - Radar imagery
 - 10 day weather forecast
 
-[Unreleased]: https://github.com/vadret/android/compare/3.2.0...HEAD
+[Unreleased]: https://github.com/vadret/android/compare/3.3.0...HEAD
+[3.3.0]: https://github.com/vadret/android/compare/3.2.0...3.3.0
 [3.2.0]: https://github.com/vadret/android/compare/3.1.0...3.2.0
 [3.1.0]: https://github.com/vadret/android/compare/3.0.0...3.1.0
 [3.0.0]: https://github.com/vadret/android/compare/2.0.3...3.0.0

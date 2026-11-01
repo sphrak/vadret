@@ -5,7 +5,7 @@ plugins {
 
 kotlin {
     android {
-        namespace = 'fi.kroon.vadret.data.pushalert'
+        namespace = 'se.vadretapp.vadret.data.pushalert'
     }
     sourceSets {
         commonMain {

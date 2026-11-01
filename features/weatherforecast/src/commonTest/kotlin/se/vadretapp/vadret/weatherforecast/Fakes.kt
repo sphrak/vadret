@@ -1,0 +1,356 @@
+package se.vadretapp.vadret.weatherforecast
+
+import io.github.sphrak.either.Either
+import io.github.sphrak.either.extension.asLeft
+import io.github.sphrak.either.extension.asRight
+import io.github.sphrak.either.extension.successOrNull
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
+import se.vadretapp.vadret.aggregatedfeed.model.AggregatedFeed
+import se.vadretapp.vadret.aggregatedfeed.model.FeedArea
+import se.vadretapp.vadret.aggregatedfeed.model.FeedSource
+import se.vadretapp.vadret.aggregatedfeed.model.WarningLevel
+import se.vadretapp.vadret.common.Failure
+import se.vadretapp.vadret.core.resources.Res
+import se.vadretapp.vadret.core.resources.wsymb2_overcast
+import se.vadretapp.vadret.favorite.FavoriteRepository
+import se.vadretapp.vadret.favorite.model.Favorite
+import se.vadretapp.vadret.forecastpreference.ForecastPreferenceRepository
+import se.vadretapp.vadret.forecastpreference.model.ForecastPreferences
+import se.vadretapp.vadret.icons.Overcast
+import se.vadretapp.vadret.icons.VadretIcons
+import se.vadretapp.vadret.location.LocationRepository
+import se.vadretapp.vadret.location.model.Location
+import se.vadretapp.vadret.location.model.LocationPreference
+import se.vadretapp.vadret.location.model.StoredLocation
+import se.vadretapp.vadret.nominatim.NominatimRepository
+import se.vadretapp.vadret.nominatim.model.Locality
+import se.vadretapp.vadret.place.PlaceRepository
+import se.vadretapp.vadret.place.model.Place
+import se.vadretapp.vadret.warning.ObserveUnseenWarningsTask
+import se.vadretapp.vadret.warning.model.WarningPlace
+import se.vadretapp.vadret.weatherforecast.model.Analysis
+import se.vadretapp.vadret.weatherforecast.model.ComingDay
+import se.vadretapp.vadret.weatherforecast.model.Forecast
+import kotlin.concurrent.atomics.AtomicInt
+import kotlin.concurrent.atomics.fetchAndIncrement
+import kotlin.coroutines.cancellation.CancellationException
+import kotlin.time.Instant
+
+internal val stockholm = StoredLocation(
+    locality = "Stockholm",
+    municipality = "Stockholm",
+    county = "Stockholm",
+    latitude = 59.3293,
+    longitude = 18.0686
+)
+
+internal val kiruna = Place(
+    locality = "Kiruna",
+    municipality = "Kiruna",
+    county = "Norrbotten",
+    latitude = 67.8558,
+    longitude = 20.2253
+)
+
+internal val kirunaFavorite = Favorite(
+    favoriteId = "favorite-1",
+    locality = "Kiruna",
+    municipality = "Kiruna",
+    county = "Norrbotten",
+    latitude = 67.8558,
+    longitude = 20.2253
+)
+
+internal val noon = Forecast(
+    validAt = Instant.parse(input = "2026-10-24T12:00:00Z"),
+    intervalStartedAt = Instant.parse(input = "2026-10-24T11:00:00Z"),
+    airTemperature = 4.0,
+    windFromDirection = 270.0,
+    windSpeed = 3.0,
+    relativeHumidity = 70,
+    precipitationType = 0,
+    symbolCode = 1,
+    precipitationAmount = 0.0
+)
+
+internal val morning = Analysis(
+    analysedAt = Instant.parse(input = "2026-10-24T06:00:00Z"),
+    airTemperature = 1.0,
+    windFromDirection = 180.0,
+    windSpeed = 2.0,
+    relativeHumidity = 90,
+    precipitationType = 0,
+    symbolCode = 6,
+    precipitationAmountLastHour = 0.0
+)
+
+internal fun comingDay(
+    dayKey: String,
+    isExpanded: Boolean = false
+): ComingDay =
+    ComingDay(
+        key = dayKey,
+        isToday = false,
+        weekdayText = "Mon",
+        dateText = "16 Nov",
+        icon = VadretIcons.Weather.Overcast,
+        descriptionResource = Res.string.wsymb2_overcast,
+        precipitationText = null,
+        lowTemperatureText = "1",
+        highTemperatureText = "5",
+        temperatureRangeStart = 0f,
+        temperatureRangeEnd = 1f,
+        hours = persistentListOf(),
+        firstShownHourIndex = 0,
+        isExpanded = isExpanded
+    )
+
+internal class FakeLocationRepository(
+    isAutomatic: Either<Failure, Boolean> = false.asRight(),
+    var deviceLocation: Either<Failure, Location> = Location(latitude = 57.7, longitude = 11.97).asRight(),
+    var selectStoredLocationResult: Either<Failure, Unit> = Unit.asRight()
+) : LocationRepository {
+
+    val writes = mutableListOf<String>()
+
+    val locationPreference: MutableStateFlow<LocationPreference> = MutableStateFlow(
+        value = LocationPreference(
+            isAutomatic = isAutomatic.successOrNull ?: false,
+            storedLocation = stockholm
+        )
+    )
+
+    var isAutomatic: Either<Failure, Boolean> = isAutomatic
+        set(value) {
+            field = value
+            val automatic: Boolean? = value.successOrNull
+            if (automatic != null) {
+                locationPreference.update { preference: LocationPreference -> preference.copy(isAutomatic = automatic) }
+            }
+        }
+
+    override suspend fun getDeviceLocation(): Either<Failure, Location> = deviceLocation
+
+    override suspend fun isAutomatic(): Either<Failure, Boolean> = isAutomatic
+
+    override suspend fun setAutomatic(isAutomatic: Boolean): Either<Failure, Unit> {
+        writes.add("automatic=$isAutomatic")
+        this.isAutomatic = isAutomatic.asRight()
+        return Unit.asRight()
+    }
+
+    override suspend fun getStoredLocation(): Either<Failure, StoredLocation> = locationPreference.value.storedLocation.asRight()
+
+    override fun observeLocationPreference(): Flow<Either<Failure, LocationPreference>> = locationPreference.map { preference: LocationPreference -> preference.asRight() }
+
+    override suspend fun selectStoredLocation(storedLocation: StoredLocation): Either<Failure, Unit> {
+        writes.add("selected=${storedLocation.locality}")
+        if (selectStoredLocationResult.isRight) {
+            this.isAutomatic = false.asRight()
+            locationPreference.value = LocationPreference(
+                isAutomatic = false,
+                storedLocation = storedLocation
+            )
+        }
+        return selectStoredLocationResult
+    }
+}
+
+internal class FakeFavoriteRepository(
+    var failure: Failure? = null
+) : FavoriteRepository {
+
+    val favorites: MutableStateFlow<List<Favorite>> = MutableStateFlow(value = emptyList())
+
+    private val nextFavoriteNumber: AtomicInt = AtomicInt(value = 1)
+
+    override fun observeFavorites(): Flow<Either<Failure, List<Favorite>>> =
+        favorites.map { favoriteList: List<Favorite> ->
+            val currentFailure: Failure? = failure
+            if (currentFailure != null) {
+                currentFailure.asLeft()
+            } else {
+                favoriteList.asRight()
+            }
+        }
+
+    override suspend fun addFavorite(
+        locality: String,
+        municipality: String,
+        county: String,
+        latitude: Double,
+        longitude: Double
+    ): Either<Failure, Favorite> {
+        val currentFailure: Failure? = failure
+        if (currentFailure != null) {
+            return currentFailure.asLeft()
+        }
+        val storedFavorite: Favorite? = favorites.value.firstOrNull { favorite: Favorite ->
+            favorite.locality == locality && favorite.municipality == municipality && favorite.county == county
+        }
+        if (storedFavorite != null) {
+            return storedFavorite.asRight()
+        }
+        val favorite = Favorite(
+            favoriteId = "favorite-${nextFavoriteNumber.fetchAndIncrement()}",
+            locality = locality,
+            municipality = municipality,
+            county = county,
+            latitude = latitude,
+            longitude = longitude
+        )
+        favorites.update { favoriteList: List<Favorite> -> favoriteList + favorite }
+        return favorite.asRight()
+    }
+
+    override suspend fun removeFavorite(favoriteId: String): Either<Failure, Unit> {
+        val currentFailure: Failure? = failure
+        if (currentFailure != null) {
+            return currentFailure.asLeft()
+        }
+        favorites.update { favoriteList: List<Favorite> -> favoriteList.filterNot { favorite: Favorite -> favorite.favoriteId == favoriteId } }
+        return Unit.asRight()
+    }
+}
+
+internal class FakeWeatherForecastRepository(
+    var forecasts: Either<Failure, List<Forecast>> = listOf(noon).asRight(),
+    var analyses: Either<Failure, List<Analysis>> = emptyList<Analysis>().asRight()
+) : WeatherForecastRepository {
+
+    val requestedCoordinates = mutableListOf<Pair<Double, Double>>()
+    val requestedAnalysisCoordinates = mutableListOf<Pair<Double, Double>>()
+    var analysisGate: CompletableDeferred<Unit>? = null
+    var isAnalysisCancelled: Boolean = false
+
+    override suspend fun getForecasts(
+        latitude: Double,
+        longitude: Double
+    ): Either<Failure, List<Forecast>> {
+        requestedCoordinates.add(latitude to longitude)
+        return forecasts
+    }
+
+    override suspend fun getAnalyses(
+        latitude: Double,
+        longitude: Double
+    ): Either<Failure, List<Analysis>> {
+        requestedAnalysisCoordinates.add(latitude to longitude)
+        try {
+            analysisGate?.await()
+        } catch (cancellationException: CancellationException) {
+            isAnalysisCancelled = true
+            throw cancellationException
+        }
+        return analyses
+    }
+}
+
+internal class FakeNominatimRepository(
+    var locality: Either<Failure, Locality> = Locality(
+        name = "Göteborg",
+        municipality = "Göteborgs kommun",
+        county = "Västra Götalands län"
+    ).asRight()
+) : NominatimRepository {
+    override suspend fun getLocality(
+        latitude: Double,
+        longitude: Double
+    ): Either<Failure, Locality> = locality
+}
+
+internal class FakePlaceRepository(
+    var items: List<Place> = listOf(kiruna)
+) : PlaceRepository {
+
+    val searches = mutableListOf<Pair<String, Int>>()
+
+    override suspend fun search(
+        prefix: String,
+        limit: Int
+    ): Either<Failure, List<Place>> {
+        searches.add(prefix to limit)
+        return items
+            .filter { place: Place ->
+                place.locality.startsWith(
+                    prefix = prefix,
+                    ignoreCase = true
+                )
+            }.asRight()
+    }
+}
+
+internal fun warning(
+    identifier: String,
+    endsAt: Instant? = null
+): AggregatedFeed =
+    AggregatedFeed(
+        identifier = identifier,
+        headline = "Vind",
+        areaName = "Stockholm",
+        warningLevel = WarningLevel.YELLOW,
+        details = emptyList(),
+        source = FeedSource.SMHI,
+        isPublicAlert = false,
+        senderName = null,
+        publishedAt = Instant.parse(input = "2026-10-24T08:00:00Z"),
+        startsAt = null,
+        endsAt = endsAt,
+        area = FeedArea(
+            polygons = emptyList(),
+            lines = emptyList(),
+            regions = emptyList()
+        )
+    )
+
+internal class FakeObserveUnseenWarningsTask(
+    initial: Either<Failure, List<AggregatedFeed>> = listOf(
+        warning(identifier = "smhi-1"),
+        warning(identifier = "smhi-2")
+    ).asRight()
+) : ObserveUnseenWarningsTask {
+
+    val unseenWarnings: MutableStateFlow<Either<Failure, List<AggregatedFeed>>> = MutableStateFlow(value = initial)
+    val requests = mutableListOf<Pair<WarningPlace, Boolean>>()
+
+    override fun invoke(
+        warningPlace: WarningPlace,
+        isRefresh: Boolean
+    ): Flow<Either<Failure, List<AggregatedFeed>>> {
+        requests.add(element = warningPlace to isRefresh)
+        return unseenWarnings
+    }
+}
+
+internal class FakeForecastPreferenceRepository : ForecastPreferenceRepository {
+
+    private var forecastPreferences = ForecastPreferences(
+        isHourlyForecastEnabled = false,
+        isExpandOnceEnabled = true
+    )
+    private val observedForecastPreferences = MutableStateFlow<Either<Failure, ForecastPreferences>>(value = forecastPreferences.asRight())
+
+    override suspend fun getForecastPreferences(): Either<Failure, ForecastPreferences> = forecastPreferences.asRight()
+
+    override fun observeForecastPreferences(): Flow<Either<Failure, ForecastPreferences>> = observedForecastPreferences
+
+    override suspend fun setHourlyForecastEnabled(isEnabled: Boolean): Either<Failure, Unit> {
+        store(forecastPreferences = forecastPreferences.copy(isHourlyForecastEnabled = isEnabled))
+        return Unit.asRight()
+    }
+
+    override suspend fun setExpandOnceEnabled(isEnabled: Boolean): Either<Failure, Unit> {
+        store(forecastPreferences = forecastPreferences.copy(isExpandOnceEnabled = isEnabled))
+        return Unit.asRight()
+    }
+
+    private fun store(forecastPreferences: ForecastPreferences) {
+        this.forecastPreferences = forecastPreferences
+        observedForecastPreferences.value = forecastPreferences.asRight()
+    }
+}

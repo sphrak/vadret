@@ -12,7 +12,7 @@ def copyChangelog = tasks.register('copyChangelog', Sync) {
 
 kotlin {
     android {
-        namespace = 'fi.kroon.vadret.shared'
+        namespace = 'se.vadretapp.vadret.shared'
     }
     [iosArm64(), iosSimulatorArm64()].each { target ->
         target.binaries.framework {
@@ -65,6 +65,6 @@ kotlin {
 }
 
 compose.resources {
-    packageOfResClass = 'fi.kroon.vadret.shared.resources'
+    packageOfResClass = 'se.vadretapp.vadret.shared.resources'
     customDirectory('commonMain', copyChangelog.map { task -> changelogResources.get() })
 }
