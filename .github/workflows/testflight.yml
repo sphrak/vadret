@@ -1,0 +1,91 @@
+name: Vädret iOS TestFlight
+
+on:
+  push:
+    branches:
+      - dev
+    tags:
+      - '*'
+  workflow_dispatch:
+
+# Two runs uploading at once can claim the same build number, so they queue.
+concurrency:
+  group: testflight
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  testflight:
+    name: testflight
+    runs-on: macos-26
+    timeout-minutes: 60
+    env:
+      ORG_GRADLE_PROJECT_GitHubPackagesUsername: ${{ github.actor }}
+      ORG_GRADLE_PROJECT_GitHubPackagesPassword: ${{ secrets.GITHUB_TOKEN }}
+      APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+      APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: 17
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+      - name: Cache Kotlin/Native toolchain
+        uses: actions/cache@v4
+        with:
+          path: ~/.konan
+          key: konan-${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml') }}
+      - name: Write the Firebase configuration
+        env:
+          GOOGLE_SERVICE_PLIST: ${{ secrets.GOOGLE_SERVICE_PLIST }}
+        run: |
+          echo "${GOOGLE_SERVICE_PLIST}" | base64 --decode > iosApp/iosApp/GoogleService-Info.plist
+      - name: Write the App Store Connect key
+        env:
+          APP_STORE_CONNECT_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_KEY_BASE64 }}
+        run: |
+          echo "${APP_STORE_CONNECT_KEY_BASE64}" | base64 --decode > "${RUNNER_TEMP}/app-store-connect.p8"
+      # A fresh runner has no development certificate, and letting Xcode create one per run fills up the team's certificate limit.
+      - name: Install the development certificate
+        env:
+          DEVELOPMENT_CERTIFICATE_BASE64: ${{ secrets.DEVELOPMENT_CERTIFICATE_BASE64 }}
+          DEVELOPMENT_CERTIFICATE_PASSWORD: ${{ secrets.DEVELOPMENT_CERTIFICATE_PASSWORD }}
+        run: |
+          keychain="${RUNNER_TEMP}/signing.keychain-db"
+          keychain_password="$(openssl rand -base64 24)"
+          echo "${DEVELOPMENT_CERTIFICATE_BASE64}" | base64 --decode > "${RUNNER_TEMP}/development.p12"
+          security create-keychain -p "${keychain_password}" "${keychain}"
+          security set-keychain-settings -lut 21600 "${keychain}"
+          security unlock-keychain -p "${keychain_password}" "${keychain}"
+          security import "${RUNNER_TEMP}/development.p12" -P "${DEVELOPMENT_CERTIFICATE_PASSWORD}" -A -t cert -f pkcs12 -k "${keychain}"
+          security set-key-partition-list -S apple-tool:,apple: -k "${keychain_password}" "${keychain}"
+          security list-keychain -d user -s "${keychain}"
+      - name: Archive
+        run: >
+          xcodebuild archive
+          -project iosApp/iosApp.xcodeproj
+          -scheme iosApp
+          -configuration Release
+          -destination 'generic/platform=iOS'
+          -archivePath "${RUNNER_TEMP}/Vadret.xcarchive"
+          -allowProvisioningUpdates
+          -authenticationKeyPath "${RUNNER_TEMP}/app-store-connect.p8"
+          -authenticationKeyID "${APP_STORE_CONNECT_KEY_ID}"
+          -authenticationKeyIssuerID "${APP_STORE_CONNECT_ISSUER_ID}"
+      # Apple signs for distribution with its cloud-managed certificate and picks the next free build number.
+      - name: Upload to TestFlight
+        run: >
+          xcodebuild -exportArchive
+          -archivePath "${RUNNER_TEMP}/Vadret.xcarchive"
+          -exportOptionsPlist iosApp/Configuration/ExportOptions.plist
+          -exportPath "${RUNNER_TEMP}/export"
+          -allowProvisioningUpdates
+          -authenticationKeyPath "${RUNNER_TEMP}/app-store-connect.p8"
+          -authenticationKeyID "${APP_STORE_CONNECT_KEY_ID}"
+          -authenticationKeyIssuerID "${APP_STORE_CONNECT_ISSUER_ID}"

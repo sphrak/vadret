@@ -68,7 +68,9 @@ Requires a Mac with Xcode 26. Open `iosApp/iosApp.xcodeproj` and run the `iosApp
 xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -sdk iphonesimulator build
 ```
 
-To run on a device, set your `TEAM_ID` in `iosApp/Configuration/Config.xcconfig`.
+To run on a device with your own Apple team, change `TEAM_ID` in `iosApp/Configuration/Config.xcconfig`.
+
+To upload a build to TestFlight, run the `Vädret iOS TestFlight` workflow under Actions on GitHub.
 
 #### Testing
 
