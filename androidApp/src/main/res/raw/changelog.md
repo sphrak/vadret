@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [3.3.0] -- 2026-11-dd
 
 > [!IMPORTANT]
-> In 3.3.0 the package name has changed to `se.vadretapp.vadret` to prepare for re-release on Google Play since `fi.kroon.vadret` got blackedlisted by Google due to account inactivity.
+> In version 3.3.0 the package name has changed to `se.vadretapp.vadret` to prepare for re-release on Google Play since `fi.kroon.vadret` got blackedlisted by Google due to account inactivity.
 
 ### Changed
 
