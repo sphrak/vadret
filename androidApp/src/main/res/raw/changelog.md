@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add intervals to wind map legend
 - Improved the precipitation radar legend
 - New app icon 📸
+- Begin publish iOS bundle to TestFlight
 
 ## [3.2.0] -- 2026-10-29
 
