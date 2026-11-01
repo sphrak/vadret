@@ -18,6 +18,7 @@
     <string name="project_third_party">Prosjekt</string>
     <string name="source_code_row_title">Kildekode</string>
     <string name="license_row_title">Tillatelse</string>
+    <string name="privacy_policy_row_title">Personvernerklæring</string>
     <string name="version_row_title">Versjon</string>
     <string name="about_app_description">Værmelding for Sverige</string>
     <string name="about_app_libraries_tab_title">biblioteker</string>

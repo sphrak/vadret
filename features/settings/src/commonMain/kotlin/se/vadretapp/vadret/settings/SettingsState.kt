@@ -7,6 +7,7 @@ import se.vadretapp.vadret.changelog.model.Changelog
 import se.vadretapp.vadret.core.resources.Res
 import se.vadretapp.vadret.core.resources.app_github_source_url
 import se.vadretapp.vadret.core.resources.app_license_url
+import se.vadretapp.vadret.core.resources.app_privacy_url
 import se.vadretapp.vadret.core.resources.app_release_page
 import se.vadretapp.vadret.core.resources.changelog_row_title
 import se.vadretapp.vadret.core.resources.ic_chevron_right
@@ -15,8 +16,10 @@ import se.vadretapp.vadret.core.resources.ic_copyright
 import se.vadretapp.vadret.core.resources.ic_history
 import se.vadretapp.vadret.core.resources.ic_info
 import se.vadretapp.vadret.core.resources.ic_open_in_new
+import se.vadretapp.vadret.core.resources.ic_shield
 import se.vadretapp.vadret.core.resources.license_row_hint
 import se.vadretapp.vadret.core.resources.license_row_title
+import se.vadretapp.vadret.core.resources.privacy_policy_row_title
 import se.vadretapp.vadret.core.resources.source_code_row_title
 import se.vadretapp.vadret.core.resources.version_row_title
 import se.vadretapp.vadret.library.model.Library
@@ -42,6 +45,13 @@ internal fun aboutRows(appVersion: String): ImmutableList<AboutRow> =
             hint = AboutRowHint.Resource(resource = Res.string.license_row_hint),
             action = AboutRowAction.OpenUrl(urlResource = Res.string.app_license_url),
             trailingIconResource = Res.drawable.ic_chevron_right
+        ),
+        AboutRow(
+            iconResource = Res.drawable.ic_shield,
+            titleResource = Res.string.privacy_policy_row_title,
+            hint = null,
+            action = AboutRowAction.OpenUrl(urlResource = Res.string.app_privacy_url),
+            trailingIconResource = Res.drawable.ic_open_in_new
         ),
         AboutRow(
             iconResource = Res.drawable.ic_history,

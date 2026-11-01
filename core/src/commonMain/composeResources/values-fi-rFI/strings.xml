@@ -46,6 +46,7 @@
     <string name="about_app_description">Sää äppi Ruotsille</string>
     <string name="version_row_title">Versio</string>
     <string name="license_row_title">Lisenssi</string>
+    <string name="privacy_policy_row_title">Tietosuojaseloste</string>
     <string name="changelog_row_title">Muutosloki</string>
     <string name="source_code_row_title">Lähdekoodi</string>
     <string name="changelog_dialog_title">Muutosloki</string>

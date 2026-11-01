@@ -17,6 +17,7 @@
     <string name="source_code_row_title">Kod źródłowy</string>
     <string name="changelog_row_title">Changelog</string>
     <string name="license_row_title">Licencja</string>
+    <string name="privacy_policy_row_title">Polityka prywatności</string>
     <string name="version_row_title">Wersja</string>
     <string name="about_app_description">Aplikacja pogodowa dla Szwecji</string>
     <string name="about_app_libraries_tab_title">Biblioteki</string>

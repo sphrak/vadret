@@ -120,10 +120,12 @@
     <string name="license_row_title">License</string>
     <string name="changelog_row_title">Changelog</string>
     <string name="source_code_row_title">Source code</string>
+    <string name="privacy_policy_row_title">Privacy policy</string>
     <string name="app_release_page" translatable="false">https://github.com/vadret/android/releases</string>
     <string name="license_row_hint" translatable="false">Apache License, Version 2.0</string>
     <string name="app_github_source_url" translatable="false">https://github.com/vadret/android</string>
     <string name="app_license_url" translatable="false">https://github.com/vadret/android/blob/master/LICENSE</string>
+    <string name="app_privacy_url" translatable="false">https://vadretapp.se/integritet/</string>
     <string name="changelog_dialog_title">Changelog</string>
     <string name="ok" translatable="false">OK</string>
     <string name="select">Select</string>

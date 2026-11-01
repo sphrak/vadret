@@ -21,6 +21,8 @@ import se.vadretapp.vadret.changelog.model.Changelog
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.core.resources.Res
+import se.vadretapp.vadret.core.resources.app_privacy_url
+import se.vadretapp.vadret.core.resources.privacy_policy_row_title
 import se.vadretapp.vadret.core.resources.setting_city
 import se.vadretapp.vadret.core.resources.setting_county
 import se.vadretapp.vadret.core.resources.setting_latitude
@@ -37,6 +39,7 @@ import se.vadretapp.vadret.location.model.Location
 import se.vadretapp.vadret.location.model.LocationPreference
 import se.vadretapp.vadret.location.model.StoredLocation
 import se.vadretapp.vadret.model.AppInfo
+import se.vadretapp.vadret.settings.model.AboutRowAction
 import se.vadretapp.vadret.settings.model.AboutRowHint
 import se.vadretapp.vadret.settings.model.LibraryGroup
 import se.vadretapp.vadret.settings.model.LocationRow
@@ -224,7 +227,11 @@ class SettingsViewModelTest {
                 ),
                 actual = state.locationRows
             )
-            assertEquals(expected = 4, actual = state.aboutRows.size)
+            assertEquals(expected = 5, actual = state.aboutRows.size)
+            assertEquals(
+                expected = AboutRowAction.OpenUrl(urlResource = Res.string.app_privacy_url),
+                actual = state.aboutRows.single { aboutRow -> aboutRow.titleResource == Res.string.privacy_policy_row_title }.action
+            )
             assertEquals(
                 expected = AboutRowHint.Plain(text = debugAppInfo.versionName),
                 actual = state.aboutRows.first().hint

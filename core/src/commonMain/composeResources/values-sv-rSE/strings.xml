@@ -44,6 +44,7 @@
     <string name="about_app_description">Väderapp för Sverige!</string>
     <string name="version_row_title">Version</string>
     <string name="license_row_title">Licens</string>
+    <string name="privacy_policy_row_title">Integritetspolicy</string>
     <string name="source_code_row_title">Källkod</string>
     <string name="changelog_row_title">Changelog</string>
     <string name="changelog_dialog_title">Changelog</string>

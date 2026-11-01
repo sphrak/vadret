@@ -45,6 +45,7 @@
     <string name="about_app_description">Vejr app for Sverige</string>
     <string name="version_row_title">Version</string>
     <string name="license_row_title">Licens</string>
+    <string name="privacy_policy_row_title">Privatlivspolitik</string>
     <string name="source_code_row_title">Kildekode</string>
     <string name="changelog_row_title">Changelog</string>
     <string name="changelog_dialog_title">Changelog</string>
