@@ -21,7 +21,8 @@ def static loadFromFile(String key, String value) {
 
 def isRunningOnCI = System.getenv("CI") == "true"
 
-def googleServicesFile = file("src/github/google-services.json")
+def pushFlavors = ["github", "dev"]
+def googleServicesFile = file("src/push/google-services.json")
 def firebaseResValues = { String applicationId ->
     def googleServices = new groovy.json.JsonSlurper().parse(googleServicesFile)
     def client = googleServices.client.find { androidClient -> androidClient.client_info.android_client_info.package_name == applicationId }
@@ -108,13 +109,6 @@ android {
             shrinkResources = true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
             buildConfigField "String", "APP_VERSION", "\"${defaultConfig.versionName}\""
-            buildConfigField "boolean", "IS_DEVELOPER_BUILD", "false"
-        }
-        localRelease {
-            initWith release
-            signingConfig = signingConfigs.debug
-            matchingFallbacks = ['release']
-            buildConfigField "boolean", "IS_DEVELOPER_BUILD", "true"
         }
         debug {
             enableAndroidTestCoverage = true
@@ -125,11 +119,31 @@ android {
     }
     flavorDimensions = ["default"]
     productFlavors {
-        fdroid {}
+        fdroid {
+            buildConfigField "boolean", "IS_DEVELOPER_BUILD", "false"
+        }
         github {
             signingConfig = signingConfigs.release
             versionNameSuffix = "signed"
             buildConfigField "String", "APP_VERSION", "\"${defaultConfig.versionName}-${getGitSha}-${versionNameSuffix}\""
+            buildConfigField "boolean", "IS_DEVELOPER_BUILD", "false"
+        }
+        dev {
+            signingConfig = signingConfigs.debug
+            versionNameSuffix = "dev"
+            buildConfigField "boolean", "IS_DEVELOPER_BUILD", "true"
+        }
+    }
+    sourceSets {
+        pushFlavors.each { pushFlavor ->
+            getByName(pushFlavor) {
+                manifest.srcFile "src/push/AndroidManifest.xml"
+                kotlin.srcDirs += "src/push/java"
+                res.srcDirs += "src/push/res"
+            }
+            getByName("test${pushFlavor.capitalize()}") {
+                kotlin.srcDirs += "src/testPush/java"
+            }
         }
     }
     lint {
@@ -154,7 +168,7 @@ kotlin {
 
 androidComponents {
     onVariants(selector().all()) { variant ->
-        if (variant.flavorName == "github" && googleServicesFile.exists()) {
+        if (variant.flavorName in pushFlavors && googleServicesFile.exists()) {
             firebaseResValues(variant.applicationId.get()).each { resourceName, value ->
                 variant.resValues.put(variant.makeResValueKey("string", resourceName), new com.android.build.api.variant.ResValue(value, null))
             }
@@ -192,11 +206,14 @@ dependencies {
     // Dependency Injection
     implementation libs.koin.core
 
-    githubImplementation project(':core:encryption')
-    githubImplementation project(':data:pushalert')
-    githubImplementation project(':features:pushalert')
-    githubImplementation libs.androidx.core.ktx
-    githubImplementation libs.firebase.messaging
+    pushFlavors.each { pushFlavor ->
+        add("${pushFlavor}Implementation", project(':core:encryption'))
+        add("${pushFlavor}Implementation", project(':data:pushalert'))
+        add("${pushFlavor}Implementation", project(':features:pushalert'))
+        addProvider("${pushFlavor}Implementation", libs.androidx.core.ktx)
+        addProvider("${pushFlavor}Implementation", libs.firebase.messaging)
+        add("test${pushFlavor.capitalize()}Implementation", project(':features:pushalert'))
+    }
 
     // Debugging, Testing, Linting, Analytics
     debugImplementation libs.leakcanary
@@ -205,7 +222,6 @@ dependencies {
     testImplementation libs.kotlin.test
     testImplementation libs.kotlin.test.junit
     testImplementation libs.mockk
-    testGithubImplementation project(':features:pushalert')
 }
 
 repositories {

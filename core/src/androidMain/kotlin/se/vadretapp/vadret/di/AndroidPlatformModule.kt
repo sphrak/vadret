@@ -5,6 +5,7 @@ import android.location.LocationManager
 import android.os.Looper
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.http.HttpHeaders
 import okhttp3.Cache
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -89,16 +90,17 @@ private fun okHttpEngine(
                     maxSize = CACHE_SIZE_BYTES
                 )
             )
-            .addInterceptor(httpLoggingInterceptor(isDebug = appInfo.isDebug))
+            .addInterceptor(httpLoggingInterceptor(isDeveloperBuild = appInfo.isDeveloperBuild))
             .build()
     }
 }
 
-private fun httpLoggingInterceptor(isDebug: Boolean): HttpLoggingInterceptor =
+private fun httpLoggingInterceptor(isDeveloperBuild: Boolean): HttpLoggingInterceptor =
     HttpLoggingInterceptor(
         logger = HttpLoggingInterceptor.Logger { message: String -> logger.debug { message } }
     ).apply {
-        level = if (isDebug) {
+        redactHeader(name = HttpHeaders.Authorization)
+        level = if (isDeveloperBuild) {
             HttpLoggingInterceptor.Level.BODY
         } else {
             HttpLoggingInterceptor.Level.NONE

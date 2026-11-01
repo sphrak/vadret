@@ -27,10 +27,10 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class GithubModulesTest {
+class PushModulesTest {
 
     private val testDispatcher: TestDispatcher = StandardTestDispatcher()
-    private val directory: File = Files.createTempDirectory("github-modules-test").toFile()
+    private val directory: File = Files.createTempDirectory("push-modules-test").toFile()
 
     @BeforeTest
     fun setUp() {
@@ -44,7 +44,7 @@ class GithubModulesTest {
     }
 
     @Test
-    fun `push alerts can be built from the github modules`() {
+    fun `push alerts can be built from the push modules`() {
         val context: Context = mockk(relaxed = true)
         every { context.applicationContext } returns context
         every { context.cacheDir } returns directory

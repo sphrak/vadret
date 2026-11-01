@@ -20,7 +20,7 @@ abstract class BaseApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        if (BuildConfig.DEBUG) {
+        if (BuildConfig.IS_DEVELOPER_BUILD) {
             LoggerFactory.register(
                 name = LOGCAT_SINK_NAME,
                 sink = logcatSink(minimumLevel = LogLevel.DEBUG)

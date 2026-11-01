@@ -228,7 +228,7 @@ capture_screenshots_in_theme() {
 
 capture_screenshots() {
     step "Installing the local release build"
-    ./gradlew --quiet :androidApp:installFdroidLocalRelease
+    ./gradlew --quiet :androidApp:installDevRelease
     adb shell am start -S -W -n "${MAIN_ACTIVITY}" --es "${RADAR_IMAGE_URL_EXTRA}" "https://opendata-download-radar.smhi.se/api/version/latest/area/sweden/product/comp/2026/10/25/radar_2610251300.tif" > /dev/null
     trap restore_phone EXIT
     enter_demo_mode
