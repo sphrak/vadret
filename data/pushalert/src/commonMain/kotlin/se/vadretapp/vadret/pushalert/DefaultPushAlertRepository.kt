@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.map
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.common.catch
 import se.vadretapp.vadret.common.either
+import se.vadretapp.vadret.geohash.model.Geohash
 import se.vadretapp.vadret.pushalert.extension.toChallenge
 import se.vadretapp.vadret.pushalert.extension.toDeviceRegistration
 import se.vadretapp.vadret.pushalert.extension.toDeviceRequestDto
@@ -19,6 +20,7 @@ import se.vadretapp.vadret.pushalert.extension.toInstallationToken
 import se.vadretapp.vadret.pushalert.extension.toPushAlertChoices
 import se.vadretapp.vadret.pushalert.extension.toPushAlertChoicesEntity
 import se.vadretapp.vadret.pushalert.extension.toSubscriptionDto
+import se.vadretapp.vadret.pushalert.extension.toSyncedCurrentGeohash
 import se.vadretapp.vadret.pushalert.extension.withDeviceRegistration
 import se.vadretapp.vadret.pushalert.extension.withInstallationToken
 import se.vadretapp.vadret.pushalert.extension.withoutInstallation
@@ -87,6 +89,16 @@ internal class DefaultPushAlertRepository(
                 installationToken = installationToken.value,
                 subscriptionDto = pushAlertSubscription.toSubscriptionDto()
             )
+        }.catch { exception: Exception -> exception.toFailure() }
+
+    override suspend fun syncedCurrentGeohash(): Either<Failure, Geohash?> =
+        either {
+            pushAlertLocalDataSource.state().toSyncedCurrentGeohash()
+        }.catch { exception: Exception -> exception.toFailure() }
+
+    override suspend fun saveSyncedCurrentGeohash(geohash: Geohash): Either<Failure, Unit> =
+        either {
+            pushAlertLocalDataSource.updateState { pushAlertStateEntity -> pushAlertStateEntity.copy(syncedCurrentGeohash = geohash.value) }
         }.catch { exception: Exception -> exception.toFailure() }
 
     override suspend fun forgetInstallation(installationToken: InstallationToken): Either<Failure, Unit> =

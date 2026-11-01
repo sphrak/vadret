@@ -13,6 +13,8 @@ internal data class PushAlertStateEntity(
     val registeredDevicePublicKey: String? = null,
     @SerialName(value = "registered_at_millis")
     val registeredAtMillis: Long? = null,
+    @SerialName(value = "synced_current_geohash")
+    val syncedCurrentGeohash: String? = null,
     @SerialName(value = "choices")
     val choices: PushAlertChoicesEntity = PushAlertChoicesEntity(),
     @SerialName(value = "is_sync_pending")

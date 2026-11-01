@@ -40,6 +40,7 @@ val pushAlertModule: Module = module {
             deviceTokenSource = get(),
             notificationPermissionSource = get(),
             sealedMessageKey = get(),
+            getCurrentGeohashTask = get(),
             getPushAlertGeohashesTask = get(),
             clock = get()
         )

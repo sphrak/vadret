@@ -28,6 +28,7 @@ internal class DefaultSyncPushAlertsTask(
     private val deviceTokenSource: DeviceTokenSource,
     private val notificationPermissionSource: NotificationPermissionSource,
     private val sealedMessageKey: SealedMessageKey,
+    private val getCurrentGeohashTask: GetCurrentGeohashTask,
     private val getPushAlertGeohashesTask: GetPushAlertGeohashesTask,
     private val clock: Clock
 ) : SyncPushAlertsTask {
@@ -91,19 +92,35 @@ internal class DefaultSyncPushAlertsTask(
     private suspend fun follow(pushAlertChoices: PushAlertChoices): Either<Failure, Unit> =
         installation().flatMap { installationToken: InstallationToken ->
             registerDevice(installationToken = installationToken).flatMap {
-                getPushAlertGeohashesTask(favoriteIds = pushAlertChoices.favoriteIds).flatMap { geohashes: List<Geohash> ->
-                    pushAlertRepository.replaceSubscription(
+                getCurrentGeohashTask().flatMap { currentGeohash: Geohash ->
+                    subscribe(
                         installationToken = installationToken,
-                        pushAlertSubscription = PushAlertSubscription(
-                            geohashes = geohashes,
-                            warningLowestLevel = pushAlertChoices.warningLowestLevel,
-                            pollenChoices = pushAlertChoices.pollenChoices,
-                            temperatureTrend = pushAlertChoices.temperatureTrend,
-                            strongWind = pushAlertChoices.strongWind
-                        )
+                        currentGeohash = currentGeohash,
+                        pushAlertChoices = pushAlertChoices
                     )
                 }
             }
+        }
+
+    private suspend fun subscribe(
+        installationToken: InstallationToken,
+        currentGeohash: Geohash,
+        pushAlertChoices: PushAlertChoices
+    ): Either<Failure, Unit> =
+        getPushAlertGeohashesTask(
+            currentGeohash = currentGeohash,
+            favoriteIds = pushAlertChoices.favoriteIds
+        ).flatMap { geohashes: List<Geohash> ->
+            pushAlertRepository.replaceSubscription(
+                installationToken = installationToken,
+                pushAlertSubscription = PushAlertSubscription(
+                    geohashes = geohashes,
+                    warningLowestLevel = pushAlertChoices.warningLowestLevel,
+                    pollenChoices = pushAlertChoices.pollenChoices,
+                    temperatureTrend = pushAlertChoices.temperatureTrend,
+                    strongWind = pushAlertChoices.strongWind
+                )
+            ).flatMap { pushAlertRepository.saveSyncedCurrentGeohash(geohash = currentGeohash) }
         }
 
     private suspend fun installation(): Either<Failure, InstallationToken> =

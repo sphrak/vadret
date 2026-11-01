@@ -1,13 +1,12 @@
 package se.vadretapp.vadret.pushalert
 
-import io.github.sphrak.either.extension.asLeft
 import kotlinx.coroutines.test.runTest
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
+import se.vadretapp.vadret.geohash.model.Geohash
 import se.vadretapp.vadret.pushalert.model.PushAlertKind
 import se.vadretapp.vadret.pushalert.model.PushAlertMessage
 import se.vadretapp.vadret.pushalert.usecase.DefaultAddPlaceNameTask
-import se.vadretapp.vadret.pushalert.usecase.DefaultGetCurrentGeohashTask
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -103,12 +102,13 @@ class DefaultAddPlaceNameTaskTest {
     }
 
     @Test
-    fun aCellWhereThePhoneIsNowIsLeftAsItIsEvenWhenASavedPlaceIsInIt() = runTest {
+    fun aCellWhereThePhoneWasAtTheLastSyncIsLeftAsItIsEvenWhenAChosenSavedPlaceIsInIt() = runTest {
         val windInStockholm = WIND_IN_MALMO.copy(cell = "u6sc")
 
         assertEquals(
             expected = listOf(
                 windInStockholm,
+                WIND_IN_MALMO,
                 WIND_IN_MALMO
             ),
             actual = listOf(
@@ -119,19 +119,32 @@ class DefaultAddPlaceNameTaskTest {
                 ),
                 addPlaceName(
                     pushAlertMessage = WIND_IN_MALMO,
-                    locationRepository = FakeLocationRepository(isAutomatic = false)
+                    pushAlertRepository = FakePushAlertRepository(syncedCurrentGeohash = Geohash(value = "u3chr"))
+                ),
+                addPlaceName(
+                    pushAlertMessage = WIND_IN_MALMO,
+                    pushAlertRepository = FakePushAlertRepository(syncedCurrentGeohash = Geohash(value = "u3chn"))
                 )
             )
         )
     }
 
     @Test
-    fun whenWhereThePhoneIsCannotBeFoundTheChosenSavedPlaceIsStillNamed() = runTest {
+    fun withoutAKeptSyncOrWithOneThatCannotBeReadTheChosenSavedPlaceIsStillNamed() = runTest {
         assertEquals(
-            expected = WIND_IN_MALMO.copy(title = "Storm i dag - Malmö"),
-            actual = addPlaceName(
-                pushAlertMessage = WIND_IN_MALMO,
-                locationRepository = FakeLocationRepository(deviceLocation = Failure(errorCode = ErrorCode.LOCATION_PERMISSION_MISSING).asLeft())
+            expected = List(size = 2) { WIND_IN_MALMO.copy(title = "Storm i dag - Malmö") },
+            actual = listOf(
+                addPlaceName(
+                    pushAlertMessage = WIND_IN_MALMO,
+                    pushAlertRepository = FakePushAlertRepository(syncedCurrentGeohash = null)
+                ),
+                addPlaceName(
+                    pushAlertMessage = WIND_IN_MALMO,
+                    pushAlertRepository = FakePushAlertRepository(
+                        syncedCurrentGeohash = SYNCED_IN_STOCKHOLM,
+                        syncedCurrentGeohashFailure = Failure(errorCode = ErrorCode.STORAGE_FAILED)
+                    )
+                )
             )
         )
     }
@@ -175,16 +188,17 @@ private suspend fun addPlaceName(
     pushAlertMessage: PushAlertMessage,
     favoriteIds: Set<String> = setOf(MALMO_FAVORITE.favoriteId),
     favoriteRepository: FakeFavoriteRepository = FakeFavoriteRepository(favorites = listOf(MALMO_FAVORITE)),
-    locationRepository: FakeLocationRepository = FakeLocationRepository()
+    pushAlertRepository: FakePushAlertRepository = FakePushAlertRepository(syncedCurrentGeohash = SYNCED_IN_STOCKHOLM)
 ): PushAlertMessage =
     DefaultAddPlaceNameTask(
         favoriteRepository = favoriteRepository,
-        getCurrentGeohashTask = DefaultGetCurrentGeohashTask(locationRepository = locationRepository)
+        pushAlertRepository = pushAlertRepository
     )(
         pushAlertMessage = pushAlertMessage,
         favoriteIds = favoriteIds
     )
 
+private val SYNCED_IN_STOCKHOLM = Geohash(value = "u6sce")
 private val WIND_IN_MALMO = PushAlertMessage(
     title = "Storm i dag",
     body = "Upp till 25 m/s i medelvind.",

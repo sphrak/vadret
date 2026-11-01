@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 import se.vadretapp.vadret.common.Failure
+import se.vadretapp.vadret.geohash.model.Geohash
 import se.vadretapp.vadret.pushalert.model.DeviceRegistration
 import se.vadretapp.vadret.pushalert.model.DeviceToken
 import se.vadretapp.vadret.pushalert.model.InstallationToken
@@ -20,9 +21,11 @@ internal class FakePushAlertRepository(
     choices: PushAlertChoices = PushAlertChoices.NOTHING_CHOSEN,
     var installationToken: InstallationToken? = null,
     var deviceRegistration: DeviceRegistration? = null,
+    var syncedCurrentGeohash: Geohash? = null,
     private val subscriptionFailures: MutableList<Failure> = mutableListOf(),
     private val registrationFailures: MutableList<Failure> = mutableListOf(),
     private val choicesFailure: Failure? = null,
+    private val syncedCurrentGeohashFailure: Failure? = null,
     private val installGate: Deferred<Unit> = CompletableDeferred(value = Unit)
 ) : PushAlertRepository {
     val calls = mutableListOf<String>()
@@ -42,6 +45,7 @@ internal class FakePushAlertRepository(
         val newInstallationToken = InstallationToken(value = "installation-${calls.count { call -> call == "install" }}")
         installationToken = newInstallationToken
         deviceRegistration = null
+        syncedCurrentGeohash = null
         return newInstallationToken.asRight()
     }
 
@@ -78,10 +82,18 @@ internal class FakePushAlertRepository(
         }
     }
 
+    override suspend fun syncedCurrentGeohash(): Either<Failure, Geohash?> = syncedCurrentGeohashFailure?.asLeft() ?: syncedCurrentGeohash.asRight()
+
+    override suspend fun saveSyncedCurrentGeohash(geohash: Geohash): Either<Failure, Unit> {
+        syncedCurrentGeohash = geohash
+        return Unit.asRight()
+    }
+
     override suspend fun forgetInstallation(installationToken: InstallationToken): Either<Failure, Unit> {
         calls += "forget ${installationToken.value}"
         this.installationToken = null
         deviceRegistration = null
+        syncedCurrentGeohash = null
         return Unit.asRight()
     }
 
@@ -89,6 +101,7 @@ internal class FakePushAlertRepository(
         calls += "clear"
         installationToken = null
         deviceRegistration = null
+        syncedCurrentGeohash = null
         return Unit.asRight()
     }
 

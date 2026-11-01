@@ -1,7 +1,6 @@
 package se.vadretapp.vadret.pushalert.usecase
 
 import io.github.sphrak.either.Either
-import io.github.sphrak.either.flatMap
 import io.github.sphrak.either.map
 import kotlinx.coroutines.flow.first
 import se.vadretapp.vadret.common.Failure
@@ -11,16 +10,16 @@ import se.vadretapp.vadret.geohash.model.Geohash
 import se.vadretapp.vadret.pushalert.extension.toGeohashOrNull
 
 internal class DefaultGetPushAlertGeohashesTask(
-    private val getCurrentGeohashTask: GetCurrentGeohashTask,
     private val favoriteRepository: FavoriteRepository
 ) : GetPushAlertGeohashesTask {
-    override suspend fun invoke(favoriteIds: Set<String>): Either<Failure, List<Geohash>> =
-        getCurrentGeohashTask().flatMap { currentGeohash: Geohash ->
-            favoriteRepository.observeFavorites().first().map { favorites: List<Favorite> ->
-                (listOf(currentGeohash) + favorites.chosenGeohashesInSweden(favoriteIds = favoriteIds))
-                    .distinct()
-                    .take(n = MAXIMUM_GEOHASHES)
-            }
+    override suspend fun invoke(
+        currentGeohash: Geohash,
+        favoriteIds: Set<String>
+    ): Either<Failure, List<Geohash>> =
+        favoriteRepository.observeFavorites().first().map { favorites: List<Favorite> ->
+            (listOf(currentGeohash) + favorites.chosenGeohashesInSweden(favoriteIds = favoriteIds))
+                .distinct()
+                .take(n = MAXIMUM_GEOHASHES)
         }
 }
 

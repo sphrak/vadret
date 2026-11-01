@@ -445,6 +445,105 @@ class DefaultPushAlertRepositoryTest {
     }
 
     @Test
+    fun whereThePhoneWasAtTheLastSyncIsKeptAndReadBack() = runTest {
+        val pushAlertLocalDataSource = FakePushAlertLocalDataSource(initialState = PushAlertStateEntity(installationToken = INSTALLATION_TOKEN))
+        val pushAlertRepository = repository(pushAlertLocalDataSource = pushAlertLocalDataSource)
+
+        val before = pushAlertRepository.syncedCurrentGeohash()
+        val saved = pushAlertRepository.saveSyncedCurrentGeohash(geohash = Geohash(value = "u6sce"))
+
+        assertEquals(
+            expected = listOf(
+                null.asRight(),
+                Unit.asRight(),
+                Geohash(value = "u6sce").asRight()
+            ),
+            actual = listOf(
+                before,
+                saved,
+                pushAlertRepository.syncedCurrentGeohash()
+            )
+        )
+        assertEquals(
+            expected = """{"installation_token":"$INSTALLATION_TOKEN","synced_current_geohash":"u6sce"}""",
+            actual = Json.encodeToString(
+                serializer = PushAlertStateEntity.serializer(),
+                value = pushAlertLocalDataSource.state.value
+            )
+        )
+    }
+
+    @Test
+    fun installingForgettingOrClearingTheInstallationForgetsWhereThePhoneWasAtTheLastSync() = runTest {
+        val synced = PushAlertStateEntity(
+            installationToken = INSTALLATION_TOKEN,
+            syncedCurrentGeohash = "u6sce"
+        )
+        val forgotten = FakePushAlertLocalDataSource(initialState = synced)
+        val cleared = FakePushAlertLocalDataSource(initialState = synced)
+        val installedAgain = FakePushAlertLocalDataSource(initialState = synced)
+
+        repository(pushAlertLocalDataSource = forgotten).forgetInstallation(installationToken = InstallationToken(value = INSTALLATION_TOKEN))
+        repository(pushAlertLocalDataSource = cleared).clearInstallation()
+        repository(pushAlertLocalDataSource = installedAgain).install()
+
+        assertEquals(
+            expected = List(size = 3) { null.asRight() },
+            actual = listOf(
+                forgotten,
+                cleared,
+                installedAgain
+            ).map { pushAlertLocalDataSource: FakePushAlertLocalDataSource -> repository(pushAlertLocalDataSource = pushAlertLocalDataSource).syncedCurrentGeohash() }
+        )
+    }
+
+    @Test
+    fun aServerThatCannotForgetLeavesWhereThePhoneWasAtTheLastSync() = runTest {
+        val pushAlertLocalDataSource = FakePushAlertLocalDataSource(
+            initialState = PushAlertStateEntity(
+                installationToken = INSTALLATION_TOKEN,
+                syncedCurrentGeohash = "u6sce"
+            )
+        )
+
+        repository(
+            pushAlertLocalDataSource = pushAlertLocalDataSource,
+            responses = mapOf("DELETE /api/v1/installations/me" to (HttpStatusCode.ServiceUnavailable to "{}"))
+        ).forgetInstallation(installationToken = InstallationToken(value = INSTALLATION_TOKEN))
+
+        assertEquals(
+            expected = Geohash(value = "u6sce").asRight(),
+            actual = repository(pushAlertLocalDataSource = pushAlertLocalDataSource).syncedCurrentGeohash()
+        )
+    }
+
+    @Test
+    fun stateStoredBeforeTheLastSyncWasKeptReadsAsNoPlace() = runTest {
+        val storedBefore = Json.decodeFromString(
+            deserializer = PushAlertStateEntity.serializer(),
+            string = """{"installation_token":"$INSTALLATION_TOKEN","registered_device_token":"fcm-1","registered_device_public_key":"BAEC","registered_at_millis":$REGISTERED_AT_MILLIS}"""
+        )
+
+        assertEquals(
+            expected = null.asRight(),
+            actual = repository(pushAlertLocalDataSource = FakePushAlertLocalDataSource(initialState = storedBefore)).syncedCurrentGeohash()
+        )
+    }
+
+    @Test
+    fun whereThePhoneWasThatCannotBeReadOrWrittenSaysSo() = runTest {
+        val broken = repository(pushAlertLocalDataSource = FakePushAlertLocalDataSource(isBroken = true))
+
+        assertEquals(
+            expected = List(size = 2) { Failure(errorCode = ErrorCode.STORAGE_FAILED).asLeft() },
+            actual = listOf(
+                broken.syncedCurrentGeohash(),
+                broken.saveSyncedCurrentGeohash(geohash = Geohash(value = "u6sce"))
+            )
+        )
+    }
+
+    @Test
     fun aPendingSyncIsKeptAndReadBackAndOutlivesTheInstallation() = runTest {
         val pushAlertLocalDataSource = FakePushAlertLocalDataSource()
         val pushAlertRepository = repository(pushAlertLocalDataSource = pushAlertLocalDataSource)

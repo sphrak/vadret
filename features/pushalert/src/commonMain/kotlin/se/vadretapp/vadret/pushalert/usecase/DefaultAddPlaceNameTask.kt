@@ -5,13 +5,14 @@ import kotlinx.coroutines.flow.first
 import se.vadretapp.vadret.favorite.FavoriteRepository
 import se.vadretapp.vadret.favorite.model.Favorite
 import se.vadretapp.vadret.geohash.model.Geohash
+import se.vadretapp.vadret.pushalert.PushAlertRepository
 import se.vadretapp.vadret.pushalert.extension.toGeohashOrNull
 import se.vadretapp.vadret.pushalert.model.PushAlertKind
 import se.vadretapp.vadret.pushalert.model.PushAlertMessage
 
 internal class DefaultAddPlaceNameTask(
     private val favoriteRepository: FavoriteRepository,
-    private val getCurrentGeohashTask: GetCurrentGeohashTask
+    private val pushAlertRepository: PushAlertRepository
 ) : AddPlaceNameTask {
     override suspend fun invoke(
         pushAlertMessage: PushAlertMessage,
@@ -43,9 +44,9 @@ internal class DefaultAddPlaceNameTask(
         }
 
     private suspend fun isWhereThePhoneIs(cell: String): Boolean =
-        when (val currentGeohash = getCurrentGeohashTask()) {
+        when (val syncedCurrentGeohash = pushAlertRepository.syncedCurrentGeohash()) {
             is Either.Left -> false
-            is Either.Right -> currentGeohash.b.toCell() == cell
+            is Either.Right -> syncedCurrentGeohash.b?.toCell() == cell
         }
 }
 

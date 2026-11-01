@@ -6,6 +6,7 @@ import io.github.sphrak.either.map
 import kotlinx.coroutines.test.runTest
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
+import se.vadretapp.vadret.geohash.model.Geohash
 import se.vadretapp.vadret.pushalert.model.PollenAlertLevel
 import se.vadretapp.vadret.pushalert.model.PollenChoice
 import se.vadretapp.vadret.pushalert.model.PushAlertChoices
@@ -13,7 +14,6 @@ import se.vadretapp.vadret.pushalert.model.PushAlertKind
 import se.vadretapp.vadret.pushalert.model.PushAlertMessage
 import se.vadretapp.vadret.pushalert.model.WarningAlertLevel
 import se.vadretapp.vadret.pushalert.usecase.DefaultAddPlaceNameTask
-import se.vadretapp.vadret.pushalert.usecase.DefaultGetCurrentGeohashTask
 import se.vadretapp.vadret.pushalert.usecase.DefaultOpenPushAlertTask
 import kotlin.io.encoding.Base64
 import kotlin.test.Test
@@ -138,7 +138,10 @@ class DefaultOpenPushAlertTaskTest {
         val openPushAlert = DefaultOpenPushAlertTask(
             sealedMessageKey = FAKE_SEALED_MESSAGE_KEY,
             pushAlertRepository = FakePushAlertRepository(choicesFailure = Failure(errorCode = ErrorCode.STORAGE_FAILED)),
-            addPlaceNameTask = addPlaceNameTask(favoriteRepository = FakeFavoriteRepository())
+            addPlaceNameTask = DefaultAddPlaceNameTask(
+                favoriteRepository = FakeFavoriteRepository(),
+                pushAlertRepository = FakePushAlertRepository()
+            )
         )
 
         assertEquals(
@@ -151,16 +154,20 @@ class DefaultOpenPushAlertTaskTest {
 private fun openPushAlert(
     pushAlertChoices: PushAlertChoices,
     favoriteRepository: FakeFavoriteRepository = FakeFavoriteRepository()
-): DefaultOpenPushAlertTask = DefaultOpenPushAlertTask(
-    sealedMessageKey = FAKE_SEALED_MESSAGE_KEY,
-    pushAlertRepository = FakePushAlertRepository(choices = pushAlertChoices),
-    addPlaceNameTask = addPlaceNameTask(favoriteRepository = favoriteRepository)
-)
-
-private fun addPlaceNameTask(favoriteRepository: FakeFavoriteRepository): DefaultAddPlaceNameTask = DefaultAddPlaceNameTask(
-    favoriteRepository = favoriteRepository,
-    getCurrentGeohashTask = DefaultGetCurrentGeohashTask(locationRepository = FakeLocationRepository())
-)
+): DefaultOpenPushAlertTask {
+    val pushAlertRepository = FakePushAlertRepository(
+        choices = pushAlertChoices,
+        syncedCurrentGeohash = Geohash(value = "u6sce")
+    )
+    return DefaultOpenPushAlertTask(
+        sealedMessageKey = FAKE_SEALED_MESSAGE_KEY,
+        pushAlertRepository = pushAlertRepository,
+        addPlaceNameTask = DefaultAddPlaceNameTask(
+            favoriteRepository = favoriteRepository,
+            pushAlertRepository = pushAlertRepository
+        )
+    )
+}
 
 private val SEALED_WARNING = byteArrayOf(1, 2, 3)
 private val SEALED_WITHOUT_BODY = byteArrayOf(4, 5, 6)

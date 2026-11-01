@@ -1,5 +1,6 @@
 package se.vadretapp.vadret.pushalert.extension
 
+import se.vadretapp.vadret.geohash.model.Geohash
 import se.vadretapp.vadret.pushalert.model.DeviceRegistration
 import se.vadretapp.vadret.pushalert.model.DeviceToken
 import se.vadretapp.vadret.pushalert.model.InstallationToken
@@ -19,6 +20,11 @@ internal fun PushAlertStateEntity.toDeviceRegistration(): DeviceRegistration? {
         devicePublicKey = registeredDevicePublicKey,
         registeredAtMillis = registeredAtMillis
     )
+}
+
+internal fun PushAlertStateEntity.toSyncedCurrentGeohash(): Geohash? {
+    val syncedCurrentGeohash = syncedCurrentGeohash ?: return null
+    return Geohash(value = syncedCurrentGeohash)
 }
 
 internal fun PushAlertStateEntity.withInstallationToken(installationToken: InstallationToken): PushAlertStateEntity =

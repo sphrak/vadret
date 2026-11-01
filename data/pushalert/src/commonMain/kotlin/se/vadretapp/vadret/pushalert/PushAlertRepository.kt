@@ -6,6 +6,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.encrypteddatastore.encryptedDataStore
+import se.vadretapp.vadret.geohash.model.Geohash
 import se.vadretapp.vadret.pushalert.local.AttestationLocalDataSource
 import se.vadretapp.vadret.pushalert.local.DefaultPushAlertLocalDataSource
 import se.vadretapp.vadret.pushalert.model.DeviceRegistration
@@ -35,6 +36,10 @@ interface PushAlertRepository {
         installationToken: InstallationToken,
         pushAlertSubscription: PushAlertSubscription?
     ): Either<Failure, Unit>
+
+    suspend fun syncedCurrentGeohash(): Either<Failure, Geohash?>
+
+    suspend fun saveSyncedCurrentGeohash(geohash: Geohash): Either<Failure, Unit>
 
     suspend fun forgetInstallation(installationToken: InstallationToken): Either<Failure, Unit>
 

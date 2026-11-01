@@ -9,6 +9,7 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
+import se.vadretapp.vadret.geohash.model.Geohash
 import se.vadretapp.vadret.location.model.Location
 import se.vadretapp.vadret.pushalert.model.DeviceRegistration
 import se.vadretapp.vadret.pushalert.model.DeviceToken
@@ -377,6 +378,89 @@ class DefaultSyncPushAlertsTaskTest {
     }
 
     @Test
+    fun aSyncTheServerTakesKeepsWhereThePhoneIsAsItWasSentButNotTheSavedPlaces() = runTest {
+        val followingTheGps = FakePushAlertRepository(choices = WARNINGS_FROM_YELLOW.copy(favoriteIds = setOf(MALMO_FAVORITE.favoriteId)))
+        val followingASavedPlace = FakePushAlertRepository(choices = WARNINGS_FROM_YELLOW)
+
+        syncPushAlertsTask(
+            pushAlertRepository = followingTheGps,
+            favoriteRepository = FakeFavoriteRepository(favorites = listOf(MALMO_FAVORITE))
+        )()
+        syncPushAlertsTask(
+            pushAlertRepository = followingASavedPlace,
+            locationRepository = FakeLocationRepository(isAutomatic = false)
+        )()
+
+        assertEquals(
+            expected = listOf(
+                Geohash(value = "u6sce"),
+                Geohash(value = "u3chr")
+            ),
+            actual = listOf(
+                followingTheGps.syncedCurrentGeohash,
+                followingASavedPlace.syncedCurrentGeohash
+            )
+        )
+    }
+
+    @Test
+    fun aSyncThatFailsLeavesWhereThePhoneWasAtTheLastSyncThatWorked() = runTest {
+        val refusedSubscription = FakePushAlertRepository(
+            choices = WARNINGS_FROM_YELLOW,
+            installationToken = InstallationToken(value = "installation-1"),
+            syncedCurrentGeohash = Geohash(value = "u3chr"),
+            subscriptionFailures = mutableListOf(Failure(errorCode = ErrorCode.HTTP_SERVICE_UNAVAILABLE))
+        )
+        val noPosition = FakePushAlertRepository(
+            choices = WARNINGS_FROM_YELLOW,
+            installationToken = InstallationToken(value = "installation-1"),
+            syncedCurrentGeohash = Geohash(value = "u3chr")
+        )
+
+        val synced = listOf(
+            syncPushAlertsTask(pushAlertRepository = refusedSubscription)(),
+            syncPushAlertsTask(
+                pushAlertRepository = noPosition,
+                locationRepository = FakeLocationRepository(deviceLocation = Failure(errorCode = ErrorCode.LOCATION_PERMISSION_MISSING).asLeft())
+            )()
+        )
+
+        assertEquals(
+            expected = listOf(
+                Failure(errorCode = ErrorCode.HTTP_SERVICE_UNAVAILABLE).asLeft(),
+                Failure(errorCode = ErrorCode.LOCATION_PERMISSION_MISSING).asLeft()
+            ),
+            actual = synced
+        )
+        assertEquals(
+            expected = List(size = 2) { Geohash(value = "u3chr") },
+            actual = listOf(
+                refusedSubscription.syncedCurrentGeohash,
+                noPosition.syncedCurrentGeohash
+            )
+        )
+    }
+
+    @Test
+    fun turningEverythingOffForgetsWhereThePhoneWasAtTheLastSync() = runTest {
+        val pushAlertRepository = FakePushAlertRepository(
+            installationToken = InstallationToken(value = "installation-1"),
+            syncedCurrentGeohash = Geohash(value = "u6sce")
+        )
+
+        syncPushAlertsTask(pushAlertRepository = pushAlertRepository)()
+
+        assertEquals(
+            expected = listOf("forget installation-1"),
+            actual = pushAlertRepository.calls
+        )
+        assertEquals(
+            expected = null,
+            actual = pushAlertRepository.syncedCurrentGeohash
+        )
+    }
+
+    @Test
     fun aTokenTheServerAlreadyHasIsNotSentAgain() = runTest {
         val pushAlertRepository = FakePushAlertRepository(
             choices = WARNINGS_FROM_YELLOW,
@@ -707,10 +791,8 @@ private fun syncPushAlertsTask(
     deviceTokenSource = deviceTokenSource,
     notificationPermissionSource = notificationPermissionSource,
     sealedMessageKey = sealedMessageKey,
-    getPushAlertGeohashesTask = DefaultGetPushAlertGeohashesTask(
-        getCurrentGeohashTask = DefaultGetCurrentGeohashTask(locationRepository = locationRepository),
-        favoriteRepository = favoriteRepository
-    ),
+    getCurrentGeohashTask = DefaultGetCurrentGeohashTask(locationRepository = locationRepository),
+    getPushAlertGeohashesTask = DefaultGetPushAlertGeohashesTask(favoriteRepository = favoriteRepository),
     clock = FIXED_CLOCK
 )
 
