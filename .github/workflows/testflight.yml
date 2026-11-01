@@ -99,4 +99,5 @@ jobs:
       - name: Show how the upload was signed
         if: failure()
         run: |
-          grep -hiE "signing identity|certificate|provisioning profile" "${TMPDIR}"/*.xcdistributionlogs/IDEDistribution.standard.log | tail -40 || true
+          codesign -dvv "${RUNNER_TEMP}"/Vadret.xcarchive/Products/Applications/*.app 2>&1 | grep -E "Identifier|Authority" || true
+          grep -rhiE "Apple (Distribution|Development)|provisioning profile" "${TMPDIR}"/*.xcdistributionlogs | tail -40 || true

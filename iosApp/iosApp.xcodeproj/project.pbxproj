@@ -36,7 +36,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		0A0000000000000000000001 /* Vädret.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Vädret.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		0A0000000000000000000001 /* Vadret.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Vadret.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0A0000000000000000000002 /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
 		0A00000000000000000000B1 /* NotificationService.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = NotificationService.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -117,7 +117,7 @@
 		0A0000000000000000000032 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				0A0000000000000000000001 /* Vädret.app */,
+				0A0000000000000000000001 /* Vadret.app */,
 				0A00000000000000000000B1 /* NotificationService.appex */,
 			);
 			name = Products;
@@ -150,7 +150,7 @@
 				0A00000000000000000000A1 /* FirebaseMessaging */,
 			);
 			productName = iosApp;
-			productReference = 0A0000000000000000000001 /* Vädret.app */;
+			productReference = 0A0000000000000000000001 /* Vadret.app */;
 			productType = "com.apple.product-type.application";
 		};
 		0A00000000000000000000B4 /* NotificationService */ = {
@@ -451,7 +451,7 @@
 					"-lsqlite3",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "$(BUNDLE_ID)";
-				PRODUCT_NAME = "$(APP_NAME)";
+				PRODUCT_NAME = "$(BUNDLE_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -487,7 +487,7 @@
 					"-lsqlite3",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "$(BUNDLE_ID)";
-				PRODUCT_NAME = "$(APP_NAME)";
+				PRODUCT_NAME = "$(BUNDLE_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
