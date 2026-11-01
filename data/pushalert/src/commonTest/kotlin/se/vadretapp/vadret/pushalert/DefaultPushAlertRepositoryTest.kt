@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.Json
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.geohash.model.Geohash
@@ -270,10 +271,14 @@ class DefaultPushAlertRepositoryTest {
         pushAlertRepository.replaceSubscription(
             installationToken = InstallationToken(value = INSTALLATION_TOKEN),
             pushAlertSubscription = PushAlertSubscription(
-                geohash = Geohash(value = "u6sce"),
+                geohashes = listOf(
+                    Geohash(value = "u6sce"),
+                    Geohash(value = "u3chr")
+                ),
                 warningLowestLevel = WarningAlertLevel.YELLOW,
                 pollenChoices = listOf(PollenChoice(pollenTypeId = BIRCH, lowestLevel = PollenAlertLevel.HIGH)),
-                temperatureTrend = true
+                temperatureTrend = true,
+                strongWind = true
             )
         )
         pushAlertRepository.replaceSubscription(
@@ -283,9 +288,28 @@ class DefaultPushAlertRepositoryTest {
 
         assertEquals(
             expected = listOf(
-                """PUT /api/v1/subscription Bearer $INSTALLATION_TOKEN {"geohash":"u6sce","warning_lowest_level":"YELLOW","pollen":[{"pollen_type_id":"$BIRCH","lowest_level":5}],"temperature_trend":true}""",
+                """PUT /api/v1/subscription Bearer $INSTALLATION_TOKEN {"geohashes":["u6sce","u3chr"],"warning_lowest_level":"YELLOW","pollen":[{"pollen_type_id":"$BIRCH","lowest_level":5}],"temperature_trend":true,"strong_wind":true}""",
                 "PUT /api/v1/subscription Bearer $INSTALLATION_TOKEN {}"
             ),
+            actual = requests
+        )
+    }
+
+    @Test
+    fun aSubscriptionWithoutStrongWindSaysSoInsteadOfLeavingItOut() = runTest {
+        repository().replaceSubscription(
+            installationToken = InstallationToken(value = INSTALLATION_TOKEN),
+            pushAlertSubscription = PushAlertSubscription(
+                geohashes = listOf(Geohash(value = "u6sce")),
+                warningLowestLevel = null,
+                pollenChoices = emptyList(),
+                temperatureTrend = false,
+                strongWind = false
+            )
+        )
+
+        assertEquals(
+            expected = listOf("""PUT /api/v1/subscription Bearer $INSTALLATION_TOKEN {"geohashes":["u6sce"],"pollen":[],"temperature_trend":false,"strong_wind":false}"""),
             actual = requests
         )
     }
@@ -359,6 +383,50 @@ class DefaultPushAlertRepositoryTest {
         assertEquals(
             expected = null,
             actual = pushAlertLocalDataSource.state.value.installationToken
+        )
+    }
+
+    @Test
+    fun strongWindAndPlacesAreStoredWithTheOtherChoices() = runTest {
+        val pushAlertLocalDataSource = FakePushAlertLocalDataSource()
+
+        repository(pushAlertLocalDataSource = pushAlertLocalDataSource).saveChoices(pushAlertChoices = CHOICES)
+
+        assertEquals(
+            expected = """{"choices":{"warning_lowest_level":"ORANGE","pollen_choices":[{"pollen_type_id":"$BIRCH","lowest_level":4}],"temperature_trend":true,"strong_wind":true,"favorite_ids":["$MALMO_FAVORITE_ID","$GOTEBORG_FAVORITE_ID"]}}""",
+            actual = Json.encodeToString(
+                serializer = PushAlertStateEntity.serializer(),
+                value = pushAlertLocalDataSource.state.value
+            )
+        )
+    }
+
+    @Test
+    fun choicesStoredBeforeStrongWindExistedReadAsStrongWindTurnedOff() = runTest {
+        val storedBeforeStrongWind = Json.decodeFromString(
+            deserializer = PushAlertStateEntity.serializer(),
+            string = """{"installation_token":"$INSTALLATION_TOKEN","choices":{"warning_lowest_level":"ORANGE","pollen_choices":[{"pollen_type_id":"$BIRCH","lowest_level":4}],"temperature_trend":true}}"""
+        )
+
+        assertEquals(
+            expected = CHOICES.copy(
+                strongWind = false,
+                favoriteIds = emptySet()
+            ).asRight(),
+            actual = repository(pushAlertLocalDataSource = FakePushAlertLocalDataSource(initialState = storedBeforeStrongWind)).choices()
+        )
+    }
+
+    @Test
+    fun choicesStoredBeforePlacesExistedReadAsNoPlaceChosen() = runTest {
+        val storedBeforePlaces = Json.decodeFromString(
+            deserializer = PushAlertStateEntity.serializer(),
+            string = """{"installation_token":"$INSTALLATION_TOKEN","choices":{"warning_lowest_level":"ORANGE","pollen_choices":[{"pollen_type_id":"$BIRCH","lowest_level":4}],"temperature_trend":true,"strong_wind":true}}"""
+        )
+
+        assertEquals(
+            expected = CHOICES.copy(favoriteIds = emptySet()).asRight(),
+            actual = repository(pushAlertLocalDataSource = FakePushAlertLocalDataSource(initialState = storedBeforePlaces)).choices()
         )
     }
 
@@ -460,8 +528,15 @@ private const val CHALLENGE = "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8="
 private const val INSTALLATION_TOKEN = "vadret_secret"
 private const val BIRCH = "2a2a2a2a-2a2a-4a2a-aa2a-2a313a323236"
 private const val REGISTERED_AT_MILLIS = 1_793_000_000_000L
+private const val MALMO_FAVORITE_ID = "favorite-malmo"
+private const val GOTEBORG_FAVORITE_ID = "favorite-goteborg"
 private val CHOICES = PushAlertChoices(
     warningLowestLevel = WarningAlertLevel.ORANGE,
     pollenChoices = listOf(PollenChoice(pollenTypeId = BIRCH, lowestLevel = PollenAlertLevel.MODERATE_TO_HIGH)),
-    temperatureTrend = true
+    temperatureTrend = true,
+    strongWind = true,
+    favoriteIds = setOf(
+        MALMO_FAVORITE_ID,
+        GOTEBORG_FAVORITE_ID
+    )
 )

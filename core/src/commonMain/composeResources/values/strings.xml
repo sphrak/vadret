@@ -274,6 +274,9 @@
     <string name="temperature_alerts">Temperature changes</string>
     <string name="temperature_alerts_on">You get a push when it gets 3° warmer or colder</string>
     <string name="temperature_alerts_off">No pushes for temperature changes</string>
+    <string name="strong_wind_alerts">Strong wind</string>
+    <string name="strong_wind_alerts_on">You get a push the evening before and on the day when the SMHI forecast shows strong wind, a storm or a hurricane</string>
+    <string name="strong_wind_alerts_off">No pushes for strong wind</string>
     <string name="pollen_alerts">Pollen alerts</string>
     <string name="pollen_alerts_on">You get a push from the chosen level and up</string>
     <string name="pollen_alerts_off">No pushes</string>
@@ -292,4 +295,11 @@
     <string name="push_alerts_only_in_sweden_text">Vädret sends push alerts for places in Sweden only, and this place is outside Sweden.</string>
     <string name="push_alerts_not_available">Push alerts are not available</string>
     <string name="attestation_refused">Vädret could not confirm this device, so push alerts cannot be turned on. This happens, for example, with an unlocked bootloader or a modified system.</string>
+    <string name="push_places">Places</string>
+    <string name="push_place_current">Where you are now</string>
+    <string name="push_place_current_value">Always</string>
+    <string name="push_place_on">You also get pushes for this place</string>
+    <string name="push_place_off">No pushes for this place</string>
+    <string name="push_places_limit">At most 4 saved places</string>
+    <string name="push_places_limit_text">At most 4 saved places can have push alerts. Turn off another place first.</string>
 </resources>

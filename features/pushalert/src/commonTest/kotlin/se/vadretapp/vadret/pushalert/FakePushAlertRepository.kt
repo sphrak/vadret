@@ -70,7 +70,7 @@ internal class FakePushAlertRepository(
         installationToken: InstallationToken,
         pushAlertSubscription: PushAlertSubscription?
     ): Either<Failure, Unit> {
-        calls += "subscribe ${installationToken.value} ${pushAlertSubscription?.geohash?.value} ${pushAlertSubscription?.warningLowestLevel} ${pushAlertSubscription?.temperatureTrend}"
+        calls += "subscribe ${installationToken.value} ${pushAlertSubscription?.geohashes?.joinToString(separator = ",") { geohash -> geohash.value }} ${pushAlertSubscription?.warningLowestLevel} ${pushAlertSubscription?.temperatureTrend} ${pushAlertSubscription?.strongWind}"
         return if (subscriptionFailures.isEmpty()) {
             Unit.asRight()
         } else {

@@ -204,6 +204,9 @@
     <string name="temperature_alerts">Temperaturförändringar</string>
     <string name="temperature_alerts_on">Du får en notis när det blir 3° varmare eller kallare</string>
     <string name="temperature_alerts_off">Inga notiser om temperatur</string>
+    <string name="strong_wind_alerts">Hård vind</string>
+    <string name="strong_wind_alerts_on">Du får en notis kvällen före och samma dag när SMHI:s prognos visar hård vind, storm eller orkan</string>
+    <string name="strong_wind_alerts_off">Inga notiser om hård vind</string>
     <string name="pollen_alerts">Pollennotiser</string>
     <string name="pollen_alerts_on">Du får en notis från vald nivå och uppåt</string>
     <string name="pollen_alerts_off">Inga notiser</string>
@@ -222,4 +225,11 @@
     <string name="push_alerts_only_in_sweden_text">Vädret skickar bara pushnotiser för platser i Sverige, och den här platsen ligger utanför Sverige.</string>
     <string name="push_alerts_not_available">Pushnotiser är inte tillgängliga</string>
     <string name="attestation_refused">Vädret kunde inte bekräfta den här enheten, så pushnotiser kan inte slås på. Det händer till exempel med en upplåst bootloader eller ett modifierat system.</string>
+    <string name="push_places">Platser</string>
+    <string name="push_place_current">Där du är nu</string>
+    <string name="push_place_current_value">Alltid</string>
+    <string name="push_place_on">Du får notiser för den här platsen också</string>
+    <string name="push_place_off">Inga notiser för den här platsen</string>
+    <string name="push_places_limit">Högst 4 sparade platser</string>
+    <string name="push_places_limit_text">Högst 4 sparade platser kan ha pushnotiser. Stäng av en annan plats först.</string>
 </resources>

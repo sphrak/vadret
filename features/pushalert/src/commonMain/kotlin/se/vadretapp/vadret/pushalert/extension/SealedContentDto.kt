@@ -13,7 +13,8 @@ internal fun SealedContentDto.toPushAlertMessageOrNull(): PushAlertMessage? {
         title = title,
         body = body,
         kind = pushAlertKind,
-        notificationId = data[NOTIFICATION_ID_FIELD]
+        notificationId = data[NOTIFICATION_ID_FIELD],
+        cell = data[CELL_FIELD]
     )
 }
 
@@ -22,11 +23,14 @@ private fun String.toPushAlertKindOrNull(): PushAlertKind? =
         WARNING_KIND -> PushAlertKind.WARNING
         POLLEN_KIND -> PushAlertKind.POLLEN
         TEMPERATURE_KIND -> PushAlertKind.TEMPERATURE
+        WIND_KIND -> PushAlertKind.WIND
         else -> null
     }
 
 private const val KIND_FIELD = "kind"
 private const val NOTIFICATION_ID_FIELD = "notification_id"
+private const val CELL_FIELD = "cell"
 private const val WARNING_KIND = "warning"
 private const val POLLEN_KIND = "pollen"
 private const val TEMPERATURE_KIND = "temperature"
+private const val WIND_KIND = "wind"

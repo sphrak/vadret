@@ -9,7 +9,7 @@ internal fun PushAlertSubscription?.toSubscriptionDto(): SubscriptionDto =
         SubscriptionDto()
     } else {
         SubscriptionDto(
-            geohash = geohash.value,
+            geohashes = geohashes.map { geohash -> geohash.value },
             warningLowestLevel = warningLowestLevel?.name,
             pollen = pollenChoices.map { pollenChoice ->
                 PollenSubscriptionDto(
@@ -17,6 +17,7 @@ internal fun PushAlertSubscription?.toSubscriptionDto(): SubscriptionDto =
                     lowestLevel = pollenChoice.lowestLevel.level
                 )
             },
-            temperatureTrend = temperatureTrend
+            temperatureTrend = temperatureTrend,
+            strongWind = strongWind
         )
     }

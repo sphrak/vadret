@@ -10,10 +10,12 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.collections.immutable.ImmutableList
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import se.vadretapp.vadret.common.Failure
@@ -33,6 +35,16 @@ import se.vadretapp.vadret.core.resources.push_alerts_not_available
 import se.vadretapp.vadret.core.resources.push_alerts_not_sent
 import se.vadretapp.vadret.core.resources.push_alerts_only_in_sweden
 import se.vadretapp.vadret.core.resources.push_alerts_only_in_sweden_text
+import se.vadretapp.vadret.core.resources.push_place_current
+import se.vadretapp.vadret.core.resources.push_place_current_value
+import se.vadretapp.vadret.core.resources.push_place_off
+import se.vadretapp.vadret.core.resources.push_place_on
+import se.vadretapp.vadret.core.resources.push_places
+import se.vadretapp.vadret.core.resources.push_places_limit
+import se.vadretapp.vadret.core.resources.push_places_limit_text
+import se.vadretapp.vadret.core.resources.strong_wind_alerts
+import se.vadretapp.vadret.core.resources.strong_wind_alerts_off
+import se.vadretapp.vadret.core.resources.strong_wind_alerts_on
 import se.vadretapp.vadret.core.resources.temperature_alerts
 import se.vadretapp.vadret.core.resources.temperature_alerts_off
 import se.vadretapp.vadret.core.resources.temperature_alerts_on
@@ -45,6 +57,7 @@ import se.vadretapp.vadret.pushalert.PushAlertsEvent
 import se.vadretapp.vadret.pushalert.PushAlertsState
 import se.vadretapp.vadret.pushalert.PushAlertsViewModel
 import se.vadretapp.vadret.pushalert.extension.labelResource
+import se.vadretapp.vadret.pushalert.model.FavoriteRow
 import se.vadretapp.vadret.pushalert.model.PollenAlertLevel
 import se.vadretapp.vadret.pushalert.model.WarningAlertLevel
 import se.vadretapp.vadret.theme.model.Theme
@@ -109,6 +122,11 @@ internal fun PushAlertsScreen(
                 onEvent = onEvent
             )
         }
+        SettingsSectionHeader(text = stringResource(resource = Res.string.push_places))
+        PlacesCard(
+            favoriteRows = state.favoriteRows,
+            onEvent = onEvent
+        )
         val failure: Failure? = state.failure
         if (failure != null) {
             Text(
@@ -159,6 +177,14 @@ private fun WeatherAlertsCard(
             isChecked = state.choices.temperatureTrend,
             onCheckedChange = { isChecked: Boolean -> onEvent(PushAlertsEvent.OnTemperatureTrendToggled(isEnabled = isChecked)) }
         )
+        SettingsRowDivider()
+        SwitchRow(
+            title = stringResource(resource = Res.string.strong_wind_alerts),
+            checkedSummary = stringResource(resource = Res.string.strong_wind_alerts_on),
+            uncheckedSummary = stringResource(resource = Res.string.strong_wind_alerts_off),
+            isChecked = state.choices.strongWind,
+            onCheckedChange = { isChecked: Boolean -> onEvent(PushAlertsEvent.OnStrongWindToggled(isEnabled = isChecked)) }
+        )
     }
 }
 
@@ -196,6 +222,39 @@ private fun PollenAlertsCard(
                 trailingIconResource = Res.drawable.ic_chevron_right,
                 onClick = { onEvent(PushAlertsEvent.OnPollenLevelRowClicked) }
             )
+        }
+    }
+}
+
+@Composable
+private fun PlacesCard(
+    favoriteRows: ImmutableList<FavoriteRow>,
+    onEvent: (PushAlertsEvent) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    VadretCard(modifier = modifier) {
+        SettingsValueRow(
+            title = stringResource(resource = Res.string.push_place_current),
+            value = stringResource(resource = Res.string.push_place_current_value)
+        )
+        favoriteRows.forEach { favoriteRow: FavoriteRow ->
+            key(favoriteRow.favoriteId) {
+                SettingsRowDivider()
+                SwitchRow(
+                    title = favoriteRow.locality,
+                    checkedSummary = stringResource(resource = Res.string.push_place_on),
+                    uncheckedSummary = stringResource(resource = Res.string.push_place_off),
+                    isChecked = favoriteRow.isChecked,
+                    onCheckedChange = { isChecked: Boolean ->
+                        onEvent(
+                            PushAlertsEvent.OnFavoriteToggled(
+                                favoriteId = favoriteRow.favoriteId,
+                                isEnabled = isChecked
+                            )
+                        )
+                    }
+                )
+            }
         }
     }
 }
@@ -242,6 +301,14 @@ private fun PushAlertsDialogs(
             titleResource = Res.string.push_alerts_only_in_sweden,
             textResource = Res.string.push_alerts_only_in_sweden_text,
             onDismiss = { onEvent(PushAlertsEvent.OnOutsideSwedenDialogDismissed) },
+            modifier = modifier
+        )
+    }
+    if (state.isFavoriteLimitDialogVisible) {
+        ExplanationDialog(
+            titleResource = Res.string.push_places_limit,
+            textResource = Res.string.push_places_limit_text,
+            onDismiss = { onEvent(PushAlertsEvent.OnFavoriteLimitDialogDismissed) },
             modifier = modifier
         )
     }

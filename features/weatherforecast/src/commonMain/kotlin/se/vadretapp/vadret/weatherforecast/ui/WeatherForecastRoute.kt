@@ -143,6 +143,7 @@ internal fun WeatherForecastScreen(
                         contentType = SEARCH_KEY
                     ) {
                         SearchPanel(
+                            modifier = Modifier.animateItem(),
                             search = search,
                             onEvent = onEvent
                         )
@@ -153,6 +154,7 @@ internal fun WeatherForecastScreen(
                         contentType = CURRENT_WEATHER_KEY
                     ) {
                         CurrentWeather(
+                            modifier = Modifier.animateItem(),
                             currentWeather = currentWeather,
                             latestWarning = state.latestWarning,
                             onWarningClick = onWarningClick
@@ -205,6 +207,7 @@ private fun LazyListScope.forecast(
             contentType = FORECAST_VIEW_KEY
         ) {
             ForecastViewSelector(
+                modifier = Modifier.animateItem(),
                 forecastView = state.forecastView,
                 onForecastViewSelected = { forecastView: ForecastView ->
                     onEvent(WeatherForecastEvent.OnForecastViewSelected(forecastView = forecastView))
@@ -217,6 +220,7 @@ private fun LazyListScope.forecast(
         contentType = FORECAST_CONTENT_KEY
     ) {
         ForecastContent(
+            modifier = Modifier.animateItem(),
             forecastView = state.forecastView,
             forecast = state.forecast,
             onEvent = onEvent

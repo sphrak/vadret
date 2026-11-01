@@ -14,6 +14,7 @@ kotlin {
                 implementation project(':core:geohash')
                 implementation project(':core:logging')
                 implementation project(':data:common')
+                implementation project(':data:favorite')
                 implementation project(':data:location')
                 implementation project(':data:pollen')
                 implementation project(':data:pushalert')
@@ -21,6 +22,7 @@ kotlin {
 
                 implementation libs.either
                 implementation libs.koin.core
+                implementation libs.kotlinx.collections.immutable
                 implementation libs.kotlinx.serialization.json
             }
         }

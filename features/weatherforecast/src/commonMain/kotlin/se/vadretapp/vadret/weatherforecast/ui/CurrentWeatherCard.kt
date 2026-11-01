@@ -1,5 +1,10 @@
 package se.vadretapp.vadret.weatherforecast.ui
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -65,17 +70,29 @@ internal fun CurrentWeatherCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(space = conditionSpacing)) {
-                    Text(
-                        text = "${currentWeather.temperatureText}$degree",
-                        style = VadretTheme.textStyles.temperature,
-                        color = VadretTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = stringResource(resource = currentWeather.descriptionResource),
-                        style = VadretTheme.textStyles.condition,
-                        color = VadretTheme.colorScheme.onSurface
-                    )
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(space = conditionSpacing)
+                ) {
+                    AnimatedContent(
+                        targetState = "${currentWeather.temperatureText}$degree",
+                        transitionSpec = { fadeIn(tween(500)) togetherWith fadeOut(tween(500)) }
+                    ) {
+                        Text(
+                            text = it,
+                            style = VadretTheme.textStyles.temperature,
+                            color = VadretTheme.colorScheme.onSurface
+                        )
+                    }
+                    AnimatedContent(
+                        targetState = stringResource(resource = currentWeather.descriptionResource),
+                        transitionSpec = { fadeIn(tween(500)) togetherWith fadeOut(tween(500)) }
+                    ) {
+                        Text(
+                            text = it,
+                            style = VadretTheme.textStyles.condition,
+                            color = VadretTheme.colorScheme.onSurface
+                        )
+                    }
                 }
                 VadretIcon(
                     icon = currentWeather.icon,

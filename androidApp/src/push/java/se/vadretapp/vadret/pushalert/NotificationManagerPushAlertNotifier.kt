@@ -65,6 +65,11 @@ internal class NotificationManagerPushAlertNotifier(
             pushAlertKind = PushAlertKind.TEMPERATURE,
             nameResource = R.string.push_alert_channel_temperature,
             importance = NotificationManagerCompat.IMPORTANCE_DEFAULT
+        ),
+        notificationChannel(
+            pushAlertKind = PushAlertKind.WIND,
+            nameResource = R.string.push_alert_channel_wind,
+            importance = NotificationManagerCompat.IMPORTANCE_DEFAULT
         )
     )
 
@@ -89,6 +94,7 @@ private fun PushAlertKind.channelId(): String =
         PushAlertKind.WARNING -> WARNING_CHANNEL_ID
         PushAlertKind.POLLEN -> POLLEN_CHANNEL_ID
         PushAlertKind.TEMPERATURE -> TEMPERATURE_CHANNEL_ID
+        PushAlertKind.WIND -> WIND_CHANNEL_ID
     }
 
 private val logger: Logger = LoggerFactory.getLogger(tag = "se.vadretapp.vadret.pushalert")
@@ -96,4 +102,5 @@ private val logger: Logger = LoggerFactory.getLogger(tag = "se.vadretapp.vadret.
 private const val WARNING_CHANNEL_ID = "warning"
 private const val POLLEN_CHANNEL_ID = "pollen"
 private const val TEMPERATURE_CHANNEL_ID = "temperature"
+private const val WIND_CHANNEL_ID = "wind"
 private const val OPEN_APP_REQUEST_CODE = 0

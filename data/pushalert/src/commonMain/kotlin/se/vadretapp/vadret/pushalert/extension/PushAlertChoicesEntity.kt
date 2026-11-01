@@ -10,7 +10,9 @@ import se.vadretapp.vadret.pushalert.model.WarningAlertLevel
 internal fun PushAlertChoicesEntity.toPushAlertChoices(): PushAlertChoices = PushAlertChoices(
     warningLowestLevel = WarningAlertLevel.entries.firstOrNull { warningAlertLevel -> warningAlertLevel.name == warningLowestLevel },
     pollenChoices = pollenChoices.mapNotNull { pollenChoiceEntity -> pollenChoiceEntity.toPollenChoiceOrNull() },
-    temperatureTrend = temperatureTrend
+    temperatureTrend = temperatureTrend,
+    strongWind = strongWind,
+    favoriteIds = favoriteIds
 )
 
 private fun PollenChoiceEntity.toPollenChoiceOrNull(): PollenChoice? {

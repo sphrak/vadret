@@ -12,5 +12,7 @@ internal fun PushAlertChoices.toPushAlertChoicesEntity(): PushAlertChoicesEntity
             lowestLevel = pollenChoice.lowestLevel.level
         )
     },
-    temperatureTrend = temperatureTrend
+    temperatureTrend = temperatureTrend,
+    strongWind = strongWind,
+    favoriteIds = favoriteIds
 )

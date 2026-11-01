@@ -10,5 +10,9 @@ internal data class PushAlertChoicesEntity(
     @SerialName(value = "pollen_choices")
     val pollenChoices: List<PollenChoiceEntity> = emptyList(),
     @SerialName(value = "temperature_trend")
-    val temperatureTrend: Boolean = false
+    val temperatureTrend: Boolean = false,
+    @SerialName(value = "strong_wind")
+    val strongWind: Boolean = false,
+    @SerialName(value = "favorite_ids")
+    val favoriteIds: Set<String> = emptySet()
 )

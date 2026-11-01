@@ -3,20 +3,30 @@ package se.vadretapp.vadret.pushalert.model
 data class PushAlertChoices(
     val warningLowestLevel: WarningAlertLevel?,
     val pollenChoices: List<PollenChoice>,
-    val temperatureTrend: Boolean
+    val temperatureTrend: Boolean,
+    val strongWind: Boolean,
+    val favoriteIds: Set<String>
 ) {
-    fun isAnythingChosen(): Boolean = warningLowestLevel != null || pollenChoices.isNotEmpty() || temperatureTrend
+    fun isAnythingChosen(): Boolean =
+        warningLowestLevel != null ||
+            pollenChoices.isNotEmpty() ||
+            temperatureTrend ||
+            strongWind
 
     fun isWithin(other: PushAlertChoices): Boolean =
         (warningLowestLevel == null || warningLowestLevel == other.warningLowestLevel) &&
             (!temperatureTrend || other.temperatureTrend) &&
-            other.pollenChoices.containsAll(elements = pollenChoices)
+            (!strongWind || other.strongWind) &&
+            other.pollenChoices.containsAll(elements = pollenChoices) &&
+            other.favoriteIds.containsAll(elements = favoriteIds)
 
     companion object {
         val NOTHING_CHOSEN: PushAlertChoices = PushAlertChoices(
             warningLowestLevel = null,
             pollenChoices = emptyList(),
-            temperatureTrend = false
+            temperatureTrend = false,
+            strongWind = false,
+            favoriteIds = emptySet()
         )
     }
 }

@@ -28,7 +28,7 @@ internal class DefaultSyncPushAlertsTask(
     private val deviceTokenSource: DeviceTokenSource,
     private val notificationPermissionSource: NotificationPermissionSource,
     private val sealedMessageKey: SealedMessageKey,
-    private val getCurrentGeohashTask: GetCurrentGeohashTask,
+    private val getPushAlertGeohashesTask: GetPushAlertGeohashesTask,
     private val clock: Clock
 ) : SyncPushAlertsTask {
     private val syncMutex = Mutex()
@@ -91,14 +91,15 @@ internal class DefaultSyncPushAlertsTask(
     private suspend fun follow(pushAlertChoices: PushAlertChoices): Either<Failure, Unit> =
         installation().flatMap { installationToken: InstallationToken ->
             registerDevice(installationToken = installationToken).flatMap {
-                getCurrentGeohashTask().flatMap { geohash: Geohash ->
+                getPushAlertGeohashesTask(favoriteIds = pushAlertChoices.favoriteIds).flatMap { geohashes: List<Geohash> ->
                     pushAlertRepository.replaceSubscription(
                         installationToken = installationToken,
                         pushAlertSubscription = PushAlertSubscription(
-                            geohash = geohash,
+                            geohashes = geohashes,
                             warningLowestLevel = pushAlertChoices.warningLowestLevel,
                             pollenChoices = pushAlertChoices.pollenChoices,
-                            temperatureTrend = pushAlertChoices.temperatureTrend
+                            temperatureTrend = pushAlertChoices.temperatureTrend,
+                            strongWind = pushAlertChoices.strongWind
                         )
                     )
                 }

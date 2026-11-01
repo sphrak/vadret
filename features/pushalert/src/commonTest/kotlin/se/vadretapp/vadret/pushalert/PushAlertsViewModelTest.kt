@@ -12,7 +12,9 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
+import se.vadretapp.vadret.favorite.model.Favorite
 import se.vadretapp.vadret.pollen.model.PollenType
+import se.vadretapp.vadret.pushalert.model.FavoriteRow
 import se.vadretapp.vadret.pushalert.model.PollenAlertLevel
 import se.vadretapp.vadret.pushalert.model.PollenChoice
 import se.vadretapp.vadret.pushalert.model.PushAlertChoices
@@ -51,6 +53,31 @@ class PushAlertsViewModelTest {
         assertEquals(
             expected = emptyList(),
             actual = savePushAlertChoicesTask.saved
+        )
+    }
+
+    @Test
+    fun strongWindAsTheFirstChoiceWaitsForPermissionAndIsSavedOnceItIsGranted() = runTest(context = testDispatcher) {
+        val savePushAlertChoicesTask = FakeSavePushAlertChoicesTask()
+        val viewModel = startedViewModel(savePushAlertChoicesTask = savePushAlertChoicesTask)
+
+        viewModel.onEvent(event = PushAlertsEvent.OnStrongWindToggled(isEnabled = true))
+        advanceUntilIdle()
+        val waiting = viewModel.state.value.pendingChoices to savePushAlertChoicesTask.saved.toList()
+        viewModel.onEvent(event = PushAlertsEvent.OnNotificationPermissionResult(isGranted = true))
+        advanceUntilIdle()
+
+        assertEquals(
+            expected = STRONG_WIND_ONLY to emptyList<PushAlertChoices>(),
+            actual = waiting
+        )
+        assertEquals(
+            expected = listOf(STRONG_WIND_ONLY),
+            actual = savePushAlertChoicesTask.saved
+        )
+        assertEquals(
+            expected = null,
+            actual = viewModel.state.value.pendingChoices
         )
     }
 
@@ -129,6 +156,43 @@ class PushAlertsViewModelTest {
         assertEquals(
             expected = 3,
             actual = syncPushAlertsTask.syncs
+        )
+    }
+
+    @Test
+    fun withAlertsAlreadyOnStrongWindIsSavedAndSyncedAtOnceBothOnAndOff() = runTest(context = testDispatcher) {
+        val savePushAlertChoicesTask = FakeSavePushAlertChoicesTask()
+        val syncPushAlertsTask = FakeSyncPushAlertsTask()
+        val viewModel = startedViewModel(
+            choices = WARNINGS_FROM_YELLOW,
+            savePushAlertChoicesTask = savePushAlertChoicesTask,
+            syncPushAlertsTask = syncPushAlertsTask
+        )
+
+        viewModel.onEvent(event = PushAlertsEvent.OnStrongWindToggled(isEnabled = true))
+        advanceUntilIdle()
+        val shown = viewModel.state.value.choices.strongWind
+        viewModel.onEvent(event = PushAlertsEvent.OnStrongWindToggled(isEnabled = false))
+        advanceUntilIdle()
+
+        assertEquals(
+            expected = listOf(
+                WARNINGS_FROM_YELLOW.copy(strongWind = true),
+                WARNINGS_FROM_YELLOW
+            ),
+            actual = savePushAlertChoicesTask.saved
+        )
+        assertEquals(
+            expected = Triple(
+                first = true,
+                second = false,
+                third = 2
+            ),
+            actual = Triple(
+                first = shown,
+                second = viewModel.state.value.choices.strongWind,
+                third = syncPushAlertsTask.syncs
+            )
         )
     }
 
@@ -378,6 +442,51 @@ class PushAlertsViewModelTest {
     }
 
     @Test
+    fun outsideSwedenStrongWindIsNotTurnedOnAndADialogSaysWhy() = runTest(context = testDispatcher) {
+        val savePushAlertChoicesTask = FakeSavePushAlertChoicesTask()
+        val viewModel = startedViewModel(
+            choices = WARNINGS_FROM_YELLOW,
+            savePushAlertChoicesTask = savePushAlertChoicesTask,
+            isOutsideSwedenTask = FakeIsOutsideSwedenTask(isOutsideSweden = true)
+        )
+
+        viewModel.onEvent(event = PushAlertsEvent.OnStrongWindToggled(isEnabled = true))
+        advanceUntilIdle()
+
+        assertEquals(
+            expected = Triple(
+                first = emptyList<PushAlertChoices>(),
+                second = WARNINGS_FROM_YELLOW,
+                third = true
+            ),
+            actual = Triple(
+                first = savePushAlertChoicesTask.saved,
+                second = viewModel.state.value.choices,
+                third = viewModel.state.value.isOutsideSwedenDialogVisible
+            )
+        )
+    }
+
+    @Test
+    fun outsideSwedenStrongWindAsTheOnlyAlertCanBeTurnedOffWithoutAskingWhereThePhoneIs() = runTest(context = testDispatcher) {
+        val savePushAlertChoicesTask = FakeSavePushAlertChoicesTask()
+        val isOutsideSwedenTask = FakeIsOutsideSwedenTask(isOutsideSweden = true)
+        val viewModel = startedViewModel(
+            choices = STRONG_WIND_ONLY,
+            savePushAlertChoicesTask = savePushAlertChoicesTask,
+            isOutsideSwedenTask = isOutsideSwedenTask
+        )
+
+        viewModel.onEvent(event = PushAlertsEvent.OnStrongWindToggled(isEnabled = false))
+        advanceUntilIdle()
+
+        assertEquals(
+            expected = listOf(PushAlertChoices.NOTHING_CHOSEN) to 0,
+            actual = savePushAlertChoicesTask.saved to isOutsideSwedenTask.checks
+        )
+    }
+
+    @Test
     fun choicesNotSentYetShowANoticeUntilASyncWorks() = runTest(context = testDispatcher) {
         val observePushAlertSyncPendingTask = FakeObservePushAlertSyncPendingTask()
         val viewModel = startedViewModel(
@@ -453,16 +562,363 @@ class PushAlertsViewModelTest {
         )
     }
 
+    @Test
+    fun startingShowsASwitchForEverySavedPlaceInTheOrderTheyWereSaved() = runTest(context = testDispatcher) {
+        val viewModel = startedViewModel(
+            choices = WARNINGS_FROM_YELLOW.copy(favoriteIds = setOf(GOTEBORG_FAVORITE.favoriteId)),
+            observeFavoritesTask = FakeObserveFavoritesTask(
+                favorites = listOf(
+                    MALMO_FAVORITE,
+                    GOTEBORG_FAVORITE,
+                    BERLIN_FAVORITE
+                )
+            )
+        )
+
+        assertEquals(
+            expected = listOf(
+                FavoriteRow(
+                    favoriteId = MALMO_FAVORITE.favoriteId,
+                    locality = "Malmö",
+                    isChecked = false,
+                    isInSweden = true
+                ),
+                FavoriteRow(
+                    favoriteId = GOTEBORG_FAVORITE.favoriteId,
+                    locality = "Göteborg",
+                    isChecked = true,
+                    isInSweden = true
+                ),
+                FavoriteRow(
+                    favoriteId = BERLIN_FAVORITE.favoriteId,
+                    locality = "Berlin",
+                    isChecked = false,
+                    isInSweden = false
+                )
+            ),
+            actual = viewModel.state.value.favoriteRows
+        )
+    }
+
+    @Test
+    fun aSavedPlaceTurnedOnAndOffIsSavedAndSyncedAtOnce() = runTest(context = testDispatcher) {
+        val savePushAlertChoicesTask = FakeSavePushAlertChoicesTask()
+        val syncPushAlertsTask = FakeSyncPushAlertsTask()
+        val viewModel = startedViewModel(
+            choices = WARNINGS_FROM_YELLOW,
+            savePushAlertChoicesTask = savePushAlertChoicesTask,
+            syncPushAlertsTask = syncPushAlertsTask,
+            observeFavoritesTask = FakeObserveFavoritesTask(
+                favorites = listOf(
+                    MALMO_FAVORITE,
+                    GOTEBORG_FAVORITE
+                )
+            )
+        )
+
+        toggle(
+            viewModel = viewModel,
+            favorite = MALMO_FAVORITE,
+            isEnabled = true
+        )
+        val shown = viewModel.state.value.checkedFavoriteIds()
+        toggle(
+            viewModel = viewModel,
+            favorite = MALMO_FAVORITE,
+            isEnabled = false
+        )
+
+        assertEquals(
+            expected = listOf(
+                WARNINGS_FROM_YELLOW.copy(favoriteIds = setOf(MALMO_FAVORITE.favoriteId)),
+                WARNINGS_FROM_YELLOW
+            ),
+            actual = savePushAlertChoicesTask.saved
+        )
+        assertEquals(
+            expected = Triple(
+                first = setOf(MALMO_FAVORITE.favoriteId),
+                second = emptySet<String>(),
+                third = 2
+            ),
+            actual = Triple(
+                first = shown,
+                second = viewModel.state.value.checkedFavoriteIds(),
+                third = syncPushAlertsTask.syncs
+            )
+        )
+    }
+
+    @Test
+    fun aSavedPlaceAloneIsSavedWithoutAskingToNotifySinceItChoosesNoAlert() = runTest(context = testDispatcher) {
+        val savePushAlertChoicesTask = FakeSavePushAlertChoicesTask()
+        val viewModel = startedViewModel(
+            savePushAlertChoicesTask = savePushAlertChoicesTask,
+            observeFavoritesTask = FakeObserveFavoritesTask(favorites = listOf(MALMO_FAVORITE))
+        )
+
+        toggle(
+            viewModel = viewModel,
+            favorite = MALMO_FAVORITE,
+            isEnabled = true
+        )
+
+        assertEquals(
+            expected = null,
+            actual = viewModel.state.value.pendingChoices
+        )
+        assertEquals(
+            expected = listOf(PushAlertChoices.NOTHING_CHOSEN.copy(favoriteIds = setOf(MALMO_FAVORITE.favoriteId))),
+            actual = savePushAlertChoicesTask.saved
+        )
+    }
+
+    @Test
+    fun aFifthSavedPlaceIsNotTurnedOnAndADialogSaysWhyUntilAnotherIsTurnedOff() = runTest(context = testDispatcher) {
+        val savePushAlertChoicesTask = FakeSavePushAlertChoicesTask()
+        val fourPlaces = setOf(
+            MALMO_FAVORITE.favoriteId,
+            GOTEBORG_FAVORITE.favoriteId,
+            UPPSALA_FAVORITE.favoriteId,
+            UMEA_FAVORITE.favoriteId
+        )
+        val viewModel = startedViewModel(
+            choices = WARNINGS_FROM_YELLOW.copy(favoriteIds = fourPlaces),
+            savePushAlertChoicesTask = savePushAlertChoicesTask,
+            observeFavoritesTask = FakeObserveFavoritesTask(favorites = FIVE_PLACES)
+        )
+
+        toggle(
+            viewModel = viewModel,
+            favorite = KIRUNA_FAVORITE,
+            isEnabled = true
+        )
+        val refused = viewModel.state.value
+        viewModel.onEvent(event = PushAlertsEvent.OnFavoriteLimitDialogDismissed)
+        advanceUntilIdle()
+        val isDialogVisibleAfterDismissal = viewModel.state.value.isFavoriteLimitDialogVisible
+        toggle(
+            viewModel = viewModel,
+            favorite = UMEA_FAVORITE,
+            isEnabled = false
+        )
+        toggle(
+            viewModel = viewModel,
+            favorite = KIRUNA_FAVORITE,
+            isEnabled = true
+        )
+
+        assertEquals(
+            expected = Triple(
+                first = true,
+                second = fourPlaces,
+                third = false
+            ),
+            actual = Triple(
+                first = refused.isFavoriteLimitDialogVisible,
+                second = refused.checkedFavoriteIds(),
+                third = isDialogVisibleAfterDismissal
+            )
+        )
+        assertEquals(
+            expected = listOf(
+                fourPlaces - UMEA_FAVORITE.favoriteId,
+                fourPlaces - UMEA_FAVORITE.favoriteId + KIRUNA_FAVORITE.favoriteId
+            ),
+            actual = savePushAlertChoicesTask.saved.map { pushAlertChoices: PushAlertChoices -> pushAlertChoices.favoriteIds }
+        )
+    }
+
+    @Test
+    fun aSavedPlaceRemovedElsewhereDisappearsAndNoLongerCountsTowardsTheLimit() = runTest(context = testDispatcher) {
+        val savePushAlertChoicesTask = FakeSavePushAlertChoicesTask()
+        val observeFavoritesTask = FakeObserveFavoritesTask(favorites = FIVE_PLACES)
+        val viewModel = startedViewModel(
+            choices = WARNINGS_FROM_YELLOW.copy(
+                favoriteIds = setOf(
+                    MALMO_FAVORITE.favoriteId,
+                    GOTEBORG_FAVORITE.favoriteId,
+                    UPPSALA_FAVORITE.favoriteId,
+                    UMEA_FAVORITE.favoriteId
+                )
+            ),
+            savePushAlertChoicesTask = savePushAlertChoicesTask,
+            observeFavoritesTask = observeFavoritesTask
+        )
+
+        observeFavoritesTask.favorites.value = FIVE_PLACES - UMEA_FAVORITE
+        advanceUntilIdle()
+        val shownPlaces = viewModel.state.value.favoriteRows.map { favoriteRow: FavoriteRow -> favoriteRow.favoriteId }
+        toggle(
+            viewModel = viewModel,
+            favorite = KIRUNA_FAVORITE,
+            isEnabled = true
+        )
+
+        assertEquals(
+            expected = (FIVE_PLACES - UMEA_FAVORITE).map { favorite: Favorite -> favorite.favoriteId },
+            actual = shownPlaces
+        )
+        assertEquals(
+            expected = listOf(
+                setOf(
+                    MALMO_FAVORITE.favoriteId,
+                    GOTEBORG_FAVORITE.favoriteId,
+                    UPPSALA_FAVORITE.favoriteId,
+                    KIRUNA_FAVORITE.favoriteId
+                )
+            ),
+            actual = savePushAlertChoicesTask.saved.map { pushAlertChoices: PushAlertChoices -> pushAlertChoices.favoriteIds }
+        )
+    }
+
+    @Test
+    fun aSavedPlaceAbroadIsNotTurnedOnAndADialogSaysWhy() = runTest(context = testDispatcher) {
+        val savePushAlertChoicesTask = FakeSavePushAlertChoicesTask()
+        val viewModel = startedViewModel(
+            choices = WARNINGS_FROM_YELLOW,
+            savePushAlertChoicesTask = savePushAlertChoicesTask,
+            observeFavoritesTask = FakeObserveFavoritesTask(favorites = listOf(BERLIN_FAVORITE))
+        )
+
+        toggle(
+            viewModel = viewModel,
+            favorite = BERLIN_FAVORITE,
+            isEnabled = true
+        )
+        val refused = viewModel.state.value
+        viewModel.onEvent(event = PushAlertsEvent.OnOutsideSwedenDialogDismissed)
+        advanceUntilIdle()
+
+        assertEquals(
+            expected = Triple(
+                first = emptyList<PushAlertChoices>(),
+                second = emptySet<String>(),
+                third = true
+            ),
+            actual = Triple(
+                first = savePushAlertChoicesTask.saved,
+                second = refused.checkedFavoriteIds(),
+                third = refused.isOutsideSwedenDialogVisible
+            )
+        )
+        assertEquals(
+            expected = false,
+            actual = viewModel.state.value.isOutsideSwedenDialogVisible
+        )
+    }
+
+    @Test
+    fun outsideSwedenASavedPlaceInSwedenIsNotTurnedOnButCanBeTurnedOffWithoutAskingWhereThePhoneIs() = runTest(context = testDispatcher) {
+        val savePushAlertChoicesTask = FakeSavePushAlertChoicesTask()
+        val isOutsideSwedenTask = FakeIsOutsideSwedenTask(isOutsideSweden = true)
+        val viewModel = startedViewModel(
+            choices = WARNINGS_FROM_YELLOW.copy(favoriteIds = setOf(GOTEBORG_FAVORITE.favoriteId)),
+            savePushAlertChoicesTask = savePushAlertChoicesTask,
+            observeFavoritesTask = FakeObserveFavoritesTask(
+                favorites = listOf(
+                    MALMO_FAVORITE,
+                    GOTEBORG_FAVORITE
+                )
+            ),
+            isOutsideSwedenTask = isOutsideSwedenTask
+        )
+
+        toggle(
+            viewModel = viewModel,
+            favorite = MALMO_FAVORITE,
+            isEnabled = true
+        )
+        val refused = viewModel.state.value
+        val checksWhenTurningOn = isOutsideSwedenTask.checks
+        toggle(
+            viewModel = viewModel,
+            favorite = GOTEBORG_FAVORITE,
+            isEnabled = false
+        )
+
+        assertEquals(
+            expected = Triple(
+                first = true,
+                second = setOf(GOTEBORG_FAVORITE.favoriteId),
+                third = 1
+            ),
+            actual = Triple(
+                first = refused.isOutsideSwedenDialogVisible,
+                second = refused.checkedFavoriteIds(),
+                third = checksWhenTurningOn
+            )
+        )
+        assertEquals(
+            expected = listOf(WARNINGS_FROM_YELLOW) to 1,
+            actual = savePushAlertChoicesTask.saved to isOutsideSwedenTask.checks
+        )
+    }
+
+    @Test
+    fun aSavedPlaceThatIsNoLongerShownCannotBeTurnedOn() = runTest(context = testDispatcher) {
+        val savePushAlertChoicesTask = FakeSavePushAlertChoicesTask()
+        val viewModel = startedViewModel(
+            choices = WARNINGS_FROM_YELLOW,
+            savePushAlertChoicesTask = savePushAlertChoicesTask,
+            observeFavoritesTask = FakeObserveFavoritesTask(favorites = listOf(MALMO_FAVORITE))
+        )
+
+        toggle(
+            viewModel = viewModel,
+            favorite = GOTEBORG_FAVORITE,
+            isEnabled = true
+        )
+
+        assertEquals(
+            expected = emptyList<PushAlertChoices>(),
+            actual = savePushAlertChoicesTask.saved
+        )
+    }
+
+    @Test
+    fun savedPlacesThatCannotBeReadAreShownAsAFailure() = runTest(context = testDispatcher) {
+        val viewModel = startedViewModel(
+            choices = WARNINGS_FROM_YELLOW,
+            observeFavoritesTask = FakeObserveFavoritesTask(failure = Failure(errorCode = ErrorCode.STORAGE_FAILED))
+        )
+
+        assertEquals(
+            expected = Failure(errorCode = ErrorCode.STORAGE_FAILED),
+            actual = viewModel.state.value.failure
+        )
+        assertEquals(
+            expected = emptyList(),
+            actual = viewModel.state.value.favoriteRows
+        )
+    }
+
+    private fun TestScope.toggle(
+        viewModel: PushAlertsViewModel,
+        favorite: Favorite,
+        isEnabled: Boolean
+    ) {
+        viewModel.onEvent(
+            event = PushAlertsEvent.OnFavoriteToggled(
+                favoriteId = favorite.favoriteId,
+                isEnabled = isEnabled
+            )
+        )
+        advanceUntilIdle()
+    }
+
     private fun TestScope.startedViewModel(
         choices: PushAlertChoices = PushAlertChoices.NOTHING_CHOSEN,
         savePushAlertChoicesTask: FakeSavePushAlertChoicesTask = FakeSavePushAlertChoicesTask(),
         syncPushAlertsTask: FakeSyncPushAlertsTask = FakeSyncPushAlertsTask(),
         observePushAlertSyncPendingTask: FakeObservePushAlertSyncPendingTask = FakeObservePushAlertSyncPendingTask(),
+        observeFavoritesTask: FakeObserveFavoritesTask = FakeObserveFavoritesTask(),
         isOutsideSwedenTask: FakeIsOutsideSwedenTask = FakeIsOutsideSwedenTask()
     ): PushAlertsViewModel {
         val viewModel = PushAlertsViewModel(
             observePushAlertChoicesTask = FakeObservePushAlertChoicesTask(choices = choices),
             observePushAlertSyncPendingTask = observePushAlertSyncPendingTask,
+            observeFavoritesTask = observeFavoritesTask,
             savePushAlertChoicesTask = savePushAlertChoicesTask,
             syncPushAlertsTask = syncPushAlertsTask,
             getPollenTypesTask = FakeGetPollenTypesTask(pollenTypes = listOf(BIRCH, GRASS)),
@@ -486,5 +942,21 @@ private val GRASS = PollenType(
 private val WARNINGS_FROM_YELLOW = PushAlertChoices(
     warningLowestLevel = WarningAlertLevel.YELLOW,
     pollenChoices = emptyList(),
-    temperatureTrend = false
+    temperatureTrend = false,
+    strongWind = false,
+    favoriteIds = emptySet()
 )
+private val STRONG_WIND_ONLY = PushAlertChoices.NOTHING_CHOSEN.copy(strongWind = true)
+private val FIVE_PLACES = listOf(
+    MALMO_FAVORITE,
+    GOTEBORG_FAVORITE,
+    UPPSALA_FAVORITE,
+    UMEA_FAVORITE,
+    KIRUNA_FAVORITE
+)
+
+private fun PushAlertsState.checkedFavoriteIds(): Set<String> =
+    favoriteRows
+        .filter { favoriteRow: FavoriteRow -> favoriteRow.isChecked }
+        .map { favoriteRow: FavoriteRow -> favoriteRow.favoriteId }
+        .toSet()

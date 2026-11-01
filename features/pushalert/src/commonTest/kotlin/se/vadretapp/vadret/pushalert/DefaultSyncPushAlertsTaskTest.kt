@@ -16,6 +16,7 @@ import se.vadretapp.vadret.pushalert.model.InstallationToken
 import se.vadretapp.vadret.pushalert.model.PushAlertChoices
 import se.vadretapp.vadret.pushalert.model.WarningAlertLevel
 import se.vadretapp.vadret.pushalert.usecase.DefaultGetCurrentGeohashTask
+import se.vadretapp.vadret.pushalert.usecase.DefaultGetPushAlertGeohashesTask
 import se.vadretapp.vadret.pushalert.usecase.DefaultSyncPushAlertsTask
 import kotlin.io.encoding.Base64
 import kotlin.test.Test
@@ -64,7 +65,69 @@ class DefaultSyncPushAlertsTaskTest {
             expected = listOf(
                 "install",
                 "register installation-1 fcm-1 replacing null key 65 at $NOW_MILLIS",
-                "subscribe installation-1 u6sce YELLOW false"
+                "subscribe installation-1 u6sce YELLOW false false"
+            ),
+            actual = pushAlertRepository.calls
+        )
+    }
+
+    @Test
+    fun onlyStrongWindChosenInstallsRegistersAndSubscribesForIt() = runTest {
+        val pushAlertRepository = FakePushAlertRepository(choices = STRONG_WIND_ONLY)
+
+        val synced = syncPushAlertsTask(pushAlertRepository = pushAlertRepository)()
+
+        assertEquals(
+            expected = Unit.asRight(),
+            actual = synced
+        )
+        assertEquals(
+            expected = listOf(
+                "install",
+                "register installation-1 fcm-1 replacing null key 65 at $NOW_MILLIS",
+                "subscribe installation-1 u6sce null false true"
+            ),
+            actual = pushAlertRepository.calls
+        )
+    }
+
+    @Test
+    fun theSubscriptionSaysWhetherStrongWindIsFollowed() = runTest {
+        val subscribed = listOf(
+            WARNINGS_FROM_YELLOW,
+            WARNINGS_FROM_YELLOW.copy(strongWind = true)
+        ).map { pushAlertChoices: PushAlertChoices ->
+            val pushAlertRepository = FakePushAlertRepository(choices = pushAlertChoices)
+            syncPushAlertsTask(pushAlertRepository = pushAlertRepository)()
+            pushAlertRepository.calls.last()
+        }
+
+        assertEquals(
+            expected = listOf(
+                "subscribe installation-1 u6sce YELLOW false false",
+                "subscribe installation-1 u6sce YELLOW false true"
+            ),
+            actual = subscribed
+        )
+    }
+
+    @Test
+    fun turningOffStrongWindWhenNothingElseIsChosenMakesTheServerForgetThePhone() = runTest {
+        val pushAlertRepository = FakePushAlertRepository(
+            choices = STRONG_WIND_ONLY,
+            installationToken = InstallationToken(value = "installation-1")
+        )
+        val syncPushAlertsTask = syncPushAlertsTask(pushAlertRepository = pushAlertRepository)
+        syncPushAlertsTask()
+
+        pushAlertRepository.saveChoices(pushAlertChoices = STRONG_WIND_ONLY.copy(strongWind = false))
+        syncPushAlertsTask()
+
+        assertEquals(
+            expected = listOf(
+                "register installation-1 fcm-1 replacing null key 65 at $NOW_MILLIS",
+                "subscribe installation-1 u6sce null false true",
+                "forget installation-1"
             ),
             actual = pushAlertRepository.calls
         )
@@ -124,7 +187,7 @@ class DefaultSyncPushAlertsTaskTest {
             expected = listOf(
                 "install",
                 "register installation-1 fcm-1 replacing null key 65 at $NOW_MILLIS",
-                "subscribe installation-1 u6sce YELLOW false"
+                "subscribe installation-1 u6sce YELLOW false false"
             ),
             actual = pushAlertRepository.calls
         )
@@ -140,8 +203,176 @@ class DefaultSyncPushAlertsTaskTest {
         )()
 
         assertEquals(
-            expected = "subscribe installation-1 u3chr YELLOW false",
+            expected = "subscribe installation-1 u3chr YELLOW false false",
             actual = pushAlertRepository.calls.last()
+        )
+    }
+
+    @Test
+    fun chosenSavedPlacesInSwedenAreFollowedAfterWhereThePhoneIs() = runTest {
+        val pushAlertRepository = FakePushAlertRepository(
+            choices = WARNINGS_FROM_YELLOW.copy(
+                favoriteIds = setOf(
+                    MALMO_FAVORITE.favoriteId,
+                    GOTEBORG_FAVORITE.favoriteId,
+                    BERLIN_FAVORITE.favoriteId
+                )
+            )
+        )
+
+        syncPushAlertsTask(
+            pushAlertRepository = pushAlertRepository,
+            favoriteRepository = FakeFavoriteRepository(
+                favorites = listOf(
+                    GOTEBORG_FAVORITE,
+                    UPPSALA_FAVORITE,
+                    BERLIN_FAVORITE,
+                    MALMO_FAVORITE
+                )
+            )
+        )()
+
+        assertEquals(
+            expected = "subscribe installation-1 u6sce,u6282,u3chr YELLOW false false",
+            actual = pushAlertRepository.calls.last()
+        )
+    }
+
+    @Test
+    fun placesSharingAGeohashWithEachOtherOrWithWhereThePhoneIsAreSentOnce() = runTest {
+        val sharingPlaces = listOf(
+            STOCKHOLM_NORRMALM_FAVORITE,
+            MALMO_FAVORITE,
+            MALMO_CENTRAL_FAVORITE,
+            LIMHAMN_FAVORITE
+        )
+        val pushAlertRepository = FakePushAlertRepository(
+            choices = WARNINGS_FROM_YELLOW.copy(favoriteIds = sharingPlaces.map { favorite -> favorite.favoriteId }.toSet())
+        )
+
+        syncPushAlertsTask(
+            pushAlertRepository = pushAlertRepository,
+            favoriteRepository = FakeFavoriteRepository(favorites = sharingPlaces)
+        )()
+
+        assertEquals(
+            expected = "subscribe installation-1 u6sce,u3chr,u3chn YELLOW false false",
+            actual = pushAlertRepository.calls.last()
+        )
+    }
+
+    @Test
+    fun noMoreThanFivePlacesAreSentAndWhereThePhoneIsIsAlwaysOne() = runTest {
+        val manyPlaces = listOf(
+            MALMO_FAVORITE,
+            GOTEBORG_FAVORITE,
+            UPPSALA_FAVORITE,
+            UMEA_FAVORITE,
+            KIRUNA_FAVORITE,
+            VISBY_FAVORITE
+        )
+        val pushAlertRepository = FakePushAlertRepository(
+            choices = WARNINGS_FROM_YELLOW.copy(favoriteIds = manyPlaces.map { favorite -> favorite.favoriteId }.toSet())
+        )
+
+        syncPushAlertsTask(
+            pushAlertRepository = pushAlertRepository,
+            favoriteRepository = FakeFavoriteRepository(favorites = manyPlaces)
+        )()
+
+        assertEquals(
+            expected = "subscribe installation-1 u6sce,u3chr,u6282,u6ss9,u7q7j YELLOW false false",
+            actual = pushAlertRepository.calls.last()
+        )
+    }
+
+    @Test
+    fun aSavedPlaceRemovedElsewhereInTheAppIsLeftOutOfTheNextSync() = runTest {
+        val favoriteRepository = FakeFavoriteRepository(
+            favorites = listOf(
+                MALMO_FAVORITE,
+                GOTEBORG_FAVORITE
+            )
+        )
+        val pushAlertRepository = FakePushAlertRepository(
+            choices = WARNINGS_FROM_YELLOW.copy(
+                favoriteIds = setOf(
+                    MALMO_FAVORITE.favoriteId,
+                    GOTEBORG_FAVORITE.favoriteId
+                )
+            )
+        )
+        val syncPushAlertsTask = syncPushAlertsTask(
+            pushAlertRepository = pushAlertRepository,
+            favoriteRepository = favoriteRepository
+        )
+
+        syncPushAlertsTask()
+        favoriteRepository.removeFavorite(favoriteId = MALMO_FAVORITE.favoriteId)
+        syncPushAlertsTask()
+
+        assertEquals(
+            expected = listOf(
+                "subscribe installation-1 u6sce,u3chr,u6282 YELLOW false false",
+                "subscribe installation-1 u6sce,u6282 YELLOW false false"
+            ),
+            actual = pushAlertRepository.calls.filter { call -> call.startsWith(prefix = "subscribe") }
+        )
+    }
+
+    @Test
+    fun savedPlacesAloneInstallNothingAndMakeTheServerForgetThePhone() = runTest {
+        val newPhone = FakePushAlertRepository(choices = PLACES_ONLY)
+        val installedPhone = FakePushAlertRepository(
+            choices = PLACES_ONLY,
+            installationToken = InstallationToken(value = "installation-1")
+        )
+
+        val synced = listOf(
+            newPhone,
+            installedPhone
+        ).map { pushAlertRepository: FakePushAlertRepository ->
+            syncPushAlertsTask(
+                pushAlertRepository = pushAlertRepository,
+                favoriteRepository = FakeFavoriteRepository(favorites = listOf(MALMO_FAVORITE))
+            )()
+        }
+
+        assertEquals(
+            expected = List(size = 2) { Unit.asRight() },
+            actual = synced
+        )
+        assertEquals(
+            expected = listOf(
+                emptyList<String>(),
+                listOf("forget installation-1")
+            ),
+            actual = listOf(
+                newPhone.calls,
+                installedPhone.calls
+            )
+        )
+    }
+
+    @Test
+    fun savedPlacesThatCannotBeReadSubscribeNothingAndAreTriedAgainLater() = runTest {
+        val pushAlertRepository = FakePushAlertRepository(choices = WARNINGS_FROM_YELLOW.copy(favoriteIds = setOf(MALMO_FAVORITE.favoriteId)))
+
+        val synced = syncPushAlertsTask(
+            pushAlertRepository = pushAlertRepository,
+            favoriteRepository = FakeFavoriteRepository(
+                favorites = listOf(MALMO_FAVORITE),
+                failure = Failure(errorCode = ErrorCode.STORAGE_FAILED)
+            )
+        )()
+
+        assertEquals(
+            expected = Failure(errorCode = ErrorCode.STORAGE_FAILED).asLeft(),
+            actual = synced
+        )
+        assertEquals(
+            expected = false to true,
+            actual = pushAlertRepository.calls.any { call -> call.startsWith(prefix = "subscribe") } to pushAlertRepository.isSyncPending.value
         )
     }
 
@@ -160,7 +391,7 @@ class DefaultSyncPushAlertsTaskTest {
         syncPushAlertsTask(pushAlertRepository = pushAlertRepository)()
 
         assertEquals(
-            expected = listOf("subscribe installation-1 u6sce YELLOW false"),
+            expected = listOf("subscribe installation-1 u6sce YELLOW false false"),
             actual = pushAlertRepository.calls
         )
     }
@@ -274,7 +505,7 @@ class DefaultSyncPushAlertsTaskTest {
             expected = listOf(
                 "register installation-1 fcm-2 replacing fcm-1 key 65 at $NOW_MILLIS",
                 "register installation-1 fcm-2 replacing fcm-1 key 65 at $NOW_MILLIS",
-                "subscribe installation-1 u6sce YELLOW false"
+                "subscribe installation-1 u6sce YELLOW false false"
             ),
             actual = pushAlertRepository.calls
         )
@@ -377,11 +608,11 @@ class DefaultSyncPushAlertsTaskTest {
         )
         assertEquals(
             expected = listOf(
-                "subscribe installation-0 u6sce YELLOW false",
+                "subscribe installation-0 u6sce YELLOW false false",
                 "clear",
                 "install",
                 "register installation-1 fcm-1 replacing null key 65 at $NOW_MILLIS",
-                "subscribe installation-1 u6sce YELLOW false"
+                "subscribe installation-1 u6sce YELLOW false false"
             ),
             actual = pushAlertRepository.calls
         )
@@ -469,13 +700,17 @@ private fun syncPushAlertsTask(
     deviceTokenSource: FakeDeviceTokenSource = FakeDeviceTokenSource(),
     notificationPermissionSource: FakeNotificationPermissionSource = FakeNotificationPermissionSource(),
     sealedMessageKey: FakeSealedMessageKey = FakeSealedMessageKey(),
-    locationRepository: FakeLocationRepository = FakeLocationRepository()
+    locationRepository: FakeLocationRepository = FakeLocationRepository(),
+    favoriteRepository: FakeFavoriteRepository = FakeFavoriteRepository()
 ): DefaultSyncPushAlertsTask = DefaultSyncPushAlertsTask(
     pushAlertRepository = pushAlertRepository,
     deviceTokenSource = deviceTokenSource,
     notificationPermissionSource = notificationPermissionSource,
     sealedMessageKey = sealedMessageKey,
-    getCurrentGeohashTask = DefaultGetCurrentGeohashTask(locationRepository = locationRepository),
+    getPushAlertGeohashesTask = DefaultGetPushAlertGeohashesTask(
+        getCurrentGeohashTask = DefaultGetCurrentGeohashTask(locationRepository = locationRepository),
+        favoriteRepository = favoriteRepository
+    ),
     clock = FIXED_CLOCK
 )
 
@@ -486,8 +721,14 @@ private val FIXED_CLOCK: Clock = object : Clock {
 private val WARNINGS_FROM_YELLOW = PushAlertChoices(
     warningLowestLevel = WarningAlertLevel.YELLOW,
     pollenChoices = emptyList(),
-    temperatureTrend = false
+    temperatureTrend = false,
+    strongWind = false,
+    favoriteIds = emptySet()
 )
+
+private val STRONG_WIND_ONLY = PushAlertChoices.NOTHING_CHOSEN.copy(strongWind = true)
+
+private val PLACES_ONLY = PushAlertChoices.NOTHING_CHOSEN.copy(favoriteIds = setOf(MALMO_FAVORITE.favoriteId))
 
 private val UNAUTHORIZED = Failure(errorCode = ErrorCode.HTTP_UNAUTHORIZED)
 
