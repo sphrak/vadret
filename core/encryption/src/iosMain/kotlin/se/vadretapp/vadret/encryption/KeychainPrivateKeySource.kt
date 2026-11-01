@@ -33,6 +33,7 @@ import platform.Security.errSecItemNotFound
 import platform.Security.errSecSuccess
 import platform.Security.kSecAccessControlPrivateKeyUsage
 import platform.Security.kSecAttrAccessControl
+import platform.Security.kSecAttrAccessGroup
 import platform.Security.kSecAttrAccessible
 import platform.Security.kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
 import platform.Security.kSecAttrApplicationTag
@@ -51,12 +52,16 @@ import platform.Security.kSecReturnRef
 import se.vadretapp.vadret.encryption.error.EncryptionError
 import se.vadretapp.vadret.encryption.extension.describeAndRelease
 import se.vadretapp.vadret.encryption.extension.toCFData
+import se.vadretapp.vadret.encryption.extension.toCFString
 import se.vadretapp.vadret.encryption.model.KeyAlias
+import se.vadretapp.vadret.encryption.model.KeychainAccessGroup
 import se.vadretapp.vadret.logging.Logger
 import se.vadretapp.vadret.logging.LoggerFactory
 
+// Without a keychainAccessGroup the key stays in the app's own access group, out of reach of its extensions.
 internal class KeychainPrivateKeySource(
-    private val keyAlias: KeyAlias
+    private val keyAlias: KeyAlias,
+    private val keychainAccessGroup: KeychainAccessGroup?
 ) : PrivateKeySource {
     private val keychainLock = NSLock()
 
@@ -69,21 +74,29 @@ internal class KeychainPrivateKeySource(
 
     private fun findOrCreate(): Either<EncryptionError, SecKeyRef> {
         val tag = keyAlias.value.encodeToByteArray().toCFData() ?: return unavailable(description = "the key tag could not be made")
-        val privateKey = when (val found = find(tag = tag)) {
+        val accessGroup = keychainAccessGroup?.value?.toCFString()
+        val privateKey = when (val found = find(tag = tag, accessGroup = accessGroup)) {
             is Either.Left -> found
-            is Either.Right -> found.b?.asRight() ?: create(tag = tag)
+            is Either.Right -> found.b?.asRight() ?: create(tag = tag, accessGroup = accessGroup)
         }
         CFRelease(tag)
+        if (accessGroup != null) {
+            CFRelease(accessGroup)
+        }
         return privateKey
     }
 
-    private fun find(tag: CFDataRef): Either<EncryptionError, SecKeyRef?> = memScoped {
+    private fun find(
+        tag: CFDataRef,
+        accessGroup: CFStringRef?
+    ): Either<EncryptionError, SecKeyRef?> = memScoped {
         val query = cfDictionaryOf(
-            entries = listOf(
+            entries = listOfNotNull(
                 kSecClass to kSecClassKey,
                 kSecAttrKeyClass to kSecAttrKeyClassPrivate,
                 kSecAttrApplicationTag to tag,
-                kSecReturnRef to kCFBooleanTrue
+                kSecReturnRef to kCFBooleanTrue,
+                accessGroupEntry(accessGroup = accessGroup)
             )
         )
         val result = alloc<CFTypeRefVar>()
@@ -96,16 +109,20 @@ internal class KeychainPrivateKeySource(
         }
     }
 
-    private fun create(tag: CFDataRef): Either<EncryptionError, SecKeyRef> = memScoped {
+    private fun create(
+        tag: CFDataRef,
+        accessGroup: CFStringRef?
+    ): Either<EncryptionError, SecKeyRef> = memScoped {
         val keyBits = alloc<IntVar>()
         keyBits.value = P256_KEY_BITS
         val keySize = CFNumberCreate(kCFAllocatorDefault, kCFNumberSInt32Type, keyBits.ptr)
         val accessControl = secureEnclaveAccessControl()
         val privateKeyAttributes = cfDictionaryOf(
-            entries = listOf(
+            entries = listOfNotNull(
                 kSecAttrIsPermanent to kCFBooleanTrue,
                 kSecAttrApplicationTag to tag,
-                protection(accessControl = accessControl)
+                protection(accessControl = accessControl),
+                accessGroupEntry(accessGroup = accessGroup)
             )
         )
         val attributes = cfDictionaryOf(
@@ -149,6 +166,13 @@ private fun protection(accessControl: SecAccessControlRef?): Pair<CFStringRef?, 
         kSecAttrAccessible to kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
     } else {
         kSecAttrAccessControl to accessControl
+    }
+
+private fun accessGroupEntry(accessGroup: CFStringRef?): Pair<CFStringRef?, CFTypeRef?>? =
+    if (accessGroup == null) {
+        null
+    } else {
+        kSecAttrAccessGroup to accessGroup
     }
 
 private fun secureEnclaveToken(): Pair<CFStringRef?, CFTypeRef?>? =

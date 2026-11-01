@@ -4,8 +4,8 @@ import io.github.sphrak.either.Either
 import kotlinx.coroutines.flow.first
 import se.vadretapp.vadret.favorite.FavoriteRepository
 import se.vadretapp.vadret.favorite.model.Favorite
-import se.vadretapp.vadret.geohash.model.Geohash
 import se.vadretapp.vadret.pushalert.PushAlertRepository
+import se.vadretapp.vadret.pushalert.extension.toCell
 import se.vadretapp.vadret.pushalert.extension.toGeohashOrNull
 import se.vadretapp.vadret.pushalert.model.PushAlertKind
 import se.vadretapp.vadret.pushalert.model.PushAlertMessage
@@ -58,7 +58,4 @@ private fun PushAlertKind.isAboutOneCell(): Boolean =
         PushAlertKind.WIND -> true
     }
 
-private fun Geohash.toCell(): String = value.take(n = CELL_LENGTH)
-
-private const val CELL_LENGTH = 4
 private const val PLACE_NAME_SEPARATOR = " - "

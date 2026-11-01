@@ -7,6 +7,7 @@ import se.vadretapp.vadret.logging.LogLevel
 import se.vadretapp.vadret.logging.LoggerFactory
 import se.vadretapp.vadret.logging.nsLogSink
 import se.vadretapp.vadret.model.AppInfo
+import se.vadretapp.vadret.pushalert.di.iosPushAlertPlaceNameModule
 import se.vadretapp.vadret.pushalert.di.pushAlertModule
 import se.vadretapp.vadret.radar.di.iosRadarModule
 import se.vadretapp.vadret.radar.di.radarModule
@@ -16,6 +17,7 @@ import kotlin.native.Platform
 private const val NS_LOG_SINK_NAME = "nslog"
 private const val VERSION_KEY = "CFBundleShortVersionString"
 private const val UNKNOWN_VERSION = ""
+private const val APP_GROUP_KEY = "AppGroup"
 
 internal val koinApplication: KoinApplication by lazy {
     val appInfo: AppInfo = appInfo()
@@ -32,7 +34,8 @@ internal val koinApplication: KoinApplication by lazy {
                 radarModule,
                 iosRadarModule,
                 pushAlertModule,
-                iosPushAlertModule
+                iosPushAlertModule(appGroup = appGroup()),
+                iosPushAlertPlaceNameModule
             )
         )
     }
@@ -46,3 +49,7 @@ private fun appInfo(): AppInfo =
         isDebug = Platform.isDebugBinary,
         isDeveloperBuild = Platform.isDebugBinary
     )
+
+// Info.plist derives the app group from the bundle id, so a build with another bundle id gets its own group.
+private fun appGroup(): String =
+    checkNotNull(value = NSBundle.mainBundle.objectForInfoDictionaryKey(key = APP_GROUP_KEY) as? String) { "Info.plist has no $APP_GROUP_KEY" }

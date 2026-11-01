@@ -1,0 +1,20 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "push_alert_placeholder" : {
+      "comment" : "What a push alert shows if the phone cannot open it. The server names this key.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "da" : { "stringUnit" : { "state" : "translated", "value" : "Ny notifikation" } },
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Neue Mitteilung" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "New notification" } },
+        "fi" : { "stringUnit" : { "state" : "translated", "value" : "Uusi ilmoitus" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Nouvelle notification" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Nytt varsel" } },
+        "pl" : { "stringUnit" : { "state" : "translated", "value" : "Nowe powiadomienie" } },
+        "sv" : { "stringUnit" : { "state" : "translated", "value" : "Ny notis" } }
+      }
+    }
+  },
+  "version" : "1.0"
+}

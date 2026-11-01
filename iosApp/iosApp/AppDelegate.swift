@@ -28,22 +28,6 @@ final class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNU
         Messaging.messaging().apnsToken = deviceToken
     }
 
-    func application(
-        _ application: UIApplication,
-        didReceiveRemoteNotification userInfo: [AnyHashable: Any],
-        fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
-    ) {
-        guard let sealed = userInfo[sealedField] as? String else {
-            completionHandler(.noData)
-            return
-        }
-        PushAlertsBridgeKt.showSealedPushAlert(sealed: sealed) {
-            DispatchQueue.main.async {
-                completionHandler(.newData)
-            }
-        }
-    }
-
     func messaging(
         _ messaging: Messaging,
         didReceiveRegistrationToken fcmToken: String?
@@ -59,5 +43,3 @@ final class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNU
         completionHandler([.banner, .list, .sound])
     }
 }
-
-private let sealedField = "sealed"

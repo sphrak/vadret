@@ -16,8 +16,9 @@ import se.vadretapp.vadret.forecastwarning.WarningViewModel
 import se.vadretapp.vadret.lifecycle.AppStartHook
 import se.vadretapp.vadret.main.MainViewModel
 import se.vadretapp.vadret.model.AppInfo
+import se.vadretapp.vadret.pushalert.di.iosPushAlertPlaceNameModule
 import se.vadretapp.vadret.pushalert.di.pushAlertModule
-import se.vadretapp.vadret.pushalert.usecase.OpenPushAlertTask
+import se.vadretapp.vadret.pushalert.usecase.PublishPushAlertPlaceNamesTask
 import se.vadretapp.vadret.pushalert.usecase.SyncPushAlertsTask
 import se.vadretapp.vadret.radar.RadarViewModel
 import se.vadretapp.vadret.radar.di.iosRadarModule
@@ -60,7 +61,8 @@ class IosModulesTest {
                     radarModule,
                     iosRadarModule,
                     pushAlertModule,
-                    iosPushAlertModule
+                    iosPushAlertModule(appGroup = APP_GROUP),
+                    iosPushAlertPlaceNameModule
                 ) + module {
                     factory<CoroutineDispatcher> { testDispatcher }
                 }
@@ -85,10 +87,12 @@ class IosModulesTest {
         val koin: Koin = koin()
 
         assertNotNull(actual = koin.get<SyncPushAlertsTask>())
-        assertNotNull(actual = koin.get<OpenPushAlertTask>())
+        assertNotNull(actual = koin.get<PublishPushAlertPlaceNamesTask>())
         assertEquals(
-            expected = 1 to 1,
+            expected = 1 to 2,
             actual = koin.getAll<SettingsSection>().size to koin.getAll<AppStartHook>().size
         )
     }
 }
+
+private const val APP_GROUP = "group.se.vadretapp.vadret"

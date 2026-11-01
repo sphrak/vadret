@@ -70,6 +70,8 @@ xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -sdk iphonesimulator 
 
 To run on a device with your own Apple team, change `TEAM_ID` in `iosApp/Configuration/Config.xcconfig`.
 
+Push alerts arrive as an alert that `iosApp/NotificationService` opens before iOS shows it. The extension reaches the key and the saved place names through the app group `group.<bundle id>`, so both App IDs, `<bundle id>` and `<bundle id>.NotificationService`, need App Groups with that group.
+
 To upload a build to TestFlight, run the `Vädret iOS TestFlight` workflow under Actions on GitHub.
 
 #### Testing
