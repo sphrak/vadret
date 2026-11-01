@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import fi.kroon.vadret.common.Failure
 import fi.kroon.vadret.language.model.AppLanguage
+import fi.kroon.vadret.lifecycle.AppStartHook
 import fi.kroon.vadret.theme.model.Theme
 import io.github.sphrak.either.Either
 import io.github.sphrak.either.extension.onResult
@@ -16,6 +17,7 @@ import kotlin.concurrent.atomics.AtomicBoolean
 internal class MainViewModel(
     private val observeThemeTask: ObserveThemeTask,
     private val observeLanguageTask: ObserveLanguageTask,
+    private val appStartHooks: List<AppStartHook>,
     private val coroutineDispatcher: CoroutineDispatcher
 ) : ViewModel() {
 
@@ -35,6 +37,9 @@ internal class MainViewModel(
 
     private fun onStart() {
         if (isStarted.compareAndSet(expectedValue = false, newValue = true)) {
+            appStartHooks.forEach { appStartHook: AppStartHook ->
+                viewModelScope.launch(context = coroutineDispatcher) { appStartHook.onAppStart() }
+            }
             viewModelScope.launch(context = coroutineDispatcher) {
                 observeThemeTask().collect { result: Either<Failure, Theme> ->
                     theme.value = result.onResult(

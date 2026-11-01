@@ -30,8 +30,16 @@ jobs:
           KEY_STORE_PASSWORD: ${{ secrets.KEY_STORE_PASSWORD }}
           ORG_GRADLE_PROJECT_GitHubPackagesUsername: ${{ github.actor }}
           ORG_GRADLE_PROJECT_GitHubPackagesPassword: ${{ secrets.GITHUB_TOKEN }}
+          FIREBASE_APPLICATION_ID: ${{ secrets.FIREBASE_APPLICATION_ID }}
+          FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+          FIREBASE_SENDER_ID: ${{ secrets.FIREBASE_SENDER_ID }}
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
         run: |
-          ./gradlew assembleGithubRelease
+          ./gradlew assembleGithubRelease \
+            -Pvadret.firebase.applicationId="$FIREBASE_APPLICATION_ID" \
+            -Pvadret.firebase.apiKey="$FIREBASE_API_KEY" \
+            -Pvadret.firebase.senderId="$FIREBASE_SENDER_ID" \
+            -Pvadret.firebase.projectId="$FIREBASE_PROJECT_ID"
       - name: Create release with one APK per CPU type
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

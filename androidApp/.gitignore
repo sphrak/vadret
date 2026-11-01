@@ -1,4 +1,4 @@
 /build
-fdroid*
-github*
+/fdroid*
+/github*
 google*

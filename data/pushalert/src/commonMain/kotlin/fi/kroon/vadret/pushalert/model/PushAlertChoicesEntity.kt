@@ -1,0 +1,14 @@
+package fi.kroon.vadret.pushalert.model
+
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
+@Serializable
+internal data class PushAlertChoicesEntity(
+    @SerialName(value = "warning_lowest_level")
+    val warningLowestLevel: String? = null,
+    @SerialName(value = "pollen_choices")
+    val pollenChoices: List<PollenChoiceEntity> = emptyList(),
+    @SerialName(value = "temperature_trend")
+    val temperatureTrend: Boolean = false
+)

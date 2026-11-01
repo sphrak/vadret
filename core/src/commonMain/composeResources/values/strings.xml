@@ -85,6 +85,7 @@
     <string name="disk_cache_read" translatable="false">Disk cache read failed</string>
 
     <string name="unhandled_error" translatable="false">Unhandled exception</string>
+    <string name="attestation_failed">Vädret could not check this device just now, so push alerts are not on yet. Try again later.</string>
     <string name="no_location_permission">No location permission</string>
     <string name="location_failure">Location not available</string>
     <string name="no_network_available">No network available</string>
@@ -188,6 +189,7 @@
 
     // HTTP STATUS CODES
     <string name="http_forbidden_403" translatable="false">Access Forbidden 403</string>
+    <string name="http_unauthorized_401" translatable="false">Unauthorized 401</string>
     <string name="http_bad_request_400" translatable="false">Bad Request 400</string>
     <string name="http_internal_server_error_500" translatable="false">Internal Server Error 500</string>
     <string name="http_service_unavailable_503" translatable="false">Service Unavailable 503</string>
@@ -264,4 +266,30 @@
     <string name="close">Close</string>
     <string name="back">Back</string>
     <string name="warning_period" translatable="false">%1$s - %2$s</string>
+    <string name="push_alerts">Push alerts</string>
+    <string name="warning_alerts">Weather warnings</string>
+    <string name="warning_alerts_on">You get a push for warnings where you are</string>
+    <string name="warning_alerts_off">No pushes for warnings</string>
+    <string name="lowest_warning_level">Lowest warning level</string>
+    <string name="temperature_alerts">Temperature changes</string>
+    <string name="temperature_alerts_on">You get a push when it gets 3° warmer or colder</string>
+    <string name="temperature_alerts_off">No pushes for temperature changes</string>
+    <string name="pollen_alerts">Pollen alerts</string>
+    <string name="pollen_alerts_on">You get a push from the chosen level and up</string>
+    <string name="pollen_alerts_off">No pushes</string>
+    <string name="lowest_pollen_level">Lowest pollen level</string>
+    <string name="notifications_are_off">Notifications are turned off</string>
+    <string name="notifications_are_off_text">Allow notifications for Vädret in the system settings to get push alerts.</string>
+    <string name="pollen_level_low">Low</string>
+    <string name="pollen_level_low_to_moderate">Low to moderate</string>
+    <string name="pollen_level_moderate">Moderate</string>
+    <string name="pollen_level_moderate_to_high">Moderate to high</string>
+    <string name="pollen_level_high">High</string>
+    <string name="pollen_level_high_to_very_high">High to very high</string>
+    <string name="pollen_level_very_high">Very high</string>
+    <string name="push_alerts_not_sent">Your choices are not sent yet. Vädret tries again the next time it starts.</string>
+    <string name="push_alerts_only_in_sweden">Push alerts cover Sweden only</string>
+    <string name="push_alerts_only_in_sweden_text">Vädret sends push alerts for places in Sweden only, and this place is outside Sweden.</string>
+    <string name="push_alerts_not_available">Push alerts are not available</string>
+    <string name="attestation_refused">Vädret could not confirm this device, so push alerts cannot be turned on. This happens, for example, with an unlocked bootloader or a modified system.</string>
 </resources>

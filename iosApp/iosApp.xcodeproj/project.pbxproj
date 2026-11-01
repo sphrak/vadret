@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		0A00000000000000000000A2 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 0A00000000000000000000A1 /* FirebaseMessaging */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		0A0000000000000000000001 /* Vädret.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Vädret.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0A0000000000000000000002 /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
@@ -37,6 +41,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0A00000000000000000000A2 /* FirebaseMessaging in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -75,6 +80,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 0A0000000000000000000070 /* Build configuration list for PBXNativeTarget "iosApp" */;
 			buildPhases = (
+				0A00000000000000000000A3 /* Check Firebase Configuration */,
 				0A0000000000000000000050 /* Compile Kotlin Framework */,
 				0A0000000000000000000051 /* Sources */,
 				0A0000000000000000000020 /* Frameworks */,
@@ -89,6 +95,7 @@
 			);
 			name = iosApp;
 			packageProductDependencies = (
+				0A00000000000000000000A1 /* FirebaseMessaging */,
 			);
 			productName = iosApp;
 			productReference = 0A0000000000000000000001 /* Vädret.app */;
@@ -125,6 +132,9 @@
 			);
 			mainGroup = 0A0000000000000000000030;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				0A00000000000000000000A0 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 0A0000000000000000000032 /* Products */;
 			projectDirPath = "";
@@ -146,6 +156,24 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		0A00000000000000000000A3 /* Check Firebase Configuration */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Check Firebase Configuration";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if [ \"$CONFIGURATION\" = \"Release\" ] && [ ! -f \"$SRCROOT/iosApp/GoogleService-Info.plist\" ]; then\n  echo \"error: Release builds need iosApp/iosApp/GoogleService-Info.plist from the Firebase console for push alerts\"\n  exit 1\nfi\n";
+		};
 		0A0000000000000000000050 /* Compile Kotlin Framework */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -300,7 +328,10 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 0A0000000000000000000002 /* Config.xcconfig */;
 			buildSettings = {
+				APP_ATTEST_ENVIRONMENT = development;
+				APS_ENVIRONMENT = development;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Configuration/iosApp.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = "$(TEAM_ID)";
@@ -333,7 +364,10 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 0A0000000000000000000002 /* Config.xcconfig */;
 			buildSettings = {
+				APP_ATTEST_ENVIRONMENT = production;
+				APS_ENVIRONMENT = production;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Configuration/iosApp.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = "$(TEAM_ID)";
@@ -384,6 +418,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		0A00000000000000000000A0 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 13.1.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		0A00000000000000000000A1 /* FirebaseMessaging */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0A00000000000000000000A0 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseMessaging;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 0A0000000000000000000060 /* Project object */;
 }

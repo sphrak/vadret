@@ -1,0 +1,61 @@
+package fi.kroon.vadret.pushalert.local
+
+import fi.kroon.vadret.pushalert.error.AttestationException
+import fi.kroon.vadret.pushalert.extension.sha256
+import fi.kroon.vadret.pushalert.extension.toByteArray
+import fi.kroon.vadret.pushalert.extension.toNSData
+import fi.kroon.vadret.pushalert.model.Attestation
+import fi.kroon.vadret.pushalert.model.IosAttestation
+import kotlinx.coroutines.suspendCancellableCoroutine
+import platform.DeviceCheck.DCAppAttestService
+import platform.Foundation.NSData
+import platform.Foundation.NSError
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+
+internal class IosAttestationLocalDataSource : AttestationLocalDataSource {
+    override suspend fun attest(challenge: ByteArray): Attestation {
+        val appAttestService = DCAppAttestService.sharedService
+        if (!appAttestService.supported) {
+            throw AttestationException(message = "App Attest is not supported on this device")
+        }
+        val keyId = generateKey(appAttestService = appAttestService)
+        return IosAttestation(
+            keyId = keyId,
+            attestationObject = attestKey(
+                appAttestService = appAttestService,
+                keyId = keyId,
+                clientDataHash = challenge.sha256()
+            )
+        )
+    }
+
+    private suspend fun generateKey(appAttestService: DCAppAttestService): String =
+        suspendCancellableCoroutine { continuation ->
+            appAttestService.generateKeyWithCompletionHandler { keyId: String?, error: NSError? ->
+                if (keyId == null) {
+                    continuation.resumeWithException(exception = AttestationException(message = "App Attest made no key: ${error?.localizedDescription}"))
+                } else {
+                    continuation.resume(value = keyId)
+                }
+            }
+        }
+
+    private suspend fun attestKey(
+        appAttestService: DCAppAttestService,
+        keyId: String,
+        clientDataHash: ByteArray
+    ): ByteArray =
+        suspendCancellableCoroutine { continuation ->
+            appAttestService.attestKey(
+                keyId = keyId,
+                clientDataHash = clientDataHash.toNSData()
+            ) { attestationObject: NSData?, error: NSError? ->
+                if (attestationObject == null) {
+                    continuation.resumeWithException(exception = AttestationException(message = "App Attest could not attest the key: ${error?.localizedDescription}"))
+                } else {
+                    continuation.resume(value = attestationObject.toByteArray())
+                }
+            }
+        }
+}

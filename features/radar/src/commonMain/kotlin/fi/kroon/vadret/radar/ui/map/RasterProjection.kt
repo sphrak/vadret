@@ -1,9 +1,5 @@
 package fi.kroon.vadret.radar.ui.map
 
-import fi.kroon.vadret.radar.projection.RADAR_EAST_LONGITUDE
-import fi.kroon.vadret.radar.projection.RADAR_NORTH_LATITUDE
-import fi.kroon.vadret.radar.projection.RADAR_SOUTH_LATITUDE
-import fi.kroon.vadret.radar.projection.RADAR_WEST_LONGITUDE
 import fi.kroon.vadret.radar.wind.RasterArea
 
 internal class RasterProjection(

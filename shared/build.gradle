@@ -48,6 +48,13 @@ kotlin {
                 implementation libs.multiplatform.navigation3.ui
             }
         }
+        iosMain {
+            dependencies {
+                implementation project(':core:encryption')
+                implementation project(':data:pushalert')
+                implementation project(':features:pushalert')
+            }
+        }
         commonTest {
             dependencies {
                 implementation project(':core:testing')

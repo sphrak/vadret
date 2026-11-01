@@ -46,9 +46,11 @@ class MainViewModelTest {
     private val testScope = TestScope(testDispatcher)
     private val observeThemeTask = FakeObserveThemeTask()
     private val observeLanguageTask = FakeObserveLanguageTask()
+    private val appStartHook = CountingAppStartHook()
     private val mainViewModel = MainViewModel(
         observeThemeTask = observeThemeTask,
         observeLanguageTask = observeLanguageTask,
+        appStartHooks = listOf(appStartHook),
         coroutineDispatcher = testDispatcher
     )
 
@@ -61,6 +63,19 @@ class MainViewModelTest {
     fun tearDown() {
         Dispatchers.resetMain()
     }
+
+    @Test
+    fun `every start hook runs once however often the app starts`() =
+        testScope.runTest {
+            mainViewModel.onEvent(event = MainEvent.OnStart)
+            mainViewModel.onEvent(event = MainEvent.OnStart)
+            advanceUntilIdle()
+
+            assertEquals(
+                expected = 1,
+                actual = appStartHook.starts.value
+            )
+        }
 
     @Test
     fun `the theme is null until started and then follows every change`() =

@@ -1,0 +1,40 @@
+plugins {
+    id 'vadret.kmp.library'
+    id 'kotlinx-serialization'
+}
+
+kotlin {
+    android {
+        namespace = 'fi.kroon.vadret.encrypteddatastore'
+    }
+    sourceSets {
+        commonMain {
+            dependencies {
+                implementation project(':core:encryption')
+                implementation project(':core:logging')
+
+                implementation libs.coroutines.core
+                implementation libs.datastore.core
+                implementation libs.either
+                implementation libs.kotlinx.serialization.json
+                implementation libs.okio
+            }
+        }
+        androidMain {
+            dependencies {
+                implementation libs.datastore.tink
+                implementation libs.tink.android
+            }
+        }
+        iosMain {
+            dependencies {
+                implementation libs.datastore.core.okio
+            }
+        }
+        commonTest {
+            dependencies {
+                implementation project(':core:testing')
+            }
+        }
+    }
+}

@@ -7,6 +7,8 @@
 .env
 keystore.properties
 .keystore
+*.keystore
+*.jks
 
 # Built application files
 *.apk
@@ -118,3 +120,5 @@ fabric.properties
 xcuserdata/
 *.xcuserstate
 DerivedData/
+GoogleService-Info.plist
+google-services.json

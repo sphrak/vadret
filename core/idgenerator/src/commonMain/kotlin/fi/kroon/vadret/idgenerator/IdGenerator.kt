@@ -1,6 +1,5 @@
 package fi.kroon.vadret.idgenerator
 
-import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 interface IdGenerator {

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="push_alert_channel_warnings">Vädervarningar</string>
+    <string name="push_alert_channel_pollen">Pollen</string>
+    <string name="push_alert_channel_temperature">Temperaturförändringar</string>
+</resources>

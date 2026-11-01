@@ -53,6 +53,7 @@ class ExceptionTest {
         runTest {
             val expected: Map<Int, ErrorCode> = mapOf(
                 400 to ErrorCode.HTTP_BAD_REQUEST,
+                401 to ErrorCode.HTTP_UNAUTHORIZED,
                 403 to ErrorCode.HTTP_FORBIDDEN,
                 404 to ErrorCode.HTTP_NOT_FOUND,
                 418 to ErrorCode.HTTP_UNEXPECTED_STATUS,

@@ -1,0 +1,39 @@
+plugins {
+    id 'vadret.kmp.feature'
+    id 'kotlinx-serialization'
+}
+
+kotlin {
+    android {
+        namespace = 'fi.kroon.vadret.pushalert'
+    }
+    sourceSets {
+        commonMain {
+            dependencies {
+                implementation project(':core:encryption')
+                implementation project(':core:geohash')
+                implementation project(':core:logging')
+                implementation project(':data:common')
+                implementation project(':data:location')
+                implementation project(':data:pollen')
+                implementation project(':data:pushalert')
+                implementation project(':data:theme')
+
+                implementation libs.either
+                implementation libs.koin.core
+                implementation libs.kotlinx.serialization.json
+            }
+        }
+        androidMain {
+            dependencies {
+                implementation libs.androidx.activity.compose
+                implementation libs.androidx.core.ktx
+            }
+        }
+        commonTest {
+            dependencies {
+                implementation project(':core:testing')
+            }
+        }
+    }
+}

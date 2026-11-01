@@ -13,6 +13,8 @@ import fi.kroon.vadret.core.resources.weather
 import fi.kroon.vadret.settings.Settings
 import fi.kroon.vadret.settings.SettingsEvent
 import fi.kroon.vadret.settings.SettingsState
+import fi.kroon.vadret.ui.SettingsSectionHeader
+import fi.kroon.vadret.ui.SwitchRow
 import fi.kroon.vadret.ui.VadretCard
 import fi.kroon.vadret.ui.VadretTheme
 import org.jetbrains.compose.resources.stringResource

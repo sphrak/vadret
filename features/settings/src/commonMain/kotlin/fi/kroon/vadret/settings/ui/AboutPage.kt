@@ -17,7 +17,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -31,11 +30,11 @@ import fi.kroon.vadret.core.resources.app_name
 import fi.kroon.vadret.settings.model.AboutRow
 import fi.kroon.vadret.settings.model.AboutRowAction
 import fi.kroon.vadret.settings.model.AboutRowHint
+import fi.kroon.vadret.ui.SettingsRowDivider
 import fi.kroon.vadret.ui.VadretCard
 import fi.kroon.vadret.ui.VadretTheme
 import kotlinx.collections.immutable.ImmutableList
 import org.jetbrains.compose.resources.DrawableResource
-import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 

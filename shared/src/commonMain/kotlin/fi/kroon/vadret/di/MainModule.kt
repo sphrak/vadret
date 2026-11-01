@@ -13,5 +13,12 @@ import org.koin.dsl.module
 internal val mainModule: Module = module {
     factoryOf(::DefaultObserveLanguageTask) { bind<ObserveLanguageTask>() }
     factoryOf(::DefaultObserveThemeTask) { bind<ObserveThemeTask>() }
-    factoryOf(::MainViewModel)
+    factory<MainViewModel> {
+        MainViewModel(
+            observeThemeTask = get(),
+            observeLanguageTask = get(),
+            appStartHooks = getAll(),
+            coroutineDispatcher = get()
+        )
+    }
 }

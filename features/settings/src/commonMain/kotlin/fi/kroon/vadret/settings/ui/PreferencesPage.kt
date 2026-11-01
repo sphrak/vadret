@@ -2,8 +2,8 @@ package fi.kroon.vadret.settings.ui
 
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -25,6 +25,11 @@ import fi.kroon.vadret.settings.SettingsEvent
 import fi.kroon.vadret.settings.SettingsState
 import fi.kroon.vadret.settings.extension.labelResource
 import fi.kroon.vadret.settings.model.LocationRow
+import fi.kroon.vadret.ui.SettingsRowDivider
+import fi.kroon.vadret.ui.SettingsSection
+import fi.kroon.vadret.ui.SettingsSectionHeader
+import fi.kroon.vadret.ui.SettingsValueRow
+import fi.kroon.vadret.ui.SwitchRow
 import fi.kroon.vadret.ui.VadretCard
 import fi.kroon.vadret.ui.VadretTheme
 import kotlinx.collections.immutable.ImmutableList
@@ -41,12 +46,14 @@ private const val CURRENT_LOCATION_KEY = "current-location"
 
 private enum class PreferenceContentType {
     HEADER,
-    CARD
+    CARD,
+    SECTION
 }
 
 @Composable
 internal fun PreferencesPage(
     state: SettingsState,
+    settingsSections: List<SettingsSection>,
     onEvent: (SettingsEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -114,6 +121,13 @@ internal fun PreferencesPage(
                 locationRows = state.locationRows,
                 isAutomaticLocation = settings.isAutomaticLocation
             )
+        }
+        items(
+            items = settingsSections,
+            key = { settingsSection: SettingsSection -> settingsSection.key },
+            contentType = { PreferenceContentType.SECTION }
+        ) { settingsSection: SettingsSection ->
+            settingsSection.Content(modifier = Modifier)
         }
     }
 }

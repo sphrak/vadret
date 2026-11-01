@@ -21,6 +21,16 @@ def static loadFromFile(String key, String value) {
 
 def isRunningOnCI = System.getenv("CI") == "true"
 
+def firebaseResValue = { String propertyName ->
+    providers.gradleProperty(propertyName).orElse("").map { value -> new com.android.build.api.variant.ResValue(value, null) }
+}
+def firebaseResValues = [
+    "google_app_id"      : "vadret.firebase.applicationId",
+    "google_api_key"     : "vadret.firebase.apiKey",
+    "gcm_defaultSenderId": "vadret.firebase.senderId",
+    "project_id"         : "vadret.firebase.projectId"
+]
+
 def appVersionCode = 31
 def abiVersionCodes = ["armeabi-v7a": 1, "arm64-v8a": 2, "x86_64": 4]
 
@@ -126,6 +136,7 @@ android {
     }
     buildFeatures {
         buildConfig = true
+        resValues = true
     }
 }
 
@@ -138,6 +149,11 @@ kotlin {
 
 androidComponents {
     onVariants(selector().all()) { variant ->
+        if (variant.flavorName == "github") {
+            firebaseResValues.each { resourceName, propertyName ->
+                variant.resValues.put(variant.makeResValueKey("string", resourceName), firebaseResValue(propertyName))
+            }
+        }
         variant.outputs.each { output ->
             def abi = output.filters.find { filter -> filter.filterType == com.android.build.api.variant.FilterConfiguration.FilterType.ABI }?.identifier
             if (abi != null) {
@@ -171,6 +187,12 @@ dependencies {
     // Dependency Injection
     implementation libs.koin.core
 
+    githubImplementation project(':core:encryption')
+    githubImplementation project(':data:pushalert')
+    githubImplementation project(':features:pushalert')
+    githubImplementation libs.androidx.core.ktx
+    githubImplementation libs.firebase.messaging
+
     // Debugging, Testing, Linting, Analytics
     debugImplementation libs.leakcanary
     testImplementation project(':core:testing')
@@ -178,11 +200,25 @@ dependencies {
     testImplementation libs.kotlin.test
     testImplementation libs.kotlin.test.junit
     testImplementation libs.mockk
+    testGithubImplementation project(':features:pushalert')
 }
 
 repositories {
     mavenCentral()
 }
+
+def missingFirebaseProperties = providers.provider {
+    firebaseResValues.values().findAll { propertyName -> providers.gradleProperty(propertyName).getOrElse("").isBlank() }
+}
+def checkFirebaseConfiguration = tasks.register("checkFirebaseConfiguration") {
+    def missing = missingFirebaseProperties
+    doLast {
+        if (!missing.get().isEmpty()) {
+            throw new GradleException("A GitHub release needs the Gradle properties ${missing.get().join(", ")} from the Firebase console")
+        }
+    }
+}
+tasks.matching { task -> task.name == "packageGithubRelease" }.configureEach { task -> task.dependsOn(checkFirebaseConfiguration) }
 
 tasks.named("check") {
     dependsOn ":ktlint"

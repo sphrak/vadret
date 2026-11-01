@@ -20,4 +20,4 @@ internal fun appModules(context: Context): List<Module> =
         ),
         radarModule,
         androidRadarModule
-    )
+    ) + flavorModules(context = context)

@@ -20,6 +20,7 @@ import fi.kroon.vadret.changelog.model.Changelog
 import fi.kroon.vadret.core.resources.Res
 import fi.kroon.vadret.core.resources.select_a_language
 import fi.kroon.vadret.core.resources.select_a_theme
+import fi.kroon.vadret.di.koinAll
 import fi.kroon.vadret.di.koinViewModel
 import fi.kroon.vadret.language.model.AppLanguage
 import fi.kroon.vadret.library.model.Library
@@ -28,6 +29,8 @@ import fi.kroon.vadret.settings.SettingsState
 import fi.kroon.vadret.settings.SettingsViewModel
 import fi.kroon.vadret.settings.extension.labelResource
 import fi.kroon.vadret.theme.model.Theme
+import fi.kroon.vadret.ui.ChoiceDialog
+import fi.kroon.vadret.ui.SettingsSection
 import fi.kroon.vadret.ui.ThemePreviewParameterProvider
 import fi.kroon.vadret.ui.VadretTheme
 import fi.kroon.vadret.ui.VadretTopAppBar
@@ -37,11 +40,13 @@ import org.jetbrains.compose.resources.stringResource
 @Composable
 fun SettingsRoute(
     modifier: Modifier = Modifier,
-    viewModel: SettingsViewModel = koinViewModel()
+    viewModel: SettingsViewModel = koinViewModel(),
+    settingsSections: List<SettingsSection> = koinAll()
 ) {
     val state: SettingsState by viewModel.state.collectAsStateWithLifecycle()
     SettingsScreen(
         state = state,
+        settingsSections = settingsSections,
         onEvent = viewModel::onEvent,
         modifier = modifier
     )
@@ -50,6 +55,7 @@ fun SettingsRoute(
 @Composable
 internal fun SettingsScreen(
     state: SettingsState,
+    settingsSections: List<SettingsSection>,
     onEvent: (SettingsEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -76,6 +82,7 @@ internal fun SettingsScreen(
             when (state.pages[pageIndex]) {
                 SettingsPage.PREFERENCES -> PreferencesPage(
                     state = state,
+                    settingsSections = settingsSections,
                     onEvent = onEvent
                 )
                 SettingsPage.LIBRARIES -> LibrariesPage(
@@ -143,6 +150,7 @@ private fun SettingsScreenPreview(
     VadretTheme(theme = theme) {
         SettingsScreen(
             state = settingsPreviewState(theme = theme),
+            settingsSections = emptyList(),
             onEvent = {},
             modifier = Modifier.background(color = VadretTheme.colorScheme.background)
         )

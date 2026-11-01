@@ -1,0 +1,9 @@
+plugins {
+    id 'vadret.kmp.library'
+}
+
+kotlin {
+    android {
+        namespace = 'fi.kroon.vadret.geohash'
+    }
+}

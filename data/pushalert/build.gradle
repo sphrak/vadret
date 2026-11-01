@@ -1,0 +1,35 @@
+plugins {
+    id 'vadret.kmp.library'
+    id 'kotlinx-serialization'
+}
+
+kotlin {
+    android {
+        namespace = 'fi.kroon.vadret.data.pushalert'
+    }
+    sourceSets {
+        commonMain {
+            dependencies {
+                implementation project(':core:encrypteddatastore')
+                implementation project(':core:geohash')
+                implementation project(':core:logging')
+                implementation project(':data:common')
+
+                implementation libs.coroutines.core
+                implementation libs.datastore.core
+                implementation libs.either
+                implementation libs.kotlinx.serialization.json
+                implementation libs.ktor.client.core
+                implementation libs.okio
+            }
+        }
+        commonTest {
+            dependencies {
+                implementation project(':core:testing')
+                implementation libs.ktor.client.mock
+                implementation libs.ktor.client.content.negotiation
+                implementation libs.ktor.serialization.kotlinx.json
+            }
+        }
+    }
+}

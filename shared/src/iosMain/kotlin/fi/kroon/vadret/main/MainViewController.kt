@@ -7,11 +7,13 @@ import androidx.compose.ui.uikit.LocalUIViewController
 import androidx.compose.ui.window.ComposeUIViewController
 import fi.kroon.vadret.di.LocalKoin
 import fi.kroon.vadret.di.iosPlatformModule
+import fi.kroon.vadret.di.iosPushAlertModule
 import fi.kroon.vadret.di.sharedModules
 import fi.kroon.vadret.logging.LogLevel
 import fi.kroon.vadret.logging.LoggerFactory
 import fi.kroon.vadret.logging.nsLogSink
 import fi.kroon.vadret.model.AppInfo
+import fi.kroon.vadret.pushalert.di.pushAlertModule
 import fi.kroon.vadret.radar.di.iosRadarModule
 import fi.kroon.vadret.radar.di.radarModule
 import fi.kroon.vadret.radar.ui.RadarMapHost
@@ -33,7 +35,7 @@ private val radarTab = RadarTab(
     content = { RadarRoute() }
 )
 
-private val koinApplication: KoinApplication by lazy {
+internal val koinApplication: KoinApplication by lazy {
     val appInfo: AppInfo = appInfo()
     if (appInfo.isDebug) {
         LoggerFactory.register(
@@ -42,7 +44,15 @@ private val koinApplication: KoinApplication by lazy {
         )
     }
     koinApplication {
-        modules(modules = sharedModules + listOf(iosPlatformModule(appInfo = appInfo), radarModule, iosRadarModule))
+        modules(
+            modules = sharedModules + listOf(
+                iosPlatformModule(appInfo = appInfo),
+                radarModule,
+                iosRadarModule,
+                pushAlertModule,
+                iosPushAlertModule
+            )
+        )
     }
 }
 
