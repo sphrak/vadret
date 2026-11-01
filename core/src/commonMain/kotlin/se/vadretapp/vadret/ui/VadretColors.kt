@@ -33,6 +33,10 @@ data class VadretColors(
     val chipText: Color = Color(color = 0xFF2B2B2B)
 )
 
+// The light message pale lavender glares on a dark screen, so dark themes use a dim indigo with light text (8.7:1).
+private val darkWarningMessage = Color(color = 0xFF283154)
+private val onDarkWarningMessage = Color(color = 0xFFCDD5F5)
+
 internal val lightVadretColors: VadretColors = VadretColors(
     divider = Color(color = 0xFFEEF0F4),
     icon = Color(color = 0xFF4A4F5E),
@@ -42,11 +46,15 @@ internal val lightVadretColors: VadretColors = VadretColors(
 internal val darkVadretColors: VadretColors = VadretColors(
     divider = Color(color = 0xFF262933),
     icon = Color(color = 0xFFC4C8D4),
-    precipitation = Color(color = 0xFF7FB0FF)
+    precipitation = Color(color = 0xFF7FB0FF),
+    warningMessage = darkWarningMessage,
+    onWarningMessage = onDarkWarningMessage
 )
 
 internal val amoledVadretColors: VadretColors = VadretColors(
     divider = Color(color = 0xFF1E1E1E),
     icon = Color(color = 0xFFC4C8D4),
-    precipitation = Color(color = 0xFF7FB0FF)
+    precipitation = Color(color = 0xFF7FB0FF),
+    warningMessage = darkWarningMessage,
+    onWarningMessage = onDarkWarningMessage
 )
