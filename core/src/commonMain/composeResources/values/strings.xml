@@ -122,7 +122,6 @@
     <string name="source_code_row_title">Source code</string>
     <string name="app_release_page" translatable="false">https://github.com/vadret/android/releases</string>
     <string name="license_row_hint" translatable="false">Apache License, Version 2.0</string>
-    <string name="app_github_url" translatable="false">https://vadret.github.io/android</string>
     <string name="app_github_source_url" translatable="false">https://github.com/vadret/android</string>
     <string name="app_license_url" translatable="false">https://github.com/vadret/android/blob/master/LICENSE</string>
     <string name="changelog_dialog_title">Changelog</string>
