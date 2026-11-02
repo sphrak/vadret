@@ -3,6 +3,7 @@ package se.vadretapp.vadret.forecastwarning
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import io.github.sphrak.either.Either
 import io.github.sphrak.either.extension.onResult
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.coroutines.CoroutineDispatcher
@@ -19,14 +20,14 @@ import se.vadretapp.vadret.forecastwarning.model.WarningItem
 import se.vadretapp.vadret.ui.extension.launchReplacing
 import se.vadretapp.vadret.ui.extension.messageResource
 import se.vadretapp.vadret.ui.format.currentLanguageTag
-import se.vadretapp.vadret.warning.GetWarningsTask
+import se.vadretapp.vadret.warning.ObserveChosenPlaceWarningsTask
 import kotlin.concurrent.atomics.AtomicBoolean
 import kotlin.concurrent.atomics.AtomicReference
 import kotlin.time.Clock
 
 @Immutable
 class WarningViewModel internal constructor(
-    private val getWarningsTask: GetWarningsTask,
+    private val observeChosenPlaceWarningsTask: ObserveChosenPlaceWarningsTask,
     private val clock: Clock,
     private val coroutineDispatcher: CoroutineDispatcher
 ) : ViewModel() {
@@ -79,14 +80,15 @@ class WarningViewModel internal constructor(
             currentJob = loadJob,
             context = coroutineDispatcher
         ) {
-            getWarningsTask(isRefresh = isRefresh)
-                .onResult(
+            observeChosenPlaceWarningsTask(isRefresh = isRefresh).collect { result: Either<Failure, List<AggregatedFeed>> ->
+                result.onResult(
                     onError = { failure: Failure -> displayError(failure = failure) },
                     onSuccess = { aggregatedFeeds: List<AggregatedFeed> ->
                         warnings.store(newValue = aggregatedFeeds)
                         displayWarnings(warningItems = aggregatedFeeds.toItems())
                     }
                 )
+            }
         }
     }
 

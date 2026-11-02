@@ -5,11 +5,14 @@ import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.factoryOf
 import org.koin.dsl.module
 import se.vadretapp.vadret.warning.DefaultGetWarningsTask
+import se.vadretapp.vadret.warning.DefaultObserveChosenPlaceWarningsTask
 import se.vadretapp.vadret.warning.DefaultObserveUnseenWarningsTask
 import se.vadretapp.vadret.warning.GetWarningsTask
+import se.vadretapp.vadret.warning.ObserveChosenPlaceWarningsTask
 import se.vadretapp.vadret.warning.ObserveUnseenWarningsTask
 
 val warningTaskModule: Module = module {
     factoryOf(::DefaultGetWarningsTask) { bind<GetWarningsTask>() }
+    factoryOf(::DefaultObserveChosenPlaceWarningsTask) { bind<ObserveChosenPlaceWarningsTask>() }
     factoryOf(::DefaultObserveUnseenWarningsTask) { bind<ObserveUnseenWarningsTask>() }
 }

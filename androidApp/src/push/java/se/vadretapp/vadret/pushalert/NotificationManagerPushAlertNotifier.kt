@@ -29,6 +29,7 @@ internal class NotificationManagerPushAlertNotifier(
         notificationManager.createNotificationChannelsCompat(notificationChannels())
         val notification = NotificationCompat.Builder(context, pushAlertMessage.kind.channelId())
             .setSmallIcon(R.drawable.ic_push_alert)
+            .setColor(ContextCompat.getColor(context, R.color.push_alert_accent))
             .setContentTitle(pushAlertMessage.title)
             .setContentText(pushAlertMessage.body)
             .setStyle(NotificationCompat.BigTextStyle().bigText(pushAlertMessage.body))

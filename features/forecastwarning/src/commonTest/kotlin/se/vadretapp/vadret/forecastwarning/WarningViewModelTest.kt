@@ -32,9 +32,9 @@ class WarningViewModelTest {
 
     private val testDispatcher: TestDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
-    private val getWarningsTask = FakeGetWarningsTask()
+    private val observeChosenPlaceWarningsTask = FakeObserveChosenPlaceWarningsTask()
     private val warningViewModel = WarningViewModel(
-        getWarningsTask = getWarningsTask,
+        observeChosenPlaceWarningsTask = observeChosenPlaceWarningsTask,
         clock = FixedClock(now = Instant.parse(input = "2026-10-24T08:30:00Z")),
         coroutineDispatcher = testDispatcher
     )
@@ -55,19 +55,19 @@ class WarningViewModelTest {
     fun `nothing loads until the screen starts the view model and then only once`() =
         testScope.runTest {
             advanceUntilIdle()
-            assertEquals(expected = emptyList(), actual = getWarningsTask.refreshes)
+            assertEquals(expected = emptyList(), actual = observeChosenPlaceWarningsTask.refreshes)
 
             warningViewModel.onEvent(event = WarningEvent.OnStart)
             warningViewModel.onEvent(event = WarningEvent.OnStart)
             advanceUntilIdle()
 
-            assertEquals(expected = listOf(false), actual = getWarningsTask.refreshes)
+            assertEquals(expected = listOf(false), actual = observeChosenPlaceWarningsTask.refreshes)
         }
 
     @Test
-    fun `every warning is shown in one list newest first`() =
+    fun `every warning of the chosen place is shown in one list newest first`() =
         testScope.runTest {
-            getWarningsTask.result = listOf(
+            observeChosenPlaceWarningsTask.results.value = listOf(
                 aggregatedFeed(
                     identifier = "smhi-1",
                     publishedAt = Instant.parse(input = "2026-10-24T05:00:00Z")
@@ -94,12 +94,12 @@ class WarningViewModelTest {
     @Test
     fun `no warnings is told apart from a failed load`() =
         testScope.runTest {
-            getWarningsTask.result = emptyList<AggregatedFeed>().asRight()
+            observeChosenPlaceWarningsTask.results.value = emptyList<AggregatedFeed>().asRight()
             warningViewModel.onEvent(event = WarningEvent.OnStart)
             advanceUntilIdle()
             assertTrue(actual = warningViewModel.state.value.isEmpty)
 
-            getWarningsTask.result = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft()
+            observeChosenPlaceWarningsTask.results.value = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft()
             warningViewModel.onEvent(event = WarningEvent.OnRefresh)
             advanceUntilIdle()
 
@@ -111,6 +111,19 @@ class WarningViewModelTest {
         }
 
     @Test
+    fun `choosing another place shows its warnings without loading again`() =
+        testScope.runTest {
+            warningViewModel.onEvent(event = WarningEvent.OnStart)
+            advanceUntilIdle()
+
+            observeChosenPlaceWarningsTask.results.value = listOf(aggregatedFeed(identifier = "smhi-9-1")).asRight()
+            advanceUntilIdle()
+
+            assertEquals(expected = listOf("smhi-9-1"), actual = shownIdentifiers())
+            assertEquals(expected = listOf(false), actual = observeChosenPlaceWarningsTask.refreshes)
+        }
+
+    @Test
     fun `a refresh skips the cache`() =
         testScope.runTest {
             warningViewModel.onEvent(event = WarningEvent.OnStart)
@@ -118,13 +131,13 @@ class WarningViewModelTest {
             warningViewModel.onEvent(event = WarningEvent.OnRefresh)
             advanceUntilIdle()
 
-            assertEquals(expected = listOf(false, true), actual = getWarningsTask.refreshes)
+            assertEquals(expected = listOf(false, true), actual = observeChosenPlaceWarningsTask.refreshes)
         }
 
     @Test
     fun `a new language tells the times again without loading`() =
         testScope.runTest {
-            getWarningsTask.result = listOf(
+            observeChosenPlaceWarningsTask.results.value = listOf(
                 aggregatedFeed(
                     identifier = "smhi-1",
                     endsAt = Instant.parse(input = "2026-10-24T08:30:00Z") + 48.hours
@@ -141,6 +154,6 @@ class WarningViewModelTest {
 
             assertEquals(expected = true, actual = englishText?.startsWith(prefix = "Mon"))
             assertEquals(expected = true, actual = swedishText?.startsWith(prefix = "mån"))
-            assertEquals(expected = listOf(false), actual = getWarningsTask.refreshes)
+            assertEquals(expected = listOf(false), actual = observeChosenPlaceWarningsTask.refreshes)
         }
 }
