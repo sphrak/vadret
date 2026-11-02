@@ -8,6 +8,7 @@ import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.format
 import kotlinx.datetime.format.char
 import kotlinx.datetime.toLocalDateTime
+import se.vadretapp.vadret.location.model.StoredLocation
 import se.vadretapp.vadret.ui.format.DateTextFormatter
 import se.vadretapp.vadret.ui.format.DateTextStyle
 import se.vadretapp.vadret.ui.format.toOneDecimalText
@@ -94,6 +95,13 @@ private fun PlaceForecast.analysesOfToday(
         }.map { analysis: Analysis -> analysis.toForecast() }
 }
 
+// Forecasts come first, so a forecast wins over an analysis of the same hour as it does in the full forecast.
+internal fun PlaceForecast.toCurrentWeather(now: Instant): CurrentWeather? {
+    val hours: List<Forecast> = forecasts + analyses.map { analysis: Analysis -> analysis.toForecast() }
+    val current: Forecast = hours.minByOrNull { forecast: Forecast -> (forecast.validAt - now).absoluteValue } ?: return null
+    return current.toCurrentWeather(isDaytime = isDaytime(at = current.validAt))
+}
+
 private fun PlaceForecast.isDaytime(at: Instant): Boolean =
     SunsetUtil.isSunUp(
         at = at,
@@ -170,3 +178,8 @@ private fun Forecast.toForecastHour(
             isDaytime = isDaytime
         )
     )
+
+internal fun PlaceForecast.isAt(storedLocation: StoredLocation): Boolean =
+    placeName == storedLocation.locality &&
+        latitude == storedLocation.latitude &&
+        longitude == storedLocation.longitude

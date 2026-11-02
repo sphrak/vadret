@@ -110,4 +110,16 @@
     <string name="pollen_types_not_available">Nie udało się wczytać rodzajów pyłków. Spróbuj ponownie później.</string>
     <string name="pollen_hibernating_title">Pyłki zapadły w sen zimowy</string>
     <string name="pollen_hibernating_text">Raporty pyłkowe wrócą, gdy sezon znów się zacznie, zwykle około lutego.</string>
+    <string name="unknown_area">Nieznane miejsce</string>
+    <string name="save_place">Zapisz miejsce</string>
+    <string name="open_forecast">Otwórz prognozę</string>
+    <string name="not_saved">Niezapisane</string>
+    <string name="saved">Zapisane</string>
+    <string name="save">Zapisz</string>
+    <string name="place_label">Nazwa miejsca</string>
+    <string name="place_label_missing_title">Nazwij miejsce</string>
+    <string name="place_label_missing_text">Nie znaleziono nazwy tego miejsca. Wpisz nazwę, aby rozpoznać je wśród ulubionych.</string>
+    <string name="place_name_taken_text">Masz już ulubione miejsce o nazwie %1$s. Nadaj temu miejscu własną nazwę.</string>
+    <string name="try_again">Spróbuj ponownie</string>
+    <string name="pegman_hint">Przeciągnij na mapę, aby zobaczyć pogodę w tym miejscu</string>
 </resources>

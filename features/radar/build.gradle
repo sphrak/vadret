@@ -35,6 +35,7 @@ kotlin {
                 implementation project(':data:pollenpreference')
                 implementation project(':data:radar')
                 implementation project(':data:wind')
+                implementation project(':ui:icons')
 
                 implementation libs.coil.core
                 implementation libs.coil.network.ktor

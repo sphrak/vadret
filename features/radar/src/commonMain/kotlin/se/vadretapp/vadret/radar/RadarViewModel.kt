@@ -128,6 +128,10 @@ class RadarViewModel internal constructor(
             }
             RadarEvent.OnPollenHibernationNoticeDismissed -> onPollenHibernationNoticeDismissed()
             is RadarEvent.OnPollenTypeSelected -> onPollenTypeSelected(pollenId = event.pollenId)
+            is RadarEvent.OnPegmanDropped -> onPegmanDropped(location = event.location)
+            RadarEvent.OnPlaceIslandDismissed -> state.update { state: RadarState ->
+                state.copy(droppedLocation = null)
+            }
         }
     }
 
@@ -582,6 +586,15 @@ class RadarViewModel internal constructor(
                 windTransitionField = null,
                 isLoading = false
             )
+        }
+    }
+
+    private fun onPegmanDropped(location: Location) {
+        if (state.value.isPlaying) {
+            stopPlaying()
+        }
+        state.update { state: RadarState ->
+            state.copy(droppedLocation = location)
         }
     }
 

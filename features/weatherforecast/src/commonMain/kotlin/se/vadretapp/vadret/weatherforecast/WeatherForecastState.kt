@@ -5,6 +5,7 @@ import org.jetbrains.compose.resources.StringResource
 import se.vadretapp.vadret.weatherforecast.model.ForecastView
 import se.vadretapp.vadret.weatherforecast.model.LatestWarning
 import se.vadretapp.vadret.weatherforecast.model.LocationChoices
+import se.vadretapp.vadret.weatherforecast.model.PlaceNaming
 import se.vadretapp.vadret.weatherforecast.model.SearchState
 import se.vadretapp.vadret.weatherforecast.model.WeatherForecast
 
@@ -20,5 +21,7 @@ data class WeatherForecastState(
     val latestWarning: LatestWarning? = null,
     val forecastView: ForecastView = ForecastView.DAYS,
     val isHourlyForecastEnabled: Boolean = false,
+    val isPlaceSaved: Boolean = false,
+    val placeNaming: PlaceNaming? = null,
     val errorMessageResource: StringResource? = null
 )

@@ -22,7 +22,12 @@ private const val RADAR_IMAGE_URL_EXTRA = "radar_image_url"
 private fun radarTab(initialRadarImageUrl: String?): RadarTab =
     RadarTab(
         host = { content: @Composable () -> Unit -> RadarMapHost(content = content) },
-        content = { RadarRoute(initialImageUrl = initialRadarImageUrl) }
+        content = { placeIsland: @Composable (latitude: Double, longitude: Double, onDismiss: () -> Unit) -> Unit ->
+            RadarRoute(
+                placeIsland = placeIsland,
+                initialImageUrl = initialRadarImageUrl
+            )
+        }
     )
 
 private fun Intent.initialRadarImageUrl(): String? =

@@ -34,6 +34,12 @@ internal data class WarningStoryKey(val warningIdentifiers: List<String>) : NavK
 internal data object RadarKey : NavKey
 
 @Serializable
+internal data class PlaceForecastKey(
+    val latitude: Double,
+    val longitude: Double
+) : NavKey
+
+@Serializable
 internal data object SettingsKey : NavKey
 
 internal enum class TopLevelDestination(

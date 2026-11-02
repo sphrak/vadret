@@ -32,6 +32,7 @@ internal data class RadarState(
     val windField: WindField? = null,
     val windTransitionField: WindField? = null,
     val deviceLocation: Location? = null,
+    val droppedLocation: Location? = null,
     val isPlaying: Boolean = false,
     val isLoading: Boolean = true,
     val isMapLoaded: Boolean = false,

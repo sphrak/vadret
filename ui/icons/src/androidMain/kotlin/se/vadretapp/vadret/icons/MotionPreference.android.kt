@@ -10,7 +10,7 @@ private const val DEFAULT_ANIMATOR_SCALE = 1f
 private const val NO_ANIMATOR_SCALE = 0f
 
 @Composable
-internal actual fun rememberIsMotionEnabled(): Boolean {
+actual fun rememberIsMotionEnabled(): Boolean {
     val context: Context = LocalContext.current
     return remember(context) {
         Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, DEFAULT_ANIMATOR_SCALE) > NO_ANIMATOR_SCALE

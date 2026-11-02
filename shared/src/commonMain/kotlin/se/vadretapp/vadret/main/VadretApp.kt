@@ -35,6 +35,7 @@ import kotlinx.serialization.modules.polymorphic
 import se.vadretapp.vadret.forecastwarning.ui.WarningDetailRoute
 import se.vadretapp.vadret.forecastwarning.ui.WarningRoute
 import se.vadretapp.vadret.forecastwarning.ui.WarningStoryRoute
+import se.vadretapp.vadret.main.navigation.PlaceForecastKey
 import se.vadretapp.vadret.main.navigation.RadarKey
 import se.vadretapp.vadret.main.navigation.SettingsKey
 import se.vadretapp.vadret.main.navigation.TabNavigation
@@ -45,13 +46,18 @@ import se.vadretapp.vadret.main.navigation.WarningKey
 import se.vadretapp.vadret.main.navigation.WarningStoryKey
 import se.vadretapp.vadret.main.navigation.WeatherKey
 import se.vadretapp.vadret.main.navigation.close
+import se.vadretapp.vadret.main.navigation.closePlaceForecast
 import se.vadretapp.vadret.main.navigation.currentTabKey
 import se.vadretapp.vadret.main.navigation.goBack
 import se.vadretapp.vadret.main.navigation.navigationBarPadding
 import se.vadretapp.vadret.main.navigation.open
+import se.vadretapp.vadret.main.navigation.openPlaceForecast
+import se.vadretapp.vadret.main.navigation.openWeatherTab
 import se.vadretapp.vadret.main.navigation.selectTab
 import se.vadretapp.vadret.settings.ui.SettingsRoute
 import se.vadretapp.vadret.ui.VadretTheme
+import se.vadretapp.vadret.weatherforecast.ui.PlaceForecastRoute
+import se.vadretapp.vadret.weatherforecast.ui.PlaceIslandRoute
 import se.vadretapp.vadret.weatherforecast.ui.WeatherForecastRoute
 
 private val navigationConfiguration: SavedStateConfiguration = SavedStateConfiguration {
@@ -76,6 +82,10 @@ private val navigationConfiguration: SavedStateConfiguration = SavedStateConfigu
             subclass(
                 subclass = RadarKey::class,
                 serializer = RadarKey.serializer()
+            )
+            subclass(
+                subclass = PlaceForecastKey::class,
+                serializer = PlaceForecastKey.serializer()
             )
             subclass(
                 subclass = SettingsKey::class,
@@ -124,6 +134,18 @@ internal fun VadretApp(
                 )
             }
         }
+        entry<PlaceForecastKey> { placeForecastKey: PlaceForecastKey ->
+            TabPage(paddingValues = tabPadding) {
+                PlaceForecastRoute(
+                    latitude = placeForecastKey.latitude,
+                    longitude = placeForecastKey.longitude,
+                    onClose = { tabNavigation.closePlaceForecast(placeForecastKey = placeForecastKey) },
+                    onWarningClick = { warningIdentifiers: List<String> ->
+                        tabNavigation.open(key = WarningStoryKey(warningIdentifiers = warningIdentifiers))
+                    }
+                )
+            }
+        }
         entry<WarningKey> {
             TabPage(paddingValues = tabPadding) {
                 WarningRoute(
@@ -149,7 +171,27 @@ internal fun VadretApp(
         }
         if (radarTab != null) {
             entry<RadarKey> {
-                TabPage(paddingValues = tabPadding) { radarTab.content() }
+                TabPage(paddingValues = tabPadding) {
+                    radarTab.content { latitude: Double, longitude: Double, onDismiss: () -> Unit ->
+                        PlaceIslandRoute(
+                            latitude = latitude,
+                            longitude = longitude,
+                            onDismiss = onDismiss,
+                            onOpenForecast = {
+                                tabNavigation.openPlaceForecast(
+                                    placeForecastKey = PlaceForecastKey(
+                                        latitude = latitude,
+                                        longitude = longitude
+                                    )
+                                )
+                            },
+                            onOpenChosenLocation = {
+                                onDismiss()
+                                tabNavigation.openWeatherTab()
+                            }
+                        )
+                    }
+                }
             }
         }
         entry<SettingsKey> {

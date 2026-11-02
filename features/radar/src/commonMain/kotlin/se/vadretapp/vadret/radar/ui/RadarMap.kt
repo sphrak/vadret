@@ -8,6 +8,7 @@ import se.vadretapp.vadret.location.model.Location
 import se.vadretapp.vadret.radar.model.PollenMarker
 import se.vadretapp.vadret.radar.model.RadarLayer
 import se.vadretapp.vadret.radar.precipitation.PrecipitationOverlay
+import se.vadretapp.vadret.radar.ui.overlay.MapProjection
 import se.vadretapp.vadret.radar.wind.WindAtLocation
 import se.vadretapp.vadret.radar.wind.WindField
 
@@ -24,5 +25,6 @@ internal expect fun RadarMap(
     pollenClouds: ImageBitmap?,
     obscuredBottom: Int,
     onMapLoaded: () -> Unit,
+    onMapProjectionChanged: (MapProjection) -> Unit,
     modifier: Modifier = Modifier
 )

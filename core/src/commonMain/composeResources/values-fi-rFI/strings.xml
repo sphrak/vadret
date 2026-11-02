@@ -121,4 +121,16 @@
     <string name="pollen_types_not_available">Siitepölytyyppejä ei voitu ladata. Yritä myöhemmin uudelleen.</string>
     <string name="pollen_hibernating_title">Siitepöly on talviunilla</string>
     <string name="pollen_hibernating_text">Siitepölyraportit palaavat, kun kausi alkaa taas, yleensä helmikuun tienoilla.</string>
+    <string name="unknown_area">Tuntematon paikka</string>
+    <string name="save_place">Tallenna paikka</string>
+    <string name="open_forecast">Avaa ennuste</string>
+    <string name="not_saved">Ei tallennettu</string>
+    <string name="saved">Tallennettu</string>
+    <string name="save">Tallenna</string>
+    <string name="place_label">Paikan nimi</string>
+    <string name="place_label_missing_title">Nimeä paikka</string>
+    <string name="place_label_missing_text">Tälle paikalle ei löytynyt nimeä. Kirjoita nimi, jotta tunnistat sen suosikeistasi.</string>
+    <string name="place_name_taken_text">Sinulla on jo suosikki nimeltä %1$s. Anna tälle paikalle oma nimi.</string>
+    <string name="try_again">Yritä uudelleen</string>
+    <string name="pegman_hint">Vedä kartalle nähdäksesi paikan sään</string>
 </resources>

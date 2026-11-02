@@ -59,7 +59,7 @@ android {
         minSdk = libs.versions.android.minSdk.get().toInteger()
         targetSdk = libs.versions.android.targetSdk.get().toInteger()
         versionCode = appVersionCode
-        versionName = "3.3.0beta01"
+        versionName = "3.3.0beta02"
         vectorDrawables.useSupportLibrary = true
         testInstrumentationRunner = "androidx.top.runner.AndroidJUnitRunner"
         multiDexEnabled = true

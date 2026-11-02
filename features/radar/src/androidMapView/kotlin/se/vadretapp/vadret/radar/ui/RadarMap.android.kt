@@ -21,6 +21,7 @@ import se.vadretapp.vadret.radar.precipitation.PrecipitationOverlay
 import se.vadretapp.vadret.radar.ui.map.RadarMapAppearance
 import se.vadretapp.vadret.radar.ui.map.RadarMapStore
 import se.vadretapp.vadret.radar.ui.map.RadarMapView
+import se.vadretapp.vadret.radar.ui.overlay.MapProjection
 import se.vadretapp.vadret.radar.wind.WindAtLocation
 import se.vadretapp.vadret.radar.wind.WindField
 import se.vadretapp.vadret.ui.VadretTheme
@@ -44,6 +45,7 @@ internal actual fun RadarMap(
     pollenClouds: ImageBitmap?,
     obscuredBottom: Int,
     onMapLoaded: () -> Unit,
+    onMapProjectionChanged: (MapProjection) -> Unit,
     modifier: Modifier
 ) {
     val radarMapStore: RadarMapStore = LocalRadarMapStore.current
@@ -61,6 +63,10 @@ internal actual fun RadarMap(
     )
     val currentOnMapLoaded: () -> Unit by rememberUpdatedState(newValue = onMapLoaded)
     val radarMapView: RadarMapView = remember(radarMapStore) { radarMapStore.radarMapView() }
+    val currentOnMapProjectionChanged: (MapProjection) -> Unit by rememberUpdatedState(newValue = onMapProjectionChanged)
+    LaunchedEffect(radarMapView) {
+        currentOnMapProjectionChanged(radarMapView.mapProjection)
+    }
     MapShownEffect(
         radarMapStore = radarMapStore,
         radarMapView = radarMapView,

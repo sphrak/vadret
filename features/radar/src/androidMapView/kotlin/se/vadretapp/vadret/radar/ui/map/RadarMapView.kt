@@ -3,13 +3,18 @@ package se.vadretapp.vadret.radar.ui.map
 import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.PointF
 import android.graphics.drawable.Drawable
 import android.widget.FrameLayout
+import androidx.compose.runtime.MutableIntState
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.lifecycle.Lifecycle
 import kotlinx.collections.immutable.ImmutableList
 import org.maplibre.android.MapLibre
+import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.geometry.LatLngBounds
 import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.maps.MapView
@@ -24,6 +29,7 @@ import se.vadretapp.vadret.radar.model.RadarLayer
 import se.vadretapp.vadret.radar.precipitation.PrecipitationOverlay
 import se.vadretapp.vadret.radar.ui.map.extension.toCameraPosition
 import se.vadretapp.vadret.radar.ui.map.extension.toRadarCamera
+import se.vadretapp.vadret.radar.ui.overlay.MapProjection
 import se.vadretapp.vadret.radar.wind.WindAtLocation
 import se.vadretapp.vadret.radar.wind.WindField
 import java.util.Locale
@@ -90,6 +96,30 @@ internal class RadarMapView(
     private var windFadeIn: ValueAnimator? = null
     private var hasWindFadedIn: Boolean = false
     private val imageLayersUpdate = Runnable { showImageLayers() }
+    private val cameraMoves: MutableIntState = mutableIntStateOf(value = 0)
+
+    // Reading the move count makes Compose place what is pinned to the map again after each camera move.
+    val mapProjection: MapProjection = object : MapProjection {
+        override fun screenOffset(
+            latitude: Double,
+            longitude: Double
+        ): Offset? {
+            cameraMoves.intValue
+            val point: PointF = map?.projection?.toScreenLocation(LatLng(latitude, longitude)) ?: return null
+            return Offset(
+                x = point.x,
+                y = point.y
+            )
+        }
+
+        override fun location(screenOffset: Offset): Location? {
+            val latLng: LatLng = map?.projection?.fromScreenLocation(PointF(screenOffset.x, screenOffset.y)) ?: return null
+            return Location(
+                latitude = latLng.latitude,
+                longitude = latLng.longitude
+            )
+        }
+    }
 
     init {
         addView(mapView)
@@ -257,6 +287,7 @@ internal class RadarMapView(
         map.addOnCameraMoveListener {
             limitCamera(map = map)
             overlayView.invalidate()
+            cameraMoves.intValue++
         }
         map.addOnCameraIdleListener { reportCameraIdle(map = map) }
         loadStyle(map = map)

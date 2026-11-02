@@ -117,4 +117,16 @@
     <string name="pollen_types_not_available">Pollentypene kunne ikke hentes. Prøv igjen senere.</string>
     <string name="pollen_hibernating_title">Pollen har gått i hi</string>
     <string name="pollen_hibernating_text">Pollenrapportene kommer tilbake når sesongen starter igjen, vanligvis rundt februar.</string>
+    <string name="unknown_area">Ukjent sted</string>
+    <string name="save_place">Lagre sted</string>
+    <string name="open_forecast">Åpne værvarsel</string>
+    <string name="not_saved">Ikke lagret</string>
+    <string name="saved">Lagret</string>
+    <string name="save">Lagre</string>
+    <string name="place_label">Navn på stedet</string>
+    <string name="place_label_missing_title">Gi stedet et navn</string>
+    <string name="place_label_missing_text">Vi fant ikke noe navn på dette stedet. Skriv et navn så du kjenner det igjen blant favorittene dine.</string>
+    <string name="place_name_taken_text">Du har allerede en favoritt som heter %1$s. Gi dette stedet et eget navn.</string>
+    <string name="try_again">Prøv igjen</string>
+    <string name="pegman_hint">Dra til et sted på kartet for å se været der</string>
 </resources>

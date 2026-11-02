@@ -30,6 +30,24 @@ internal fun TabNavigation.open(key: NavKey) {
     tabBackStacks.getValue(key = currentTabKey).add(element = key)
 }
 
+internal fun TabNavigation.openPlaceForecast(placeForecastKey: PlaceForecastKey) {
+    selectTab(tabKey = WeatherKey)
+    val weatherBackStack: NavBackStack<NavKey> = tabBackStacks.getValue(key = WeatherKey)
+    weatherBackStack.popToRoot()
+    weatherBackStack.add(element = placeForecastKey)
+}
+
+internal fun TabNavigation.openWeatherTab() {
+    selectTab(tabKey = WeatherKey)
+    tabBackStacks.getValue(key = WeatherKey).popToRoot()
+}
+
+// A place forecast is only opened from the map, so leaving it returns there.
+internal fun TabNavigation.closePlaceForecast(placeForecastKey: PlaceForecastKey) {
+    close(key = placeForecastKey)
+    selectTab(tabKey = RadarKey)
+}
+
 internal fun TabNavigation.close(key: NavKey) {
     val currentBackStack: NavBackStack<NavKey> = tabBackStacks.getValue(key = currentTabKey)
     if (currentBackStack.last() == key && currentBackStack.size > ROOT_SIZE) {
@@ -39,7 +57,10 @@ internal fun TabNavigation.close(key: NavKey) {
 
 internal fun TabNavigation.goBack() {
     val currentBackStack: NavBackStack<NavKey> = tabBackStacks.getValue(key = currentTabKey)
-    if (currentBackStack.size > ROOT_SIZE) {
+    val shownKey: NavKey = currentBackStack.last()
+    if (shownKey is PlaceForecastKey) {
+        closePlaceForecast(placeForecastKey = shownKey)
+    } else if (currentBackStack.size > ROOT_SIZE) {
         currentBackStack.removeAt(index = currentBackStack.lastIndex)
     } else if (tabHistory.size > ROOT_SIZE) {
         tabHistory.removeAt(index = tabHistory.lastIndex)

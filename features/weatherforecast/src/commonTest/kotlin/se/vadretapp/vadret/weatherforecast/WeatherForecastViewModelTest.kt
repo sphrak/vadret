@@ -22,10 +22,13 @@ import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.core.resources.Res
 import se.vadretapp.vadret.core.resources.data_not_available_at_this_location
 import se.vadretapp.vadret.core.resources.unhandled_error
+import se.vadretapp.vadret.favorite.model.Favorite
 import se.vadretapp.vadret.testing.FixedClock
+import se.vadretapp.vadret.ui.extension.messageResource
 import se.vadretapp.vadret.ui.format.currentLanguageTag
 import se.vadretapp.vadret.ui.format.toDayTimeText
 import se.vadretapp.vadret.warning.model.WarningPlace
+import se.vadretapp.vadret.weatherforecast.extension.toStoredLocation
 import se.vadretapp.vadret.weatherforecast.model.ComingDay
 import se.vadretapp.vadret.weatherforecast.model.FavoriteChoice
 import se.vadretapp.vadret.weatherforecast.model.Forecast
@@ -33,6 +36,7 @@ import se.vadretapp.vadret.weatherforecast.model.ForecastDay
 import se.vadretapp.vadret.weatherforecast.model.ForecastView
 import se.vadretapp.vadret.weatherforecast.model.LatestWarning
 import se.vadretapp.vadret.weatherforecast.model.LocationChoices
+import se.vadretapp.vadret.weatherforecast.model.PlaceNaming
 import se.vadretapp.vadret.weatherforecast.model.SearchState
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -69,8 +73,10 @@ class WeatherForecastViewModelTest {
     private val clock = FixedClock(now = Instant.parse(input = "2026-10-24T12:00:00Z"))
     private val observeUnseenWarningsTask = FakeObserveUnseenWarningsTask()
     private val forecastPreferenceRepository = FakeForecastPreferenceRepository()
+    private val nominatimRepository = FakeNominatimRepository()
     private val weatherForecastViewModel = WeatherForecastViewModel(
         getLocationModeTask = DefaultGetLocationModeTask(locationRepository = locationRepository),
+        getStoredLocationTask = DefaultGetStoredLocationTask(locationRepository = locationRepository),
         setLocationModeTask = DefaultSetLocationModeTask(locationRepository = locationRepository),
         getWeatherForecastTask = DefaultGetWeatherForecastTask(
             locationRepository = locationRepository,
@@ -89,6 +95,11 @@ class WeatherForecastViewModelTest {
             favoriteRepository = favoriteRepository,
             locationRepository = locationRepository
         ),
+        getPlaceForecastTask = DefaultGetPlaceForecastTask(
+            weatherForecastRepository = weatherForecastRepository,
+            nominatimRepository = nominatimRepository
+        ),
+        addFavoriteTask = DefaultAddFavoriteTask(favoriteRepository = favoriteRepository),
         observeUnseenWarningsTask = observeUnseenWarningsTask,
         clock = clock,
         coroutineDispatcher = testDispatcher
@@ -721,8 +732,248 @@ class WeatherForecastViewModelTest {
             assertEquals(expected = listOf(true), actual = expansion())
         }
 
+    @Test
+    fun `a place chosen while the screen was out of sight is loaded when it is shown again`() =
+        testScope.runTest {
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnShown)
+            advanceUntilIdle()
+            locationRepository.selectStoredLocation(storedLocation = kirunaFavorite.toStoredLocation())
+
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnShown)
+            advanceUntilIdle()
+
+            assertEquals(expected = "Kiruna", actual = weatherForecastViewModel.state.value.localityName)
+            assertEquals(
+                expected = listOf(
+                    59.3293 to 18.0686,
+                    kirunaFavorite.latitude to kirunaFavorite.longitude
+                ),
+                actual = weatherForecastRepository.requestedCoordinates
+            )
+        }
+
+    @Test
+    fun `a dropped place shows its own forecast and name instead of the chosen location`() =
+        testScope.runTest {
+            showDroppedPlace()
+            advanceUntilIdle()
+
+            val state: WeatherForecastState = weatherForecastViewModel.state.value
+            assertEquals(expected = "Göteborg", actual = state.localityName)
+            assertEquals(expected = false, actual = state.isPlaceSaved)
+            assertEquals(expected = false, actual = state.isLoading)
+            assertTrue(actual = state.forecast.days.isNotEmpty())
+            assertEquals(expected = listOf(DROPPED_LATITUDE to DROPPED_LONGITUDE), actual = weatherForecastRepository.requestedCoordinates)
+        }
+
+    @Test
+    fun `a dropped place shown again is not fetched again`() =
+        testScope.runTest {
+            showDroppedPlace()
+            advanceUntilIdle()
+            showDroppedPlace()
+            advanceUntilIdle()
+
+            assertEquals(expected = 1, actual = weatherForecastRepository.requestedCoordinates.size)
+        }
+
+    @Test
+    fun `a refresh fetches the dropped place again`() =
+        testScope.runTest {
+            showDroppedPlace()
+            advanceUntilIdle()
+
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnRefresh)
+            advanceUntilIdle()
+
+            assertEquals(
+                expected = listOf(
+                    DROPPED_LATITUDE to DROPPED_LONGITUDE,
+                    DROPPED_LATITUDE to DROPPED_LONGITUDE
+                ),
+                actual = weatherForecastRepository.requestedCoordinates
+            )
+            assertEquals(expected = false, actual = weatherForecastViewModel.state.value.isRefreshing)
+        }
+
+    @Test
+    fun `a dropped place is saved as a favorite and then says so`() =
+        testScope.runTest {
+            showDroppedPlace()
+            advanceUntilIdle()
+
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnSavePlaceClicked)
+            advanceUntilIdle()
+
+            assertEquals(
+                expected = listOf(
+                    Favorite(
+                        favoriteId = "favorite-1",
+                        locality = "Göteborg",
+                        municipality = "Göteborgs kommun",
+                        county = "Västra Götalands län",
+                        latitude = DROPPED_LATITUDE,
+                        longitude = DROPPED_LONGITUDE
+                    )
+                ),
+                actual = favoriteRepository.favorites.value
+            )
+            assertEquals(expected = true, actual = weatherForecastViewModel.state.value.isPlaceSaved)
+        }
+
+    @Test
+    fun `a dropped place carrying the name of a favorite elsewhere is not saved and asks for a name of its own`() =
+        testScope.runTest {
+            favoriteRepository.favorites.value = listOf(
+                Favorite(
+                    favoriteId = "favorite-gothenburg",
+                    locality = "Göteborg",
+                    municipality = "Göteborgs kommun",
+                    county = "Västra Götalands län",
+                    latitude = 57.7089,
+                    longitude = 11.9746
+                )
+            )
+            showDroppedPlace()
+            advanceUntilIdle()
+            val shown: WeatherForecastState = weatherForecastViewModel.state.value
+
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnSavePlaceClicked)
+            advanceUntilIdle()
+            val taken: WeatherForecastState = weatherForecastViewModel.state.value
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnPlaceLabelChanged(label = "Hamnen"))
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnSavePlaceClicked)
+            advanceUntilIdle()
+
+            assertEquals(expected = false, actual = shown.isPlaceSaved)
+            assertEquals(expected = PlaceNaming(takenPlaceName = "Göteborg"), actual = taken.placeNaming)
+            assertEquals(expected = false, actual = taken.isPlaceSaved)
+            assertEquals(
+                expected = listOf("Göteborg", "Hamnen"),
+                actual = favoriteRepository.favorites.value.map { favorite: Favorite -> favorite.locality }
+            )
+            val state: WeatherForecastState = weatherForecastViewModel.state.value
+            assertNull(actual = state.placeNaming)
+            assertEquals(expected = "Hamnen", actual = state.localityName)
+            assertEquals(expected = true, actual = state.isPlaceSaved)
+        }
+
+    @Test
+    fun `an unnamed dropped place saved before goes by the name it was saved with`() =
+        testScope.runTest {
+            nominatimRepository.locality = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft()
+            favoriteRepository.favorites.value = listOf(
+                Favorite(
+                    favoriteId = "favorite-cabin",
+                    locality = "Stugan",
+                    municipality = "",
+                    county = "",
+                    latitude = DROPPED_LATITUDE,
+                    longitude = DROPPED_LONGITUDE
+                )
+            )
+
+            showDroppedPlace()
+            advanceUntilIdle()
+
+            assertEquals(expected = "Stugan", actual = weatherForecastViewModel.state.value.localityName)
+            assertEquals(expected = true, actual = weatherForecastViewModel.state.value.isPlaceSaved)
+        }
+
+    @Test
+    fun `a dropped place Nominatim cannot name asks for a name before it is saved`() =
+        testScope.runTest {
+            nominatimRepository.locality = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft()
+            showDroppedPlace()
+            advanceUntilIdle()
+
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnSavePlaceClicked)
+            val asked: WeatherForecastState = weatherForecastViewModel.state.value
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnSavePlaceClicked)
+            val blank: WeatherForecastState = weatherForecastViewModel.state.value
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnPlaceLabelChanged(label = " Stugan "))
+            val named: WeatherForecastState = weatherForecastViewModel.state.value
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnSavePlaceClicked)
+            advanceUntilIdle()
+
+            assertNull(actual = asked.localityName)
+            assertEquals(expected = PlaceNaming(), actual = asked.placeNaming)
+            assertEquals(expected = true, actual = blank.placeNaming?.isLabelMissing)
+            assertEquals(expected = false, actual = named.placeNaming?.isLabelMissing)
+            assertEquals(
+                expected = listOf(
+                    Favorite(
+                        favoriteId = "favorite-1",
+                        locality = "Stugan",
+                        municipality = "",
+                        county = "",
+                        latitude = DROPPED_LATITUDE,
+                        longitude = DROPPED_LONGITUDE
+                    )
+                ),
+                actual = favoriteRepository.favorites.value
+            )
+            val state: WeatherForecastState = weatherForecastViewModel.state.value
+            assertNull(actual = state.placeNaming)
+            assertEquals(expected = "Stugan", actual = state.localityName)
+            assertEquals(expected = true, actual = state.isPlaceSaved)
+        }
+
+    @Test
+    fun `dismissing the name of a dropped place saves nothing`() =
+        testScope.runTest {
+            nominatimRepository.locality = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft()
+            showDroppedPlace()
+            advanceUntilIdle()
+
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnSavePlaceClicked)
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnPlaceLabelChanged(label = "Stu"))
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnPlaceLabelDismissed)
+            advanceUntilIdle()
+
+            assertNull(actual = weatherForecastViewModel.state.value.placeNaming)
+            assertTrue(actual = favoriteRepository.favorites.value.isEmpty())
+        }
+
+    @Test
+    fun `a dropped place that cannot be saved says why`() =
+        testScope.runTest {
+            showDroppedPlace()
+            advanceUntilIdle()
+            val failure = Failure(errorCode = ErrorCode.UNKNOWN)
+            favoriteRepository.failure = failure
+
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnSavePlaceClicked)
+            advanceUntilIdle()
+
+            assertEquals(expected = failure.messageResource(), actual = weatherForecastViewModel.state.value.errorMessageResource)
+            assertEquals(expected = false, actual = weatherForecastViewModel.state.value.isPlaceSaved)
+        }
+
+    @Test
+    fun `saving before the dropped place has loaded does nothing`() =
+        testScope.runTest {
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnSavePlaceClicked)
+            advanceUntilIdle()
+
+            assertNull(actual = weatherForecastViewModel.state.value.placeNaming)
+            assertTrue(actual = favoriteRepository.favorites.value.isEmpty())
+        }
+
+    private fun showDroppedPlace() {
+        weatherForecastViewModel.onEvent(
+            event = WeatherForecastEvent.OnPlaceShown(
+                latitude = DROPPED_LATITUDE,
+                longitude = DROPPED_LONGITUDE
+            )
+        )
+    }
+
     private fun expansion(): List<Boolean> =
         weatherForecastViewModel.state.value.forecast.comingDays.map { comingDay: ComingDay ->
             comingDay.isExpanded
         }
 }
+
+private const val DROPPED_LATITUDE = 61.8286
+private const val DROPPED_LONGITUDE = 16.0912

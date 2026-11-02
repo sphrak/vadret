@@ -5,4 +5,4 @@ import androidx.compose.runtime.remember
 import platform.UIKit.UIAccessibilityIsReduceMotionEnabled
 
 @Composable
-internal actual fun rememberIsMotionEnabled(): Boolean = remember { !UIAccessibilityIsReduceMotionEnabled() }
+actual fun rememberIsMotionEnabled(): Boolean = remember { !UIAccessibilityIsReduceMotionEnabled() }

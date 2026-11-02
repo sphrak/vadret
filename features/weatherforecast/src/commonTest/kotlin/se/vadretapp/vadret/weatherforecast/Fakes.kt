@@ -227,12 +227,14 @@ internal class FakeWeatherForecastRepository(
     val requestedAnalysisCoordinates = mutableListOf<Pair<Double, Double>>()
     var analysisGate: CompletableDeferred<Unit>? = null
     var isAnalysisCancelled: Boolean = false
+    val forecastGates: MutableMap<Pair<Double, Double>, CompletableDeferred<Unit>> = mutableMapOf()
 
     override suspend fun getForecasts(
         latitude: Double,
         longitude: Double
     ): Either<Failure, List<Forecast>> {
         requestedCoordinates.add(latitude to longitude)
+        forecastGates[latitude to longitude]?.await()
         return forecasts
     }
 

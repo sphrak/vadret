@@ -346,6 +346,70 @@ class RadarViewModelTest {
     }
 
     @Test
+    fun `a dropped pegman is kept until its island is closed`() =
+        testScope.runTest {
+            val radarViewModel: RadarViewModel = viewModel()
+            val kiruna = Location(latitude = 67.8558, longitude = 20.2253)
+
+            radarViewModel.onEvent(event = RadarEvent.OnPegmanDropped(location = kiruna))
+            val dropped: Location? = radarViewModel.state.value.droppedLocation
+            radarViewModel.onEvent(event = RadarEvent.OnPlaceIslandDismissed)
+
+            assertEquals(expected = kiruna, actual = dropped)
+            assertNull(actual = radarViewModel.state.value.droppedLocation)
+        }
+
+    @Test
+    fun `dropping the pegman stops the radar from playing`() =
+        testScope.runTest {
+            val radarViewModel: RadarViewModel = viewModel()
+            advanceUntilIdle()
+            radarViewModel.onEvent(event = RadarEvent.OnPlayButtonClicked)
+            advanceTimeBy(delayTimeMillis = 128)
+            runCurrent()
+
+            radarViewModel.onEvent(event = RadarEvent.OnPegmanDropped(location = Location(latitude = 67.8558, longitude = 20.2253)))
+            val stoppedIndex: Int = radarViewModel.state.value.precipitationIndex
+            advanceTimeBy(delayTimeMillis = 512)
+            runCurrent()
+
+            assertEquals(expected = false, actual = radarViewModel.state.value.isPlaying)
+            assertEquals(expected = stoppedIndex, actual = radarViewModel.state.value.precipitationIndex)
+        }
+
+    @Test
+    fun `dropping the pegman stops the wind from playing`() =
+        testScope.runTest {
+            val radarViewModel: RadarViewModel = viewModel()
+            advanceUntilIdle()
+            radarViewModel.onEvent(event = RadarEvent.OnLayerSelected(layer = RadarLayer.WIND))
+            advanceUntilIdle()
+            radarViewModel.onEvent(event = RadarEvent.OnPlayButtonClicked)
+            advanceTimeBy(delayTimeMillis = 128)
+            runCurrent()
+
+            radarViewModel.onEvent(event = RadarEvent.OnPegmanDropped(location = Location(latitude = 67.8558, longitude = 20.2253)))
+            val stoppedIndex: Int = radarViewModel.state.value.windIndex
+            advanceTimeBy(delayTimeMillis = 512)
+            runCurrent()
+
+            assertEquals(expected = false, actual = radarViewModel.state.value.isPlaying)
+            assertEquals(expected = stoppedIndex, actual = radarViewModel.state.value.windIndex)
+        }
+
+    @Test
+    fun `dropping the pegman again moves it`() =
+        testScope.runTest {
+            val radarViewModel: RadarViewModel = viewModel()
+            val malmo = Location(latitude = 55.6050, longitude = 13.0038)
+
+            radarViewModel.onEvent(event = RadarEvent.OnPegmanDropped(location = Location(latitude = 67.8558, longitude = 20.2253)))
+            radarViewModel.onEvent(event = RadarEvent.OnPegmanDropped(location = malmo))
+
+            assertEquals(expected = malmo, actual = radarViewModel.state.value.droppedLocation)
+        }
+
+    @Test
     fun `the newest frame is shown once loaded`() =
         testScope.runTest {
             val radarViewModel: RadarViewModel = viewModel()

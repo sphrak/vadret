@@ -163,4 +163,15 @@
     <string name="pollen_types_not_available">Die Pollenarten konnten nicht geladen werden. Versuche es später erneut.</string>
     <string name="pollen_hibernating_title">Die Pollen halten Winterschlaf</string>
     <string name="pollen_hibernating_text">Die Pollenberichte kommen zurück, wenn die Saison wieder beginnt, meist um Februar.</string>
+    <string name="save_place">Ort speichern</string>
+    <string name="open_forecast">Vorhersage öffnen</string>
+    <string name="not_saved">Nicht gespeichert</string>
+    <string name="saved">Gespeichert</string>
+    <string name="save">Speichern</string>
+    <string name="place_label">Name des Ortes</string>
+    <string name="place_label_missing_title">Ort benennen</string>
+    <string name="place_label_missing_text">Für diesen Ort wurde kein Name gefunden. Gib einen Namen ein, damit du ihn unter deinen Favoriten wiedererkennst.</string>
+    <string name="place_name_taken_text">Du hast schon einen Favoriten namens %1$s. Gib diesem Ort einen eigenen Namen.</string>
+    <string name="try_again">Erneut versuchen</string>
+    <string name="pegman_hint">Auf die Karte ziehen, um das Wetter an diesem Ort zu sehen</string>
 </resources>

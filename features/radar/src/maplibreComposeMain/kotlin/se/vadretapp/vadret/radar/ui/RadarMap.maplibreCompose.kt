@@ -13,6 +13,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
@@ -38,6 +39,7 @@ import se.vadretapp.vadret.radar.ui.map.RadarMapLayers
 import se.vadretapp.vadret.radar.ui.map.RetainedRadarMap
 import se.vadretapp.vadret.radar.ui.map.radarCameraLimits
 import se.vadretapp.vadret.radar.ui.overlay.CameraScreenProjection
+import se.vadretapp.vadret.radar.ui.overlay.MapProjection
 import se.vadretapp.vadret.radar.ui.overlay.RadarOverlay
 import se.vadretapp.vadret.radar.ui.overlay.rememberWindOpacity
 import se.vadretapp.vadret.radar.wind.WindAtLocation
@@ -68,6 +70,7 @@ internal actual fun RadarMap(
     pollenClouds: ImageBitmap?,
     obscuredBottom: Int,
     onMapLoaded: () -> Unit,
+    onMapProjectionChanged: (MapProjection) -> Unit,
     modifier: Modifier
 ) {
     val retainedRadarMap: RetainedRadarMap = LocalRetainedRadarMap.current
@@ -94,6 +97,19 @@ internal actual fun RadarMap(
     }
     var viewportSize: IntSize by remember { mutableStateOf(value = IntSize.Zero) }
     val density: Density = LocalDensity.current
+    val currentOnMapProjectionChanged: (MapProjection) -> Unit by rememberUpdatedState(newValue = onMapProjectionChanged)
+    val mapProjection: MapProjection = remember(mapState, density) {
+        CameraMapProjection {
+            cameraScreenProjection(
+                cameraPosition = mapState.cameraPosition,
+                viewportSize = viewportSize,
+                density = density
+            )
+        }
+    }
+    LaunchedEffect(mapProjection) {
+        currentOnMapProjectionChanged(mapProjection)
+    }
     val steppedZoom: Double by remember(mapState) {
         derivedStateOf { (mapState.cameraPosition.zoom * ZOOM_STEPS_PER_LEVEL).roundToInt() / ZOOM_STEPS_PER_LEVEL }
     }
@@ -115,14 +131,10 @@ internal actual fun RadarMap(
         )
         RadarOverlay(
             screenProjection = {
-                val cameraPosition: CameraPosition = mapState.cameraPosition
-                CameraScreenProjection(
-                    centerLatitude = cameraPosition.center.latitude,
-                    centerLongitude = cameraPosition.center.longitude,
-                    zoom = cameraPosition.zoom,
-                    viewportWidth = viewportSize.width.toFloat(),
-                    viewportHeight = viewportSize.height.toFloat(),
-                    density = density.density
+                cameraScreenProjection(
+                    cameraPosition = mapState.cameraPosition,
+                    viewportSize = viewportSize,
+                    density = density
                 )
             },
             layer = layer,
@@ -138,6 +150,37 @@ internal actual fun RadarMap(
         )
     }
 }
+
+// Reads the camera on every call, so what is placed with it follows the map.
+private class CameraMapProjection(
+    private val cameraScreenProjection: () -> CameraScreenProjection
+) : MapProjection {
+
+    override fun screenOffset(
+        latitude: Double,
+        longitude: Double
+    ): Offset =
+        cameraScreenProjection().screenOffset(
+            latitude = latitude,
+            longitude = longitude
+        )
+
+    override fun location(screenOffset: Offset): Location = cameraScreenProjection().location(screenOffset = screenOffset)
+}
+
+private fun cameraScreenProjection(
+    cameraPosition: CameraPosition,
+    viewportSize: IntSize,
+    density: Density
+): CameraScreenProjection =
+    CameraScreenProjection(
+        centerLatitude = cameraPosition.center.latitude,
+        centerLongitude = cameraPosition.center.longitude,
+        zoom = cameraPosition.zoom,
+        viewportWidth = viewportSize.width.toFloat(),
+        viewportHeight = viewportSize.height.toFloat(),
+        density = density.density
+    )
 
 @Composable
 private fun rememberPreparedImage(image: ImageBitmap?): PreparedImage? {

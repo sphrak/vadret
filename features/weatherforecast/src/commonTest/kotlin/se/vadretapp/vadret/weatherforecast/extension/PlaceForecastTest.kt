@@ -180,6 +180,53 @@ class PlaceForecastTest {
     }
 
     @Test
+    fun `an analysis nearer now than any forecast is the current weather of a dropped place`() {
+        val now: Instant = Instant.parse(input = "2026-10-24T12:10:00Z")
+        val placeForecast = PlaceForecast(
+            placeName = null,
+            municipality = null,
+            county = null,
+            latitude = 59.33,
+            longitude = 18.07,
+            forecasts = listOf(forecast(validAt = Instant.parse(input = "2026-10-24T14:00:00Z"))),
+            analyses = listOf(
+                analysis(
+                    analysedAt = Instant.parse(input = "2026-10-24T12:00:00Z"),
+                    airTemperature = 7.3
+                )
+            )
+        )
+
+        assertEquals(expected = "7.3", actual = placeForecast.toCurrentWeather(now = now)?.temperatureText)
+    }
+
+    @Test
+    fun `a forecast of the same hour as an analysis is the current weather of a dropped place`() {
+        val hour: Instant = Instant.parse(input = "2026-10-24T12:00:00Z")
+        val placeForecast = PlaceForecast(
+            placeName = null,
+            municipality = null,
+            county = null,
+            latitude = 59.33,
+            longitude = 18.07,
+            forecasts = listOf(
+                forecast(
+                    validAt = hour,
+                    airTemperature = 9.1
+                )
+            ),
+            analyses = listOf(
+                analysis(
+                    analysedAt = hour,
+                    airTemperature = 7.3
+                )
+            )
+        )
+
+        assertEquals(expected = "9.1", actual = placeForecast.toCurrentWeather(now = hour)?.temperatureText)
+    }
+
+    @Test
     fun `the current temperatures drop a trailing zero`() {
         val mild: CurrentWeather = currentWeather(
             forecast = forecast(

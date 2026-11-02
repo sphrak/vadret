@@ -1,14 +1,22 @@
 package se.vadretapp.vadret.radar.ui
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -21,13 +29,18 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
@@ -40,12 +53,15 @@ import se.vadretapp.vadret.core.resources.Res
 import se.vadretapp.vadret.core.resources.almost_there
 import se.vadretapp.vadret.core.resources.m_s
 import se.vadretapp.vadret.core.resources.openstreetmap_copyright_notice
+import se.vadretapp.vadret.core.resources.pegman_hint
 import se.vadretapp.vadret.di.koinViewModel
+import se.vadretapp.vadret.icons.rememberIsMotionEnabled
 import se.vadretapp.vadret.location.model.Location
 import se.vadretapp.vadret.radar.RadarEvent
 import se.vadretapp.vadret.radar.RadarState
 import se.vadretapp.vadret.radar.RadarViewModel
 import se.vadretapp.vadret.radar.model.RadarLayer
+import se.vadretapp.vadret.radar.ui.overlay.MapProjection
 import se.vadretapp.vadret.radar.wind.WindAtLocation
 import se.vadretapp.vadret.radar.wind.WindField
 import se.vadretapp.vadret.radar.wind.windAt
@@ -66,11 +82,14 @@ private val attributionPadding = PaddingValues(
     vertical = 2.dp
 )
 private const val NO_DOCK_HEIGHT = 0
+private const val UNMEASURED_SCREEN_HEIGHT = 0
 private const val COVER_FADE_MILLISECONDS = 250
 private const val ATTRIBUTION_BACKGROUND_ALPHA = 0.85f
+private const val ATTRIBUTION_WEIGHT = 1f
 
 @Composable
 fun RadarRoute(
+    placeIsland: @Composable (latitude: Double, longitude: Double, onDismiss: () -> Unit) -> Unit,
     modifier: Modifier = Modifier,
     initialImageUrl: String? = null,
     viewModel: RadarViewModel = koinViewModel()
@@ -82,6 +101,7 @@ fun RadarRoute(
     RadarScreen(
         state = state,
         onEvent = viewModel::onEvent,
+        placeIsland = placeIsland,
         modifier = modifier
     )
 }
@@ -90,6 +110,7 @@ fun RadarRoute(
 internal fun RadarScreen(
     state: RadarState,
     onEvent: (RadarEvent) -> Unit,
+    placeIsland: @Composable (latitude: Double, longitude: Double, onDismiss: () -> Unit) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val snackbarHostState: SnackbarHostState = remember { SnackbarHostState() }
@@ -124,7 +145,21 @@ internal fun RadarScreen(
     var dockHeight: Int by remember { mutableIntStateOf(value = NO_DOCK_HEIGHT) }
     val toastState: VadretToastState = rememberVadretToastState()
     val almostThere: String = stringResource(resource = Res.string.almost_there)
-    Box(modifier = modifier.fillMaxSize()) {
+    val pegmanHint: String = stringResource(resource = Res.string.pegman_hint)
+    var mapProjection: MapProjection? by remember { mutableStateOf(value = null) }
+    var screenOrigin: Offset by remember { mutableStateOf(value = Offset.Zero) }
+    var screenHeight: Int by remember { mutableIntStateOf(value = UNMEASURED_SCREEN_HEIGHT) }
+    var draggedLanding: Offset? by remember { mutableStateOf(value = null) }
+    val isPegmanDragged: Boolean by remember { derivedStateOf { draggedLanding != null } }
+    val droppedLocation: Location? = state.droppedLocation
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .onGloballyPositioned { coordinates ->
+                screenOrigin = coordinates.positionInRoot()
+                screenHeight = coordinates.size.height
+            }
+    ) {
         RadarMap(
             layer = state.layer,
             precipitationOverlay = state.precipitationOverlay,
@@ -137,6 +172,7 @@ internal fun RadarScreen(
             pollenClouds = state.pollenClouds,
             obscuredBottom = dockHeight,
             onMapLoaded = { onEvent(RadarEvent.OnMapLoaded) },
+            onMapProjectionChanged = { changedMapProjection: MapProjection -> mapProjection = changedMapProjection },
             modifier = Modifier.fillMaxSize()
         )
         AnimatedVisibility(
@@ -156,6 +192,13 @@ internal fun RadarScreen(
                 modifier = Modifier
                     .align(alignment = Alignment.TopCenter)
                     .statusBarsPadding()
+            )
+        }
+        val shownMapProjection: MapProjection? = mapProjection
+        if (droppedLocation != null && shownMapProjection != null) {
+            DroppedPegman(
+                location = droppedLocation,
+                mapProjection = shownMapProjection
             )
         }
         HiddenToggle(
@@ -178,8 +221,33 @@ internal fun RadarScreen(
             state = state,
             onEvent = onEvent,
             onDockHeightChanged = { height: Int -> dockHeight = height },
+            pegman = {
+                PegmanButton(
+                    isFigureLifted = isPegmanDragged,
+                    onTapped = { toastState.show(message = pegmanHint) },
+                    onDragged = { rootLanding: Offset -> draggedLanding = rootLanding - screenOrigin },
+                    onDropped = {
+                        val location: Location? = droppedPegmanLocation(
+                            landing = draggedLanding,
+                            mapProjection = mapProjection,
+                            visibleMapBottom = screenHeight - dockHeight
+                        )
+                        draggedLanding = null
+                        if (location != null) {
+                            onEvent(RadarEvent.OnPegmanDropped(location = location))
+                        }
+                    },
+                    onDragCancelled = { draggedLanding = null }
+                )
+            },
+            placeIsland = { location: Location ->
+                placeIsland(location.latitude, location.longitude) { onEvent(RadarEvent.OnPlaceIslandDismissed) }
+            },
             modifier = Modifier.align(alignment = Alignment.BottomCenter)
         )
+        if (isPegmanDragged) {
+            DraggedPegman(landing = { draggedLanding ?: Offset.Zero })
+        }
         VadretToast(
             state = toastState,
             modifier = Modifier
@@ -198,6 +266,8 @@ private fun RadarBottomPanel(
     state: RadarState,
     onEvent: (RadarEvent) -> Unit,
     onDockHeightChanged: (Int) -> Unit,
+    pegman: @Composable () -> Unit,
+    placeIsland: @Composable (Location) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val density: Density = LocalDensity.current
@@ -210,42 +280,102 @@ private fun RadarBottomPanel(
         onDockHeightChanged((size.height - cornerHeight).roundToInt())
     }
     Column(
-        horizontalAlignment = Alignment.End,
         verticalArrangement = Arrangement.spacedBy(space = VadretTheme.spacing.small),
         modifier = modifier.fillMaxWidth()
     ) {
-        Text(
-            text = stringResource(resource = Res.string.openstreetmap_copyright_notice),
-            style = VadretTheme.textStyles.attribution,
-            color = VadretTheme.colorScheme.onSurfaceVariant,
+        val droppedLocation: Location? = state.droppedLocation
+        Row(
+            verticalAlignment = Alignment.Bottom,
+            horizontalArrangement = Arrangement.spacedBy(space = VadretTheme.spacing.small),
             modifier = Modifier
+                .fillMaxWidth()
                 .padding(horizontal = VadretTheme.spacing.medium)
-                .background(
-                    color = VadretTheme.colorScheme.surface.copy(alpha = ATTRIBUTION_BACKGROUND_ALPHA),
-                    shape = attributionShape
-                ).padding(paddingValues = attributionPadding)
-        )
-        val timeline: RadarTimeline? = radarTimeline(state = state)
-        if (state.layer == RadarLayer.POLLEN) {
-            PollenCard(
-                pollenTypes = state.pollenTypes,
-                selectedPollenId = state.selectedPollenId,
-                dayText = state.pollenDayText,
-                dateText = state.pollenDateText,
-                onPollenTypeSelected = { pollenId: String -> onEvent(RadarEvent.OnPollenTypeSelected(pollenId = pollenId)) },
-                modifier = dockModifier
-            )
-        } else if (timeline != null || state.isLoading || state.isInitialLoading) {
-            RadarTimelineCard(
-                layer = state.layer,
-                timeline = timeline,
-                isPlaying = state.isPlaying,
-                onPlayClick = { onEvent(RadarEvent.OnPlayButtonClicked) },
-                onIndexChange = { index: Int -> onEvent(RadarEvent.OnIndexChanged(index = index)) },
-                modifier = dockModifier
-            )
+        ) {
+            Box(
+                contentAlignment = Alignment.BottomStart,
+                modifier = Modifier.weight(weight = ATTRIBUTION_WEIGHT)
+            ) {
+                Text(
+                    text = stringResource(resource = Res.string.openstreetmap_copyright_notice),
+                    style = VadretTheme.textStyles.attribution,
+                    color = VadretTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .background(
+                            color = VadretTheme.colorScheme.surface.copy(alpha = ATTRIBUTION_BACKGROUND_ALPHA),
+                            shape = attributionShape
+                        ).padding(paddingValues = attributionPadding)
+                )
+            }
+            if (droppedLocation == null) {
+                pegman()
+            }
+        }
+        val isMotionEnabled: Boolean = rememberIsMotionEnabled()
+        AnimatedContent(
+            targetState = droppedLocation,
+            contentKey = { location: Location? -> location != null },
+            contentAlignment = Alignment.BottomCenter,
+            transitionSpec = { dockTransition(isMotionEnabled = isMotionEnabled) },
+            modifier = Modifier.fillMaxWidth()
+        ) { location: Location? ->
+            if (location != null) {
+                Box(
+                    modifier = dockModifier.padding(
+                        start = VadretTheme.spacing.medium,
+                        end = VadretTheme.spacing.medium,
+                        bottom = VadretTheme.spacing.medium
+                    )
+                ) {
+                    placeIsland(location)
+                }
+            } else {
+                RadarDock(
+                    state = state,
+                    onEvent = onEvent,
+                    modifier = dockModifier
+                )
+            }
         }
     }
+}
+
+@Composable
+private fun RadarDock(
+    state: RadarState,
+    onEvent: (RadarEvent) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val timeline: RadarTimeline? = radarTimeline(state = state)
+    if (state.layer == RadarLayer.POLLEN) {
+        PollenCard(
+            pollenTypes = state.pollenTypes,
+            selectedPollenId = state.selectedPollenId,
+            dayText = state.pollenDayText,
+            dateText = state.pollenDateText,
+            onPollenTypeSelected = { pollenId: String -> onEvent(RadarEvent.OnPollenTypeSelected(pollenId = pollenId)) },
+            modifier = modifier
+        )
+    } else if (timeline != null || state.isLoading || state.isInitialLoading) {
+        RadarTimelineCard(
+            layer = state.layer,
+            timeline = timeline,
+            isPlaying = state.isPlaying,
+            onPlayClick = { onEvent(RadarEvent.OnPlayButtonClicked) },
+            onIndexChange = { index: Int -> onEvent(RadarEvent.OnIndexChanged(index = index)) },
+            modifier = modifier
+        )
+    }
+}
+
+private fun dockTransition(isMotionEnabled: Boolean): ContentTransform {
+    if (!isMotionEnabled) {
+        return EnterTransition.None togetherWith ExitTransition.None
+    }
+    return ContentTransform(
+        targetContentEnter = slideInVertically(initialOffsetY = { height: Int -> height }),
+        initialContentExit = slideOutVertically(targetOffsetY = { height: Int -> height }),
+        sizeTransform = SizeTransform(clip = false)
+    )
 }
 
 @Composable
@@ -264,5 +394,17 @@ private fun windAtDeviceLocation(
             null
         }
     }
+
+// A figure let go over the radar card would land out of sight, so it is not dropped.
+private fun droppedPegmanLocation(
+    landing: Offset?,
+    mapProjection: MapProjection?,
+    visibleMapBottom: Int
+): Location? {
+    if (landing == null || mapProjection == null || landing.y > visibleMapBottom) {
+        return null
+    }
+    return mapProjection.location(screenOffset = landing)
+}
 
 private fun WindAtLocation.windSpeedText(unit: String): String = "${windSpeed.toDouble().toOneDecimalText()} $unit"

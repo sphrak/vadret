@@ -1,5 +1,6 @@
 package se.vadretapp.vadret.radar
 
+import se.vadretapp.vadret.location.model.Location
 import se.vadretapp.vadret.radar.model.RadarLayer
 
 internal sealed interface RadarEvent {
@@ -15,4 +16,6 @@ internal sealed interface RadarEvent {
     data object OnRadarStationsToggled : RadarEvent
     data class OnPollenTypeSelected(val pollenId: String) : RadarEvent
     data object OnPollenHibernationNoticeDismissed : RadarEvent
+    data class OnPegmanDropped(val location: Location) : RadarEvent
+    data object OnPlaceIslandDismissed : RadarEvent
 }

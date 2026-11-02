@@ -14,7 +14,9 @@ import se.vadretapp.vadret.radar.ui.RadarRoute
 
 private val radarTab = RadarTab(
     host = { content: @Composable () -> Unit -> RadarMapHost(content = content) },
-    content = { RadarRoute() }
+    content = { placeIsland: @Composable (latitude: Double, longitude: Double, onDismiss: () -> Unit) -> Unit ->
+        RadarRoute(placeIsland = placeIsland)
+    }
 )
 
 fun mainViewController(): UIViewController =

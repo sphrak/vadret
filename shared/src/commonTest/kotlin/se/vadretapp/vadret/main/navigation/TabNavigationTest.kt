@@ -9,6 +9,10 @@ class TabNavigationTest {
 
     private val detailKey = WarningDetailKey(warningIdentifier = "smhi-1-1")
     private val storyKey = WarningStoryKey(warningIdentifiers = listOf("smhi-1-1"))
+    private val placeForecastKey = PlaceForecastKey(
+        latitude = 61.8286,
+        longitude = 16.0912
+    )
 
     private val tabNavigation = TabNavigation(
         tabHistory = NavBackStack(WeatherKey),
@@ -71,6 +75,50 @@ class TabNavigationTest {
 
         tabNavigation.close(key = storyKey)
         tabNavigation.close(key = WeatherKey)
+        assertEquals(expected = listOf(WeatherKey), actual = tabBackStack(tabKey = WeatherKey))
+    }
+
+    @Test
+    fun `a place forecast opens in the weather tab on top of its first screen`() {
+        tabNavigation.open(key = storyKey)
+        tabNavigation.selectTab(tabKey = RadarKey)
+
+        tabNavigation.openPlaceForecast(placeForecastKey = placeForecastKey)
+
+        assertEquals(expected = WeatherKey, actual = tabNavigation.currentTabKey)
+        assertEquals(expected = listOf(WeatherKey, placeForecastKey), actual = tabBackStack(tabKey = WeatherKey))
+    }
+
+    @Test
+    fun `back from a place forecast returns to the map`() {
+        tabNavigation.selectTab(tabKey = RadarKey)
+        tabNavigation.openPlaceForecast(placeForecastKey = placeForecastKey)
+
+        tabNavigation.goBack()
+
+        assertEquals(expected = listOf(WeatherKey, RadarKey), actual = tabNavigation.tabHistory.toList())
+        assertEquals(expected = listOf(WeatherKey), actual = tabBackStack(tabKey = WeatherKey))
+    }
+
+    @Test
+    fun `closing a place forecast returns to the map`() {
+        tabNavigation.selectTab(tabKey = RadarKey)
+        tabNavigation.openPlaceForecast(placeForecastKey = placeForecastKey)
+
+        tabNavigation.closePlaceForecast(placeForecastKey = placeForecastKey)
+
+        assertEquals(expected = RadarKey, actual = tabNavigation.currentTabKey)
+        assertEquals(expected = listOf(WeatherKey), actual = tabBackStack(tabKey = WeatherKey))
+    }
+
+    @Test
+    fun `a place saved from the map shows the weather tab from its first screen`() {
+        tabNavigation.openPlaceForecast(placeForecastKey = placeForecastKey)
+        tabNavigation.selectTab(tabKey = RadarKey)
+
+        tabNavigation.openWeatherTab()
+
+        assertEquals(expected = WeatherKey, actual = tabNavigation.currentTabKey)
         assertEquals(expected = listOf(WeatherKey), actual = tabBackStack(tabKey = WeatherKey))
     }
 }

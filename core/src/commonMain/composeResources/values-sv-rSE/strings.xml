@@ -247,4 +247,15 @@
     <string name="pollen_types_not_available">Pollentyperna kunde inte hämtas. Försök igen senare.</string>
     <string name="pollen_hibernating_title">Pollen har gått i ide</string>
     <string name="pollen_hibernating_text">Pollenrapporterna återkommer när säsongen börjar igen, vanligtvis runt februari.</string>
+    <string name="save_place">Spara plats</string>
+    <string name="open_forecast">Öppna prognos</string>
+    <string name="not_saved">Inte sparad</string>
+    <string name="saved">Sparad</string>
+    <string name="save">Spara</string>
+    <string name="place_label">Namn på platsen</string>
+    <string name="place_label_missing_title">Namnge platsen</string>
+    <string name="place_label_missing_text">Vi hittade inget namn för den här platsen. Skriv ett namn så att du känner igen den bland dina favoriter.</string>
+    <string name="place_name_taken_text">Du har redan en favorit som heter %1$s. Ge den här platsen ett eget namn.</string>
+    <string name="try_again">Försök igen</string>
+    <string name="pegman_hint">Dra till en plats på kartan för att se vädret där</string>
 </resources>

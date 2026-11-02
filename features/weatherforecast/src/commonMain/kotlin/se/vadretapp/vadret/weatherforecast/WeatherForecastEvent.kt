@@ -7,6 +7,13 @@ import se.vadretapp.vadret.weatherforecast.model.ForecastView
 sealed interface WeatherForecastEvent {
 
     data object OnShown : WeatherForecastEvent
+    data class OnPlaceShown(
+        val latitude: Double,
+        val longitude: Double
+    ) : WeatherForecastEvent
+    data object OnSavePlaceClicked : WeatherForecastEvent
+    data class OnPlaceLabelChanged(val label: String) : WeatherForecastEvent
+    data object OnPlaceLabelDismissed : WeatherForecastEvent
     data object OnResumed : WeatherForecastEvent
     data class OnLocaleChanged(val languageTag: String) : WeatherForecastEvent
     data object OnRefresh : WeatherForecastEvent
