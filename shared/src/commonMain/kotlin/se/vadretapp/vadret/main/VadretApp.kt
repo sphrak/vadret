@@ -3,7 +3,9 @@ package se.vadretapp.vadret.main
 import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
@@ -33,6 +35,7 @@ import kotlinx.collections.immutable.toImmutableList
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import se.vadretapp.vadret.forecastwarning.ui.WarningDetailRoute
+import se.vadretapp.vadret.forecastwarning.ui.WarningMapHost
 import se.vadretapp.vadret.forecastwarning.ui.WarningRoute
 import se.vadretapp.vadret.forecastwarning.ui.WarningStoryRoute
 import se.vadretapp.vadret.main.navigation.PlaceForecastKey
@@ -155,7 +158,7 @@ internal fun VadretApp(
                 )
             }
         }
-        entry<WarningDetailKey> { warningDetailKey: WarningDetailKey ->
+        entry<WarningDetailKey>(metadata = detailTransitions) { warningDetailKey: WarningDetailKey ->
             TabPage(paddingValues = tabPadding) {
                 WarningDetailRoute(
                     warningIdentifier = warningDetailKey.warningIdentifier,
@@ -221,15 +224,17 @@ internal fun VadretApp(
             onDestinationClick = { destination: TopLevelDestination -> tabNavigation.selectTab(tabKey = destination.key) },
             modifier = Modifier.align(alignment = Alignment.BottomCenter)
         )
-        RadarHost(radarTab = radarTab) {
-            NavDisplay(
-                entries = tabNavigation.tabHistory.flatMap { tabKey: NavKey -> tabEntries.getValue(key = tabKey) },
-                onBack = { tabNavigation.goBack() },
-                transitionSpec = { instantTransition() },
-                popTransitionSpec = { instantTransition() },
-                predictivePopTransitionSpec = { instantTransition() },
-                modifier = Modifier.fillMaxSize()
-            )
+        WarningMapHost {
+            RadarHost(radarTab = radarTab) {
+                NavDisplay(
+                    entries = tabNavigation.tabHistory.flatMap { tabKey: NavKey -> tabEntries.getValue(key = tabKey) },
+                    onBack = { tabNavigation.goBack() },
+                    transitionSpec = { instantTransition() },
+                    popTransitionSpec = { instantTransition() },
+                    predictivePopTransitionSpec = { instantTransition() },
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
         }
     }
 }
@@ -266,7 +271,14 @@ private fun instantTransition(): ContentTransform = EnterTransition.None togethe
 
 private fun slideDown(): ContentTransform = EnterTransition.None togetherWith slideOutVertically(targetOffsetY = { height: Int -> height })
 
+private fun slideOutToEnd(): ContentTransform = EnterTransition.None togetherWith slideOutHorizontally(targetOffsetX = { width: Int -> width })
+
 private val storyTransitions: Map<String, Any> =
     NavDisplay.transitionSpec {
         slideInVertically(initialOffsetY = { height: Int -> height }) togetherWith ExitTransition.KeepUntilTransitionsFinished
     } + NavDisplay.popTransitionSpec { slideDown() } + NavDisplay.predictivePopTransitionSpec { _: Int -> slideDown() }
+
+private val detailTransitions: Map<String, Any> =
+    NavDisplay.transitionSpec {
+        slideInHorizontally(initialOffsetX = { width: Int -> width }) togetherWith ExitTransition.KeepUntilTransitionsFinished
+    } + NavDisplay.popTransitionSpec { slideOutToEnd() } + NavDisplay.predictivePopTransitionSpec { _: Int -> slideOutToEnd() }
