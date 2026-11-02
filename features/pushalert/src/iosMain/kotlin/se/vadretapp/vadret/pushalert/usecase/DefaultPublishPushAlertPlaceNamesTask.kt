@@ -7,27 +7,27 @@ import kotlinx.coroutines.flow.filterNotNull
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.favorite.FavoriteRepository
 import se.vadretapp.vadret.favorite.model.Favorite
+import se.vadretapp.vadret.location.LocationRepository
+import se.vadretapp.vadret.location.model.LocationPreference
 import se.vadretapp.vadret.pushalert.PushAlertPlaceNameRepository
-import se.vadretapp.vadret.pushalert.PushAlertRepository
 import se.vadretapp.vadret.pushalert.extension.toCell
 import se.vadretapp.vadret.pushalert.extension.toGeohashOrNull
-import se.vadretapp.vadret.pushalert.model.PushAlertChoices
 
-// The Notification Service Extension names a wind or temperature alert after the chosen saved place in its cell.
+// The Notification Service Extension names a wind or temperature alert after the followed saved place in its cell.
 // It cannot tell where the phone is, so unlike AddPlaceNameTask it also names a saved place the phone is at.
 internal class DefaultPublishPushAlertPlaceNamesTask(
     private val favoriteRepository: FavoriteRepository,
-    private val pushAlertRepository: PushAlertRepository,
+    private val locationRepository: LocationRepository,
     private val pushAlertPlaceNameRepository: PushAlertPlaceNameRepository
 ) : PublishPushAlertPlaceNamesTask {
     override suspend fun invoke() {
         combine(
             favoriteRepository.observeFavorites(),
-            pushAlertRepository.observeChoices()
-        ) { favorites: Either<Failure, List<Favorite>>, pushAlertChoices: Either<Failure, PushAlertChoices> ->
+            locationRepository.observeLocationPreference()
+        ) { favorites: Either<Failure, List<Favorite>>, locationPreference: Either<Failure, LocationPreference> ->
             placeNamesByCell(
                 favorites = favorites,
-                pushAlertChoices = pushAlertChoices
+                locationPreference = locationPreference
             )
         }.filterNotNull()
             .distinctUntilChanged()
@@ -38,10 +38,10 @@ internal class DefaultPublishPushAlertPlaceNamesTask(
 
     private fun placeNamesByCell(
         favorites: Either<Failure, List<Favorite>>,
-        pushAlertChoices: Either<Failure, PushAlertChoices>
+        locationPreference: Either<Failure, LocationPreference>
     ): Map<String, String>? =
         when {
-            favorites is Either.Right && pushAlertChoices is Either.Right -> favorites.b.placeNamesByCell(favoriteIds = pushAlertChoices.b.favoriteIds)
+            favorites is Either.Right && locationPreference is Either.Right -> favorites.b.placeNamesByCell(favoriteIds = locationPreference.b.followedFavoriteIds)
             else -> null
         }
 }

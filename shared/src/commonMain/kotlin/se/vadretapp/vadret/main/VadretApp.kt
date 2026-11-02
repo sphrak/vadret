@@ -154,7 +154,8 @@ internal fun VadretApp(
                 WarningRoute(
                     onWarningClick = { warningIdentifier: String ->
                         tabNavigation.open(key = WarningDetailKey(warningIdentifier = warningIdentifier))
-                    }
+                    },
+                    onFollowedPlacesClick = { tabNavigation.selectTab(tabKey = SettingsKey) }
                 )
             }
         }

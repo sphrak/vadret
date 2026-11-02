@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.sphrak.either.Either
 import io.github.sphrak.either.extension.onResult
-import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,17 +12,13 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
-import se.vadretapp.vadret.favorite.model.Favorite
 import se.vadretapp.vadret.pollen.model.PollenType
-import se.vadretapp.vadret.pushalert.extension.toFavoriteRow
-import se.vadretapp.vadret.pushalert.model.FavoriteRow
 import se.vadretapp.vadret.pushalert.model.PollenAlertLevel
 import se.vadretapp.vadret.pushalert.model.PollenChoice
 import se.vadretapp.vadret.pushalert.model.PushAlertChoices
 import se.vadretapp.vadret.pushalert.model.WarningAlertLevel
 import se.vadretapp.vadret.pushalert.usecase.GetPollenTypesTask
 import se.vadretapp.vadret.pushalert.usecase.IsOutsideSwedenTask
-import se.vadretapp.vadret.pushalert.usecase.ObserveFavoritesTask
 import se.vadretapp.vadret.pushalert.usecase.ObservePushAlertChoicesTask
 import se.vadretapp.vadret.pushalert.usecase.ObservePushAlertSyncPendingTask
 import se.vadretapp.vadret.pushalert.usecase.SavePushAlertChoicesTask
@@ -33,7 +28,6 @@ import kotlin.concurrent.atomics.AtomicBoolean
 internal class PushAlertsViewModel(
     private val observePushAlertChoicesTask: ObservePushAlertChoicesTask,
     private val observePushAlertSyncPendingTask: ObservePushAlertSyncPendingTask,
-    private val observeFavoritesTask: ObserveFavoritesTask,
     private val savePushAlertChoicesTask: SavePushAlertChoicesTask,
     private val syncPushAlertsTask: SyncPushAlertsTask,
     private val getPollenTypesTask: GetPollenTypesTask,
@@ -70,7 +64,6 @@ internal class PushAlertsViewModel(
             }
             viewModelScope.launch(context = coroutineDispatcher) { observeChoices() }
             viewModelScope.launch(context = coroutineDispatcher) { observeSyncPending() }
-            viewModelScope.launch(context = coroutineDispatcher) { observeFavorites() }
             viewModelScope.launch(context = coroutineDispatcher) { loadPollenTypes() }
         }
     }
@@ -89,15 +82,6 @@ internal class PushAlertsViewModel(
             result.onResult(
                 onError = { failure: Failure -> state.update { state: PushAlertsState -> state.copy(failure = failure) } },
                 onSuccess = { isSyncPending: Boolean -> state.update { state: PushAlertsState -> state.copy(isSyncPending = isSyncPending) } }
-            )
-        }
-    }
-
-    private suspend fun observeFavorites() {
-        observeFavoritesTask().collect { result: Either<Failure, List<Favorite>> ->
-            result.onResult(
-                onError = { failure: Failure -> state.update { state: PushAlertsState -> state.copy(failure = failure) } },
-                onSuccess = { favorites: List<Favorite> -> state.update { state: PushAlertsState -> state.withFavorites(favorites = favorites) } }
             )
         }
     }
@@ -136,11 +120,6 @@ internal class PushAlertsViewModel(
             PushAlertsEvent.OnPollenLevelRowClicked -> state.update { state: PushAlertsState -> state.copy(isPollenLevelDialogVisible = true) }
             PushAlertsEvent.OnPollenLevelDialogDismissed -> state.update { state: PushAlertsState -> state.copy(isPollenLevelDialogVisible = false) }
             is PushAlertsEvent.OnPollenLevelSelected -> onPollenLevelSelected(pollenAlertLevel = event.pollenAlertLevel)
-            is PushAlertsEvent.OnFavoriteToggled -> onFavoriteToggled(
-                favoriteId = event.favoriteId,
-                isEnabled = event.isEnabled
-            )
-            PushAlertsEvent.OnFavoriteLimitDialogDismissed -> state.update { state: PushAlertsState -> state.copy(isFavoriteLimitDialogVisible = false) }
             is PushAlertsEvent.OnNotificationPermissionResult -> onNotificationPermissionResult(isGranted = event.isGranted)
             PushAlertsEvent.OnNotificationPermissionDialogDismissed -> state.update { state: PushAlertsState ->
                 state.copy(isNotificationPermissionDialogVisible = false)
@@ -183,27 +162,6 @@ internal class PushAlertsViewModel(
                 pollenChoices = choices.pollenChoices.map { pollenChoice: PollenChoice -> pollenChoice.copy(lowestLevel = pollenAlertLevel) }
             )
         )
-    }
-
-    private suspend fun onFavoriteToggled(
-        favoriteId: String,
-        isEnabled: Boolean
-    ) {
-        val currentState = state.value
-        val toggledFavoriteRow = currentState.favoriteRows.firstOrNull { favoriteRow: FavoriteRow -> favoriteRow.favoriteId == favoriteId } ?: return
-        val otherFavoriteIds = currentState.favoriteRows
-            .filter { favoriteRow: FavoriteRow -> favoriteRow.isChecked && favoriteRow.favoriteId != favoriteId }
-            .map { favoriteRow: FavoriteRow -> favoriteRow.favoriteId }
-            .toSet()
-        if (!isEnabled) {
-            choose(pushAlertChoices = currentState.choices.copy(favoriteIds = otherFavoriteIds))
-        } else if (!toggledFavoriteRow.isInSweden) {
-            state.update { state: PushAlertsState -> state.copy(isOutsideSwedenDialogVisible = true) }
-        } else if (otherFavoriteIds.size >= MAXIMUM_CHOSEN_FAVORITES) {
-            state.update { state: PushAlertsState -> state.copy(isFavoriteLimitDialogVisible = true) }
-        } else {
-            choose(pushAlertChoices = currentState.choices.copy(favoriteIds = otherFavoriteIds + favoriteId))
-        }
     }
 
     private suspend fun choose(pushAlertChoices: PushAlertChoices) {
@@ -261,19 +219,7 @@ private fun PushAlertsState.withChoices(pushAlertChoices: PushAlertChoices): Pus
     copy(
         choices = pushAlertChoices,
         chosenPollenTypeIds = pushAlertChoices.pollenChoices.map { pollenChoice: PollenChoice -> pollenChoice.pollenTypeId }.toSet(),
-        pollenLevel = pushAlertChoices.pollenChoices.firstOrNull()?.lowestLevel ?: pollenLevel,
-        favoriteRows = favoriteRows
-            .map { favoriteRow: FavoriteRow -> favoriteRow.copy(isChecked = favoriteRow.favoriteId in pushAlertChoices.favoriteIds) }
-            .toImmutableList()
-    )
-
-private fun PushAlertsState.withFavorites(favorites: List<Favorite>): PushAlertsState =
-    copy(
-        favoriteRows = favorites
-            .map { favorite: Favorite -> favorite.toFavoriteRow(favoriteIds = choices.favoriteIds) }
-            .toImmutableList()
+        pollenLevel = pushAlertChoices.pollenChoices.firstOrNull()?.lowestLevel ?: pollenLevel
     )
 
 private val DEFAULT_WARNING_LEVEL = WarningAlertLevel.YELLOW
-
-private const val MAXIMUM_CHOSEN_FAVORITES = 4

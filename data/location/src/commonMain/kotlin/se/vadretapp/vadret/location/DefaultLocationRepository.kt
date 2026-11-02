@@ -58,4 +58,23 @@ internal class DefaultLocationRepository(
     override suspend fun selectStoredLocation(storedLocation: StoredLocation): Either<Failure, Unit> =
         either { storedLocationLocalDataSource.selectStoredLocation(storedLocationEntity = storedLocation.toStoredLocationEntity()) }
             .catch { exception: Exception -> exception.toFailure() }
+
+    override suspend fun followFavorite(
+        favoriteId: String,
+        maximumFollowedFavorites: Int
+    ): Either<Failure, Boolean> =
+        either {
+            storedLocationLocalDataSource.followFavorite(
+                favoriteId = favoriteId,
+                maximumFollowedFavorites = maximumFollowedFavorites
+            )
+        }.catch { exception: Exception -> exception.toFailure() }
+
+    override suspend fun unfollowFavorite(favoriteId: String): Either<Failure, Unit> =
+        either { storedLocationLocalDataSource.unfollowFavorite(favoriteId = favoriteId) }
+            .catch { exception: Exception -> exception.toFailure() }
+
+    override suspend fun adoptFollowedFavoriteIds(favoriteIds: Set<String>): Either<Failure, Unit> =
+        either { storedLocationLocalDataSource.adoptFollowedFavoriteIds(favoriteIds = favoriteIds) }
+            .catch { exception: Exception -> exception.toFailure() }
 }

@@ -4,12 +4,15 @@ import io.github.sphrak.either.Either
 import io.github.sphrak.either.extension.asLeft
 import io.github.sphrak.either.extension.asRight
 import io.github.sphrak.either.flatMap
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.encryption.SealedMessageKey
 import se.vadretapp.vadret.geohash.model.Geohash
+import se.vadretapp.vadret.location.LocationRepository
+import se.vadretapp.vadret.location.model.LocationPreference
 import se.vadretapp.vadret.logging.Logger
 import se.vadretapp.vadret.logging.LoggerFactory
 import se.vadretapp.vadret.pushalert.DeviceTokenSource
@@ -30,6 +33,7 @@ internal class DefaultSyncPushAlertsTask(
     private val sealedMessageKey: SealedMessageKey,
     private val getCurrentGeohashTask: GetCurrentGeohashTask,
     private val getPushAlertGeohashesTask: GetPushAlertGeohashesTask,
+    private val locationRepository: LocationRepository,
     private val clock: Clock
 ) : SyncPushAlertsTask {
     private val syncMutex = Mutex()
@@ -107,10 +111,12 @@ internal class DefaultSyncPushAlertsTask(
         currentGeohash: Geohash,
         pushAlertChoices: PushAlertChoices
     ): Either<Failure, Unit> =
-        getPushAlertGeohashesTask(
-            currentGeohash = currentGeohash,
-            favoriteIds = pushAlertChoices.favoriteIds
-        ).flatMap { geohashes: List<Geohash> ->
+        locationRepository.observeLocationPreference().first().flatMap { locationPreference: LocationPreference ->
+            getPushAlertGeohashesTask(
+                currentGeohash = currentGeohash,
+                favoriteIds = locationPreference.followedFavoriteIds
+            )
+        }.flatMap { geohashes: List<Geohash> ->
             pushAlertRepository.replaceSubscription(
                 installationToken = installationToken,
                 pushAlertSubscription = PushAlertSubscription(

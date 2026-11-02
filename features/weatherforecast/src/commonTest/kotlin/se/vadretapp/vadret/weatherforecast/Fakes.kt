@@ -4,6 +4,7 @@ import io.github.sphrak.either.Either
 import io.github.sphrak.either.extension.asLeft
 import io.github.sphrak.either.extension.asRight
 import io.github.sphrak.either.extension.successOrNull
+import io.github.sphrak.either.flatMap
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.Flow
@@ -19,6 +20,8 @@ import se.vadretapp.vadret.core.resources.Res
 import se.vadretapp.vadret.core.resources.wsymb2_overcast
 import se.vadretapp.vadret.favorite.FavoriteRepository
 import se.vadretapp.vadret.favorite.model.Favorite
+import se.vadretapp.vadret.followedplace.GetChosenPlaceTask
+import se.vadretapp.vadret.followedplace.model.FollowedPlace
 import se.vadretapp.vadret.forecastpreference.ForecastPreferenceRepository
 import se.vadretapp.vadret.forecastpreference.model.ForecastPreferences
 import se.vadretapp.vadret.icons.Overcast
@@ -31,6 +34,7 @@ import se.vadretapp.vadret.nominatim.NominatimRepository
 import se.vadretapp.vadret.nominatim.model.Locality
 import se.vadretapp.vadret.place.PlaceRepository
 import se.vadretapp.vadret.place.model.Place
+import se.vadretapp.vadret.warning.ObserveUnseenFollowedPlaceWarningsTask
 import se.vadretapp.vadret.warning.ObserveUnseenWarningsTask
 import se.vadretapp.vadret.warning.model.WarningPlace
 import se.vadretapp.vadret.weatherforecast.model.Analysis
@@ -121,7 +125,8 @@ internal class FakeLocationRepository(
     val locationPreference: MutableStateFlow<LocationPreference> = MutableStateFlow(
         value = LocationPreference(
             isAutomatic = isAutomatic.successOrNull ?: false,
-            storedLocation = stockholm
+            storedLocation = stockholm,
+            followedFavoriteIds = emptySet()
         )
     )
 
@@ -152,12 +157,30 @@ internal class FakeLocationRepository(
         writes.add("selected=${storedLocation.locality}")
         if (selectStoredLocationResult.isRight) {
             this.isAutomatic = false.asRight()
-            locationPreference.value = LocationPreference(
+            locationPreference.value = locationPreference.value.copy(
                 isAutomatic = false,
                 storedLocation = storedLocation
             )
         }
         return selectStoredLocationResult
+    }
+
+    override suspend fun followFavorite(
+        favoriteId: String,
+        maximumFollowedFavorites: Int
+    ): Either<Failure, Boolean> {
+        locationPreference.value = locationPreference.value.copy(followedFavoriteIds = locationPreference.value.followedFavoriteIds + favoriteId)
+        return true.asRight()
+    }
+
+    override suspend fun unfollowFavorite(favoriteId: String): Either<Failure, Unit> {
+        locationPreference.value = locationPreference.value.copy(followedFavoriteIds = locationPreference.value.followedFavoriteIds - favoriteId)
+        return Unit.asRight()
+    }
+
+    override suspend fun adoptFollowedFavoriteIds(favoriteIds: Set<String>): Either<Failure, Unit> {
+        locationPreference.value = locationPreference.value.copy(followedFavoriteIds = favoriteIds)
+        return Unit.asRight()
     }
 }
 
@@ -310,21 +333,28 @@ internal fun warning(
         )
     )
 
+// Answers for one place and for the followed places alike, and records which was asked: no place means the followed places.
 internal class FakeObserveUnseenWarningsTask(
     initial: Either<Failure, List<AggregatedFeed>> = listOf(
         warning(identifier = "smhi-1"),
         warning(identifier = "smhi-2")
     ).asRight()
-) : ObserveUnseenWarningsTask {
+) : ObserveUnseenWarningsTask,
+    ObserveUnseenFollowedPlaceWarningsTask {
 
     val unseenWarnings: MutableStateFlow<Either<Failure, List<AggregatedFeed>>> = MutableStateFlow(value = initial)
-    val requests = mutableListOf<Pair<WarningPlace, Boolean>>()
+    val requests = mutableListOf<Pair<WarningPlace?, Boolean>>()
 
     override fun invoke(
         warningPlace: WarningPlace,
         isRefresh: Boolean
     ): Flow<Either<Failure, List<AggregatedFeed>>> {
         requests.add(element = warningPlace to isRefresh)
+        return unseenWarnings
+    }
+
+    override fun invoke(isRefresh: Boolean): Flow<Either<Failure, List<AggregatedFeed>>> {
+        requests.add(element = null to isRefresh)
         return unseenWarnings
     }
 }
@@ -355,4 +385,45 @@ internal class FakeForecastPreferenceRepository : ForecastPreferenceRepository {
         this.forecastPreferences = forecastPreferences
         observedForecastPreferences.value = forecastPreferences.asRight()
     }
+}
+
+// Reads the location fake the way the chosen place is found, so the forecast tests keep steering it through that fake.
+internal class FakeGetChosenPlaceTask(
+    private val locationRepository: FakeLocationRepository,
+    private val nominatimRepository: FakeNominatimRepository
+) : GetChosenPlaceTask {
+
+    override suspend fun invoke(): Either<Failure, FollowedPlace> =
+        locationRepository.isAutomatic().flatMap { isAutomatic: Boolean ->
+            if (isAutomatic) {
+                locationRepository.getDeviceLocation().flatMap { location: Location ->
+                    val locality: Locality? = nominatimRepository
+                        .getLocality(
+                            latitude = location.latitude,
+                            longitude = location.longitude
+                        ).successOrNull
+                    FollowedPlace(
+                        favoriteId = null,
+                        name = locality?.name,
+                        municipality = locality?.municipality,
+                        county = locality?.county,
+                        latitude = location.latitude,
+                        longitude = location.longitude,
+                        isChosen = true
+                    ).asRight()
+                }
+            } else {
+                locationRepository.getStoredLocation().flatMap { storedLocation: StoredLocation ->
+                    FollowedPlace(
+                        favoriteId = null,
+                        name = storedLocation.locality,
+                        municipality = storedLocation.municipality,
+                        county = storedLocation.county,
+                        latitude = storedLocation.latitude,
+                        longitude = storedLocation.longitude,
+                        isChosen = true
+                    ).asRight()
+                }
+            }
+        }
 }

@@ -46,7 +46,7 @@ class DefaultIsOutsideSwedenTaskTest {
 }
 
 private suspend fun isOutsideSweden(locationRepository: FakeLocationRepository): Boolean =
-    DefaultIsOutsideSwedenTask(getCurrentGeohashTask = DefaultGetCurrentGeohashTask(locationRepository = locationRepository))()
+    DefaultIsOutsideSwedenTask(getCurrentGeohashTask = DefaultGetCurrentGeohashTask(getChosenPlaceTask = FakeGetChosenPlaceTask(locationRepository = locationRepository)))()
 
 private val BERLIN = Location(
     latitude = 52.52,

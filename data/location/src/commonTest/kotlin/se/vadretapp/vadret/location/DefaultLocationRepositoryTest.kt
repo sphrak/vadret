@@ -51,7 +51,8 @@ private class FakeStoredLocationLocalDataSource : StoredLocationLocalDataSource 
     private val locationPreferenceEntity: MutableStateFlow<LocationPreferenceEntity> = MutableStateFlow(
         value = LocationPreferenceEntity(
             isAutomatic = true,
-            storedLocationEntity = stockholmEntity
+            storedLocationEntity = stockholmEntity,
+            followedFavoriteIds = emptySet()
         )
     )
 
@@ -66,10 +67,28 @@ private class FakeStoredLocationLocalDataSource : StoredLocationLocalDataSource 
     override fun observeLocationPreference(): Flow<LocationPreferenceEntity> = locationPreferenceEntity
 
     override suspend fun selectStoredLocation(storedLocationEntity: StoredLocationEntity) {
-        locationPreferenceEntity.value = LocationPreferenceEntity(
-            isAutomatic = false,
-            storedLocationEntity = storedLocationEntity
-        )
+        locationPreferenceEntity.update { entity: LocationPreferenceEntity ->
+            entity.copy(
+                isAutomatic = false,
+                storedLocationEntity = storedLocationEntity
+            )
+        }
+    }
+
+    override suspend fun followFavorite(
+        favoriteId: String,
+        maximumFollowedFavorites: Int
+    ): Boolean {
+        locationPreferenceEntity.update { entity: LocationPreferenceEntity -> entity.copy(followedFavoriteIds = entity.followedFavoriteIds + favoriteId) }
+        return true
+    }
+
+    override suspend fun unfollowFavorite(favoriteId: String) {
+        locationPreferenceEntity.update { entity: LocationPreferenceEntity -> entity.copy(followedFavoriteIds = entity.followedFavoriteIds - favoriteId) }
+    }
+
+    override suspend fun adoptFollowedFavoriteIds(favoriteIds: Set<String>) {
+        locationPreferenceEntity.update { entity: LocationPreferenceEntity -> entity.copy(followedFavoriteIds = favoriteIds) }
     }
 }
 
@@ -79,6 +98,12 @@ private class BrokenStoredLocationLocalDataSource : StoredLocationLocalDataSourc
     override suspend fun getStoredLocation(): StoredLocationEntity = throw IOException("corrupt", null)
     override fun observeLocationPreference(): Flow<LocationPreferenceEntity> = flow { throw IOException("corrupt", null) }
     override suspend fun selectStoredLocation(storedLocationEntity: StoredLocationEntity) = throw IOException("corrupt", null)
+    override suspend fun followFavorite(
+        favoriteId: String,
+        maximumFollowedFavorites: Int
+    ): Boolean = throw IOException("corrupt", null)
+    override suspend fun unfollowFavorite(favoriteId: String) = throw IOException("corrupt", null)
+    override suspend fun adoptFollowedFavoriteIds(favoriteIds: Set<String>) = throw IOException("corrupt", null)
 }
 
 private val kiruna = StoredLocation(
@@ -201,11 +226,13 @@ class DefaultLocationRepositoryTest {
                             county = "Stockholm",
                             latitude = 59.3293,
                             longitude = 18.0686
-                        )
+                        ),
+                        followedFavoriteIds = emptySet()
                     ).asRight(),
                     LocationPreference(
                         isAutomatic = false,
-                        storedLocation = kiruna
+                        storedLocation = kiruna,
+                        followedFavoriteIds = emptySet()
                     ).asRight()
                 ),
                 actual = emitted

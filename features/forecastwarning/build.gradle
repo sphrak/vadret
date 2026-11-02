@@ -13,6 +13,7 @@ kotlin {
                 implementation project(':data:aggregatedfeed')
                 implementation project(':data:common')
                 implementation project(':data:theme')
+                implementation project(':domain:followedplace')
                 implementation project(':domain:warning')
                 implementation libs.either
                 implementation libs.koin.core

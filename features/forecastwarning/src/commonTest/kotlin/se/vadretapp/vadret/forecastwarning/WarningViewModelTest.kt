@@ -19,6 +19,8 @@ import se.vadretapp.vadret.core.resources.Res
 import se.vadretapp.vadret.core.resources.no_network_available
 import se.vadretapp.vadret.forecastwarning.model.WarningItem
 import se.vadretapp.vadret.testing.FixedClock
+import se.vadretapp.vadret.warning.model.FollowedPlaceWarnings
+import se.vadretapp.vadret.warning.model.PlaceWarning
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -32,9 +34,9 @@ class WarningViewModelTest {
 
     private val testDispatcher: TestDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
-    private val observeChosenPlaceWarningsTask = FakeObserveChosenPlaceWarningsTask()
+    private val observeFollowedPlaceWarningsTask = FakeObserveFollowedPlaceWarningsTask()
     private val warningViewModel = WarningViewModel(
-        observeChosenPlaceWarningsTask = observeChosenPlaceWarningsTask,
+        observeFollowedPlaceWarningsTask = observeFollowedPlaceWarningsTask,
         clock = FixedClock(now = Instant.parse(input = "2026-10-24T08:30:00Z")),
         coroutineDispatcher = testDispatcher
     )
@@ -55,19 +57,19 @@ class WarningViewModelTest {
     fun `nothing loads until the screen starts the view model and then only once`() =
         testScope.runTest {
             advanceUntilIdle()
-            assertEquals(expected = emptyList(), actual = observeChosenPlaceWarningsTask.refreshes)
+            assertEquals(expected = emptyList(), actual = observeFollowedPlaceWarningsTask.refreshes)
 
             warningViewModel.onEvent(event = WarningEvent.OnStart)
             warningViewModel.onEvent(event = WarningEvent.OnStart)
             advanceUntilIdle()
 
-            assertEquals(expected = listOf(false), actual = observeChosenPlaceWarningsTask.refreshes)
+            assertEquals(expected = listOf(false), actual = observeFollowedPlaceWarningsTask.refreshes)
         }
 
     @Test
     fun `every warning of the chosen place is shown in one list newest first`() =
         testScope.runTest {
-            observeChosenPlaceWarningsTask.results.value = listOf(
+            observeFollowedPlaceWarningsTask.results.value = listOf(
                 aggregatedFeed(
                     identifier = "smhi-1",
                     publishedAt = Instant.parse(input = "2026-10-24T05:00:00Z")
@@ -81,7 +83,7 @@ class WarningViewModelTest {
                     identifier = "smhi-2",
                     publishedAt = Instant.parse(input = "2026-10-24T06:00:00Z")
                 )
-            ).asRight()
+            ).atOneFollowedPlace().asRight()
 
             warningViewModel.onEvent(event = WarningEvent.OnStart)
             advanceUntilIdle()
@@ -94,12 +96,12 @@ class WarningViewModelTest {
     @Test
     fun `no warnings is told apart from a failed load`() =
         testScope.runTest {
-            observeChosenPlaceWarningsTask.results.value = emptyList<AggregatedFeed>().asRight()
+            observeFollowedPlaceWarningsTask.results.value = emptyList<AggregatedFeed>().atOneFollowedPlace().asRight()
             warningViewModel.onEvent(event = WarningEvent.OnStart)
             advanceUntilIdle()
             assertTrue(actual = warningViewModel.state.value.isEmpty)
 
-            observeChosenPlaceWarningsTask.results.value = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft()
+            observeFollowedPlaceWarningsTask.results.value = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft()
             warningViewModel.onEvent(event = WarningEvent.OnRefresh)
             advanceUntilIdle()
 
@@ -116,11 +118,72 @@ class WarningViewModelTest {
             warningViewModel.onEvent(event = WarningEvent.OnStart)
             advanceUntilIdle()
 
-            observeChosenPlaceWarningsTask.results.value = listOf(aggregatedFeed(identifier = "smhi-9-1")).asRight()
+            observeFollowedPlaceWarningsTask.results.value = listOf(aggregatedFeed(identifier = "smhi-9-1")).atOneFollowedPlace().asRight()
             advanceUntilIdle()
 
             assertEquals(expected = listOf("smhi-9-1"), actual = shownIdentifiers())
-            assertEquals(expected = listOf(false), actual = observeChosenPlaceWarningsTask.refreshes)
+            assertEquals(expected = listOf(false), actual = observeFollowedPlaceWarningsTask.refreshes)
+        }
+
+    @Test
+    fun `with more than one followed place each warning names the places it affects`() =
+        testScope.runTest {
+            observeFollowedPlaceWarningsTask.results.value = FollowedPlaceWarnings(
+                followedPlaces = listOf(gothenburg, cabin),
+                placeWarnings = listOf(
+                    PlaceWarning(
+                        aggregatedFeed = aggregatedFeed(identifier = "smhi-1-1"),
+                        followedPlaces = listOf(gothenburg, cabin)
+                    )
+                )
+            ).asRight()
+
+            warningViewModel.onEvent(event = WarningEvent.OnStart)
+            advanceUntilIdle()
+
+            assertEquals(expected = "Göteborg, Stugan", actual = warningViewModel.state.value.warnings.single().followedPlaceNames)
+        }
+
+    @Test
+    fun `with one followed place the warnings do not name it`() =
+        testScope.runTest {
+            warningViewModel.onEvent(event = WarningEvent.OnStart)
+            advanceUntilIdle()
+
+            assertEquals(expected = listOf(null, null), actual = warningViewModel.state.value.warnings.map { warningItem: WarningItem -> warningItem.followedPlaceNames })
+        }
+
+    @Test
+    fun `a place without a name is left out of the named places`() =
+        testScope.runTest {
+            observeFollowedPlaceWarningsTask.results.value = FollowedPlaceWarnings(
+                followedPlaces = listOf(gothenburg, cabin),
+                placeWarnings = listOf(
+                    PlaceWarning(
+                        aggregatedFeed = aggregatedFeed(identifier = "smhi-1-1"),
+                        followedPlaces = listOf(gothenburg.copy(name = null))
+                    )
+                )
+            ).asRight()
+
+            warningViewModel.onEvent(event = WarningEvent.OnStart)
+            advanceUntilIdle()
+
+            assertEquals(expected = null, actual = warningViewModel.state.value.warnings.single().followedPlaceNames)
+        }
+
+    @Test
+    fun `the followed places are named above their warnings`() =
+        testScope.runTest {
+            observeFollowedPlaceWarningsTask.results.value = FollowedPlaceWarnings(
+                followedPlaces = listOf(gothenburg, cabin),
+                placeWarnings = emptyList()
+            ).asRight()
+
+            warningViewModel.onEvent(event = WarningEvent.OnStart)
+            advanceUntilIdle()
+
+            assertEquals(expected = "Göteborg, Stugan", actual = warningViewModel.state.value.followedPlaceNames)
         }
 
     @Test
@@ -131,18 +194,18 @@ class WarningViewModelTest {
             warningViewModel.onEvent(event = WarningEvent.OnRefresh)
             advanceUntilIdle()
 
-            assertEquals(expected = listOf(false, true), actual = observeChosenPlaceWarningsTask.refreshes)
+            assertEquals(expected = listOf(false, true), actual = observeFollowedPlaceWarningsTask.refreshes)
         }
 
     @Test
     fun `a new language tells the times again without loading`() =
         testScope.runTest {
-            observeChosenPlaceWarningsTask.results.value = listOf(
+            observeFollowedPlaceWarningsTask.results.value = listOf(
                 aggregatedFeed(
                     identifier = "smhi-1",
                     endsAt = Instant.parse(input = "2026-10-24T08:30:00Z") + 48.hours
                 )
-            ).asRight()
+            ).atOneFollowedPlace().asRight()
             warningViewModel.onEvent(event = WarningEvent.OnLocaleChanged(languageTag = "en"))
             warningViewModel.onEvent(event = WarningEvent.OnStart)
             advanceUntilIdle()
@@ -154,6 +217,6 @@ class WarningViewModelTest {
 
             assertEquals(expected = true, actual = englishText?.startsWith(prefix = "Mon"))
             assertEquals(expected = true, actual = swedishText?.startsWith(prefix = "mån"))
-            assertEquals(expected = listOf(false), actual = observeChosenPlaceWarningsTask.refreshes)
+            assertEquals(expected = listOf(false), actual = observeFollowedPlaceWarningsTask.refreshes)
         }
 }

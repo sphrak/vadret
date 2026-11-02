@@ -11,8 +11,7 @@ kotlin {
             dependencies {
                 implementation project(':data:aggregatedfeed')
                 implementation project(':data:common')
-                implementation project(':data:location')
-                implementation project(':data:nominatim')
+                implementation project(':domain:followedplace')
                 implementation libs.coroutines.core
                 implementation libs.either
                 implementation libs.koin.core

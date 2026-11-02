@@ -1,9 +1,7 @@
 package se.vadretapp.vadret.pushalert.ui
 
-import kotlinx.collections.immutable.persistentListOf
 import se.vadretapp.vadret.pollen.model.PollenType
 import se.vadretapp.vadret.pushalert.PushAlertsState
-import se.vadretapp.vadret.pushalert.model.FavoriteRow
 import se.vadretapp.vadret.pushalert.model.PollenAlertLevel
 import se.vadretapp.vadret.pushalert.model.PollenChoice
 import se.vadretapp.vadret.pushalert.model.PushAlertChoices
@@ -34,20 +32,6 @@ internal fun pushAlertsPreviewState(): PushAlertsState = PushAlertsState(
             pollenId = PREVIEW_GRASS_ID,
             name = "Gräs",
             hasForecasts = true
-        )
-    ),
-    favoriteRows = persistentListOf(
-        FavoriteRow(
-            favoriteId = PREVIEW_MALMO_ID,
-            locality = "Malmö",
-            isChecked = true,
-            isInSweden = true
-        ),
-        FavoriteRow(
-            favoriteId = PREVIEW_GOTEBORG_ID,
-            locality = "Göteborg",
-            isChecked = false,
-            isInSweden = true
         )
     ),
     isSyncPending = true

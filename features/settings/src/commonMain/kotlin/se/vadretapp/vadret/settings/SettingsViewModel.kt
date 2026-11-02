@@ -2,21 +2,30 @@ package se.vadretapp.vadret.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import io.github.sphrak.either.Either
 import io.github.sphrak.either.extension.onResult
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import se.vadretapp.vadret.changelog.model.Changelog
+import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
+import se.vadretapp.vadret.followedplace.ObserveFollowablePlacesTask
+import se.vadretapp.vadret.followedplace.SetPlaceFollowedTask
+import se.vadretapp.vadret.followedplace.model.FollowableFavorite
+import se.vadretapp.vadret.followedplace.model.FollowablePlaces
 import se.vadretapp.vadret.language.model.AppLanguage
 import se.vadretapp.vadret.library.model.Library
 import se.vadretapp.vadret.model.AppInfo
 import se.vadretapp.vadret.pollen.model.PollenType
+import se.vadretapp.vadret.settings.extension.toFollowedPlaceRow
 import se.vadretapp.vadret.settings.extension.toLibraryGroups
 import se.vadretapp.vadret.settings.extension.toLocationRows
 import se.vadretapp.vadret.settings.extension.toPollenAllergenRows
+import se.vadretapp.vadret.settings.model.FollowedPlaceRow
 import se.vadretapp.vadret.theme.model.Theme
 import kotlin.concurrent.atomics.AtomicBoolean
 import kotlin.concurrent.atomics.AtomicReference
@@ -34,6 +43,8 @@ class SettingsViewModel internal constructor(
     private val setPollenAllergenTask: SetPollenAllergenTask,
     private val getPollenTypesTask: GetPollenTypesTask,
     private val setEndOfSeasonSimulatedTask: SetEndOfSeasonSimulatedTask,
+    private val observeFollowablePlacesTask: ObserveFollowablePlacesTask,
+    private val setPlaceFollowedTask: SetPlaceFollowedTask,
     appInfo: AppInfo,
     private val coroutineDispatcher: CoroutineDispatcher
 ) : ViewModel() {
@@ -99,6 +110,16 @@ class SettingsViewModel internal constructor(
             is SettingsEvent.OnEndOfSeasonSimulationToggled -> onEndOfSeasonSimulationToggled(
                 isEndOfSeasonSimulated = event.isEndOfSeasonSimulated
             )
+            is SettingsEvent.OnPlaceFollowToggled -> onPlaceFollowToggled(
+                favoriteId = event.favoriteId,
+                isFollowed = event.isFollowed
+            )
+            SettingsEvent.OnFollowedPlaceLimitDialogDismissed -> state.update { state: SettingsState ->
+                state.copy(isFollowedPlaceLimitDialogVisible = false)
+            }
+            SettingsEvent.OnFollowedPlaceAbroadDialogDismissed -> state.update { state: SettingsState ->
+                state.copy(isFollowedPlaceAbroadDialogVisible = false)
+            }
         }
     }
 
@@ -109,6 +130,52 @@ class SettingsViewModel internal constructor(
                 loadLibraries()
                 loadChangelog()
             }
+            viewModelScope.launch(context = coroutineDispatcher) { observeFollowablePlaces() }
+        }
+    }
+
+    // The chosen place is always followed, so only the other favorites have a switch.
+    private suspend fun observeFollowablePlaces() {
+        observeFollowablePlacesTask().collect { result: Either<Failure, FollowablePlaces> ->
+            result.onResult(
+                onError = { _: Failure -> },
+                onSuccess = { followablePlaces: FollowablePlaces ->
+                    state.update { state: SettingsState ->
+                        state.copy(
+                            chosenPlaceName = followablePlaces.chosenPlace?.name,
+                            followedPlaceRows = followablePlaces.favorites
+                                .filterNot { followableFavorite: FollowableFavorite -> followableFavorite.isChosen }
+                                .map { followableFavorite: FollowableFavorite -> followableFavorite.toFollowedPlaceRow() }
+                                .toImmutableList()
+                        )
+                    }
+                }
+            )
+        }
+    }
+
+    // A favorite abroad has no warnings to follow, so it is explained instead of followed.
+    private fun onPlaceFollowToggled(
+        favoriteId: String,
+        isFollowed: Boolean
+    ) {
+        val followedPlaceRow: FollowedPlaceRow = state.value.followedPlaceRows.firstOrNull { row: FollowedPlaceRow -> row.favoriteId == favoriteId } ?: return
+        if (isFollowed && !followedPlaceRow.isInSweden) {
+            state.update { state: SettingsState -> state.copy(isFollowedPlaceAbroadDialogVisible = true) }
+            return
+        }
+        viewModelScope.launch(context = coroutineDispatcher) {
+            setPlaceFollowedTask(
+                favoriteId = favoriteId,
+                isFollowed = isFollowed
+            ).onResult(
+                onError = { failure: Failure ->
+                    if (failure.errorCode == ErrorCode.FOLLOWED_PLACE_LIMIT) {
+                        state.update { state: SettingsState -> state.copy(isFollowedPlaceLimitDialogVisible = true) }
+                    }
+                },
+                onSuccess = {}
+            )
         }
     }
 

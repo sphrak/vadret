@@ -27,4 +27,10 @@ internal sealed interface SettingsEvent {
         val isAllergen: Boolean
     ) : SettingsEvent
     data class OnEndOfSeasonSimulationToggled(val isEndOfSeasonSimulated: Boolean) : SettingsEvent
+    data class OnPlaceFollowToggled(
+        val favoriteId: String,
+        val isFollowed: Boolean
+    ) : SettingsEvent
+    data object OnFollowedPlaceLimitDialogDismissed : SettingsEvent
+    data object OnFollowedPlaceAbroadDialogDismissed : SettingsEvent
 }

@@ -26,6 +26,7 @@ import se.vadretapp.vadret.library.model.Library
 import se.vadretapp.vadret.settings.model.AboutRow
 import se.vadretapp.vadret.settings.model.AboutRowAction
 import se.vadretapp.vadret.settings.model.AboutRowHint
+import se.vadretapp.vadret.settings.model.FollowedPlaceRow
 import se.vadretapp.vadret.settings.model.LibraryGroup
 import se.vadretapp.vadret.settings.model.LocationRow
 import se.vadretapp.vadret.settings.model.PollenAllergenRow
@@ -89,5 +90,9 @@ internal data class SettingsState(
     val pollenAllergenCount: Int = 0,
     val pollenAllergenRows: ImmutableList<PollenAllergenRow> = persistentListOf(),
     val isPollenAllergenDialogVisible: Boolean = false,
-    val arePollenTypesUnavailable: Boolean = false
+    val arePollenTypesUnavailable: Boolean = false,
+    val chosenPlaceName: String? = null,
+    val followedPlaceRows: ImmutableList<FollowedPlaceRow> = persistentListOf(),
+    val isFollowedPlaceLimitDialogVisible: Boolean = false,
+    val isFollowedPlaceAbroadDialogVisible: Boolean = false
 )

@@ -1,0 +1,29 @@
+plugins {
+    id 'vadret.kmp.library'
+}
+
+kotlin {
+    android {
+        namespace = 'se.vadretapp.vadret.followedplace'
+    }
+    sourceSets {
+        commonMain {
+            dependencies {
+                implementation project(':core:geohash')
+                implementation project(':core:logging')
+                implementation project(':data:common')
+                implementation project(':data:favorite')
+                implementation project(':data:location')
+                implementation project(':data:nominatim')
+                implementation libs.coroutines.core
+                implementation libs.either
+                implementation libs.koin.core
+            }
+        }
+        commonTest {
+            dependencies {
+                implementation project(':core:testing')
+            }
+        }
+    }
+}

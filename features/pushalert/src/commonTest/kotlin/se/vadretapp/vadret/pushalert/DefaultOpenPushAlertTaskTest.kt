@@ -99,8 +99,9 @@ class DefaultOpenPushAlertTaskTest {
     @Test
     fun aWindOrTemperatureAlertForAChosenSavedPlaceIsNamedAfterItAndOtherKindsAreNot() = runTest {
         val openPushAlert = openPushAlert(
-            pushAlertChoices = EVERYTHING_CHOSEN.copy(favoriteIds = setOf(MALMO_FAVORITE.favoriteId)),
-            favoriteRepository = FakeFavoriteRepository(favorites = listOf(MALMO_FAVORITE))
+            pushAlertChoices = EVERYTHING_CHOSEN,
+            favoriteRepository = FakeFavoriteRepository(favorites = listOf(MALMO_FAVORITE)),
+            locationRepository = FakeLocationRepository(followedFavoriteIds = setOf(MALMO_FAVORITE.favoriteId))
         )
 
         assertEquals(
@@ -138,6 +139,7 @@ class DefaultOpenPushAlertTaskTest {
         val openPushAlert = DefaultOpenPushAlertTask(
             sealedMessageKey = FAKE_SEALED_MESSAGE_KEY,
             pushAlertRepository = FakePushAlertRepository(choicesFailure = Failure(errorCode = ErrorCode.STORAGE_FAILED)),
+            locationRepository = FakeLocationRepository(),
             addPlaceNameTask = DefaultAddPlaceNameTask(
                 favoriteRepository = FakeFavoriteRepository(),
                 pushAlertRepository = FakePushAlertRepository()
@@ -153,7 +155,8 @@ class DefaultOpenPushAlertTaskTest {
 
 private fun openPushAlert(
     pushAlertChoices: PushAlertChoices,
-    favoriteRepository: FakeFavoriteRepository = FakeFavoriteRepository()
+    favoriteRepository: FakeFavoriteRepository = FakeFavoriteRepository(),
+    locationRepository: FakeLocationRepository = FakeLocationRepository()
 ): DefaultOpenPushAlertTask {
     val pushAlertRepository = FakePushAlertRepository(
         choices = pushAlertChoices,
@@ -162,6 +165,7 @@ private fun openPushAlert(
     return DefaultOpenPushAlertTask(
         sealedMessageKey = FAKE_SEALED_MESSAGE_KEY,
         pushAlertRepository = pushAlertRepository,
+        locationRepository = locationRepository,
         addPlaceNameTask = DefaultAddPlaceNameTask(
             favoriteRepository = favoriteRepository,
             pushAlertRepository = pushAlertRepository

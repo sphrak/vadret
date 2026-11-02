@@ -12,5 +12,6 @@ internal data class WarningState(
     val isLoading: Boolean = true,
     val isRefreshing: Boolean = false,
     val isEmpty: Boolean = false,
+    val followedPlaceNames: String? = null,
     val errorMessageResource: StringResource? = null
 )

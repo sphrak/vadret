@@ -12,6 +12,7 @@ import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -21,13 +22,15 @@ import se.vadretapp.vadret.aggregatedfeed.model.AggregatedFeed
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.favorite.model.Favorite
+import se.vadretapp.vadret.followedplace.GetChosenPlaceTask
+import se.vadretapp.vadret.followedplace.model.FollowedPlace
 import se.vadretapp.vadret.forecastpreference.model.ForecastPreferences
 import se.vadretapp.vadret.location.model.Location
-import se.vadretapp.vadret.location.model.StoredLocation
 import se.vadretapp.vadret.place.model.Place
 import se.vadretapp.vadret.ui.extension.launchReplacing
 import se.vadretapp.vadret.ui.extension.messageResource
 import se.vadretapp.vadret.ui.format.currentLanguageTag
+import se.vadretapp.vadret.warning.ObserveUnseenFollowedPlaceWarningsTask
 import se.vadretapp.vadret.warning.ObserveUnseenWarningsTask
 import se.vadretapp.vadret.warning.model.WarningPlace
 import se.vadretapp.vadret.weatherforecast.extension.isAt
@@ -60,7 +63,7 @@ private val staleForecastAge: Duration = 2.minutes
 @Immutable
 class WeatherForecastViewModel internal constructor(
     private val getLocationModeTask: GetLocationModeTask,
-    private val getStoredLocationTask: GetStoredLocationTask,
+    private val getChosenPlaceTask: GetChosenPlaceTask,
     private val setLocationModeTask: SetLocationModeTask,
     private val getWeatherForecastTask: GetWeatherForecastTask,
     private val observeLocationChoicesTask: ObserveLocationChoicesTask,
@@ -72,6 +75,7 @@ class WeatherForecastViewModel internal constructor(
     private val getPlaceForecastTask: GetPlaceForecastTask,
     private val addFavoriteTask: AddFavoriteTask,
     private val observeUnseenWarningsTask: ObserveUnseenWarningsTask,
+    private val observeUnseenFollowedPlaceWarningsTask: ObserveUnseenFollowedPlaceWarningsTask,
     private val clock: Clock,
     private val coroutineDispatcher: CoroutineDispatcher
 ) : ViewModel() {
@@ -173,10 +177,10 @@ class WeatherForecastViewModel internal constructor(
     // A place opened from the map can become the chosen location while this screen is out of sight.
     private suspend fun reloadIfAnotherPlaceWasChosen() {
         val loadedPlaceForecast: PlaceForecast = placeForecast.load() ?: return
-        getStoredLocationTask().onResult(
+        getChosenPlaceTask().onResult(
             onError = { failure: Failure -> displayError(failure = failure) },
-            onSuccess = { storedLocation: StoredLocation ->
-                if (!loadedPlaceForecast.isAt(storedLocation = storedLocation)) {
+            onSuccess = { chosenPlace: FollowedPlace ->
+                if (!loadedPlaceForecast.isAt(followedPlace = chosenPlace)) {
                     reloadStoredLocation()
                 }
             }
@@ -368,13 +372,8 @@ class WeatherForecastViewModel internal constructor(
             currentJob = warningJob,
             context = coroutineDispatcher
         ) {
-            observeUnseenWarningsTask(
-                warningPlace = WarningPlace(
-                    latitude = placeForecast.latitude,
-                    longitude = placeForecast.longitude,
-                    county = placeForecast.county,
-                    municipality = placeForecast.municipality
-                ),
+            unseenWarningsFor(
+                placeForecast = placeForecast,
                 isRefresh = isRefresh
             ).collect { result: Either<Failure, List<AggregatedFeed>> ->
                 result.onResult(
@@ -387,6 +386,25 @@ class WeatherForecastViewModel internal constructor(
             }
         }
     }
+
+    // A dropped place shows its own warnings, the chosen location those of every followed place.
+    private fun unseenWarningsFor(
+        placeForecast: PlaceForecast,
+        isRefresh: Boolean
+    ): Flow<Either<Failure, List<AggregatedFeed>>> =
+        if (droppedPlace.load() != null) {
+            observeUnseenWarningsTask(
+                warningPlace = WarningPlace(
+                    latitude = placeForecast.latitude,
+                    longitude = placeForecast.longitude,
+                    county = placeForecast.county,
+                    municipality = placeForecast.municipality
+                ),
+                isRefresh = isRefresh
+            )
+        } else {
+            observeUnseenFollowedPlaceWarningsTask(isRefresh = isRefresh)
+        }
 
     private fun displayLatestWarning() {
         state.update { state: WeatherForecastState ->

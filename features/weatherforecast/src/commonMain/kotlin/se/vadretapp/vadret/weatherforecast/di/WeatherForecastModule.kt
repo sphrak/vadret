@@ -8,7 +8,6 @@ import se.vadretapp.vadret.weatherforecast.AddFavoriteTask
 import se.vadretapp.vadret.weatherforecast.DefaultAddFavoriteTask
 import se.vadretapp.vadret.weatherforecast.DefaultGetLocationModeTask
 import se.vadretapp.vadret.weatherforecast.DefaultGetPlaceForecastTask
-import se.vadretapp.vadret.weatherforecast.DefaultGetStoredLocationTask
 import se.vadretapp.vadret.weatherforecast.DefaultGetWeatherForecastTask
 import se.vadretapp.vadret.weatherforecast.DefaultObserveForecastPreferencesTask
 import se.vadretapp.vadret.weatherforecast.DefaultObserveLocationChoicesTask
@@ -19,7 +18,6 @@ import se.vadretapp.vadret.weatherforecast.DefaultSelectPlaceTask
 import se.vadretapp.vadret.weatherforecast.DefaultSetLocationModeTask
 import se.vadretapp.vadret.weatherforecast.GetLocationModeTask
 import se.vadretapp.vadret.weatherforecast.GetPlaceForecastTask
-import se.vadretapp.vadret.weatherforecast.GetStoredLocationTask
 import se.vadretapp.vadret.weatherforecast.GetWeatherForecastTask
 import se.vadretapp.vadret.weatherforecast.ObserveForecastPreferencesTask
 import se.vadretapp.vadret.weatherforecast.ObserveLocationChoicesTask
@@ -35,7 +33,6 @@ val weatherForecastModule: Module = module {
     factoryOf(::DefaultAddFavoriteTask) { bind<AddFavoriteTask>() }
     factoryOf(::DefaultGetLocationModeTask) { bind<GetLocationModeTask>() }
     factoryOf(::DefaultGetPlaceForecastTask) { bind<GetPlaceForecastTask>() }
-    factoryOf(::DefaultGetStoredLocationTask) { bind<GetStoredLocationTask>() }
     factoryOf(::DefaultGetWeatherForecastTask) { bind<GetWeatherForecastTask>() }
     factoryOf(::DefaultObserveForecastPreferencesTask) { bind<ObserveForecastPreferencesTask>() }
     factoryOf(::DefaultObserveLocationChoicesTask) { bind<ObserveLocationChoicesTask>() }

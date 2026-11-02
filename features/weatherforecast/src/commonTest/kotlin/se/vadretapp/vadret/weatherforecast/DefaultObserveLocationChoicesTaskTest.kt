@@ -56,7 +56,8 @@ class DefaultObserveLocationChoicesTaskTest {
         favoriteRepository.favorites.value = listOf(bergaDanderyd, bergaLinkoping)
         locationRepository.locationPreference.value = LocationPreference(
             isAutomatic = isAutomatic,
-            storedLocation = favorite.toStoredLocation()
+            storedLocation = favorite.toStoredLocation(),
+            followedFavoriteIds = emptySet()
         )
     }
 

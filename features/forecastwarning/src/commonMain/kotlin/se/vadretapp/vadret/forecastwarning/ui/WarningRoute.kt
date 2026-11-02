@@ -1,8 +1,10 @@
 package se.vadretapp.vadret.forecastwarning.ui
 
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
@@ -12,6 +14,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -29,8 +32,10 @@ import kotlinx.collections.immutable.ImmutableList
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import se.vadretapp.vadret.core.resources.Res
+import se.vadretapp.vadret.core.resources.change_followed_places
 import se.vadretapp.vadret.core.resources.warning_display_no_warnings_issued
 import se.vadretapp.vadret.core.resources.warnings
+import se.vadretapp.vadret.core.resources.warnings_for_places
 import se.vadretapp.vadret.di.koinViewModel
 import se.vadretapp.vadret.forecastwarning.WarningEvent
 import se.vadretapp.vadret.forecastwarning.WarningState
@@ -46,6 +51,7 @@ import se.vadretapp.vadret.ui.VadretTheme
 import se.vadretapp.vadret.ui.VadretTopAppBar
 
 private const val WARNING_LIST_KEY = "warning-list"
+private const val FOLLOWED_PLACES_KEY = "followed-places"
 
 private val contentHorizontalPadding = 13.dp
 private val contentTopPadding = 8.dp
@@ -56,6 +62,7 @@ private val listVerticalPadding = 13.dp
 @Composable
 fun WarningRoute(
     onWarningClick: (String) -> Unit,
+    onFollowedPlacesClick: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: WarningViewModel = koinViewModel()
 ) {
@@ -64,6 +71,7 @@ fun WarningRoute(
         state = state,
         onEvent = viewModel::onEvent,
         onWarningClick = onWarningClick,
+        onFollowedPlacesClick = onFollowedPlacesClick,
         modifier = modifier
     )
 }
@@ -73,6 +81,7 @@ internal fun WarningScreen(
     state: WarningState,
     onEvent: (WarningEvent) -> Unit,
     onWarningClick: (String) -> Unit,
+    onFollowedPlacesClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val snackbarHostState: SnackbarHostState = remember { SnackbarHostState() }
@@ -115,6 +124,19 @@ internal fun WarningScreen(
                 ),
                 modifier = Modifier.fillMaxSize()
             ) {
+                val followedPlaceNames: String? = state.followedPlaceNames
+                if (followedPlaceNames != null) {
+                    item(
+                        key = FOLLOWED_PLACES_KEY,
+                        contentType = FOLLOWED_PLACES_KEY
+                    ) {
+                        FollowedPlacesHeader(
+                            followedPlaceNames = followedPlaceNames,
+                            onChangeClick = onFollowedPlacesClick,
+                            modifier = Modifier.padding(bottom = VadretTheme.spacing.small)
+                        )
+                    }
+                }
                 warningList(
                     warnings = state.warnings,
                     onWarningClick = onWarningClick
@@ -134,6 +156,31 @@ internal fun WarningScreen(
                         .padding(all = VadretTheme.spacing.extraLarge)
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun FollowedPlacesHeader(
+    followedPlaceNames: String,
+    onChangeClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Text(
+            text = stringResource(
+                resource = Res.string.warnings_for_places,
+                followedPlaceNames
+            ),
+            style = VadretTheme.textStyles.detail,
+            color = VadretTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(weight = 1f)
+        )
+        TextButton(onClick = onChangeClick) {
+            Text(text = stringResource(resource = Res.string.change_followed_places))
         }
     }
 }
@@ -195,7 +242,8 @@ private fun WarningScreenPreview(
         WarningScreen(
             state = warningPreviewState(),
             onEvent = {},
-            onWarningClick = {}
+            onWarningClick = {},
+            onFollowedPlacesClick = {}
         )
     }
 }

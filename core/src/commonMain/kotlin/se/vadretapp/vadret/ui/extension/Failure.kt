@@ -50,6 +50,7 @@ fun Failure.messageResource(): StringResource =
         ErrorCode.UNSUPPORTED_AREA -> Res.string.push_alerts_only_in_sweden_text
         ErrorCode.PUSH_ALERT_NOT_CHOSEN,
         ErrorCode.FAVORITE_NAME_TAKEN,
+        ErrorCode.FOLLOWED_PLACE_LIMIT,
         ErrorCode.STORAGE_FAILED,
         ErrorCode.UNKNOWN -> Res.string.unhandled_error
     }

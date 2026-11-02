@@ -15,8 +15,11 @@ import se.vadretapp.vadret.aggregatedfeed.model.GeoLine
 import se.vadretapp.vadret.aggregatedfeed.model.GeoPolygon
 import se.vadretapp.vadret.aggregatedfeed.model.WarningLevel
 import se.vadretapp.vadret.common.Failure
+import se.vadretapp.vadret.followedplace.model.FollowedPlace
 import se.vadretapp.vadret.warning.GetWarningsTask
-import se.vadretapp.vadret.warning.ObserveChosenPlaceWarningsTask
+import se.vadretapp.vadret.warning.ObserveFollowedPlaceWarningsTask
+import se.vadretapp.vadret.warning.model.FollowedPlaceWarnings
+import se.vadretapp.vadret.warning.model.PlaceWarning
 import kotlin.time.Instant
 
 internal fun aggregatedFeed(
@@ -74,9 +77,40 @@ internal class FakeGetWarningsTask(
     }
 }
 
-internal class FakeObserveChosenPlaceWarningsTask : ObserveChosenPlaceWarningsTask {
+internal fun List<AggregatedFeed>.atOneFollowedPlace(): FollowedPlaceWarnings =
+    FollowedPlaceWarnings(
+        followedPlaces = listOf(gothenburg),
+        placeWarnings = map { aggregatedFeed: AggregatedFeed ->
+            PlaceWarning(
+                aggregatedFeed = aggregatedFeed,
+                followedPlaces = listOf(gothenburg)
+            )
+        }
+    )
 
-    val results: MutableStateFlow<Either<Failure, List<AggregatedFeed>>> = MutableStateFlow(
+internal val gothenburg = FollowedPlace(
+    favoriteId = null,
+    name = "Göteborg",
+    municipality = "Göteborg",
+    county = "Västra Götaland",
+    latitude = 57.7089,
+    longitude = 11.9746,
+    isChosen = true
+)
+
+internal val cabin = FollowedPlace(
+    favoriteId = "favorite-cabin",
+    name = "Stugan",
+    municipality = null,
+    county = null,
+    latitude = 61.8286,
+    longitude = 16.0912,
+    isChosen = false
+)
+
+internal class FakeObserveFollowedPlaceWarningsTask : ObserveFollowedPlaceWarningsTask {
+
+    val results: MutableStateFlow<Either<Failure, FollowedPlaceWarnings>> = MutableStateFlow(
         value = listOf(
             aggregatedFeed(
                 identifier = "smhi-1-2",
@@ -86,11 +120,11 @@ internal class FakeObserveChosenPlaceWarningsTask : ObserveChosenPlaceWarningsTa
                 identifier = "smhi-1-1",
                 publishedAt = Instant.parse(input = "2026-10-24T07:00:00Z")
             )
-        ).asRight()
+        ).atOneFollowedPlace().asRight()
     )
     val refreshes = mutableListOf<Boolean>()
 
-    override fun invoke(isRefresh: Boolean): Flow<Either<Failure, List<AggregatedFeed>>> =
+    override fun invoke(isRefresh: Boolean): Flow<Either<Failure, FollowedPlaceWarnings>> =
         flow {
             refreshes.add(element = isRefresh)
             emitAll(results)

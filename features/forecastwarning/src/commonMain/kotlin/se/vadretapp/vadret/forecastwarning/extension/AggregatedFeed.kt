@@ -42,7 +42,8 @@ internal fun List<AggregatedFeed>.toWarningItems(
 internal fun AggregatedFeed.toWarningItem(
     now: Instant,
     timeZone: TimeZone,
-    languageTag: String
+    languageTag: String,
+    followedPlaceNames: String? = null
 ): WarningItem {
     val spacedAreaName: String? = (areaName ?: regionNames())?.withSpacedCommas()
     val publisher: String = senderName ?: source.displayName()
@@ -73,7 +74,8 @@ internal fun AggregatedFeed.toWarningItem(
             .filterNot { feedDetail: FeedDetail -> feedDetail.repeatsArea(spacedAreaName = spacedAreaName) }
             .map { feedDetail: FeedDetail -> feedDetail.toWarningDetail() }
             .toImmutableList(),
-        mapArea = area.toWarningMapArea()
+        mapArea = area.toWarningMapArea(),
+        followedPlaceNames = followedPlaceNames
     )
 }
 

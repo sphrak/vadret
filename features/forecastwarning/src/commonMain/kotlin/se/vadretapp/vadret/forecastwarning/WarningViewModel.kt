@@ -13,21 +13,22 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.TimeZone
-import se.vadretapp.vadret.aggregatedfeed.model.AggregatedFeed
 import se.vadretapp.vadret.common.Failure
+import se.vadretapp.vadret.forecastwarning.extension.followedPlaceNames
 import se.vadretapp.vadret.forecastwarning.extension.toWarningItems
 import se.vadretapp.vadret.forecastwarning.model.WarningItem
 import se.vadretapp.vadret.ui.extension.launchReplacing
 import se.vadretapp.vadret.ui.extension.messageResource
 import se.vadretapp.vadret.ui.format.currentLanguageTag
-import se.vadretapp.vadret.warning.ObserveChosenPlaceWarningsTask
+import se.vadretapp.vadret.warning.ObserveFollowedPlaceWarningsTask
+import se.vadretapp.vadret.warning.model.FollowedPlaceWarnings
 import kotlin.concurrent.atomics.AtomicBoolean
 import kotlin.concurrent.atomics.AtomicReference
 import kotlin.time.Clock
 
 @Immutable
 class WarningViewModel internal constructor(
-    private val observeChosenPlaceWarningsTask: ObserveChosenPlaceWarningsTask,
+    private val observeFollowedPlaceWarningsTask: ObserveFollowedPlaceWarningsTask,
     private val clock: Clock,
     private val coroutineDispatcher: CoroutineDispatcher
 ) : ViewModel() {
@@ -37,7 +38,7 @@ class WarningViewModel internal constructor(
 
     private val isStarted: AtomicBoolean = AtomicBoolean(value = false)
     private val languageTag: AtomicReference<String> = AtomicReference(value = currentLanguageTag())
-    private val warnings: AtomicReference<List<AggregatedFeed>> = AtomicReference(value = emptyList())
+    private val warnings: AtomicReference<FollowedPlaceWarnings?> = AtomicReference(value = null)
     private val loadJob: AtomicReference<Job?> = AtomicReference(value = null)
 
     internal fun onEvent(event: WarningEvent) {
@@ -69,8 +70,9 @@ class WarningViewModel internal constructor(
             return
         }
         viewModelScope.launch(context = coroutineDispatcher) {
+            val loadedWarnings: FollowedPlaceWarnings = warnings.load() ?: return@launch
             state.update { state: WarningState ->
-                state.copy(warnings = warnings.load().toItems())
+                state.copy(warnings = loadedWarnings.toItems())
             }
         }
     }
@@ -80,29 +82,36 @@ class WarningViewModel internal constructor(
             currentJob = loadJob,
             context = coroutineDispatcher
         ) {
-            observeChosenPlaceWarningsTask(isRefresh = isRefresh).collect { result: Either<Failure, List<AggregatedFeed>> ->
+            observeFollowedPlaceWarningsTask(isRefresh = isRefresh).collect { result: Either<Failure, FollowedPlaceWarnings> ->
                 result.onResult(
                     onError = { failure: Failure -> displayError(failure = failure) },
-                    onSuccess = { aggregatedFeeds: List<AggregatedFeed> ->
-                        warnings.store(newValue = aggregatedFeeds)
-                        displayWarnings(warningItems = aggregatedFeeds.toItems())
+                    onSuccess = { followedPlaceWarnings: FollowedPlaceWarnings ->
+                        warnings.store(newValue = followedPlaceWarnings)
+                        displayWarnings(
+                            warningItems = followedPlaceWarnings.toItems(),
+                            followedPlaceNames = followedPlaceWarnings.followedPlaceNames()
+                        )
                     }
                 )
             }
         }
     }
 
-    private fun List<AggregatedFeed>.toItems(): ImmutableList<WarningItem> =
+    private fun FollowedPlaceWarnings.toItems(): ImmutableList<WarningItem> =
         toWarningItems(
             now = clock.now(),
             timeZone = TimeZone.currentSystemDefault(),
             languageTag = languageTag.load()
         )
 
-    private fun displayWarnings(warningItems: ImmutableList<WarningItem>) {
+    private fun displayWarnings(
+        warningItems: ImmutableList<WarningItem>,
+        followedPlaceNames: String?
+    ) {
         state.update { state: WarningState ->
             state.copy(
                 warnings = warningItems,
+                followedPlaceNames = followedPlaceNames,
                 isLoading = false,
                 isRefreshing = false,
                 isEmpty = warningItems.isEmpty()

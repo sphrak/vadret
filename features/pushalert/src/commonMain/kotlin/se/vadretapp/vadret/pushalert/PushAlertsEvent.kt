@@ -18,11 +18,6 @@ internal sealed interface PushAlertsEvent {
     data object OnPollenLevelRowClicked : PushAlertsEvent
     data object OnPollenLevelDialogDismissed : PushAlertsEvent
     data class OnPollenLevelSelected(val pollenAlertLevel: PollenAlertLevel) : PushAlertsEvent
-    data class OnFavoriteToggled(
-        val favoriteId: String,
-        val isEnabled: Boolean
-    ) : PushAlertsEvent
-    data object OnFavoriteLimitDialogDismissed : PushAlertsEvent
     data class OnNotificationPermissionResult(val isGranted: Boolean) : PushAlertsEvent
     data object OnNotificationPermissionDialogDismissed : PushAlertsEvent
     data object OnOutsideSwedenDialogDismissed : PushAlertsEvent

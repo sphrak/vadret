@@ -19,6 +19,7 @@ kotlin {
                 implementation project(':data:pollen')
                 implementation project(':data:pollenpreference')
                 implementation project(':data:theme')
+                implementation project(':domain:followedplace')
 
                 implementation libs.either
                 implementation libs.koin.core

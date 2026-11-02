@@ -1,10 +1,14 @@
 package se.vadretapp.vadret.settings.ui
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import kotlinx.collections.immutable.ImmutableList
@@ -13,6 +17,12 @@ import org.jetbrains.compose.resources.stringResource
 import se.vadretapp.vadret.core.resources.Res
 import se.vadretapp.vadret.core.resources.display
 import se.vadretapp.vadret.core.resources.enable_hourly_forecast
+import se.vadretapp.vadret.core.resources.followed_place_chosen
+import se.vadretapp.vadret.core.resources.followed_place_off
+import se.vadretapp.vadret.core.resources.followed_place_on
+import se.vadretapp.vadret.core.resources.followed_place_position
+import se.vadretapp.vadret.core.resources.followed_places
+import se.vadretapp.vadret.core.resources.followed_places_text
 import se.vadretapp.vadret.core.resources.gps_is_being_used
 import se.vadretapp.vadret.core.resources.gps_is_not_being_used
 import se.vadretapp.vadret.core.resources.hourly_forecast_is_disabled
@@ -29,11 +39,13 @@ import se.vadretapp.vadret.core.resources.select_a_theme
 import se.vadretapp.vadret.core.resources.setting_current_location
 import se.vadretapp.vadret.core.resources.setting_location_title
 import se.vadretapp.vadret.core.resources.show_pollen
+import se.vadretapp.vadret.core.resources.unknown_area
 import se.vadretapp.vadret.core.resources.use_gps_by_default
 import se.vadretapp.vadret.settings.Settings
 import se.vadretapp.vadret.settings.SettingsEvent
 import se.vadretapp.vadret.settings.SettingsState
 import se.vadretapp.vadret.settings.extension.labelResource
+import se.vadretapp.vadret.settings.model.FollowedPlaceRow
 import se.vadretapp.vadret.settings.model.LocationRow
 import se.vadretapp.vadret.ui.SettingsRowDivider
 import se.vadretapp.vadret.ui.SettingsSection
@@ -53,6 +65,8 @@ private const val POLLEN_HEADER_KEY = "pollen-header"
 private const val POLLEN_KEY = "pollen"
 private const val CURRENT_LOCATION_HEADER_KEY = "current-location-header"
 private const val CURRENT_LOCATION_KEY = "current-location"
+private const val FOLLOWED_PLACES_HEADER_KEY = "followed-places-header"
+private const val FOLLOWED_PLACES_KEY = "followed-places"
 
 private enum class PreferenceContentType {
     HEADER,
@@ -92,6 +106,17 @@ internal fun PreferencesPage(
                     }
                 )
             }
+        }
+        item(key = FOLLOWED_PLACES_HEADER_KEY, contentType = PreferenceContentType.HEADER) {
+            SettingsSectionHeader(text = stringResource(resource = Res.string.followed_places))
+        }
+        item(key = FOLLOWED_PLACES_KEY, contentType = PreferenceContentType.CARD) {
+            FollowedPlacesCard(
+                chosenPlaceName = state.chosenPlaceName,
+                isAutomaticLocation = settings.isAutomaticLocation,
+                followedPlaceRows = state.followedPlaceRows,
+                onEvent = onEvent
+            )
         }
         item(key = DISPLAY_HEADER_KEY, contentType = PreferenceContentType.HEADER) {
             SettingsSectionHeader(text = stringResource(resource = Res.string.display))
@@ -218,3 +243,51 @@ private fun locationAlpha(isAutomaticLocation: Boolean): Float =
     } else {
         FULL_ALPHA
     }
+
+// The chosen place has no switch, since warnings and push alerts always cover it.
+@Composable
+private fun FollowedPlacesCard(
+    chosenPlaceName: String?,
+    isAutomaticLocation: Boolean,
+    followedPlaceRows: ImmutableList<FollowedPlaceRow>,
+    onEvent: (SettingsEvent) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier) {
+        VadretCard {
+            SettingsValueRow(
+                title = stringResource(resource = Res.string.followed_place_chosen),
+                value = chosenPlaceName ?: if (isAutomaticLocation) {
+                    stringResource(resource = Res.string.followed_place_position)
+                } else {
+                    stringResource(resource = Res.string.unknown_area)
+                }
+            )
+            followedPlaceRows.forEach { followedPlaceRow: FollowedPlaceRow ->
+                key(followedPlaceRow.favoriteId) {
+                    SettingsRowDivider()
+                    SwitchRow(
+                        title = followedPlaceRow.name,
+                        checkedSummary = stringResource(resource = Res.string.followed_place_on),
+                        uncheckedSummary = stringResource(resource = Res.string.followed_place_off),
+                        isChecked = followedPlaceRow.isFollowed,
+                        onCheckedChange = { isChecked: Boolean ->
+                            onEvent(
+                                SettingsEvent.OnPlaceFollowToggled(
+                                    favoriteId = followedPlaceRow.favoriteId,
+                                    isFollowed = isChecked
+                                )
+                            )
+                        }
+                    )
+                }
+            }
+        }
+        Text(
+            text = stringResource(resource = Res.string.followed_places_text),
+            style = VadretTheme.textStyles.detail,
+            color = VadretTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(all = VadretTheme.spacing.large)
+        )
+    }
+}

@@ -8,7 +8,7 @@ import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.format
 import kotlinx.datetime.format.char
 import kotlinx.datetime.toLocalDateTime
-import se.vadretapp.vadret.location.model.StoredLocation
+import se.vadretapp.vadret.followedplace.model.FollowedPlace
 import se.vadretapp.vadret.ui.format.DateTextFormatter
 import se.vadretapp.vadret.ui.format.DateTextStyle
 import se.vadretapp.vadret.ui.format.toOneDecimalText
@@ -179,7 +179,7 @@ private fun Forecast.toForecastHour(
         )
     )
 
-internal fun PlaceForecast.isAt(storedLocation: StoredLocation): Boolean =
-    placeName == storedLocation.locality &&
-        latitude == storedLocation.latitude &&
-        longitude == storedLocation.longitude
+internal fun PlaceForecast.isAt(followedPlace: FollowedPlace): Boolean =
+    placeName == followedPlace.name &&
+        latitude == followedPlace.latitude &&
+        longitude == followedPlace.longitude

@@ -7,6 +7,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -17,9 +20,15 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import se.vadretapp.vadret.changelog.model.Changelog
 import se.vadretapp.vadret.core.resources.Res
+import se.vadretapp.vadret.core.resources.followed_places_limit
+import se.vadretapp.vadret.core.resources.followed_places_limit_text
+import se.vadretapp.vadret.core.resources.followed_places_only_in_sweden
+import se.vadretapp.vadret.core.resources.followed_places_only_in_sweden_text
+import se.vadretapp.vadret.core.resources.ok
 import se.vadretapp.vadret.core.resources.select_a_language
 import se.vadretapp.vadret.core.resources.select_a_theme
 import se.vadretapp.vadret.di.koinAll
@@ -140,6 +149,20 @@ internal fun SettingsScreen(
             onDismiss = { onEvent(SettingsEvent.OnLanguageDialogDismissed) }
         )
     }
+    if (state.isFollowedPlaceLimitDialogVisible) {
+        FollowedPlaceDialog(
+            titleResource = Res.string.followed_places_limit,
+            textResource = Res.string.followed_places_limit_text,
+            onDismiss = { onEvent(SettingsEvent.OnFollowedPlaceLimitDialogDismissed) }
+        )
+    }
+    if (state.isFollowedPlaceAbroadDialogVisible) {
+        FollowedPlaceDialog(
+            titleResource = Res.string.followed_places_only_in_sweden,
+            textResource = Res.string.followed_places_only_in_sweden_text,
+            onDismiss = { onEvent(SettingsEvent.OnFollowedPlaceAbroadDialogDismissed) }
+        )
+    }
     if (state.isPollenAllergenDialogVisible) {
         PollenAllergenDialog(
             pollenAllergenRows = state.pollenAllergenRows,
@@ -155,6 +178,26 @@ internal fun SettingsScreen(
             onDismiss = { onEvent(SettingsEvent.OnPollenAllergensDialogDismissed) }
         )
     }
+}
+
+@Composable
+private fun FollowedPlaceDialog(
+    titleResource: StringResource,
+    textResource: StringResource,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = stringResource(resource = Res.string.ok))
+            }
+        },
+        title = { Text(text = stringResource(resource = titleResource)) },
+        text = { Text(text = stringResource(resource = textResource)) },
+        modifier = modifier
+    )
 }
 
 @Preview(device = Devices.PHONE)

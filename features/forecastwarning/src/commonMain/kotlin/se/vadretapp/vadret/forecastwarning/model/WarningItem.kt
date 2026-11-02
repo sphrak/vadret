@@ -20,5 +20,6 @@ internal data class WarningItem(
     val startsAtText: String?,
     val endsAtText: String?,
     val details: ImmutableList<WarningDetail>,
-    val mapArea: WarningMapArea
+    val mapArea: WarningMapArea,
+    val followedPlaceNames: String?
 )

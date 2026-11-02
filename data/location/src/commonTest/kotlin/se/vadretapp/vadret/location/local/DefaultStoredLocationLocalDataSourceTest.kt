@@ -67,7 +67,8 @@ class DefaultStoredLocationLocalDataSourceTest {
             assertEquals(
                 expected = LocationPreferenceEntity(
                     isAutomatic = true,
-                    storedLocationEntity = umea
+                    storedLocationEntity = umea,
+                    followedFavoriteIds = emptySet()
                 ),
                 actual = storedLocationLocalDataSource.observeLocationPreference().first()
             )
@@ -97,4 +98,113 @@ class DefaultStoredLocationLocalDataSourceTest {
                 actual = emitted.map { locationPreferenceEntity: LocationPreferenceEntity -> locationPreferenceEntity.isAutomatic }
             )
         }
+
+    @Test
+    fun `nothing is followed at first and followed favorites read back`() =
+        runTest {
+            val storedLocationLocalDataSource: StoredLocationLocalDataSource = DefaultStoredLocationLocalDataSource(
+                dataStore = testPreferencesDataStore(scope = backgroundScope)
+            )
+            val nothingFollowed: Set<String> = storedLocationLocalDataSource.observeLocationPreference().first().followedFavoriteIds
+
+            storedLocationLocalDataSource.followFavorite(
+                favoriteId = "favorite-1",
+                maximumFollowedFavorites = MAXIMUM_FOLLOWED_FAVORITES
+            )
+            storedLocationLocalDataSource.followFavorite(
+                favoriteId = "favorite-2",
+                maximumFollowedFavorites = MAXIMUM_FOLLOWED_FAVORITES
+            )
+            storedLocationLocalDataSource.unfollowFavorite(favoriteId = "favorite-1")
+
+            assertEquals(expected = emptySet(), actual = nothingFollowed)
+            assertEquals(
+                expected = setOf("favorite-2"),
+                actual = storedLocationLocalDataSource.observeLocationPreference().first().followedFavoriteIds
+            )
+        }
+
+    @Test
+    fun `a favorite past the limit is not followed while one already followed stays followed`() =
+        runTest {
+            val storedLocationLocalDataSource: StoredLocationLocalDataSource = DefaultStoredLocationLocalDataSource(
+                dataStore = testPreferencesDataStore(scope = backgroundScope)
+            )
+            val followed: List<Boolean> = listOf("favorite-1", "favorite-2", "favorite-3", "favorite-1").map { favoriteId: String ->
+                storedLocationLocalDataSource.followFavorite(
+                    favoriteId = favoriteId,
+                    maximumFollowedFavorites = 2
+                )
+            }
+
+            assertEquals(expected = listOf(true, true, false, true), actual = followed)
+            assertEquals(
+                expected = setOf("favorite-1", "favorite-2"),
+                actual = storedLocationLocalDataSource.observeLocationPreference().first().followedFavoriteIds
+            )
+        }
+
+    @Test
+    fun `the push favorites are adopted once and never over a later choice`() =
+        runTest {
+            val storedLocationLocalDataSource: StoredLocationLocalDataSource = DefaultStoredLocationLocalDataSource(
+                dataStore = testPreferencesDataStore(scope = backgroundScope)
+            )
+
+            storedLocationLocalDataSource.adoptFollowedFavoriteIds(favoriteIds = setOf("favorite-1"))
+            val adopted: Set<String> = storedLocationLocalDataSource.observeLocationPreference().first().followedFavoriteIds
+            storedLocationLocalDataSource.followFavorite(
+                favoriteId = "favorite-2",
+                maximumFollowedFavorites = MAXIMUM_FOLLOWED_FAVORITES
+            )
+            storedLocationLocalDataSource.adoptFollowedFavoriteIds(favoriteIds = setOf("favorite-3"))
+
+            assertEquals(expected = setOf("favorite-1"), actual = adopted)
+            assertEquals(
+                expected = setOf("favorite-1", "favorite-2"),
+                actual = storedLocationLocalDataSource.observeLocationPreference().first().followedFavoriteIds
+            )
+        }
+
+    @Test
+    fun `following nothing is a choice the push favorites are not adopted over`() =
+        runTest {
+            val storedLocationLocalDataSource: StoredLocationLocalDataSource = DefaultStoredLocationLocalDataSource(
+                dataStore = testPreferencesDataStore(scope = backgroundScope)
+            )
+
+            storedLocationLocalDataSource.followFavorite(
+                favoriteId = "favorite-2",
+                maximumFollowedFavorites = MAXIMUM_FOLLOWED_FAVORITES
+            )
+            storedLocationLocalDataSource.unfollowFavorite(favoriteId = "favorite-2")
+            storedLocationLocalDataSource.adoptFollowedFavoriteIds(favoriteIds = setOf("favorite-1"))
+
+            assertEquals(expected = emptySet(), actual = storedLocationLocalDataSource.observeLocationPreference().first().followedFavoriteIds)
+        }
+
+    @Test
+    fun `a selected location keeps what is followed`() =
+        runTest {
+            val storedLocationLocalDataSource: StoredLocationLocalDataSource = DefaultStoredLocationLocalDataSource(
+                dataStore = testPreferencesDataStore(scope = backgroundScope)
+            )
+            storedLocationLocalDataSource.followFavorite(
+                favoriteId = "favorite-1",
+                maximumFollowedFavorites = MAXIMUM_FOLLOWED_FAVORITES
+            )
+
+            storedLocationLocalDataSource.selectStoredLocation(storedLocationEntity = umea)
+
+            assertEquals(
+                expected = LocationPreferenceEntity(
+                    isAutomatic = false,
+                    storedLocationEntity = umea,
+                    followedFavoriteIds = setOf("favorite-1")
+                ),
+                actual = storedLocationLocalDataSource.observeLocationPreference().first()
+            )
+        }
 }
+
+private const val MAXIMUM_FOLLOWED_FAVORITES = 4

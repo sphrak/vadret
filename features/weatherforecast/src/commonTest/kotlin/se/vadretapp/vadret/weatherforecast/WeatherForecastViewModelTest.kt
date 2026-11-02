@@ -76,12 +76,17 @@ class WeatherForecastViewModelTest {
     private val nominatimRepository = FakeNominatimRepository()
     private val weatherForecastViewModel = WeatherForecastViewModel(
         getLocationModeTask = DefaultGetLocationModeTask(locationRepository = locationRepository),
-        getStoredLocationTask = DefaultGetStoredLocationTask(locationRepository = locationRepository),
+        getChosenPlaceTask = FakeGetChosenPlaceTask(
+            locationRepository = locationRepository,
+            nominatimRepository = FakeNominatimRepository()
+        ),
         setLocationModeTask = DefaultSetLocationModeTask(locationRepository = locationRepository),
         getWeatherForecastTask = DefaultGetWeatherForecastTask(
-            locationRepository = locationRepository,
-            weatherForecastRepository = weatherForecastRepository,
-            nominatimRepository = FakeNominatimRepository()
+            getChosenPlaceTask = FakeGetChosenPlaceTask(
+                locationRepository = locationRepository,
+                nominatimRepository = FakeNominatimRepository()
+            ),
+            weatherForecastRepository = weatherForecastRepository
         ),
         observeLocationChoicesTask = DefaultObserveLocationChoicesTask(
             favoriteRepository = favoriteRepository,
@@ -101,6 +106,7 @@ class WeatherForecastViewModelTest {
         ),
         addFavoriteTask = DefaultAddFavoriteTask(favoriteRepository = favoriteRepository),
         observeUnseenWarningsTask = observeUnseenWarningsTask,
+        observeUnseenFollowedPlaceWarningsTask = observeUnseenWarningsTask,
         clock = clock,
         coroutineDispatcher = testDispatcher
     )
@@ -226,7 +232,7 @@ class WeatherForecastViewModelTest {
         }
 
     @Test
-    fun `the latest unseen warning for the place is shown once the forecast is shown`() =
+    fun `the latest unseen warning of the followed places is shown once the forecast is shown`() =
         testScope.runTest {
             weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnShown)
             advanceUntilIdle()
@@ -242,31 +248,23 @@ class WeatherForecastViewModelTest {
                 ),
                 actual = weatherForecastViewModel.state.value.latestWarning
             )
-            assertEquals(
-                expected = listOf(
-                    WarningPlace(
-                        latitude = 59.3293,
-                        longitude = 18.0686,
-                        county = "Stockholm",
-                        municipality = "Stockholm"
-                    ) to false
-                ),
+            assertEquals<List<Pair<WarningPlace?, Boolean>>>(
+                expected = listOf(null to false),
                 actual = observeUnseenWarningsTask.requests
             )
         }
 
     @Test
-    fun `the device location is matched with the county and municipality it lies in`() =
+    fun `a dropped place asks for its own warnings by its county and municipality`() =
         testScope.runTest {
-            locationRepository.isAutomatic = true.asRight()
-            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnLocationPermissionResult(isGranted = true))
+            showDroppedPlace()
             advanceUntilIdle()
 
-            assertEquals(
+            assertEquals<List<Pair<WarningPlace?, Boolean>>>(
                 expected = listOf(
                     WarningPlace(
-                        latitude = 57.7,
-                        longitude = 11.97,
+                        latitude = DROPPED_LATITUDE,
+                        longitude = DROPPED_LONGITUDE,
                         county = "Västra Götalands län",
                         municipality = "Göteborgs kommun"
                     ) to false
@@ -309,7 +307,7 @@ class WeatherForecastViewModelTest {
 
             assertEquals(
                 expected = listOf(false, true),
-                actual = observeUnseenWarningsTask.requests.map { request: Pair<WarningPlace, Boolean> -> request.second }
+                actual = observeUnseenWarningsTask.requests.map { request: Pair<WarningPlace?, Boolean> -> request.second }
             )
         }
 

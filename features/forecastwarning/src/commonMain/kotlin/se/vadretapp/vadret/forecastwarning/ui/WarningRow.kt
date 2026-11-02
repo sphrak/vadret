@@ -28,6 +28,7 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import se.vadretapp.vadret.core.resources.Res
 import se.vadretapp.vadret.core.resources.ic_chevron_right
+import se.vadretapp.vadret.core.resources.warning_affects_places
 import se.vadretapp.vadret.core.resources.warning_until
 import se.vadretapp.vadret.forecastwarning.model.WarningItem
 import se.vadretapp.vadret.theme.model.Theme
@@ -101,6 +102,19 @@ internal fun WarningRow(
                         style = VadretTheme.textStyles.detailLabel,
                         color = VadretTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1
+                    )
+                }
+                val followedPlaceNames: String? = warning.followedPlaceNames
+                if (followedPlaceNames != null) {
+                    Text(
+                        text = stringResource(
+                            resource = Res.string.warning_affects_places,
+                            followedPlaceNames
+                        ),
+                        style = VadretTheme.textStyles.detailLabel,
+                        color = VadretTheme.colorScheme.primary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }

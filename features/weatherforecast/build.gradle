@@ -20,6 +20,7 @@ kotlin {
                 implementation project(':data:theme')
                 implementation project(':ui:icons')
                 implementation project(':data:weatherforecast')
+                implementation project(':domain:followedplace')
                 implementation project(':domain:warning')
 
                 implementation libs.either

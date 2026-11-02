@@ -20,9 +20,11 @@ class DefaultGetWeatherForecastTaskTest {
     private val weatherForecastRepository = FakeWeatherForecastRepository(analyses = listOf(morning).asRight())
     private val nominatimRepository = FakeNominatimRepository()
     private val getWeatherForecastTask: GetWeatherForecastTask = DefaultGetWeatherForecastTask(
-        locationRepository = locationRepository,
-        weatherForecastRepository = weatherForecastRepository,
-        nominatimRepository = nominatimRepository
+        getChosenPlaceTask = FakeGetChosenPlaceTask(
+            locationRepository = locationRepository,
+            nominatimRepository = nominatimRepository
+        ),
+        weatherForecastRepository = weatherForecastRepository
     )
 
     @Test

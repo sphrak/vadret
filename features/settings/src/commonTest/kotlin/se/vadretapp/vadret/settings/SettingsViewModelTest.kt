@@ -9,6 +9,7 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestDispatcher
@@ -30,6 +31,11 @@ import se.vadretapp.vadret.core.resources.setting_county
 import se.vadretapp.vadret.core.resources.setting_latitude
 import se.vadretapp.vadret.core.resources.setting_longitude
 import se.vadretapp.vadret.core.resources.setting_municipality
+import se.vadretapp.vadret.followedplace.ObserveFollowablePlacesTask
+import se.vadretapp.vadret.followedplace.SetPlaceFollowedTask
+import se.vadretapp.vadret.followedplace.model.FollowableFavorite
+import se.vadretapp.vadret.followedplace.model.FollowablePlaces
+import se.vadretapp.vadret.followedplace.model.FollowedPlace
 import se.vadretapp.vadret.forecastpreference.ForecastPreferenceRepository
 import se.vadretapp.vadret.forecastpreference.model.ForecastPreferences
 import se.vadretapp.vadret.language.LanguageRepository
@@ -49,6 +55,7 @@ import se.vadretapp.vadret.pollenpreference.PollenPreferenceRepository
 import se.vadretapp.vadret.pollenpreference.model.PollenPreferences
 import se.vadretapp.vadret.settings.model.AboutRowAction
 import se.vadretapp.vadret.settings.model.AboutRowHint
+import se.vadretapp.vadret.settings.model.FollowedPlaceRow
 import se.vadretapp.vadret.settings.model.LibraryGroup
 import se.vadretapp.vadret.settings.model.LocationRow
 import se.vadretapp.vadret.settings.model.PollenAllergenRow
@@ -107,6 +114,12 @@ private class FakeLocationRepository(
     override suspend fun getStoredLocation(): Either<Failure, StoredLocation> = stockholm.asRight()
     override fun observeLocationPreference(): Flow<Either<Failure, LocationPreference>> = error("Settings never observe the location")
     override suspend fun selectStoredLocation(storedLocation: StoredLocation): Either<Failure, Unit> = error("Settings never store a place")
+    override suspend fun followFavorite(
+        favoriteId: String,
+        maximumFollowedFavorites: Int
+    ): Either<Failure, Boolean> = error("Settings never follow a place")
+    override suspend fun unfollowFavorite(favoriteId: String): Either<Failure, Unit> = error("Settings never follow a place")
+    override suspend fun adoptFollowedFavoriteIds(favoriteIds: Set<String>): Either<Failure, Unit> = error("Settings never follow a place")
 }
 
 private class FakeForecastPreferenceRepository(
@@ -250,6 +263,8 @@ class SettingsViewModelTest {
     private val forecastPreferenceRepository = FakeForecastPreferenceRepository()
     private val pollenPreferenceRepository = FakePollenPreferenceRepository()
     private val pollenRepository = FakePollenRepository()
+    private val observeFollowablePlacesTask = FakeObserveFollowablePlacesTask()
+    private val setPlaceFollowedTask = FakeSetPlaceFollowedTask()
 
     @BeforeTest
     fun setUp() {
@@ -281,12 +296,84 @@ class SettingsViewModelTest {
             setPollenAllergenTask = DefaultSetPollenAllergenTask(pollenPreferenceRepository = pollenPreferenceRepository),
             getPollenTypesTask = DefaultGetPollenTypesTask(pollenRepository = pollenRepository),
             setEndOfSeasonSimulatedTask = DefaultSetEndOfSeasonSimulatedTask(pollenPreferenceRepository = pollenPreferenceRepository),
+            observeFollowablePlacesTask = observeFollowablePlacesTask,
+            setPlaceFollowedTask = setPlaceFollowedTask,
             appInfo = appInfo,
             coroutineDispatcher = testDispatcher
         )
         settingsViewModel.onEvent(event = SettingsEvent.OnStart)
         return settingsViewModel
     }
+
+    @Test
+    fun `the chosen place is shown and only the other favorites can be followed`() =
+        testScope.runTest {
+            val settingsViewModel: SettingsViewModel = viewModel()
+            advanceUntilIdle()
+
+            assertEquals(expected = "Göteborg", actual = settingsViewModel.state.value.chosenPlaceName)
+            assertEquals(
+                expected = listOf(
+                    FollowedPlaceRow(
+                        favoriteId = "favorite-visby",
+                        name = "Visby",
+                        isFollowed = true,
+                        isInSweden = true
+                    ),
+                    FollowedPlaceRow(
+                        favoriteId = "favorite-berlin",
+                        name = "Berlin",
+                        isFollowed = false,
+                        isInSweden = false
+                    )
+                ),
+                actual = settingsViewModel.state.value.followedPlaceRows
+            )
+        }
+
+    @Test
+    fun `a favorite is followed and unfollowed`() =
+        testScope.runTest {
+            val settingsViewModel: SettingsViewModel = viewModel()
+            advanceUntilIdle()
+
+            settingsViewModel.onEvent(event = SettingsEvent.OnPlaceFollowToggled(favoriteId = "favorite-visby", isFollowed = false))
+            advanceUntilIdle()
+            settingsViewModel.onEvent(event = SettingsEvent.OnPlaceFollowToggled(favoriteId = "favorite-visby", isFollowed = true))
+            advanceUntilIdle()
+
+            assertEquals(expected = listOf("favorite-visby" to false, "favorite-visby" to true), actual = setPlaceFollowedTask.calls)
+        }
+
+    @Test
+    fun `following past the limit says why until the notice is dismissed`() =
+        testScope.runTest {
+            setPlaceFollowedTask.result = Failure(errorCode = ErrorCode.FOLLOWED_PLACE_LIMIT).asLeft()
+            val settingsViewModel: SettingsViewModel = viewModel()
+            advanceUntilIdle()
+
+            settingsViewModel.onEvent(event = SettingsEvent.OnPlaceFollowToggled(favoriteId = "favorite-visby", isFollowed = true))
+            advanceUntilIdle()
+            val refused: Boolean = settingsViewModel.state.value.isFollowedPlaceLimitDialogVisible
+            settingsViewModel.onEvent(event = SettingsEvent.OnFollowedPlaceLimitDialogDismissed)
+
+            assertEquals(expected = true to false, actual = refused to settingsViewModel.state.value.isFollowedPlaceLimitDialogVisible)
+        }
+
+    @Test
+    fun `a favorite abroad is explained instead of followed`() =
+        testScope.runTest {
+            val settingsViewModel: SettingsViewModel = viewModel()
+            advanceUntilIdle()
+
+            settingsViewModel.onEvent(event = SettingsEvent.OnPlaceFollowToggled(favoriteId = "favorite-berlin", isFollowed = true))
+            advanceUntilIdle()
+            val explained: Boolean = settingsViewModel.state.value.isFollowedPlaceAbroadDialogVisible
+            settingsViewModel.onEvent(event = SettingsEvent.OnFollowedPlaceAbroadDialogDismissed)
+
+            assertEquals(expected = true to false, actual = explained to settingsViewModel.state.value.isFollowedPlaceAbroadDialogVisible)
+            assertEquals(expected = emptyList(), actual = setPlaceFollowedTask.calls)
+        }
 
     @Test
     fun `settings and libraries are loaded`() =
@@ -695,4 +782,60 @@ class SettingsViewModelTest {
 
             assertNull(actual = settingsViewModel.state.value.settings)
         }
+}
+
+private class FakeObserveFollowablePlacesTask : ObserveFollowablePlacesTask {
+
+    val followablePlaces: MutableStateFlow<Either<Failure, FollowablePlaces>> = MutableStateFlow(
+        value = FollowablePlaces(
+            chosenPlace = FollowedPlace(
+                favoriteId = "favorite-gothenburg",
+                name = "Göteborg",
+                municipality = "Göteborg",
+                county = "Västra Götaland",
+                latitude = 57.7089,
+                longitude = 11.9746,
+                isChosen = true
+            ),
+            favorites = listOf(
+                FollowableFavorite(
+                    favoriteId = "favorite-gothenburg",
+                    name = "Göteborg",
+                    isFollowed = false,
+                    isChosen = true,
+                    isInSweden = true
+                ),
+                FollowableFavorite(
+                    favoriteId = "favorite-visby",
+                    name = "Visby",
+                    isFollowed = true,
+                    isChosen = false,
+                    isInSweden = true
+                ),
+                FollowableFavorite(
+                    favoriteId = "favorite-berlin",
+                    name = "Berlin",
+                    isFollowed = false,
+                    isChosen = false,
+                    isInSweden = false
+                )
+            )
+        ).asRight()
+    )
+
+    override fun invoke(): Flow<Either<Failure, FollowablePlaces>> = followablePlaces
+}
+
+private class FakeSetPlaceFollowedTask : SetPlaceFollowedTask {
+
+    var result: Either<Failure, Unit> = Unit.asRight()
+    val calls = mutableListOf<Pair<String, Boolean>>()
+
+    override suspend fun invoke(
+        favoriteId: String,
+        isFollowed: Boolean
+    ): Either<Failure, Unit> {
+        calls.add(element = favoriteId to isFollowed)
+        return result
+    }
 }

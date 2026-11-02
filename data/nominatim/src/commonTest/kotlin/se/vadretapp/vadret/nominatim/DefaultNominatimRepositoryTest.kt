@@ -3,6 +3,7 @@ package se.vadretapp.vadret.nominatim
 import io.github.sphrak.either.Either
 import io.github.sphrak.either.extension.asLeft
 import io.github.sphrak.either.extension.asRight
+import io.github.sphrak.either.extension.successOrNull
 import io.ktor.client.engine.mock.MockRequestHandler
 import io.ktor.client.engine.mock.respond
 import io.ktor.client.request.HttpRequestData
@@ -12,6 +13,7 @@ import io.ktor.http.headersOf
 import kotlinx.coroutines.test.runTest
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
+import se.vadretapp.vadret.nominatim.local.DefaultLocalityInMemoryDataSource
 import se.vadretapp.vadret.nominatim.model.Locality
 import se.vadretapp.vadret.nominatim.remote.DefaultNominatimRemoteDataSource
 import se.vadretapp.vadret.testing.mockHttpClient
@@ -35,7 +37,8 @@ class DefaultNominatimRepositoryTest {
                         handler(request)
                     }
                 }
-            )
+            ),
+            localityInMemoryDataSource = DefaultLocalityInMemoryDataSource()
         )
 
     private fun respondingWith(body: String): NominatimRepository =
@@ -146,5 +149,42 @@ class DefaultNominatimRepositoryTest {
                     actual = offline
                 )
             }
+        }
+
+    @Test
+    fun `a position already named is not asked about again`() =
+        runTest {
+            val nominatimRepository: NominatimRepository = respondingWith(body = """{"address":{"city":"Göteborg"}}""")
+
+            nominatimRepository.getLocality(
+                latitude = 57.7089,
+                longitude = 11.9746
+            )
+            val again: Either<Failure, Locality> = nominatimRepository.getLocality(
+                latitude = 57.7089,
+                longitude = 11.9746
+            )
+            nominatimRepository.getLocality(
+                latitude = 57.7,
+                longitude = 11.97
+            )
+
+            assertEquals(expected = "Göteborg", actual = again.successOrNull?.name)
+            assertEquals(expected = 2, actual = requests.size)
+        }
+
+    @Test
+    fun `a position that could not be named is asked about again`() =
+        runTest {
+            val nominatimRepository: NominatimRepository = repository { throw networkUnavailableException(host = "nominatim.openstreetmap.org") }
+
+            repeat(times = 2) {
+                nominatimRepository.getLocality(
+                    latitude = 57.7089,
+                    longitude = 11.9746
+                )
+            }
+
+            assertEquals(expected = 2, actual = requests.size)
         }
 }
