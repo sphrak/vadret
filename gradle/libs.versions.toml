@@ -2,7 +2,7 @@
 agp = "9.4.1"
 r8 = "9.5.28"
 kotlin = "2.5.0-Beta2"
-ksp = "2.3.12"
+ksp = "2.3.13"
 
 android-compileSdk = "37"
 android-compileSdkMinor = "2"
