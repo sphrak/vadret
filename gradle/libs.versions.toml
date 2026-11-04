@@ -37,7 +37,7 @@ mockk = "1.14.11"
 navigation3 = "1.2.1"
 okhttp = "5.5.1"
 okio = "3.18.2"
-tink = "1.20.0"
+tink = "1.24.0"
 room = "3.0.3"
 sqlite = "2.7.1"
 
