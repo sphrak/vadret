@@ -132,6 +132,10 @@
     <string name="widget_will_update_shortly">Widget kommer uppdateras strax</string>
     <string name="widget_setup_search">Sök</string>
     <string name="select_a_theme">Välj tema</string>
+    <string name="light_theme">Ljust</string>
+    <string name="dark_theme">Mörkt</string>
+    <string name="amoled_theme">Mörkt (AMOLED)</string>
+    <string name="system_theme">Följ systemet</string>
     <string name="widget_select_location_mode">Välj platsläge</string>
     <string name="widget_select_update_interval">Välj uppdateringsinterval</string>
     <string name="widget_select_widget_theme">Välj widget tema</string>

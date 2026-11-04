@@ -7,6 +7,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -16,6 +17,8 @@ import se.vadretapp.vadret.BuildConfig
 import se.vadretapp.vadret.di.LocalKoin
 import se.vadretapp.vadret.radar.ui.RadarMapHost
 import se.vadretapp.vadret.radar.ui.RadarRoute
+import se.vadretapp.vadret.theme.model.Theme
+import se.vadretapp.vadret.ui.isDark
 
 private const val RADAR_IMAGE_URL_EXTRA = "radar_image_url"
 
@@ -48,7 +51,9 @@ class MainActivity : ComponentActivity() {
             CompositionLocalProvider(LocalKoin provides koin) {
                 VadretRoot(
                     radarTab = radarTab,
-                    systemBarsEffect = { isDark: Boolean -> SystemBarsEffect(isDark = isDark) }
+                    systemBarsEffect = { theme: Theme ->
+                        SystemBarsEffect(isDark = theme.isDark(isSystemDark = isSystemInDarkTheme()))
+                    }
                 )
             }
         }

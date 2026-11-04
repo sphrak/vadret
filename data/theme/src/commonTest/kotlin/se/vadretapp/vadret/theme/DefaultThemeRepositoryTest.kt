@@ -45,12 +45,12 @@ class DefaultThemeRepositoryTest {
     }
 
     @Test
-    fun `nothing stored is the light theme`() =
+    fun `nothing stored follows the system`() =
         runTest {
             val (themeRepository: ThemeRepository, _) = themeRepository()
 
             assertEquals(
-                expected = Theme.LIGHT.asRight(),
+                expected = Theme.SYSTEM.asRight(),
                 actual = themeRepository.getTheme()
             )
         }
@@ -72,7 +72,7 @@ class DefaultThemeRepositoryTest {
         }
 
     @Test
-    fun `an unknown stored value is the light theme`() =
+    fun `an unknown stored value follows the system`() =
         runTest {
             val dataStore = testPreferencesDataStore(scope = backgroundScope)
             dataStore.edit { preferences -> preferences[stringPreferencesKey(name = "theme")] = "Light (No background)" }
@@ -81,7 +81,7 @@ class DefaultThemeRepositoryTest {
             )
 
             assertEquals(
-                expected = Theme.LIGHT.asRight(),
+                expected = Theme.SYSTEM.asRight(),
                 actual = themeRepository.getTheme()
             )
         }
@@ -107,7 +107,7 @@ class DefaultThemeRepositoryTest {
 
             assertEquals<List<Either<Failure, Theme>>>(
                 expected = listOf(
-                    Theme.LIGHT.asRight(),
+                    Theme.SYSTEM.asRight(),
                     Theme.DARK.asRight(),
                     Theme.AMOLED.asRight()
                 ),

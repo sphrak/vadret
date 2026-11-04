@@ -11,6 +11,7 @@ import se.vadretapp.vadret.di.LocalKoin
 import se.vadretapp.vadret.di.koinApplication
 import se.vadretapp.vadret.radar.ui.RadarMapHost
 import se.vadretapp.vadret.radar.ui.RadarRoute
+import se.vadretapp.vadret.theme.model.Theme
 
 private val radarTab = RadarTab(
     host = { content: @Composable () -> Unit -> RadarMapHost(content = content) },
@@ -24,19 +25,25 @@ fun mainViewController(): UIViewController =
         CompositionLocalProvider(LocalKoin provides koinApplication.koin) {
             VadretRoot(
                 radarTab = radarTab,
-                systemBarsEffect = { isDark: Boolean -> InterfaceStyleEffect(isDark = isDark) }
+                systemBarsEffect = { theme: Theme -> InterfaceStyleEffect(theme = theme) }
             )
         }
     }
 
 @Composable
-private fun InterfaceStyleEffect(isDark: Boolean) {
+private fun InterfaceStyleEffect(theme: Theme) {
     val viewController: UIViewController = LocalUIViewController.current
-    LaunchedEffect(viewController, isDark) {
-        viewController.overrideUserInterfaceStyle = if (isDark) {
-            UIUserInterfaceStyle.UIUserInterfaceStyleDark
-        } else {
-            UIUserInterfaceStyle.UIUserInterfaceStyleLight
-        }
+    LaunchedEffect(viewController, theme) {
+        viewController.overrideUserInterfaceStyle = theme.toInterfaceStyle()
     }
 }
+
+// Following the system leaves the style unset, since an override would also hide the system's own switches
+// from the app.
+private fun Theme.toInterfaceStyle(): UIUserInterfaceStyle =
+    when (this) {
+        Theme.LIGHT -> UIUserInterfaceStyle.UIUserInterfaceStyleLight
+        Theme.DARK -> UIUserInterfaceStyle.UIUserInterfaceStyleDark
+        Theme.AMOLED -> UIUserInterfaceStyle.UIUserInterfaceStyleDark
+        Theme.SYSTEM -> UIUserInterfaceStyle.UIUserInterfaceStyleUnspecified
+    }

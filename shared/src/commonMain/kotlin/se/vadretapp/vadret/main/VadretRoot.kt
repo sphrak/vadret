@@ -14,12 +14,11 @@ import se.vadretapp.vadret.main.navigation.TopLevelDestination
 import se.vadretapp.vadret.theme.model.Theme
 import se.vadretapp.vadret.ui.LanguageEnvironment
 import se.vadretapp.vadret.ui.VadretTheme
-import se.vadretapp.vadret.ui.isDark
 
 @Composable
 fun VadretRoot(
     radarTab: RadarTab?,
-    systemBarsEffect: @Composable (isDark: Boolean) -> Unit,
+    systemBarsEffect: @Composable (theme: Theme) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val viewModel: MainViewModel = koinViewModel()
@@ -32,7 +31,7 @@ fun VadretRoot(
     }
     val currentTheme: Theme = theme ?: return
     val currentLanguage: AppLanguage = language ?: return
-    systemBarsEffect(currentTheme.isDark())
+    systemBarsEffect(currentTheme)
     LanguageEnvironment(languageTag = currentLanguage.languageTag) {
         VadretTheme(theme = currentTheme) {
             VadretApp(

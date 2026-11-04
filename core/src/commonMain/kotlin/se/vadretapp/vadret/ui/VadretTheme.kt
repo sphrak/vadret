@@ -1,5 +1,6 @@
 package se.vadretapp.vadret.ui
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
@@ -113,14 +114,15 @@ fun VadretTheme(
     theme: Theme,
     content: @Composable () -> Unit
 ) {
+    val isSystemDark: Boolean = isSystemInDarkTheme()
     CompositionLocalProvider(
-        LocalVadretColors provides theme.toVadretColors(),
-        LocalVadretIsDark provides theme.isDark(),
+        LocalVadretColors provides theme.toVadretColors(isSystemDark = isSystemDark),
+        LocalVadretIsDark provides theme.isDark(isSystemDark = isSystemDark),
         LocalVadretSpacing provides VadretSpacing(),
         LocalVadretTextStyles provides VadretTextStyles()
     ) {
         MaterialTheme(
-            colorScheme = theme.toColorScheme(),
+            colorScheme = theme.toColorScheme(isSystemDark = isSystemDark),
             shapes = vadretShapes,
             typography = vadretTypography,
             content = content
@@ -166,23 +168,35 @@ object VadretTheme {
         get() = LocalVadretTextStyles.current
 }
 
-fun Theme.isDark(): Boolean =
+fun Theme.isDark(isSystemDark: Boolean): Boolean =
     when (this) {
         Theme.LIGHT -> false
         Theme.DARK -> true
         Theme.AMOLED -> true
+        Theme.SYSTEM -> isSystemDark
     }
 
-private fun Theme.toColorScheme(): ColorScheme =
+// Following the system gives the plain dark look, since pure black is something a person picks on purpose.
+private fun Theme.toColorScheme(isSystemDark: Boolean): ColorScheme =
     when (this) {
         Theme.LIGHT -> lightScheme
         Theme.DARK -> darkScheme
         Theme.AMOLED -> amoledScheme
+        Theme.SYSTEM -> if (isSystemDark) {
+            darkScheme
+        } else {
+            lightScheme
+        }
     }
 
-private fun Theme.toVadretColors(): VadretColors =
+private fun Theme.toVadretColors(isSystemDark: Boolean): VadretColors =
     when (this) {
         Theme.LIGHT -> lightVadretColors
         Theme.DARK -> darkVadretColors
         Theme.AMOLED -> amoledVadretColors
+        Theme.SYSTEM -> if (isSystemDark) {
+            darkVadretColors
+        } else {
+            lightVadretColors
+        }
     }

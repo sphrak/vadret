@@ -102,9 +102,10 @@
     <string name="theme">Theme</string>
     <string name="select_a_theme">Select a theme</string>
 
-    <string name="light_key" translatable="false">Light</string>
-    <string name="dark_key" translatable="false">Dark</string>
-    <string name="amoled_key" translatable="false">AMOLED</string>
+    <string name="light_theme">Light</string>
+    <string name="dark_theme">Dark</string>
+    <string name="amoled_theme">Dark (AMOLED)</string>
+    <string name="system_theme">Follow system</string>
     <string name="light_no_background_key" translatable="false">Light (No background)</string>
 
     <string name="percent" translatable="false">%</string>

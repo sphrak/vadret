@@ -93,7 +93,7 @@ class MainViewModelTest {
             job.cancel()
 
             assertEquals(
-                expected = listOf(null, Theme.DARK, Theme.LIGHT),
+                expected = listOf(null, Theme.DARK, Theme.SYSTEM),
                 actual = seen
             )
         }

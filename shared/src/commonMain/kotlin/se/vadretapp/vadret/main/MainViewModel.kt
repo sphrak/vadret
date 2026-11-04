@@ -43,7 +43,7 @@ internal class MainViewModel(
             viewModelScope.launch(context = coroutineDispatcher) {
                 observeThemeTask().collect { result: Either<Failure, Theme> ->
                     theme.value = result.onResult(
-                        onError = { _: Failure -> Theme.LIGHT },
+                        onError = { _: Failure -> Theme.SYSTEM },
                         onSuccess = { observedTheme: Theme -> observedTheme }
                     )
                 }
