@@ -13,9 +13,8 @@ androidxAnnotation = "1.9.1"
 activityCompose = "1.13.0"
 coil = "3.6.3"
 commonsCsv = "1.7"
-composeBom = "2026.09.00"
-composeMultiplatform = "1.13.0-beta01"
-composeMultiplatformMaterial3 = "1.13.0-beta01"
+composeMultiplatform = "1.13.0-beta02"
+composeMultiplatformMaterial3 = "1.13.0-beta02"
 material3 = "1.5.0-beta02"
 coreKtx = "1.19.1"
 coroutines = "1.11.0"
@@ -68,12 +67,7 @@ multiplatform-lifecycle-viewmodel = { module = "org.jetbrains.androidx.lifecycle
 multiplatform-lifecycle-viewmodel-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
 multiplatform-lifecycle-viewmodel-navigation3 = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-navigation3", version.ref = "lifecycle" }
 
-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
-compose-foundation = { module = "androidx.compose.foundation:foundation" }
 compose-material3 = { module = "androidx.compose.material3:material3", version.ref = "material3" }
-compose-ui = { module = "androidx.compose.ui:ui" }
-compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
-compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
 navigation3-runtime = { module = "androidx.navigation3:navigation3-runtime", version.ref = "navigation3" }
 navigation3-ui = { module = "androidx.navigation3:navigation3-ui", version.ref = "navigation3" }
 multiplatform-navigation3-ui = { module = "org.jetbrains.androidx.navigation3:navigation3-ui", version.ref = "navigation3" }
