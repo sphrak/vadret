@@ -1,11 +1,13 @@
 package se.vadretapp.vadret.di
 
+import okio.Path.Companion.toPath
 import org.koin.core.module.Module
 import org.koin.dsl.module
 import se.vadretapp.vadret.core.resources.Res
 import se.vadretapp.vadret.forecastpreference.ForecastPreferenceRepository
 import se.vadretapp.vadret.language.LanguageRepository
 import se.vadretapp.vadret.library.LibraryRepository
+import se.vadretapp.vadret.model.AppDirectories
 import se.vadretapp.vadret.nominatim.NominatimRepository
 import se.vadretapp.vadret.place.PlaceRepository
 import se.vadretapp.vadret.pollen.PollenRepository
@@ -16,6 +18,7 @@ import se.vadretapp.vadret.weatherforecast.WeatherForecastRepository
 import se.vadretapp.vadret.wind.WindRepository
 
 private const val PLACES_FILE = "files/sweden.csv"
+private const val RADAR_IMAGE_DIRECTORY = "radar_images"
 
 val repositoryModule: Module = module {
     single<PlaceRepository> {
@@ -32,6 +35,7 @@ val repositoryModule: Module = module {
         RadarRepository(
             httpClient = inject(),
             diskCache = get(),
+            imageDirectoryPath = (get<AppDirectories>().cacheDirectoryPath.toPath() / RADAR_IMAGE_DIRECTORY).toString(),
             clock = get(),
             coroutineDispatcher = get()
         )

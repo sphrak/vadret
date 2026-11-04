@@ -35,6 +35,8 @@ internal data class RadarState(
     val droppedLocation: Location? = null,
     val isPlaying: Boolean = false,
     val isLoading: Boolean = true,
+    val isWaitingForFrame: Boolean = false,
+    val isDownloadingRadarDay: Boolean = false,
     val isMapLoaded: Boolean = false,
     val isPrecipitationUnavailable: Boolean = false,
     val areRadarStationsShown: Boolean = false,
@@ -50,6 +52,8 @@ internal data class RadarState(
     val layerIndex: Int = layers.indexOf(element = layer)
 
     val isInitialLoading: Boolean = !isMapLoaded || (layer == RadarLayer.PRECIPITATION && precipitationOverlay == null && !isPrecipitationUnavailable)
+
+    val isProgressShown: Boolean = isLoading || isInitialLoading || isWaitingForFrame || isDownloadingRadarDay
 
     val shownWindField: WindField? = windTransitionField ?: windField
 }

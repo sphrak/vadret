@@ -187,7 +187,7 @@ internal fun RadarScreen(
                     .background(color = VadretTheme.colorScheme.background)
             )
         }
-        if (state.isLoading || state.isInitialLoading) {
+        if (state.isProgressShown) {
             VadretProgressBar(
                 modifier = Modifier
                     .align(alignment = Alignment.TopCenter)

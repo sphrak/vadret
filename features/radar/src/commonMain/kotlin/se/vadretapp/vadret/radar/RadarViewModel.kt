@@ -14,9 +14,11 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -65,6 +67,7 @@ import kotlin.time.Duration.Companion.milliseconds
 private const val PRELOADED_FRAME_DISTANCE = 3
 
 private val frameDuration: Duration = 128.milliseconds
+private val slowLoadDelay: Duration = 300.milliseconds
 private const val WIND_STEPS_PER_FRAME = 4
 
 private class PreparedWindField(
@@ -75,6 +78,7 @@ private class PreparedWindField(
 @Immutable
 class RadarViewModel internal constructor(
     private val getRadarTask: GetRadarTask,
+    private val downloadRadarDayTask: DownloadRadarDayTask,
     private val getWindForecastTask: GetWindForecastTask,
     private val getDeviceLocationTask: GetDeviceLocationTask,
     private val getPollenMapTask: GetPollenMapTask,
@@ -106,6 +110,7 @@ class RadarViewModel internal constructor(
     private val windForecast: AtomicReference<WindForecast?> = AtomicReference(value = null)
     private val playJob: AtomicReference<Job?> = AtomicReference(value = null)
     private val frameJob: AtomicReference<Job?> = AtomicReference(value = null)
+    private val radarDayJob: AtomicReference<Job?> = AtomicReference(value = null)
     private val preparedWindField: AtomicReference<PreparedWindField?> = AtomicReference(value = null)
 
     internal fun onEvent(event: RadarEvent) {
@@ -443,6 +448,9 @@ class RadarViewModel internal constructor(
     private fun onIndexChanged(index: Int) {
         stopPlaying()
         val layer: RadarLayer = state.value.layer
+        if (layer == RadarLayer.PRECIPITATION) {
+            downloadRadarDay()
+        }
         state.update { state: RadarState ->
             when (layer) {
                 RadarLayer.PRECIPITATION -> state.copy(precipitationIndex = index)
@@ -489,6 +497,62 @@ class RadarViewModel internal constructor(
         }
 
     private suspend fun precipitationOverlay(
+        index: Int,
+        isMoving: Boolean
+    ): Either<Failure, PrecipitationOverlay>? =
+        withSlowLoadProgress(
+            showProgress = { state: RadarState, isShown: Boolean -> state.copy(isWaitingForFrame = isShown) }
+        ) {
+            renderedPrecipitationOverlay(
+                index = index,
+                isMoving = isMoving
+            )
+        }
+
+    // Images on disk are ready within a few frames, so the loading bar only shows while SMHI is slow to answer.
+    private suspend fun <T> withSlowLoadProgress(
+        showProgress: (RadarState, Boolean) -> RadarState,
+        load: suspend () -> T
+    ): T = coroutineScope {
+        val slowLoadIndicator: Job = launch {
+            delay(duration = slowLoadDelay)
+            state.update { state: RadarState -> showProgress(state, true) }
+        }
+        try {
+            load()
+        } finally {
+            slowLoadIndicator.cancel()
+            state.update { state: RadarState -> showProgress(state, false) }
+        }
+    }
+
+    // Playing or moving the slider goes through most of the day, which one archive brings in a single request.
+    // It runs on its own, so moving the slider while it downloads does not start it over, and a day that fails
+    // leaves its frames to load one by one.
+    private fun downloadRadarDay(): Job? {
+        val startedDownload: Job? = radarDayJob.load()
+        if (startedDownload != null || state.value.precipitationFrames.isEmpty()) {
+            return startedDownload
+        }
+        val radarDayDownload: Job = viewModelScope.launch(
+            context = coroutineDispatcher,
+            start = CoroutineStart.LAZY
+        ) {
+            withSlowLoadProgress(
+                showProgress = { state: RadarState, isShown: Boolean -> state.copy(isDownloadingRadarDay = isShown) }
+            ) {
+                downloadRadarDayTask(imageUrls = state.value.precipitationFrames.map { frame: RadarFrame -> frame.imageUrl })
+            }
+        }
+        if (radarDayJob.compareAndSet(expectedValue = null, newValue = radarDayDownload)) {
+            radarDayDownload.start()
+            return radarDayDownload
+        }
+        radarDayDownload.cancel()
+        return radarDayJob.load()
+    }
+
+    private suspend fun renderedPrecipitationOverlay(
         index: Int,
         isMoving: Boolean
     ): Either<Failure, PrecipitationOverlay>? {
@@ -616,6 +680,9 @@ class RadarViewModel internal constructor(
     }
 
     private suspend fun CoroutineScope.play(layer: RadarLayer) {
+        if (layer == RadarLayer.PRECIPITATION) {
+            downloadRadarDay()?.join()
+        }
         while (isActive) {
             val radarState: RadarState = state.value
             val frameCount: Int = radarState.frameCount(layer = layer)

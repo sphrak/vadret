@@ -1,7 +1,5 @@
 package se.vadretapp.vadret.radar.extension
 
-import coil3.network.HttpException
-import coil3.network.NetworkResponse
 import kotlinx.io.IOException
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
@@ -13,8 +11,6 @@ import kotlin.coroutines.cancellation.CancellationException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
-
-private const val HTTP_NOT_FOUND = 404
 
 class ThrowableTest {
 
@@ -29,7 +25,6 @@ class ThrowableTest {
     fun `known failures get their error code and a warning`() {
         val knownFailures: List<Pair<Throwable, ErrorCode>> = listOf(
             TiffFormatException(message = "The byte order mark is missing") to ErrorCode.INVALID_RESPONSE,
-            HttpException(response = NetworkResponse(code = HTTP_NOT_FOUND)) to ErrorCode.NETWORK_FAILURE,
             IOException("Connection reset") to ErrorCode.NETWORK_FAILURE
         )
 

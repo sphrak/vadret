@@ -8,6 +8,7 @@ import se.vadretapp.vadret.common.extension.toKnownFailure
 import se.vadretapp.vadret.common.extension.toNetworkFailure
 import se.vadretapp.vadret.logging.Logger
 import se.vadretapp.vadret.logging.LoggerFactory
+import se.vadretapp.vadret.radar.exception.RadarDownloadException
 import se.vadretapp.vadret.radar.exception.RadarImageUrlException
 import kotlin.coroutines.cancellation.CancellationException
 
@@ -22,6 +23,10 @@ internal fun Exception.toFailure(): Failure =
         )
         this is RadarImageUrlException -> toKnownFailure(
             errorCode = ErrorCode.RADAR_NOT_AVAILABLE,
+            logger = logger
+        )
+        this is RadarDownloadException -> toKnownFailure(
+            errorCode = ErrorCode.INVALID_RESPONSE,
             logger = logger
         )
         else -> toNetworkFailure(logger = logger)

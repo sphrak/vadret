@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New app icon 📸
 - Begin publish iOS bundle to TestFlight
 - Drag and drop pin to see weather at that location
+- Batch download radar imagery
 
 ## [3.2.0] -- 2026-10-29
 

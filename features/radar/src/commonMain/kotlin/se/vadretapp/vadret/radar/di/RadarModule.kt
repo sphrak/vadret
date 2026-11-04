@@ -5,6 +5,7 @@ import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.factoryOf
 import org.koin.dsl.module
 import se.vadretapp.vadret.model.AppInfo
+import se.vadretapp.vadret.radar.DefaultDownloadRadarDayTask
 import se.vadretapp.vadret.radar.DefaultGetDeviceLocationTask
 import se.vadretapp.vadret.radar.DefaultGetPollenMapTask
 import se.vadretapp.vadret.radar.DefaultGetRadarTask
@@ -13,6 +14,7 @@ import se.vadretapp.vadret.radar.DefaultObservePollenInSeasonTask
 import se.vadretapp.vadret.radar.DefaultObservePollenPreferencesTask
 import se.vadretapp.vadret.radar.DefaultRadarImageLoader
 import se.vadretapp.vadret.radar.DefaultSetPollenHibernationNoticeShownTask
+import se.vadretapp.vadret.radar.DownloadRadarDayTask
 import se.vadretapp.vadret.radar.GetDeviceLocationTask
 import se.vadretapp.vadret.radar.GetPollenMapTask
 import se.vadretapp.vadret.radar.GetRadarTask
@@ -47,6 +49,7 @@ val radarModule: Module = module {
     }
     factoryOf(::DefaultSetPollenHibernationNoticeShownTask) { bind<SetPollenHibernationNoticeShownTask>() }
     factoryOf(::DefaultGetRadarTask) { bind<GetRadarTask>() }
+    factoryOf(::DefaultDownloadRadarDayTask) { bind<DownloadRadarDayTask>() }
     factoryOf(::DefaultGetWindForecastTask) { bind<GetWindForecastTask>() }
     single<WindFieldRenderer> { DefaultWindFieldRenderer(coroutineDispatcher = get()) }
     single<PollenCloudRenderer> { DefaultPollenCloudRenderer(coroutineDispatcher = get()) }
@@ -54,8 +57,8 @@ val radarModule: Module = module {
     single<RadarImageLoader> {
         DefaultRadarImageLoader(
             platformContext = get(),
-            radarReprojection = get(),
-            httpClient = inject()
+            radarRepository = get(),
+            radarReprojection = get()
         )
     }
     factoryOf(::RadarViewModel)

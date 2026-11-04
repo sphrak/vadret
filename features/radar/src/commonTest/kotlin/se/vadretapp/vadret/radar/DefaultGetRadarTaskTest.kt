@@ -31,6 +31,12 @@ private class FakeRadarRepository : RadarRepository {
         requestedImageUrls.add(imageUrl)
         return archivedRadar.asRight()
     }
+
+    override suspend fun getRadarImage(imageUrl: String): Either<Failure, ByteArray> = ByteArray(size = 0).asRight()
+
+    override suspend fun getMissingRadarImageCount(imageUrls: List<String>): Either<Failure, Int> = 0.asRight()
+
+    override suspend fun downloadRadarDays(imageUrls: List<String>): Either<Failure, Unit> = Unit.asRight()
 }
 
 class DefaultGetRadarTaskTest {

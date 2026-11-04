@@ -12,10 +12,12 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
+import okio.Path
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.common.defaultJson
 import se.vadretapp.vadret.logging.LogLevel
+import se.vadretapp.vadret.radar.local.DefaultRadarImageLocalDataSource
 import se.vadretapp.vadret.radar.local.DefaultRadarLocalDataSource
 import se.vadretapp.vadret.radar.local.RadarCacheEntity
 import se.vadretapp.vadret.radar.local.RadarImageEntity
@@ -25,12 +27,14 @@ import se.vadretapp.vadret.radar.remote.DefaultRadarRemoteDataSource
 import se.vadretapp.vadret.radar.remote.RadarDto
 import se.vadretapp.vadret.radar.remote.RadarFileDto
 import se.vadretapp.vadret.radar.remote.RadarFormatDto
-import se.vadretapp.vadret.radar.remote.RadarRemoteDataSource
 import se.vadretapp.vadret.testing.FakeDiskCache
 import se.vadretapp.vadret.testing.FixedClock
 import se.vadretapp.vadret.testing.LogLine
+import se.vadretapp.vadret.testing.deleteRecursively
 import se.vadretapp.vadret.testing.mockHttpClient
+import se.vadretapp.vadret.testing.temporaryDirectory
 import se.vadretapp.vadret.testing.withRecordedLogs
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.time.Duration.Companion.minutes
@@ -39,18 +43,6 @@ import kotlin.time.Instant
 private const val CACHE_KEY = "radar_geotiff.json"
 
 private val now: Instant = Instant.parse(input = "2026-10-24T14:00:00Z")
-
-private class FakeRadarRemoteDataSource(
-    private val radarDto: RadarDto
-) : RadarRemoteDataSource {
-
-    val requestedDates = mutableListOf<LocalDate>()
-
-    override suspend fun getRadar(date: LocalDate): RadarDto {
-        requestedDates.add(date)
-        return radarDto
-    }
-}
 
 private fun file(
     valid: String,
@@ -69,6 +61,7 @@ private fun file(
 class DefaultRadarRepositoryTest {
 
     private val testScope = TestScope(StandardTestDispatcher())
+    private val imageDirectory: Path = temporaryDirectory(prefix = "radar-images")
     private val diskCache = FakeDiskCache()
     private val clock = FixedClock(now = now)
     private val radarRemoteDataSource = FakeRadarRemoteDataSource(
@@ -87,8 +80,17 @@ class DefaultRadarRepositoryTest {
             diskCache = diskCache,
             coroutineDispatcher = StandardTestDispatcher(testScope.testScheduler)
         ),
+        radarImageLocalDataSource = DefaultRadarImageLocalDataSource(
+            directoryPath = imageDirectory.toString(),
+            coroutineDispatcher = StandardTestDispatcher(testScope.testScheduler)
+        ),
         clock = clock
     )
+
+    @AfterTest
+    fun tearDown() {
+        imageDirectory.deleteRecursively()
+    }
 
     private val fetchedRadar = Radar(
         images = listOf(
@@ -251,6 +253,10 @@ class DefaultRadarRepositoryTest {
                     diskCache = FakeDiskCache(),
                     coroutineDispatcher = StandardTestDispatcher(testScheduler)
                 ),
+                radarImageLocalDataSource = DefaultRadarImageLocalDataSource(
+                    directoryPath = imageDirectory.toString(),
+                    coroutineDispatcher = StandardTestDispatcher(testScope.testScheduler)
+                ),
                 clock = clock
             )
 
@@ -288,6 +294,10 @@ class DefaultRadarRepositoryTest {
                         radarLocalDataSource = DefaultRadarLocalDataSource(
                             diskCache = FakeDiskCache(),
                             coroutineDispatcher = StandardTestDispatcher(testScheduler)
+                        ),
+                        radarImageLocalDataSource = DefaultRadarImageLocalDataSource(
+                            directoryPath = imageDirectory.toString(),
+                            coroutineDispatcher = StandardTestDispatcher(testScope.testScheduler)
                         ),
                         clock = clock
                     ).getRadar()

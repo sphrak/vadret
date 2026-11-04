@@ -6,6 +6,7 @@ import io.github.sphrak.either.extension.asLeft
 import io.github.sphrak.either.extension.asRight
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -59,6 +60,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 
 private class FakeGetRadarTask(
@@ -78,14 +80,29 @@ private class FakeRadarImageLoader : RadarImageLoader {
     val loadedUrls = mutableListOf<String>()
     val radarEchoes = mutableMapOf<String, RadarEchoes>()
     var failingUrls: Set<String> = emptySet()
+    var loadDuration: Duration = Duration.ZERO
 
     override suspend fun load(imageUrl: String): Either<Failure, RadarEchoes> {
         loadedUrls.add(imageUrl)
+        delay(duration = loadDuration)
         return if (imageUrl in failingUrls) {
             Failure(errorCode = ErrorCode.NETWORK_FAILURE).asLeft()
         } else {
             radarEchoes.getOrPut(imageUrl) { fakeRadarEchoes() }.asRight()
         }
+    }
+}
+
+private class FakeDownloadRadarDayTask : DownloadRadarDayTask {
+
+    val requestedImageUrls = mutableListOf<List<String>>()
+    var result: Either<Failure, Unit> = Unit.asRight()
+    var downloadDuration: Duration = Duration.ZERO
+
+    override suspend fun invoke(imageUrls: List<String>): Either<Failure, Unit> {
+        requestedImageUrls.add(imageUrls)
+        delay(duration = downloadDuration)
+        return result
     }
 }
 
@@ -304,6 +321,7 @@ class RadarViewModelTest {
     private val pollenCloudRenderer = FakePollenCloudRenderer()
     private val getDeviceLocationTask = FakeGetDeviceLocationTask(result = Location(latitude = 59.3, longitude = 18.0).asRight())
     private val radarImageLoader = FakeRadarImageLoader()
+    private val downloadRadarDayTask = FakeDownloadRadarDayTask()
     private val windFieldRenderer = FakeWindFieldRenderer()
     private val observePollenPreferencesTask = FakeObservePollenPreferencesTask()
     private val observePollenInSeasonTask = FakeObservePollenInSeasonTask()
@@ -326,6 +344,7 @@ class RadarViewModelTest {
     ): RadarViewModel {
         val radarViewModel = RadarViewModel(
             getRadarTask = getRadarTask,
+            downloadRadarDayTask = downloadRadarDayTask,
             getWindForecastTask = getWindForecastTask,
             getDeviceLocationTask = getDeviceLocationTask,
             getPollenMapTask = getPollenMapTask,
@@ -510,6 +529,40 @@ class RadarViewModelTest {
         }
 
     @Test
+    fun `a frame that is slow to load shows that the radar is loading`() =
+        testScope.runTest {
+            val radarViewModel: RadarViewModel = viewModel()
+            radarViewModel.onEvent(event = RadarEvent.OnMapLoaded)
+            advanceUntilIdle()
+            val shownState: RadarState = radarViewModel.state.value
+            radarImageLoader.loadDuration = 2.seconds
+
+            radarViewModel.onEvent(event = RadarEvent.OnIndexChanged(index = 1))
+            advanceTimeBy(delayTime = 1.seconds)
+            val waitingState: RadarState = radarViewModel.state.value
+            advanceUntilIdle()
+
+            assertEquals(expected = false, actual = shownState.isProgressShown)
+            assertEquals(expected = true, actual = waitingState.isProgressShown)
+            assertEquals(expected = false, actual = radarViewModel.state.value.isProgressShown)
+            assertEquals(expected = 1, actual = radarViewModel.state.value.precipitationIndex)
+        }
+
+    @Test
+    fun `a frame that loads quickly does not flash the loading bar`() =
+        testScope.runTest {
+            val radarViewModel: RadarViewModel = viewModel()
+            advanceUntilIdle()
+            radarImageLoader.loadDuration = 200.milliseconds
+
+            radarViewModel.onEvent(event = RadarEvent.OnIndexChanged(index = 1))
+            advanceTimeBy(delayTime = 1.seconds)
+
+            assertEquals(expected = false, actual = radarViewModel.state.value.isWaitingForFrame)
+            assertEquals(expected = 1, actual = radarViewModel.state.value.precipitationIndex)
+        }
+
+    @Test
     fun `playing moves each frame towards the one after it`() =
         testScope.runTest {
             val radarViewModel: RadarViewModel = viewModel()
@@ -523,6 +576,77 @@ class RadarViewModelTest {
 
             assertSame(expected = radarImageLoader.radarEchoes["https://smhi.se/1.png"]?.image, actual = motion?.nextEchoes)
             assertEquals(expected = 128.milliseconds, actual = motion?.duration)
+        }
+
+    @Test
+    fun `opening the radar loads only the frame it shows`() =
+        testScope.runTest {
+            viewModel()
+            advanceUntilIdle()
+
+            assertEquals(expected = listOf("https://smhi.se/2.png"), actual = radarImageLoader.loadedUrls)
+            assertEquals(expected = emptyList(), actual = downloadRadarDayTask.requestedImageUrls)
+        }
+
+    @Test
+    fun `playing downloads the day before it loads the frames`() =
+        testScope.runTest {
+            val radarViewModel: RadarViewModel = viewModel()
+            radarViewModel.onEvent(event = RadarEvent.OnMapLoaded)
+            advanceUntilIdle()
+            downloadRadarDayTask.downloadDuration = 2.seconds
+
+            radarViewModel.onEvent(event = RadarEvent.OnPlayButtonClicked)
+            advanceTimeBy(delayTime = 1.seconds)
+            val downloadingState: RadarState = radarViewModel.state.value
+            val loadedWhileDownloading: List<String> = radarImageLoader.loadedUrls.toList()
+            advanceTimeBy(delayTime = 2.seconds)
+            radarViewModel.onEvent(event = RadarEvent.OnPlayButtonClicked)
+
+            assertEquals(
+                expected = listOf(listOf("https://smhi.se/0.png", "https://smhi.se/1.png", "https://smhi.se/2.png")),
+                actual = downloadRadarDayTask.requestedImageUrls
+            )
+            assertEquals(expected = true, actual = downloadingState.isProgressShown)
+            assertEquals(expected = listOf("https://smhi.se/2.png"), actual = loadedWhileDownloading)
+            assertEquals(expected = true, actual = "https://smhi.se/0.png" in radarImageLoader.loadedUrls)
+            assertEquals(expected = false, actual = radarViewModel.state.value.isProgressShown)
+        }
+
+    @Test
+    fun `the day is downloaded once however often the slider moves and the radar plays`() =
+        testScope.runTest {
+            val radarViewModel: RadarViewModel = viewModel()
+            advanceUntilIdle()
+            downloadRadarDayTask.downloadDuration = 2.seconds
+
+            radarViewModel.onEvent(event = RadarEvent.OnIndexChanged(index = 0))
+            radarViewModel.onEvent(event = RadarEvent.OnIndexChanged(index = 1))
+            advanceUntilIdle()
+            radarViewModel.onEvent(event = RadarEvent.OnPlayButtonClicked)
+            advanceTimeBy(delayTimeMillis = 128)
+            radarViewModel.onEvent(event = RadarEvent.OnPlayButtonClicked)
+            advanceUntilIdle()
+
+            assertEquals(expected = 1, actual = downloadRadarDayTask.requestedImageUrls.size)
+        }
+
+    @Test
+    fun `a day that fails to download still plays its frames`() =
+        testScope.runTest {
+            downloadRadarDayTask.result = Failure(errorCode = ErrorCode.NETWORK_FAILURE).asLeft()
+            val radarViewModel: RadarViewModel = viewModel()
+            advanceUntilIdle()
+
+            radarViewModel.onEvent(event = RadarEvent.OnPlayButtonClicked)
+            advanceTimeBy(delayTimeMillis = 128)
+            runCurrent()
+            val state: RadarState = radarViewModel.state.value
+            radarViewModel.onEvent(event = RadarEvent.OnPlayButtonClicked)
+
+            assertEquals(expected = true, actual = state.isPlaying)
+            assertEquals(expected = 0, actual = state.precipitationIndex)
+            assertNull(actual = state.errorMessageResource)
         }
 
     @Test

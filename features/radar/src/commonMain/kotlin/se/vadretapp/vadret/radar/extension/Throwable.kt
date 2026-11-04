@@ -1,6 +1,5 @@
 package se.vadretapp.vadret.radar.extension
 
-import coil3.network.HttpException
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.common.extension.toKnownFailure
@@ -17,10 +16,6 @@ internal fun Throwable.toFailure(): Failure =
         is CancellationException -> throw this
         is TiffFormatException -> toKnownFailure(
             errorCode = ErrorCode.INVALID_RESPONSE,
-            logger = logger
-        )
-        is HttpException -> toKnownFailure(
-            errorCode = ErrorCode.NETWORK_FAILURE,
             logger = logger
         )
         is Exception -> toNetworkFailure(logger = logger)
