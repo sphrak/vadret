@@ -10,7 +10,7 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
-                implementation project(':core:encrypteddatastore')
+                implementation project(':core:encryption')
                 implementation project(':core:geohash')
                 implementation project(':core:logging')
                 implementation project(':data:common')
@@ -21,6 +21,17 @@ kotlin {
                 implementation libs.kotlinx.serialization.json
                 implementation libs.ktor.client.core
                 implementation libs.okio
+            }
+        }
+        androidMain {
+            dependencies {
+                implementation libs.datastore.tink
+                implementation libs.tink.android
+            }
+        }
+        iosMain {
+            dependencies {
+                implementation libs.datastore.core.okio
             }
         }
         commonTest {

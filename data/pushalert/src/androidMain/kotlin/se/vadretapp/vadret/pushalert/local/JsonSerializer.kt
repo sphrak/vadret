@@ -1,9 +1,9 @@
-package se.vadretapp.vadret.encrypteddatastore
+package se.vadretapp.vadret.pushalert.local
 
 import androidx.datastore.core.Serializer
 import kotlinx.serialization.KSerializer
-import se.vadretapp.vadret.encrypteddatastore.extension.decode
-import se.vadretapp.vadret.encrypteddatastore.extension.encode
+import se.vadretapp.vadret.pushalert.extension.decode
+import se.vadretapp.vadret.pushalert.extension.encode
 import java.io.InputStream
 import java.io.OutputStream
 

@@ -1,4 +1,4 @@
-package se.vadretapp.vadret.encrypteddatastore
+package se.vadretapp.vadret.pushalert.local
 
 import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import se.vadretapp.vadret.logging.Logger
@@ -13,4 +13,4 @@ internal fun <T> corruptionHandler(
         defaultValue
     }
 
-private val logger: Logger = LoggerFactory.getLogger(tag = "se.vadretapp.vadret.encrypteddatastore")
+private val logger: Logger = LoggerFactory.getLogger(tag = "se.vadretapp.vadret.pushalert")

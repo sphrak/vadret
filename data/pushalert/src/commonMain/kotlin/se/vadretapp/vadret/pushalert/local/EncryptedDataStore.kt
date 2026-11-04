@@ -1,4 +1,4 @@
-package se.vadretapp.vadret.encrypteddatastore
+package se.vadretapp.vadret.pushalert.local
 
 import androidx.datastore.core.DataStore
 import kotlinx.coroutines.CoroutineDispatcher
@@ -10,7 +10,7 @@ import okio.Path.Companion.toPath
 import se.vadretapp.vadret.encryption.DeviceCipher
 import se.vadretapp.vadret.encryption.model.KeyAlias
 
-fun <T> encryptedDataStore(
+internal fun <T> encryptedDataStore(
     directoryPath: String,
     fileName: String,
     serializer: KSerializer<T>,

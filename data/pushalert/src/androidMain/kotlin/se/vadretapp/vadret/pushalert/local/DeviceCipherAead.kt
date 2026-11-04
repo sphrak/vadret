@@ -1,8 +1,8 @@
-package se.vadretapp.vadret.encrypteddatastore
+package se.vadretapp.vadret.pushalert.local
 
 import com.google.crypto.tink.Aead
-import se.vadretapp.vadret.encrypteddatastore.extension.orThrow
 import se.vadretapp.vadret.encryption.DeviceCipher
+import se.vadretapp.vadret.pushalert.extension.orThrow
 
 internal class DeviceCipherAead(
     private val deviceCipher: DeviceCipher,

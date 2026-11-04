@@ -1,4 +1,4 @@
-package se.vadretapp.vadret.encrypteddatastore.extension
+package se.vadretapp.vadret.pushalert.extension
 
 import androidx.datastore.core.CorruptionException
 import io.github.sphrak.either.Either

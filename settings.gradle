@@ -9,7 +9,6 @@ plugins {
 include ':androidApp'
 include ':shared'
 include ':core'
-include ':core:encrypteddatastore'
 include ':core:encryption'
 include ':core:geohash'
 include ':core:idgenerator'

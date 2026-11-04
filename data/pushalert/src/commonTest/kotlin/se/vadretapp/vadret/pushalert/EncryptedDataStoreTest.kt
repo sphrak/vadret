@@ -1,4 +1,4 @@
-package se.vadretapp.vadret.encrypteddatastore
+package se.vadretapp.vadret.pushalert
 
 import androidx.datastore.core.DataStore
 import kotlinx.coroutines.CoroutineScope
@@ -15,6 +15,7 @@ import okio.IOException
 import okio.Path
 import se.vadretapp.vadret.encryption.DeviceCipher
 import se.vadretapp.vadret.logging.LogLevel
+import se.vadretapp.vadret.pushalert.local.encryptedDataStore
 import se.vadretapp.vadret.testing.deleteRecursively
 import se.vadretapp.vadret.testing.temporaryDirectory
 import se.vadretapp.vadret.testing.withRecordedLogs

@@ -1,11 +1,10 @@
-package se.vadretapp.vadret.encrypteddatastore
+package se.vadretapp.vadret.pushalert.local
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.core.DataStoreFactory
-import androidx.datastore.core.okio.OkioStorage
+import androidx.datastore.tink.AeadSerializer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.serialization.KSerializer
-import okio.FileSystem
 import okio.Path
 import se.vadretapp.vadret.encryption.DeviceCipher
 
@@ -17,19 +16,22 @@ internal actual fun <T> encryptedDataStore(
     scope: CoroutineScope
 ): DataStore<T> =
     DataStoreFactory.create(
-        storage = OkioStorage(
-            fileSystem = FileSystem.SYSTEM,
-            serializer = DeviceCipherSerializer(
-                serializer = serializer,
-                defaultValue = defaultValue,
+        serializer = AeadSerializer(
+            aead = DeviceCipherAead(
                 deviceCipher = deviceCipher,
                 fileName = path.name
             ),
-            producePath = { path }
+            wrappedSerializer = JsonSerializer(
+                serializer = serializer,
+                defaultValue = defaultValue,
+                fileName = path.name
+            ),
+            associatedData = path.name.encodeToByteArray()
         ),
         corruptionHandler = corruptionHandler(
             fileName = path.name,
             defaultValue = defaultValue
         ),
-        scope = scope
+        scope = scope,
+        produceFile = { path.toFile() }
     )

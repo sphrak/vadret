@@ -5,10 +5,10 @@ import io.ktor.client.HttpClient
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import se.vadretapp.vadret.common.Failure
-import se.vadretapp.vadret.encrypteddatastore.encryptedDataStore
 import se.vadretapp.vadret.geohash.model.Geohash
 import se.vadretapp.vadret.pushalert.local.AttestationLocalDataSource
 import se.vadretapp.vadret.pushalert.local.DefaultPushAlertLocalDataSource
+import se.vadretapp.vadret.pushalert.local.encryptedDataStore
 import se.vadretapp.vadret.pushalert.model.DeviceRegistration
 import se.vadretapp.vadret.pushalert.model.DeviceToken
 import se.vadretapp.vadret.pushalert.model.InstallationToken

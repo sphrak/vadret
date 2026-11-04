@@ -1,13 +1,13 @@
-package se.vadretapp.vadret.encrypteddatastore
+package se.vadretapp.vadret.pushalert.local
 
 import androidx.datastore.core.okio.OkioSerializer
 import kotlinx.serialization.KSerializer
 import okio.BufferedSink
 import okio.BufferedSource
-import se.vadretapp.vadret.encrypteddatastore.extension.decode
-import se.vadretapp.vadret.encrypteddatastore.extension.encode
-import se.vadretapp.vadret.encrypteddatastore.extension.orThrow
 import se.vadretapp.vadret.encryption.DeviceCipher
+import se.vadretapp.vadret.pushalert.extension.decode
+import se.vadretapp.vadret.pushalert.extension.encode
+import se.vadretapp.vadret.pushalert.extension.orThrow
 
 internal class DeviceCipherSerializer<T>(
     private val serializer: KSerializer<T>,

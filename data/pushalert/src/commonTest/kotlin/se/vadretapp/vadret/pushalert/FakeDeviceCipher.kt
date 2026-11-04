@@ -1,4 +1,4 @@
-package se.vadretapp.vadret.encrypteddatastore
+package se.vadretapp.vadret.pushalert
 
 import io.github.sphrak.either.Either
 import io.github.sphrak.either.extension.asLeft
