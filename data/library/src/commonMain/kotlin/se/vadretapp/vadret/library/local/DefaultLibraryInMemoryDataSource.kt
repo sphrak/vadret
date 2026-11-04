@@ -23,15 +23,6 @@ internal class DefaultLibraryInMemoryDataSource : LibraryInMemoryDataSource {
             license = MIT
         ),
         Library(
-            author = "Apache Commons™",
-            title = "Apache Commons CSV",
-            description = "Reads and writes files in the comma separated values format.",
-            projectUrl = "https://commons.apache.org/proper/commons-csv/",
-            sourceUrl = "https://git-wip-us.apache.org/repos/asf?p=commons-csv.git",
-            licenseUrl = "http://www.apache.org/licenses/",
-            license = APACHE_2
-        ),
-        Library(
             author = "Square Inc.",
             title = "OkHttp",
             description = "An HTTP+HTTP/2 client for Android and Java applications.",

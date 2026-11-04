@@ -37,7 +37,8 @@ class DefaultLibraryRepositoryTest {
                     "Corbind",
                     "PermissionsDispatcher",
                     "ThreetenABP",
-                    "Picasso"
+                    "Picasso",
+                    "Apache Commons CSV"
                 )
             }
         )

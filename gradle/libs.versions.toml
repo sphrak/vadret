@@ -12,7 +12,6 @@ android-targetSdk = "37"
 androidxAnnotation = "1.9.1"
 activityCompose = "1.13.0"
 coil = "3.6.3"
-commonsCsv = "1.7"
 composeMultiplatform = "1.13.0-beta02"
 composeMultiplatformMaterial3 = "1.13.0-beta02"
 material3 = "1.5.0-rc01"
@@ -123,7 +122,6 @@ koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
 # Miscellaneous
 coil-core = { module = "io.coil-kt.coil3:coil", version.ref = "coil" }
 coil-network-ktor = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref = "coil" }
-commons-csv = { module = "org.apache.commons:commons-csv", version.ref = "commonsCsv" }
 either = { module = "io.github.sphrak:either", version.ref = "either" }
 maplibre-android = { module = "org.maplibre.gl:android-sdk", version.ref = "maplibre" }
 maplibre-compose = { module = "org.maplibre.compose:maplibre-compose", version.ref = "maplibreCompose" }
