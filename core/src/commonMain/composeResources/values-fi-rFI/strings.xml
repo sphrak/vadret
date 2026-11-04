@@ -111,13 +111,13 @@
     <string name="show_pollen">Näytä siitepöly</string>
     <string name="pollen_is_shown">Siitepölykartta on käytössä</string>
     <string name="pollen_is_hidden">Siitepöly on piilotettu</string>
-    <string name="pollen_allergies">Allergiat</string>
+    <string name="pollen_allergies">Merkityt siitepölyt</string>
     <string name="pollen_no_allergies">Ei valittu</string>
     <plurals name="pollen_allergens_selected">
         <item quantity="one">%1$d valittu</item>
         <item quantity="other">%1$d valittu</item>
     </plurals>
-    <string name="pollen_allergies_description">Valitse, mille olet allerginen. Kartta avautuu siihen.</string>
+    <string name="pollen_allergies_description">Valitse, mitkä siitepölyt haluat merkitä. Kartta näyttää ne ensin.</string>
     <string name="pollen_types_not_available">Siitepölytyyppejä ei voitu ladata. Yritä myöhemmin uudelleen.</string>
     <string name="pollen_hibernating_title">Siitepöly on talviunilla</string>
     <string name="pollen_hibernating_text">Siitepölyraportit palaavat, kun kausi alkaa taas, yleensä helmikuun tienoilla.</string>

@@ -302,13 +302,13 @@
     <string name="show_pollen">Show pollen</string>
     <string name="pollen_is_shown">The pollen map is on</string>
     <string name="pollen_is_hidden">Pollen is hidden</string>
-    <string name="pollen_allergies">Allergies</string>
+    <string name="pollen_allergies">Highlighted pollen</string>
     <string name="pollen_no_allergies">None chosen</string>
     <plurals name="pollen_allergens_selected">
         <item quantity="one">%1$d chosen</item>
         <item quantity="other">%1$d chosen</item>
     </plurals>
-    <string name="pollen_allergies_description">Choose what you\'re allergic to. The map opens on it.</string>
+    <string name="pollen_allergies_description">Choose which pollen to highlight. The map shows them first.</string>
     <string name="pollen_types_not_available">The pollen types could not be loaded. Try again later.</string>
     <string name="pollen_hibernating_title">Pollen has gone into hibernation</string>
     <string name="pollen_hibernating_text">The pollen reports return when the season starts again, usually around February.</string>

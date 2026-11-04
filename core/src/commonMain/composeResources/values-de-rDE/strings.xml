@@ -153,13 +153,13 @@
     <string name="show_pollen">Pollen anzeigen</string>
     <string name="pollen_is_shown">Die Pollenkarte ist an</string>
     <string name="pollen_is_hidden">Pollen sind ausgeblendet</string>
-    <string name="pollen_allergies">Allergien</string>
+    <string name="pollen_allergies">Markierte Pollen</string>
     <string name="pollen_no_allergies">Keine ausgewählt</string>
     <plurals name="pollen_allergens_selected">
         <item quantity="one">%1$d ausgewählt</item>
         <item quantity="other">%1$d ausgewählt</item>
     </plurals>
-    <string name="pollen_allergies_description">Wähle, wogegen du allergisch bist. Die Karte öffnet sich damit.</string>
+    <string name="pollen_allergies_description">Wähle, welche Pollen du markieren möchtest. Die Karte zeigt sie zuerst.</string>
     <string name="pollen_types_not_available">Die Pollenarten konnten nicht geladen werden. Versuche es später erneut.</string>
     <string name="pollen_hibernating_title">Die Pollen halten Winterschlaf</string>
     <string name="pollen_hibernating_text">Die Pollenberichte kommen zurück, wenn die Saison wieder beginnt, meist um Februar.</string>

@@ -98,7 +98,7 @@
     <string name="show_pollen">Pokaż pyłki</string>
     <string name="pollen_is_shown">Mapa pyłków jest włączona</string>
     <string name="pollen_is_hidden">Pyłki są ukryte</string>
-    <string name="pollen_allergies">Alergie</string>
+    <string name="pollen_allergies">Wyróżnione pyłki</string>
     <string name="pollen_no_allergies">Nie wybrano</string>
     <plurals name="pollen_allergens_selected">
         <item quantity="one">%1$d wybrany</item>
@@ -106,7 +106,7 @@
         <item quantity="many">%1$d wybranych</item>
         <item quantity="other">%1$d wybranego</item>
     </plurals>
-    <string name="pollen_allergies_description">Wybierz, na co masz alergię. Mapa otworzy się na tym.</string>
+    <string name="pollen_allergies_description">Wybierz, które pyłki chcesz wyróżnić. Mapa pokaże je najpierw.</string>
     <string name="pollen_types_not_available">Nie udało się wczytać rodzajów pyłków. Spróbuj ponownie później.</string>
     <string name="pollen_hibernating_title">Pyłki zapadły w sen zimowy</string>
     <string name="pollen_hibernating_text">Raporty pyłkowe wrócą, gdy sezon znów się zacznie, zwykle około lutego.</string>

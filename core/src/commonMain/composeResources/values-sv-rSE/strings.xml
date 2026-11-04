@@ -235,13 +235,13 @@
     <string name="show_pollen">Visa pollen</string>
     <string name="pollen_is_shown">Pollenkartan är på</string>
     <string name="pollen_is_hidden">Pollen döljs</string>
-    <string name="pollen_allergies">Allergier</string>
+    <string name="pollen_allergies">Markerade pollen</string>
     <string name="pollen_no_allergies">Inga valda</string>
     <plurals name="pollen_allergens_selected">
         <item quantity="one">%1$d vald</item>
         <item quantity="other">%1$d valda</item>
     </plurals>
-    <string name="pollen_allergies_description">Välj vad du är allergisk mot. Kartan öppnas på det.</string>
+    <string name="pollen_allergies_description">Välj vilka pollen du vill markera. Kartan visar dem först.</string>
     <string name="pollen_types_not_available">Pollentyperna kunde inte hämtas. Försök igen senare.</string>
     <string name="pollen_hibernating_title">Pollen har gått i ide</string>
     <string name="pollen_hibernating_text">Pollenrapporterna återkommer när säsongen börjar igen, vanligtvis runt februari.</string>
