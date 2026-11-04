@@ -34,8 +34,6 @@ import org.maplibre.compose.map.MapState
 import org.maplibre.compose.map.MaplibreMap
 import org.maplibre.compose.util.DpPadding
 import org.maplibre.spatialk.geojson.BoundingBox
-import se.vadretapp.vadret.core.resources.Res
-import se.vadretapp.vadret.core.resources.openstreetmap_copyright_notice
 import se.vadretapp.vadret.forecastwarning.model.MapBounds
 import se.vadretapp.vadret.forecastwarning.model.WarningMapArea
 import se.vadretapp.vadret.forecastwarning.ui.map.RetainedWarningMap
@@ -43,6 +41,8 @@ import se.vadretapp.vadret.forecastwarning.ui.map.WarningMapHolder
 import se.vadretapp.vadret.forecastwarning.ui.map.WarningMapLayers
 import se.vadretapp.vadret.ui.VadretTheme
 import se.vadretapp.vadret.ui.WarningColors
+import se.vadretapp.vadret.ui.resources.Res
+import se.vadretapp.vadret.ui.resources.openstreetmap_copyright_notice
 
 private const val MAXIMUM_ZOOM_LEVEL = 9.0
 private const val ZOOM_OUT_LEVELS = 0.5

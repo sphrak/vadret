@@ -8,17 +8,17 @@ import se.vadretapp.vadret.aggregatedfeed.model.FeedDetail
 import se.vadretapp.vadret.aggregatedfeed.model.FeedDetailKind
 import se.vadretapp.vadret.aggregatedfeed.model.FeedRegion
 import se.vadretapp.vadret.aggregatedfeed.model.FeedSource
-import se.vadretapp.vadret.core.resources.Res
-import se.vadretapp.vadret.core.resources.warning_detail_advice
-import se.vadretapp.vadret.core.resources.warning_detail_comment
-import se.vadretapp.vadret.core.resources.warning_detail_description
-import se.vadretapp.vadret.core.resources.warning_detail_what_happens
-import se.vadretapp.vadret.core.resources.warning_detail_where
 import se.vadretapp.vadret.forecastwarning.model.WarningDetail
 import se.vadretapp.vadret.forecastwarning.model.WarningItem
 import se.vadretapp.vadret.ui.extension.displayName
 import se.vadretapp.vadret.ui.extension.toElapsedTime
 import se.vadretapp.vadret.ui.format.toDayTimeText
+import se.vadretapp.vadret.ui.resources.Res
+import se.vadretapp.vadret.ui.resources.warning_detail_advice
+import se.vadretapp.vadret.ui.resources.warning_detail_comment
+import se.vadretapp.vadret.ui.resources.warning_detail_description
+import se.vadretapp.vadret.ui.resources.warning_detail_what_happens
+import se.vadretapp.vadret.ui.resources.warning_detail_where
 import kotlin.time.Instant
 
 private val commaWithoutSpace = Regex(pattern = ",(?=\\S)")

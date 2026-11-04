@@ -37,18 +37,18 @@ import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
-import se.vadretapp.vadret.core.resources.Res
-import se.vadretapp.vadret.core.resources.ic_pause_filled
-import se.vadretapp.vadret.core.resources.ic_play_arrow_filled
-import se.vadretapp.vadret.core.resources.pause
-import se.vadretapp.vadret.core.resources.play
-import se.vadretapp.vadret.core.resources.pollen_level_high
-import se.vadretapp.vadret.core.resources.pollen_level_low
-import se.vadretapp.vadret.core.resources.pollen_level_moderate
-import se.vadretapp.vadret.core.resources.pollen_level_very_high
 import se.vadretapp.vadret.radar.model.RadarLayer
 import se.vadretapp.vadret.radar.pollen.PollenColorScale
 import se.vadretapp.vadret.ui.VadretTheme
+import se.vadretapp.vadret.ui.resources.Res
+import se.vadretapp.vadret.ui.resources.ic_pause_filled
+import se.vadretapp.vadret.ui.resources.ic_play_arrow_filled
+import se.vadretapp.vadret.ui.resources.pause
+import se.vadretapp.vadret.ui.resources.play
+import se.vadretapp.vadret.ui.resources.pollen_level_high
+import se.vadretapp.vadret.ui.resources.pollen_level_low
+import se.vadretapp.vadret.ui.resources.pollen_level_moderate
+import se.vadretapp.vadret.ui.resources.pollen_level_very_high
 import kotlin.math.roundToInt
 
 private val cardElevation = 6.dp

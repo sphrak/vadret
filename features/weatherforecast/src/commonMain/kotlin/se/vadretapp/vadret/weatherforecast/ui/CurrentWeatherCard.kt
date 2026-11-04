@@ -27,19 +27,19 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
-import se.vadretapp.vadret.core.resources.Res
-import se.vadretapp.vadret.core.resources.degree
-import se.vadretapp.vadret.core.resources.feels_like
-import se.vadretapp.vadret.core.resources.humidity
-import se.vadretapp.vadret.core.resources.ic_north
-import se.vadretapp.vadret.core.resources.m_s
-import se.vadretapp.vadret.core.resources.percent
-import se.vadretapp.vadret.core.resources.wind
 import se.vadretapp.vadret.icons.VadretIcon
 import se.vadretapp.vadret.theme.model.Theme
 import se.vadretapp.vadret.ui.ThemePreviewParameterProvider
 import se.vadretapp.vadret.ui.VadretCard
 import se.vadretapp.vadret.ui.VadretTheme
+import se.vadretapp.vadret.ui.resources.Res
+import se.vadretapp.vadret.ui.resources.degree
+import se.vadretapp.vadret.ui.resources.feels_like
+import se.vadretapp.vadret.ui.resources.humidity
+import se.vadretapp.vadret.ui.resources.ic_north
+import se.vadretapp.vadret.ui.resources.m_s
+import se.vadretapp.vadret.ui.resources.percent
+import se.vadretapp.vadret.ui.resources.wind
 import se.vadretapp.vadret.weatherforecast.model.CurrentWeather
 
 private val cardPadding = 21.dp

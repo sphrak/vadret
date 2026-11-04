@@ -31,11 +31,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.collections.immutable.ImmutableList
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
-import se.vadretapp.vadret.core.resources.Res
-import se.vadretapp.vadret.core.resources.change_followed_places
-import se.vadretapp.vadret.core.resources.warning_display_no_warnings_issued
-import se.vadretapp.vadret.core.resources.warnings
-import se.vadretapp.vadret.core.resources.warnings_for_places
 import se.vadretapp.vadret.di.koinViewModel
 import se.vadretapp.vadret.forecastwarning.WarningEvent
 import se.vadretapp.vadret.forecastwarning.WarningState
@@ -49,6 +44,11 @@ import se.vadretapp.vadret.ui.VadretProgressBar
 import se.vadretapp.vadret.ui.VadretPullToRefreshBox
 import se.vadretapp.vadret.ui.VadretTheme
 import se.vadretapp.vadret.ui.VadretTopAppBar
+import se.vadretapp.vadret.ui.resources.Res
+import se.vadretapp.vadret.ui.resources.change_followed_places
+import se.vadretapp.vadret.ui.resources.warning_display_no_warnings_issued
+import se.vadretapp.vadret.ui.resources.warnings
+import se.vadretapp.vadret.ui.resources.warnings_for_places
 
 private const val WARNING_LIST_KEY = "warning-list"
 private const val FOLLOWED_PLACES_KEY = "followed-places"

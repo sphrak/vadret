@@ -2,11 +2,11 @@ package se.vadretapp.vadret.weatherforecast.model
 
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.StringResource
-import se.vadretapp.vadret.core.resources.Res
-import se.vadretapp.vadret.core.resources.forecast_days
-import se.vadretapp.vadret.core.resources.forecast_hours
-import se.vadretapp.vadret.core.resources.ic_calendar_view_day
-import se.vadretapp.vadret.core.resources.ic_schedule
+import se.vadretapp.vadret.ui.resources.Res
+import se.vadretapp.vadret.ui.resources.forecast_days
+import se.vadretapp.vadret.ui.resources.forecast_hours
+import se.vadretapp.vadret.ui.resources.ic_calendar_view_day
+import se.vadretapp.vadret.ui.resources.ic_schedule
 
 enum class ForecastView(
     val titleResource: StringResource,

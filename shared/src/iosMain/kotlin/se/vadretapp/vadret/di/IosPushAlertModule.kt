@@ -7,12 +7,12 @@ import org.koin.core.module.Module
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import platform.Foundation.NSFileManager
+import se.vadretapp.vadret.di.model.AppDirectories
 import se.vadretapp.vadret.encryption.SealedMessageKey
 import se.vadretapp.vadret.encryption.model.KeyAlias
 import se.vadretapp.vadret.encryption.model.KeychainAccessGroup
 import se.vadretapp.vadret.logging.Logger
 import se.vadretapp.vadret.logging.LoggerFactory
-import se.vadretapp.vadret.model.AppDirectories
 import se.vadretapp.vadret.pushalert.DeviceTokenSource
 import se.vadretapp.vadret.pushalert.IosDeviceTokenSource
 import se.vadretapp.vadret.pushalert.IosNotificationPermissionSource

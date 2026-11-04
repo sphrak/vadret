@@ -16,12 +16,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.stringResource
-import se.vadretapp.vadret.core.resources.Res
-import se.vadretapp.vadret.core.resources.degree
-import se.vadretapp.vadret.core.resources.feels_like
 import se.vadretapp.vadret.icons.VadretIcon
 import se.vadretapp.vadret.ui.VadretCard
 import se.vadretapp.vadret.ui.VadretTheme
+import se.vadretapp.vadret.ui.resources.Res
+import se.vadretapp.vadret.ui.resources.degree
+import se.vadretapp.vadret.ui.resources.feels_like
 import se.vadretapp.vadret.weatherforecast.model.ForecastDay
 import se.vadretapp.vadret.weatherforecast.model.ForecastHour
 

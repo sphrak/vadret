@@ -1,11 +1,11 @@
 package se.vadretapp.vadret.settings.ui
 
 import org.jetbrains.compose.resources.StringResource
-import se.vadretapp.vadret.core.resources.Res
-import se.vadretapp.vadret.core.resources.about_app_about_title
-import se.vadretapp.vadret.core.resources.about_app_libraries_tab_title
-import se.vadretapp.vadret.core.resources.developer_settings_title
-import se.vadretapp.vadret.core.resources.settings
+import se.vadretapp.vadret.ui.resources.Res
+import se.vadretapp.vadret.ui.resources.about_app_about_title
+import se.vadretapp.vadret.ui.resources.about_app_libraries_tab_title
+import se.vadretapp.vadret.ui.resources.developer_settings_title
+import se.vadretapp.vadret.ui.resources.settings
 
 internal enum class SettingsPage(
     val titleResource: StringResource

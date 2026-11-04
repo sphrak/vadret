@@ -15,12 +15,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.UriHandler
 import org.jetbrains.compose.resources.stringResource
-import se.vadretapp.vadret.core.resources.Res
-import se.vadretapp.vadret.core.resources.license_third_party
-import se.vadretapp.vadret.core.resources.project_third_party
-import se.vadretapp.vadret.core.resources.source_third_party
 import se.vadretapp.vadret.library.model.Library
 import se.vadretapp.vadret.ui.VadretTheme
+import se.vadretapp.vadret.ui.resources.Res
+import se.vadretapp.vadret.ui.resources.license_third_party
+import se.vadretapp.vadret.ui.resources.project_third_party
+import se.vadretapp.vadret.ui.resources.source_third_party
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

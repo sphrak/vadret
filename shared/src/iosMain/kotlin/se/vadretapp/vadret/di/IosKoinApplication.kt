@@ -3,10 +3,10 @@ package se.vadretapp.vadret.di
 import org.koin.core.KoinApplication
 import org.koin.dsl.koinApplication
 import platform.Foundation.NSBundle
+import se.vadretapp.vadret.di.model.AppInfo
 import se.vadretapp.vadret.logging.LogLevel
 import se.vadretapp.vadret.logging.LoggerFactory
 import se.vadretapp.vadret.logging.nsLogSink
-import se.vadretapp.vadret.model.AppInfo
 import se.vadretapp.vadret.pushalert.di.iosPushAlertPlaceNameModule
 import se.vadretapp.vadret.pushalert.di.pushAlertModule
 import se.vadretapp.vadret.radar.di.iosRadarModule

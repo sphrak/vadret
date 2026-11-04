@@ -13,14 +13,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import org.jetbrains.compose.resources.stringResource
-import se.vadretapp.vadret.core.resources.Res
-import se.vadretapp.vadret.core.resources.cancel
-import se.vadretapp.vadret.core.resources.place_label
-import se.vadretapp.vadret.core.resources.place_label_missing_text
-import se.vadretapp.vadret.core.resources.place_label_missing_title
-import se.vadretapp.vadret.core.resources.place_name_taken_text
-import se.vadretapp.vadret.core.resources.save
 import se.vadretapp.vadret.ui.VadretTheme
+import se.vadretapp.vadret.ui.resources.Res
+import se.vadretapp.vadret.ui.resources.cancel
+import se.vadretapp.vadret.ui.resources.place_label
+import se.vadretapp.vadret.ui.resources.place_label_missing_text
+import se.vadretapp.vadret.ui.resources.place_label_missing_title
+import se.vadretapp.vadret.ui.resources.place_name_taken_text
+import se.vadretapp.vadret.ui.resources.save
 import se.vadretapp.vadret.weatherforecast.model.PlaceNaming
 
 @Composable

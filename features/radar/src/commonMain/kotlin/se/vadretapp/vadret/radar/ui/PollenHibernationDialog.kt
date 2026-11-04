@@ -6,10 +6,10 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import org.jetbrains.compose.resources.stringResource
-import se.vadretapp.vadret.core.resources.Res
-import se.vadretapp.vadret.core.resources.close
-import se.vadretapp.vadret.core.resources.pollen_hibernating_text
-import se.vadretapp.vadret.core.resources.pollen_hibernating_title
+import se.vadretapp.vadret.ui.resources.Res
+import se.vadretapp.vadret.ui.resources.close
+import se.vadretapp.vadret.ui.resources.pollen_hibernating_text
+import se.vadretapp.vadret.ui.resources.pollen_hibernating_title
 
 @Composable
 internal fun PollenHibernationDialog(

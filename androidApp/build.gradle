@@ -185,7 +185,7 @@ androidComponents {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
-    implementation project(':core')
+    implementation project(':core:di')
     implementation project(':core:logging')
     implementation project(':data:common')
     implementation project(':data:language')
@@ -196,6 +196,7 @@ dependencies {
     implementation project(':features:settings')
     implementation project(':features:weatherforecast')
     implementation project(':shared')
+    implementation project(':ui:foundation')
 
     // Android
     implementation libs.androidx.activity.compose
@@ -215,6 +216,7 @@ dependencies {
         add("${pushFlavor}Implementation", project(':features:pushalert'))
         addProvider("${pushFlavor}Implementation", libs.androidx.core.ktx)
         addProvider("${pushFlavor}Implementation", libs.firebase.messaging)
+        add("test${pushFlavor.capitalize()}Implementation", project(':core:lifecycle'))
         add("test${pushFlavor.capitalize()}Implementation", project(':features:pushalert'))
     }
 

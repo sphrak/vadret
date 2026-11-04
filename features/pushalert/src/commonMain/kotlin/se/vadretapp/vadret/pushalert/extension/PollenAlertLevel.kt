@@ -1,15 +1,15 @@
 package se.vadretapp.vadret.pushalert.extension
 
 import org.jetbrains.compose.resources.StringResource
-import se.vadretapp.vadret.core.resources.Res
-import se.vadretapp.vadret.core.resources.pollen_level_high
-import se.vadretapp.vadret.core.resources.pollen_level_high_to_very_high
-import se.vadretapp.vadret.core.resources.pollen_level_low
-import se.vadretapp.vadret.core.resources.pollen_level_low_to_moderate
-import se.vadretapp.vadret.core.resources.pollen_level_moderate
-import se.vadretapp.vadret.core.resources.pollen_level_moderate_to_high
-import se.vadretapp.vadret.core.resources.pollen_level_very_high
 import se.vadretapp.vadret.pushalert.model.PollenAlertLevel
+import se.vadretapp.vadret.ui.resources.Res
+import se.vadretapp.vadret.ui.resources.pollen_level_high
+import se.vadretapp.vadret.ui.resources.pollen_level_high_to_very_high
+import se.vadretapp.vadret.ui.resources.pollen_level_low
+import se.vadretapp.vadret.ui.resources.pollen_level_low_to_moderate
+import se.vadretapp.vadret.ui.resources.pollen_level_moderate
+import se.vadretapp.vadret.ui.resources.pollen_level_moderate_to_high
+import se.vadretapp.vadret.ui.resources.pollen_level_very_high
 
 internal fun PollenAlertLevel.labelResource(): StringResource =
     when (this) {

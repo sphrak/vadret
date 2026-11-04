@@ -24,18 +24,18 @@ import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
-import se.vadretapp.vadret.core.resources.Res
-import se.vadretapp.vadret.core.resources.ic_air
-import se.vadretapp.vadret.core.resources.ic_local_florist
-import se.vadretapp.vadret.core.resources.ic_local_florist_filled
-import se.vadretapp.vadret.core.resources.ic_rainy
-import se.vadretapp.vadret.core.resources.ic_rainy_filled
-import se.vadretapp.vadret.core.resources.pollen
-import se.vadretapp.vadret.core.resources.precipitation
-import se.vadretapp.vadret.core.resources.wind
 import se.vadretapp.vadret.radar.model.RadarLayer
 import se.vadretapp.vadret.ui.VadretSlidingSelector
 import se.vadretapp.vadret.ui.VadretTheme
+import se.vadretapp.vadret.ui.resources.Res
+import se.vadretapp.vadret.ui.resources.ic_air
+import se.vadretapp.vadret.ui.resources.ic_local_florist
+import se.vadretapp.vadret.ui.resources.ic_local_florist_filled
+import se.vadretapp.vadret.ui.resources.ic_rainy
+import se.vadretapp.vadret.ui.resources.ic_rainy_filled
+import se.vadretapp.vadret.ui.resources.pollen
+import se.vadretapp.vadret.ui.resources.precipitation
+import se.vadretapp.vadret.ui.resources.wind
 
 private const val FILLED_ICON_COVERAGE = 0.5f
 

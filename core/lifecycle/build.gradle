@@ -1,0 +1,9 @@
+plugins {
+    id 'vadret.kmp.library'
+}
+
+kotlin {
+    android {
+        namespace = 'se.vadretapp.vadret.lifecycle'
+    }
+}

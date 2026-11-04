@@ -55,9 +55,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
-import se.vadretapp.vadret.core.resources.Res
-import se.vadretapp.vadret.core.resources.back
-import se.vadretapp.vadret.core.resources.ic_arrow_back
 import se.vadretapp.vadret.di.koinViewModel
 import se.vadretapp.vadret.forecastwarning.WarningDetailEvent
 import se.vadretapp.vadret.forecastwarning.WarningDetailState
@@ -68,6 +65,9 @@ import se.vadretapp.vadret.ui.LocalLanguageTag
 import se.vadretapp.vadret.ui.VadretProgressBar
 import se.vadretapp.vadret.ui.VadretTheme
 import se.vadretapp.vadret.ui.WarningColors
+import se.vadretapp.vadret.ui.resources.Res
+import se.vadretapp.vadret.ui.resources.back
+import se.vadretapp.vadret.ui.resources.ic_arrow_back
 import kotlin.math.roundToInt
 
 private const val EXPANDED = 0f

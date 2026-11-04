@@ -16,8 +16,6 @@ import se.vadretapp.vadret.aggregatedfeed.model.FeedArea
 import se.vadretapp.vadret.aggregatedfeed.model.FeedSource
 import se.vadretapp.vadret.aggregatedfeed.model.WarningLevel
 import se.vadretapp.vadret.common.Failure
-import se.vadretapp.vadret.core.resources.Res
-import se.vadretapp.vadret.core.resources.wsymb2_overcast
 import se.vadretapp.vadret.favorite.FavoriteRepository
 import se.vadretapp.vadret.favorite.model.Favorite
 import se.vadretapp.vadret.followedplace.GetChosenPlaceTask
@@ -34,6 +32,8 @@ import se.vadretapp.vadret.nominatim.NominatimRepository
 import se.vadretapp.vadret.nominatim.model.Locality
 import se.vadretapp.vadret.place.PlaceRepository
 import se.vadretapp.vadret.place.model.Place
+import se.vadretapp.vadret.ui.resources.Res
+import se.vadretapp.vadret.ui.resources.wsymb2_overcast
 import se.vadretapp.vadret.warning.ObserveUnseenFollowedPlaceWarningsTask
 import se.vadretapp.vadret.warning.ObserveUnseenWarningsTask
 import se.vadretapp.vadret.warning.model.WarningPlace

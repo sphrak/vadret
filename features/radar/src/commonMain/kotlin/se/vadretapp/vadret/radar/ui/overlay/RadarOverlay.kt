@@ -25,8 +25,6 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.sp
 import kotlinx.collections.immutable.ImmutableList
 import org.jetbrains.compose.resources.painterResource
-import se.vadretapp.vadret.core.resources.Res
-import se.vadretapp.vadret.core.resources.ic_north
 import se.vadretapp.vadret.location.model.Location
 import se.vadretapp.vadret.radar.model.PollenMarker
 import se.vadretapp.vadret.radar.model.RadarLayer
@@ -36,6 +34,8 @@ import se.vadretapp.vadret.radar.ui.map.RasterProjection
 import se.vadretapp.vadret.radar.wind.WindAtLocation
 import se.vadretapp.vadret.radar.wind.WindField
 import se.vadretapp.vadret.ui.VadretTheme
+import se.vadretapp.vadret.ui.resources.Res
+import se.vadretapp.vadret.ui.resources.ic_north
 
 private const val PARTICLE_FRAME_NANOS = 33_000_000L
 private const val WIND_FADE_IN_MILLISECONDS = 400

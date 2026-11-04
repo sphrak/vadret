@@ -42,12 +42,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import kotlinx.coroutines.flow.collectLatest
 import org.jetbrains.compose.resources.stringResource
-import se.vadretapp.vadret.core.resources.Res
-import se.vadretapp.vadret.core.resources.pegman_hint
 import se.vadretapp.vadret.icons.rememberIsMotionEnabled
 import se.vadretapp.vadret.location.model.Location
 import se.vadretapp.vadret.radar.ui.overlay.MapProjection
 import se.vadretapp.vadret.ui.VadretTheme
+import se.vadretapp.vadret.ui.resources.Res
+import se.vadretapp.vadret.ui.resources.pegman_hint
 import kotlin.math.roundToInt
 
 private val pegmanButtonSize: Dp = 44.dp

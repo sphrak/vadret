@@ -11,14 +11,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import kotlinx.collections.immutable.ImmutableList
 import org.jetbrains.compose.resources.stringResource
-import se.vadretapp.vadret.core.resources.Res
-import se.vadretapp.vadret.core.resources.close
-import se.vadretapp.vadret.core.resources.pollen_allergies
-import se.vadretapp.vadret.core.resources.pollen_allergies_description
-import se.vadretapp.vadret.core.resources.pollen_types_not_available
 import se.vadretapp.vadret.settings.model.PollenAllergenRow
 import se.vadretapp.vadret.ui.SettingsRowDivider
 import se.vadretapp.vadret.ui.VadretTheme
+import se.vadretapp.vadret.ui.resources.Res
+import se.vadretapp.vadret.ui.resources.close
+import se.vadretapp.vadret.ui.resources.pollen_allergies
+import se.vadretapp.vadret.ui.resources.pollen_allergies_description
+import se.vadretapp.vadret.ui.resources.pollen_types_not_available
 
 @Composable
 internal fun PollenAllergenDialog(

@@ -6,15 +6,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import org.jetbrains.compose.resources.stringResource
-import se.vadretapp.vadret.core.resources.Res
-import se.vadretapp.vadret.core.resources.allow_expand_once
-import se.vadretapp.vadret.core.resources.end_of_season_is_not_simulated
-import se.vadretapp.vadret.core.resources.end_of_season_is_simulated
-import se.vadretapp.vadret.core.resources.expand_once_is_disabled
-import se.vadretapp.vadret.core.resources.expand_once_is_enabled
-import se.vadretapp.vadret.core.resources.pollen
-import se.vadretapp.vadret.core.resources.simulate_end_of_season
-import se.vadretapp.vadret.core.resources.weather
 import se.vadretapp.vadret.settings.Settings
 import se.vadretapp.vadret.settings.SettingsEvent
 import se.vadretapp.vadret.settings.SettingsState
@@ -22,6 +13,15 @@ import se.vadretapp.vadret.ui.SettingsSectionHeader
 import se.vadretapp.vadret.ui.SwitchRow
 import se.vadretapp.vadret.ui.VadretCard
 import se.vadretapp.vadret.ui.VadretTheme
+import se.vadretapp.vadret.ui.resources.Res
+import se.vadretapp.vadret.ui.resources.allow_expand_once
+import se.vadretapp.vadret.ui.resources.end_of_season_is_not_simulated
+import se.vadretapp.vadret.ui.resources.end_of_season_is_simulated
+import se.vadretapp.vadret.ui.resources.expand_once_is_disabled
+import se.vadretapp.vadret.ui.resources.expand_once_is_enabled
+import se.vadretapp.vadret.ui.resources.pollen
+import se.vadretapp.vadret.ui.resources.simulate_end_of_season
+import se.vadretapp.vadret.ui.resources.weather
 
 private const val WEATHER_HEADER_KEY = "weather-header"
 private const val EXPAND_ONCE_KEY = "expand-once"

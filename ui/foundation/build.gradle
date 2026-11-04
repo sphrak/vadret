@@ -1,0 +1,33 @@
+plugins {
+    id 'vadret.kmp.library'
+    id 'vadret.kmp.compose'
+}
+
+kotlin {
+    android {
+        namespace = 'se.vadretapp.vadret.ui'
+    }
+    sourceSets {
+        commonMain {
+            dependencies {
+                implementation project(':data:aggregatedfeed')
+                implementation project(':data:common')
+                implementation project(':data:theme')
+
+                implementation libs.coroutines.core
+                implementation libs.kotlinx.datetime
+            }
+        }
+        commonTest {
+            dependencies {
+                implementation project(':core:testing')
+            }
+        }
+    }
+}
+
+compose.resources {
+    publicResClass = true
+    packageOfResClass = 'se.vadretapp.vadret.ui.resources'
+    generateResClass = always
+}

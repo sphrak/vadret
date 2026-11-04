@@ -1,12 +1,12 @@
 package se.vadretapp.vadret.settings.extension
 
 import org.jetbrains.compose.resources.StringResource
-import se.vadretapp.vadret.core.resources.Res
-import se.vadretapp.vadret.core.resources.amoled_theme
-import se.vadretapp.vadret.core.resources.dark_theme
-import se.vadretapp.vadret.core.resources.light_theme
-import se.vadretapp.vadret.core.resources.system_theme
 import se.vadretapp.vadret.theme.model.Theme
+import se.vadretapp.vadret.ui.resources.Res
+import se.vadretapp.vadret.ui.resources.amoled_theme
+import se.vadretapp.vadret.ui.resources.dark_theme
+import se.vadretapp.vadret.ui.resources.light_theme
+import se.vadretapp.vadret.ui.resources.system_theme
 
 internal fun Theme.labelResource(): StringResource =
     when (this) {

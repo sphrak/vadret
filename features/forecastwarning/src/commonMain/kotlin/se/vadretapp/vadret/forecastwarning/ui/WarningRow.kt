@@ -26,10 +26,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
-import se.vadretapp.vadret.core.resources.Res
-import se.vadretapp.vadret.core.resources.ic_chevron_right
-import se.vadretapp.vadret.core.resources.warning_affects_places
-import se.vadretapp.vadret.core.resources.warning_until
 import se.vadretapp.vadret.forecastwarning.model.WarningItem
 import se.vadretapp.vadret.theme.model.Theme
 import se.vadretapp.vadret.ui.ThemePreviewParameterProvider
@@ -37,6 +33,10 @@ import se.vadretapp.vadret.ui.VadretCard
 import se.vadretapp.vadret.ui.VadretTheme
 import se.vadretapp.vadret.ui.WarningColors
 import se.vadretapp.vadret.ui.elapsedTimeText
+import se.vadretapp.vadret.ui.resources.Res
+import se.vadretapp.vadret.ui.resources.ic_chevron_right
+import se.vadretapp.vadret.ui.resources.warning_affects_places
+import se.vadretapp.vadret.ui.resources.warning_until
 import se.vadretapp.vadret.ui.warningTag
 
 private val rowStartPadding = 21.dp

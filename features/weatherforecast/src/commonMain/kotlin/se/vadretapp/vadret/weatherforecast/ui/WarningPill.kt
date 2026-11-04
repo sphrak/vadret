@@ -27,13 +27,13 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import se.vadretapp.vadret.aggregatedfeed.model.FeedSource
 import se.vadretapp.vadret.aggregatedfeed.model.WarningLevel
-import se.vadretapp.vadret.core.resources.Res
-import se.vadretapp.vadret.core.resources.warning_until
 import se.vadretapp.vadret.theme.model.Theme
 import se.vadretapp.vadret.ui.ThemePreviewParameterProvider
 import se.vadretapp.vadret.ui.VadretTheme
 import se.vadretapp.vadret.ui.WarningColors
 import se.vadretapp.vadret.ui.extension.iconResource
+import se.vadretapp.vadret.ui.resources.Res
+import se.vadretapp.vadret.ui.resources.warning_until
 import se.vadretapp.vadret.ui.warningColors
 import se.vadretapp.vadret.ui.warningLabel
 import se.vadretapp.vadret.weatherforecast.model.LatestWarning

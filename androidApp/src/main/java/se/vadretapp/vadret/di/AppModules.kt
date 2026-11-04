@@ -3,7 +3,7 @@ package se.vadretapp.vadret.di
 import android.content.Context
 import org.koin.core.module.Module
 import se.vadretapp.vadret.BuildConfig
-import se.vadretapp.vadret.model.AppInfo
+import se.vadretapp.vadret.di.model.AppInfo
 import se.vadretapp.vadret.radar.di.androidRadarModule
 import se.vadretapp.vadret.radar.di.radarModule
 

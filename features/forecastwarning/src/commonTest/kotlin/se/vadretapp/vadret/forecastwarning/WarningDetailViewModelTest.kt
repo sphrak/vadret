@@ -12,10 +12,10 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
-import se.vadretapp.vadret.core.resources.Res
-import se.vadretapp.vadret.core.resources.no_alert_available
-import se.vadretapp.vadret.core.resources.no_network_available
 import se.vadretapp.vadret.testing.FixedClock
+import se.vadretapp.vadret.ui.resources.Res
+import se.vadretapp.vadret.ui.resources.no_alert_available
+import se.vadretapp.vadret.ui.resources.no_network_available
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test

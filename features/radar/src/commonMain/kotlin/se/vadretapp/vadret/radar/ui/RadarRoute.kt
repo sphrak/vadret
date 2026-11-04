@@ -49,11 +49,6 @@ import androidx.compose.ui.unit.toSize
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
-import se.vadretapp.vadret.core.resources.Res
-import se.vadretapp.vadret.core.resources.almost_there
-import se.vadretapp.vadret.core.resources.m_s
-import se.vadretapp.vadret.core.resources.openstreetmap_copyright_notice
-import se.vadretapp.vadret.core.resources.pegman_hint
 import se.vadretapp.vadret.di.koinViewModel
 import se.vadretapp.vadret.icons.rememberIsMotionEnabled
 import se.vadretapp.vadret.location.model.Location
@@ -72,6 +67,11 @@ import se.vadretapp.vadret.ui.VadretToast
 import se.vadretapp.vadret.ui.VadretToastState
 import se.vadretapp.vadret.ui.format.toOneDecimalText
 import se.vadretapp.vadret.ui.rememberVadretToastState
+import se.vadretapp.vadret.ui.resources.Res
+import se.vadretapp.vadret.ui.resources.almost_there
+import se.vadretapp.vadret.ui.resources.m_s
+import se.vadretapp.vadret.ui.resources.openstreetmap_copyright_notice
+import se.vadretapp.vadret.ui.resources.pegman_hint
 import kotlin.math.roundToInt
 
 private val toolbarTopPadding = 16.dp

@@ -10,12 +10,12 @@ import kotlinx.coroutines.test.setMain
 import org.koin.core.Koin
 import org.koin.dsl.koinApplication
 import org.koin.dsl.module
+import se.vadretapp.vadret.di.model.AppInfo
 import se.vadretapp.vadret.forecastwarning.WarningDetailViewModel
 import se.vadretapp.vadret.forecastwarning.WarningStoryViewModel
 import se.vadretapp.vadret.forecastwarning.WarningViewModel
 import se.vadretapp.vadret.lifecycle.AppStartHook
 import se.vadretapp.vadret.main.MainViewModel
-import se.vadretapp.vadret.model.AppInfo
 import se.vadretapp.vadret.pushalert.di.iosPushAlertPlaceNameModule
 import se.vadretapp.vadret.pushalert.di.pushAlertModule
 import se.vadretapp.vadret.pushalert.usecase.PublishPushAlertPlaceNamesTask

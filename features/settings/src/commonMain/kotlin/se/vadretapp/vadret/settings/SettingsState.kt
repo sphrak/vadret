@@ -4,24 +4,6 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import se.vadretapp.vadret.changelog.model.Changelog
-import se.vadretapp.vadret.core.resources.Res
-import se.vadretapp.vadret.core.resources.app_github_source_url
-import se.vadretapp.vadret.core.resources.app_license_url
-import se.vadretapp.vadret.core.resources.app_privacy_url
-import se.vadretapp.vadret.core.resources.app_release_page
-import se.vadretapp.vadret.core.resources.changelog_row_title
-import se.vadretapp.vadret.core.resources.ic_chevron_right
-import se.vadretapp.vadret.core.resources.ic_code
-import se.vadretapp.vadret.core.resources.ic_copyright
-import se.vadretapp.vadret.core.resources.ic_history
-import se.vadretapp.vadret.core.resources.ic_info
-import se.vadretapp.vadret.core.resources.ic_open_in_new
-import se.vadretapp.vadret.core.resources.ic_shield
-import se.vadretapp.vadret.core.resources.license_row_hint
-import se.vadretapp.vadret.core.resources.license_row_title
-import se.vadretapp.vadret.core.resources.privacy_policy_row_title
-import se.vadretapp.vadret.core.resources.source_code_row_title
-import se.vadretapp.vadret.core.resources.version_row_title
 import se.vadretapp.vadret.library.model.Library
 import se.vadretapp.vadret.settings.model.AboutRow
 import se.vadretapp.vadret.settings.model.AboutRowAction
@@ -31,6 +13,24 @@ import se.vadretapp.vadret.settings.model.LibraryGroup
 import se.vadretapp.vadret.settings.model.LocationRow
 import se.vadretapp.vadret.settings.model.PollenAllergenRow
 import se.vadretapp.vadret.settings.ui.SettingsPage
+import se.vadretapp.vadret.ui.resources.Res
+import se.vadretapp.vadret.ui.resources.app_github_source_url
+import se.vadretapp.vadret.ui.resources.app_license_url
+import se.vadretapp.vadret.ui.resources.app_privacy_url
+import se.vadretapp.vadret.ui.resources.app_release_page
+import se.vadretapp.vadret.ui.resources.changelog_row_title
+import se.vadretapp.vadret.ui.resources.ic_chevron_right
+import se.vadretapp.vadret.ui.resources.ic_code
+import se.vadretapp.vadret.ui.resources.ic_copyright
+import se.vadretapp.vadret.ui.resources.ic_history
+import se.vadretapp.vadret.ui.resources.ic_info
+import se.vadretapp.vadret.ui.resources.ic_open_in_new
+import se.vadretapp.vadret.ui.resources.ic_shield
+import se.vadretapp.vadret.ui.resources.license_row_hint
+import se.vadretapp.vadret.ui.resources.license_row_title
+import se.vadretapp.vadret.ui.resources.privacy_policy_row_title
+import se.vadretapp.vadret.ui.resources.source_code_row_title
+import se.vadretapp.vadret.ui.resources.version_row_title
 
 internal fun aboutRows(appVersion: String): ImmutableList<AboutRow> =
     persistentListOf(

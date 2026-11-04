@@ -37,19 +37,19 @@ import kotlinx.collections.immutable.ImmutableList
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
-import se.vadretapp.vadret.core.resources.Res
-import se.vadretapp.vadret.core.resources.collapsed
-import se.vadretapp.vadret.core.resources.coming_days_title
-import se.vadretapp.vadret.core.resources.degree
-import se.vadretapp.vadret.core.resources.expanded
-import se.vadretapp.vadret.core.resources.ic_expand_more
-import se.vadretapp.vadret.core.resources.millimeter
-import se.vadretapp.vadret.core.resources.today
 import se.vadretapp.vadret.icons.VadretIcon
 import se.vadretapp.vadret.theme.model.Theme
 import se.vadretapp.vadret.ui.ThemePreviewParameterProvider
 import se.vadretapp.vadret.ui.VadretCard
 import se.vadretapp.vadret.ui.VadretTheme
+import se.vadretapp.vadret.ui.resources.Res
+import se.vadretapp.vadret.ui.resources.collapsed
+import se.vadretapp.vadret.ui.resources.coming_days_title
+import se.vadretapp.vadret.ui.resources.degree
+import se.vadretapp.vadret.ui.resources.expanded
+import se.vadretapp.vadret.ui.resources.ic_expand_more
+import se.vadretapp.vadret.ui.resources.millimeter
+import se.vadretapp.vadret.ui.resources.today
 import se.vadretapp.vadret.weatherforecast.model.ComingDay
 
 private const val COLLAPSED_DEGREES = 0f

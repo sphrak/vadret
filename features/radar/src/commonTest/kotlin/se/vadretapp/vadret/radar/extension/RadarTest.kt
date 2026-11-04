@@ -1,14 +1,14 @@
 package se.vadretapp.vadret.radar.extension
 
 import kotlinx.datetime.TimeZone
-import se.vadretapp.vadret.core.resources.Res
-import se.vadretapp.vadret.core.resources.an_hour_ago
-import se.vadretapp.vadret.core.resources.minutes_ago
 import se.vadretapp.vadret.radar.model.Radar
 import se.vadretapp.vadret.radar.model.RadarFrame
 import se.vadretapp.vadret.radar.model.RadarImage
 import se.vadretapp.vadret.radar.model.WindTimeFrame
 import se.vadretapp.vadret.ui.model.ElapsedTime
+import se.vadretapp.vadret.ui.resources.Res
+import se.vadretapp.vadret.ui.resources.an_hour_ago
+import se.vadretapp.vadret.ui.resources.minutes_ago
 import se.vadretapp.vadret.wind.model.WindForecast
 import se.vadretapp.vadret.wind.model.WindFrame
 import se.vadretapp.vadret.wind.model.WindGrid

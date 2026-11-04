@@ -22,13 +22,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
-import se.vadretapp.vadret.core.resources.Res
-import se.vadretapp.vadret.core.resources.add_place
-import se.vadretapp.vadret.core.resources.close_search
-import se.vadretapp.vadret.core.resources.ic_close
 import se.vadretapp.vadret.place.model.Place
 import se.vadretapp.vadret.ui.VadretCard
 import se.vadretapp.vadret.ui.VadretTheme
+import se.vadretapp.vadret.ui.resources.Res
+import se.vadretapp.vadret.ui.resources.add_place
+import se.vadretapp.vadret.ui.resources.close_search
+import se.vadretapp.vadret.ui.resources.ic_close
 import se.vadretapp.vadret.weatherforecast.WeatherForecastEvent
 import se.vadretapp.vadret.weatherforecast.model.SearchState
 

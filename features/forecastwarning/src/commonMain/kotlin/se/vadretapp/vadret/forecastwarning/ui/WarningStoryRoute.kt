@@ -34,9 +34,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.collections.immutable.persistentListOf
-import se.vadretapp.vadret.core.resources.Res
-import se.vadretapp.vadret.core.resources.close
-import se.vadretapp.vadret.core.resources.ic_close
 import se.vadretapp.vadret.di.koinViewModel
 import se.vadretapp.vadret.forecastwarning.WarningStoryEvent
 import se.vadretapp.vadret.forecastwarning.WarningStoryState
@@ -46,6 +43,9 @@ import se.vadretapp.vadret.theme.model.Theme
 import se.vadretapp.vadret.ui.LocalLanguageTag
 import se.vadretapp.vadret.ui.VadretTheme
 import se.vadretapp.vadret.ui.WarningColors
+import se.vadretapp.vadret.ui.resources.Res
+import se.vadretapp.vadret.ui.resources.close
+import se.vadretapp.vadret.ui.resources.ic_close
 
 private const val STORY_DURATION_MILLISECONDS = 8_000
 private const val STORY_START = 0f

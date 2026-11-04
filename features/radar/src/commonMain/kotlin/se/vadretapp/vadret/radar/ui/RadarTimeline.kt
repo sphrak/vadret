@@ -2,15 +2,15 @@ package se.vadretapp.vadret.radar.ui
 
 import androidx.compose.runtime.Composable
 import org.jetbrains.compose.resources.stringResource
-import se.vadretapp.vadret.core.resources.Res
-import se.vadretapp.vadret.core.resources.day_forecast
-import se.vadretapp.vadret.core.resources.now
-import se.vadretapp.vadret.core.resources.source_and_time
 import se.vadretapp.vadret.radar.RadarState
 import se.vadretapp.vadret.radar.model.RadarFrame
 import se.vadretapp.vadret.radar.model.RadarLayer
 import se.vadretapp.vadret.radar.model.WindTimeFrame
 import se.vadretapp.vadret.ui.elapsedTimeText
+import se.vadretapp.vadret.ui.resources.Res
+import se.vadretapp.vadret.ui.resources.day_forecast
+import se.vadretapp.vadret.ui.resources.now
+import se.vadretapp.vadret.ui.resources.source_and_time
 
 internal data class RadarTimeline(
     val timeText: String,

@@ -28,15 +28,15 @@ import kotlinx.collections.immutable.ImmutableList
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
-import se.vadretapp.vadret.core.resources.Res
-import se.vadretapp.vadret.core.resources.about_app_description
-import se.vadretapp.vadret.core.resources.app_name
 import se.vadretapp.vadret.settings.model.AboutRow
 import se.vadretapp.vadret.settings.model.AboutRowAction
 import se.vadretapp.vadret.settings.model.AboutRowHint
 import se.vadretapp.vadret.ui.SettingsRowDivider
 import se.vadretapp.vadret.ui.VadretCard
 import se.vadretapp.vadret.ui.VadretTheme
+import se.vadretapp.vadret.ui.resources.Res
+import se.vadretapp.vadret.ui.resources.about_app_description
+import se.vadretapp.vadret.ui.resources.app_name
 
 private const val HEADER_KEY = "header"
 private const val ROWS_KEY = "rows"

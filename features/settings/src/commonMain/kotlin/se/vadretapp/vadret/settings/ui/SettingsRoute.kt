@@ -23,14 +23,6 @@ import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import se.vadretapp.vadret.changelog.model.Changelog
-import se.vadretapp.vadret.core.resources.Res
-import se.vadretapp.vadret.core.resources.followed_places_limit
-import se.vadretapp.vadret.core.resources.followed_places_limit_text
-import se.vadretapp.vadret.core.resources.followed_places_only_in_sweden
-import se.vadretapp.vadret.core.resources.followed_places_only_in_sweden_text
-import se.vadretapp.vadret.core.resources.ok
-import se.vadretapp.vadret.core.resources.select_a_language
-import se.vadretapp.vadret.core.resources.select_a_theme
 import se.vadretapp.vadret.di.koinAll
 import se.vadretapp.vadret.di.koinViewModel
 import se.vadretapp.vadret.language.model.AppLanguage
@@ -45,6 +37,14 @@ import se.vadretapp.vadret.ui.SettingsSection
 import se.vadretapp.vadret.ui.ThemePreviewParameterProvider
 import se.vadretapp.vadret.ui.VadretTheme
 import se.vadretapp.vadret.ui.VadretTopAppBar
+import se.vadretapp.vadret.ui.resources.Res
+import se.vadretapp.vadret.ui.resources.followed_places_limit
+import se.vadretapp.vadret.ui.resources.followed_places_limit_text
+import se.vadretapp.vadret.ui.resources.followed_places_only_in_sweden
+import se.vadretapp.vadret.ui.resources.followed_places_only_in_sweden_text
+import se.vadretapp.vadret.ui.resources.ok
+import se.vadretapp.vadret.ui.resources.select_a_language
+import se.vadretapp.vadret.ui.resources.select_a_theme
 
 @Composable
 fun SettingsRoute(

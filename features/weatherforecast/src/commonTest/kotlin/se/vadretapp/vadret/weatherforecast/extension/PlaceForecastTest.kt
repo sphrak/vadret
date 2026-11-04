@@ -7,8 +7,6 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atTime
 import kotlinx.datetime.plus
 import kotlinx.datetime.toInstant
-import se.vadretapp.vadret.core.resources.Res
-import se.vadretapp.vadret.core.resources.wsymb2_overcast
 import se.vadretapp.vadret.icons.ClearSky
 import se.vadretapp.vadret.icons.ClearSkyNight
 import se.vadretapp.vadret.icons.Overcast
@@ -16,6 +14,8 @@ import se.vadretapp.vadret.icons.VadretIconGraphic
 import se.vadretapp.vadret.icons.VadretIcons
 import se.vadretapp.vadret.icons.VariableCloudiness
 import se.vadretapp.vadret.icons.VariableCloudinessNight
+import se.vadretapp.vadret.ui.resources.Res
+import se.vadretapp.vadret.ui.resources.wsymb2_overcast
 import se.vadretapp.vadret.weatherforecast.model.Analysis
 import se.vadretapp.vadret.weatherforecast.model.CurrentWeather
 import se.vadretapp.vadret.weatherforecast.model.Forecast

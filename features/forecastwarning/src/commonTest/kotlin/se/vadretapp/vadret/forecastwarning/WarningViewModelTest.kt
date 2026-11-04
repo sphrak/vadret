@@ -15,10 +15,10 @@ import se.vadretapp.vadret.aggregatedfeed.model.AggregatedFeed
 import se.vadretapp.vadret.aggregatedfeed.model.FeedSource
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
-import se.vadretapp.vadret.core.resources.Res
-import se.vadretapp.vadret.core.resources.no_network_available
 import se.vadretapp.vadret.forecastwarning.model.WarningItem
 import se.vadretapp.vadret.testing.FixedClock
+import se.vadretapp.vadret.ui.resources.Res
+import se.vadretapp.vadret.ui.resources.no_network_available
 import se.vadretapp.vadret.warning.model.FollowedPlaceWarnings
 import se.vadretapp.vadret.warning.model.PlaceWarning
 import kotlin.test.AfterTest

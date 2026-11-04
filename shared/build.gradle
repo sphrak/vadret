@@ -26,7 +26,8 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
-                implementation project(':core')
+                implementation project(':core:di')
+                implementation project(':core:lifecycle')
                 implementation project(':core:logging')
                 implementation project(':data:changelog')
                 implementation project(':data:common')
@@ -38,6 +39,7 @@ kotlin {
                 implementation project(':features:radar')
                 implementation project(':features:settings')
                 implementation project(':features:weatherforecast')
+                implementation project(':ui:foundation')
 
                 implementation libs.coroutines.core
                 implementation libs.either

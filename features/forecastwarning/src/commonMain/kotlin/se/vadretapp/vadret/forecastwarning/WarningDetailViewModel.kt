@@ -12,11 +12,11 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.TimeZone
 import se.vadretapp.vadret.aggregatedfeed.model.AggregatedFeed
 import se.vadretapp.vadret.common.Failure
-import se.vadretapp.vadret.core.resources.Res
-import se.vadretapp.vadret.core.resources.no_alert_available
 import se.vadretapp.vadret.forecastwarning.extension.toWarningItem
 import se.vadretapp.vadret.ui.extension.messageResource
 import se.vadretapp.vadret.ui.format.currentLanguageTag
+import se.vadretapp.vadret.ui.resources.Res
+import se.vadretapp.vadret.ui.resources.no_alert_available
 import se.vadretapp.vadret.warning.GetWarningsTask
 import kotlin.concurrent.atomics.AtomicReference
 import kotlin.time.Clock

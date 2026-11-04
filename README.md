@@ -104,7 +104,7 @@ git history.
 * [More information here](https://github.com/vadret/android/blob/master/CONTRIBUTING.md)
 
 ## Localization
-Translations live in `core/src/main/res/values-<language>/strings.xml`. To add a language or fix a
+Translations live in `ui/foundation/src/commonMain/composeResources/values-<language>/strings.xml`. To add a language or fix a
 translation, open a pull request and add your name to the `TRANSLATORS` file.
 
 ## License

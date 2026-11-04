@@ -19,14 +19,14 @@ import se.vadretapp.vadret.aggregatedfeed.model.FeedSource
 import se.vadretapp.vadret.aggregatedfeed.model.WarningLevel
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
-import se.vadretapp.vadret.core.resources.Res
-import se.vadretapp.vadret.core.resources.data_not_available_at_this_location
-import se.vadretapp.vadret.core.resources.unhandled_error
 import se.vadretapp.vadret.favorite.model.Favorite
 import se.vadretapp.vadret.testing.FixedClock
 import se.vadretapp.vadret.ui.extension.messageResource
 import se.vadretapp.vadret.ui.format.currentLanguageTag
 import se.vadretapp.vadret.ui.format.toDayTimeText
+import se.vadretapp.vadret.ui.resources.Res
+import se.vadretapp.vadret.ui.resources.data_not_available_at_this_location
+import se.vadretapp.vadret.ui.resources.unhandled_error
 import se.vadretapp.vadret.warning.model.WarningPlace
 import se.vadretapp.vadret.weatherforecast.extension.toStoredLocation
 import se.vadretapp.vadret.weatherforecast.model.ComingDay

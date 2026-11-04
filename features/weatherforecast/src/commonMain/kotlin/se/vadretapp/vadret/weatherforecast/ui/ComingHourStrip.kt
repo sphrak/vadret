@@ -31,17 +31,17 @@ import androidx.compose.ui.unit.dp
 import kotlinx.collections.immutable.ImmutableList
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
-import se.vadretapp.vadret.core.resources.Res
-import se.vadretapp.vadret.core.resources.degree
-import se.vadretapp.vadret.core.resources.ic_north
-import se.vadretapp.vadret.core.resources.m_s
-import se.vadretapp.vadret.core.resources.now
-import se.vadretapp.vadret.core.resources.temperature
-import se.vadretapp.vadret.core.resources.wind_in_meters_per_second
 import se.vadretapp.vadret.icons.VadretIcon
 import se.vadretapp.vadret.theme.model.Theme
 import se.vadretapp.vadret.ui.ThemePreviewParameterProvider
 import se.vadretapp.vadret.ui.VadretTheme
+import se.vadretapp.vadret.ui.resources.Res
+import se.vadretapp.vadret.ui.resources.degree
+import se.vadretapp.vadret.ui.resources.ic_north
+import se.vadretapp.vadret.ui.resources.m_s
+import se.vadretapp.vadret.ui.resources.now
+import se.vadretapp.vadret.ui.resources.temperature
+import se.vadretapp.vadret.ui.resources.wind_in_meters_per_second
 import se.vadretapp.vadret.weatherforecast.model.ComingHour
 
 private const val HOUR_CONTENT_TYPE = "coming-hour"

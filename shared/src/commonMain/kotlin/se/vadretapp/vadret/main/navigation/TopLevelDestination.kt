@@ -4,19 +4,19 @@ import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.StringResource
-import se.vadretapp.vadret.core.resources.Res
-import se.vadretapp.vadret.core.resources.ic_partly_cloudy_day
-import se.vadretapp.vadret.core.resources.ic_partly_cloudy_day_filled
-import se.vadretapp.vadret.core.resources.ic_radar
-import se.vadretapp.vadret.core.resources.ic_radar_filled
-import se.vadretapp.vadret.core.resources.ic_settings
-import se.vadretapp.vadret.core.resources.ic_settings_filled
-import se.vadretapp.vadret.core.resources.ic_warning
-import se.vadretapp.vadret.core.resources.ic_warning_filled
-import se.vadretapp.vadret.core.resources.radar
-import se.vadretapp.vadret.core.resources.settings
-import se.vadretapp.vadret.core.resources.warnings
-import se.vadretapp.vadret.core.resources.weather
+import se.vadretapp.vadret.ui.resources.Res
+import se.vadretapp.vadret.ui.resources.ic_partly_cloudy_day
+import se.vadretapp.vadret.ui.resources.ic_partly_cloudy_day_filled
+import se.vadretapp.vadret.ui.resources.ic_radar
+import se.vadretapp.vadret.ui.resources.ic_radar_filled
+import se.vadretapp.vadret.ui.resources.ic_settings
+import se.vadretapp.vadret.ui.resources.ic_settings_filled
+import se.vadretapp.vadret.ui.resources.ic_warning
+import se.vadretapp.vadret.ui.resources.ic_warning_filled
+import se.vadretapp.vadret.ui.resources.radar
+import se.vadretapp.vadret.ui.resources.settings
+import se.vadretapp.vadret.ui.resources.warnings
+import se.vadretapp.vadret.ui.resources.weather
 
 @Serializable
 internal data object WeatherKey : NavKey

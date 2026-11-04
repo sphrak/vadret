@@ -23,10 +23,6 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
-import se.vadretapp.vadret.core.resources.Res
-import se.vadretapp.vadret.core.resources.network_failure
-import se.vadretapp.vadret.core.resources.no_radar_available
-import se.vadretapp.vadret.core.resources.no_wind_available
 import se.vadretapp.vadret.location.model.Location
 import se.vadretapp.vadret.pollen.model.PollenLevel
 import se.vadretapp.vadret.pollen.model.PollenType
@@ -49,6 +45,10 @@ import se.vadretapp.vadret.radar.wind.WindFieldRenderer
 import se.vadretapp.vadret.radar.wind.WindFieldValues
 import se.vadretapp.vadret.radar.wind.WindPalette
 import se.vadretapp.vadret.testing.FixedClock
+import se.vadretapp.vadret.ui.resources.Res
+import se.vadretapp.vadret.ui.resources.network_failure
+import se.vadretapp.vadret.ui.resources.no_radar_available
+import se.vadretapp.vadret.ui.resources.no_wind_available
 import se.vadretapp.vadret.wind.model.WindForecast
 import se.vadretapp.vadret.wind.model.WindFrame
 import se.vadretapp.vadret.wind.model.WindGrid

@@ -11,8 +11,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import kotlinx.collections.immutable.ImmutableList
 import org.jetbrains.compose.resources.stringResource
-import se.vadretapp.vadret.core.resources.Res
-import se.vadretapp.vadret.core.resources.licenses_intro
 import se.vadretapp.vadret.library.model.Library
 import se.vadretapp.vadret.settings.model.LibraryGroup
 import se.vadretapp.vadret.ui.SettingsRowDivider
@@ -20,6 +18,8 @@ import se.vadretapp.vadret.ui.SettingsSectionHeader
 import se.vadretapp.vadret.ui.SettingsValueRow
 import se.vadretapp.vadret.ui.VadretCard
 import se.vadretapp.vadret.ui.VadretTheme
+import se.vadretapp.vadret.ui.resources.Res
+import se.vadretapp.vadret.ui.resources.licenses_intro
 
 private const val INTRO_KEY = "intro"
 private const val INTRO_CONTENT_TYPE = "intro"

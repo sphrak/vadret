@@ -13,13 +13,13 @@ import kotlinx.coroutines.launch
 import se.vadretapp.vadret.changelog.model.Changelog
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
+import se.vadretapp.vadret.di.model.AppInfo
 import se.vadretapp.vadret.followedplace.ObserveFollowablePlacesTask
 import se.vadretapp.vadret.followedplace.SetPlaceFollowedTask
 import se.vadretapp.vadret.followedplace.model.FollowableFavorite
 import se.vadretapp.vadret.followedplace.model.FollowablePlaces
 import se.vadretapp.vadret.language.model.AppLanguage
 import se.vadretapp.vadret.library.model.Library
-import se.vadretapp.vadret.model.AppInfo
 import se.vadretapp.vadret.pollen.model.PollenType
 import se.vadretapp.vadret.settings.extension.toFollowedPlaceRow
 import se.vadretapp.vadret.settings.extension.toLibraryGroups

@@ -17,17 +17,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.stringResource
-import se.vadretapp.vadret.core.resources.Res
-import se.vadretapp.vadret.core.resources.source_and_time
-import se.vadretapp.vadret.core.resources.warning_from
-import se.vadretapp.vadret.core.resources.warning_period
-import se.vadretapp.vadret.core.resources.warning_until
-import se.vadretapp.vadret.core.resources.warning_when
 import se.vadretapp.vadret.forecastwarning.model.WarningDetail
 import se.vadretapp.vadret.forecastwarning.model.WarningItem
 import se.vadretapp.vadret.ui.VadretTheme
 import se.vadretapp.vadret.ui.WarningColors
 import se.vadretapp.vadret.ui.elapsedTimeText
+import se.vadretapp.vadret.ui.resources.Res
+import se.vadretapp.vadret.ui.resources.source_and_time
+import se.vadretapp.vadret.ui.resources.warning_from
+import se.vadretapp.vadret.ui.resources.warning_period
+import se.vadretapp.vadret.ui.resources.warning_until
+import se.vadretapp.vadret.ui.resources.warning_when
 import se.vadretapp.vadret.ui.warningColors
 import se.vadretapp.vadret.ui.warningLabel
 
