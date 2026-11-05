@@ -15,6 +15,8 @@ import kotlinx.coroutines.test.setMain
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.favorite.model.Favorite
+import se.vadretapp.vadret.followedplace.AddFavoriteTask
+import se.vadretapp.vadret.followedplace.SelectFavoriteTask
 import se.vadretapp.vadret.location.model.Location
 import se.vadretapp.vadret.nominatim.model.Locality
 import se.vadretapp.vadret.testing.FixedClock
@@ -42,8 +44,11 @@ class PlaceIslandViewModelTest {
             weatherForecastRepository = weatherForecastRepository,
             nominatimRepository = nominatimRepository
         ),
-        addFavoriteTask = DefaultAddFavoriteTask(favoriteRepository = favoriteRepository),
-        selectFavoriteTask = DefaultSelectFavoriteTask(locationRepository = locationRepository),
+        addFavoriteTask = AddFavoriteTask(
+            favoriteRepository = favoriteRepository,
+            locationRepository = locationRepository
+        ),
+        selectFavoriteTask = SelectFavoriteTask(locationRepository = locationRepository),
         clock = FixedClock(now = Instant.parse(input = "2026-10-24T12:00:00Z")),
         coroutineDispatcher = testDispatcher
     )

@@ -12,21 +12,15 @@ import se.vadretapp.vadret.followedplace.model.FollowedPlace
 import se.vadretapp.vadret.lifecycle.AppStartHook
 import se.vadretapp.vadret.logging.Logger
 import se.vadretapp.vadret.logging.LoggerFactory
-import se.vadretapp.vadret.pushalert.usecase.AdoptPushAlertFavoritesTask
 import se.vadretapp.vadret.pushalert.usecase.SyncPushAlertsTask
 
 internal class PushAlertsAppStartHook(
-    private val adoptPushAlertFavoritesTask: AdoptPushAlertFavoritesTask,
     private val syncPushAlertsTask: SyncPushAlertsTask,
     private val observeFollowedPlacesTask: ObserveFollowedPlacesTask
 ) : AppStartHook {
 
-    // The server learns of a place chosen or followed anywhere in the app, not only on the push alert settings.
+    // The server learns of a place chosen or saved anywhere in the app, not only on the push alert settings.
     override suspend fun onAppStart() {
-        adoptPushAlertFavoritesTask().onResult(
-            onError = { failure: Failure -> logger.warn { "The push alert favorites could not be followed: ${failure.errorCode}" } },
-            onSuccess = { logger.debug { "The push alert favorites are followed" } }
-        )
         sync()
         observeFollowedPlacesTask()
             .map { followedPlaces: Either<Failure, List<FollowedPlace>> -> followedPlaces.map { places: List<FollowedPlace> -> places.coordinates() } }

@@ -42,6 +42,24 @@ internal data class PlaceForecastKey(
 @Serializable
 internal data object SettingsKey : NavKey
 
+@Serializable
+internal data object SettingsPlacesKey : NavKey
+
+@Serializable
+internal data class SettingsSectionKey(val sectionKey: String) : NavKey
+
+@Serializable
+internal data object SettingsPollenKey : NavKey
+
+@Serializable
+internal data object SettingsAboutKey : NavKey
+
+@Serializable
+internal data object SettingsLicensesKey : NavKey
+
+@Serializable
+internal data object SettingsDeveloperKey : NavKey
+
 internal enum class TopLevelDestination(
     val key: NavKey,
     val iconResource: DrawableResource,

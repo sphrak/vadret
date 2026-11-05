@@ -15,34 +15,37 @@ import kotlin.test.assertEquals
 
 class DefaultPublishPushAlertPlaceNamesTaskTest {
     @Test
-    fun onlyTheChosenSavedPlacesAreNamedByTheirCell() = runTest {
+    fun everySavedPlaceIsNamedByItsCell() = runTest {
         val pushAlertPlaceNameRepository = FakePushAlertPlaceNameRepository()
 
         publish(
             favoriteRepository = FakeFavoriteRepository(favorites = listOf(MALMO_FAVORITE, GOTEBORG_FAVORITE)),
-            locationRepository = FakeLocationRepository(followedFavoriteIds = following(MALMO_FAVORITE)),
             pushAlertPlaceNameRepository = pushAlertPlaceNameRepository
         )
 
         assertEquals(
-            expected = listOf(mapOf(MALMO_FAVORITE.cell() to "Malmö")),
+            expected = listOf(
+                mapOf(
+                    MALMO_FAVORITE.cell() to "Malmö",
+                    GOTEBORG_FAVORITE.cell() to "Göteborg"
+                )
+            ),
             actual = pushAlertPlaceNameRepository.savedPlaceNames
         )
     }
 
     @Test
-    fun choosingOrForgettingASavedPlaceSavesTheNamesAgain() = runTest {
-        val locationRepository = FakeLocationRepository(followedFavoriteIds = following(MALMO_FAVORITE))
+    fun savingOrRemovingAPlaceSavesTheNamesAgain() = runTest {
+        val favoriteRepository = FakeFavoriteRepository(favorites = listOf(MALMO_FAVORITE))
         val pushAlertPlaceNameRepository = FakePushAlertPlaceNameRepository()
         publish(
-            favoriteRepository = FakeFavoriteRepository(favorites = listOf(MALMO_FAVORITE, GOTEBORG_FAVORITE)),
-            locationRepository = locationRepository,
+            favoriteRepository = favoriteRepository,
             pushAlertPlaceNameRepository = pushAlertPlaceNameRepository
         )
 
-        locationRepository.followedFavoriteIds.value = following(MALMO_FAVORITE, GOTEBORG_FAVORITE)
+        favoriteRepository.favorites.value = listOf(MALMO_FAVORITE, GOTEBORG_FAVORITE)
         runCurrent()
-        locationRepository.followedFavoriteIds.value = emptySet()
+        favoriteRepository.favorites.value = emptyList()
         runCurrent()
 
         assertEquals(
@@ -64,11 +67,10 @@ class DefaultPublishPushAlertPlaceNamesTaskTest {
         val pushAlertPlaceNameRepository = FakePushAlertPlaceNameRepository()
         publish(
             favoriteRepository = favoriteRepository,
-            locationRepository = FakeLocationRepository(followedFavoriteIds = following(MALMO_FAVORITE)),
             pushAlertPlaceNameRepository = pushAlertPlaceNameRepository
         )
 
-        favoriteRepository.favorites.value = listOf(MALMO_FAVORITE, GOTEBORG_FAVORITE)
+        favoriteRepository.favorites.value = listOf(MALMO_FAVORITE, MALMO_CENTRAL_FAVORITE)
         runCurrent()
 
         assertEquals(
@@ -78,12 +80,11 @@ class DefaultPublishPushAlertPlaceNamesTaskTest {
     }
 
     @Test
-    fun twoChosenSavedPlacesInOneCellAreNamedAfterTheFirst() = runTest {
+    fun twoSavedPlacesInOneCellAreNamedAfterTheFirst() = runTest {
         val pushAlertPlaceNameRepository = FakePushAlertPlaceNameRepository()
 
         publish(
             favoriteRepository = FakeFavoriteRepository(favorites = listOf(MALMO_FAVORITE, MALMO_CENTRAL_FAVORITE)),
-            locationRepository = FakeLocationRepository(followedFavoriteIds = following(MALMO_FAVORITE, MALMO_CENTRAL_FAVORITE)),
             pushAlertPlaceNameRepository = pushAlertPlaceNameRepository
         )
 
@@ -98,7 +99,7 @@ class DefaultPublishPushAlertPlaceNamesTaskTest {
     }
 
     @Test
-    fun nothingIsSavedWhileTheSavedPlacesOrTheChoicesCannotBeRead() = runTest {
+    fun nothingIsSavedWhileTheSavedPlacesCannotBeRead() = runTest {
         val pushAlertPlaceNameRepository = FakePushAlertPlaceNameRepository()
 
         publish(
@@ -106,7 +107,6 @@ class DefaultPublishPushAlertPlaceNamesTaskTest {
                 favorites = listOf(MALMO_FAVORITE),
                 failure = Failure(errorCode = ErrorCode.STORAGE_FAILED)
             ),
-            locationRepository = FakeLocationRepository(followedFavoriteIds = following(MALMO_FAVORITE)),
             pushAlertPlaceNameRepository = pushAlertPlaceNameRepository
         )
 
@@ -118,15 +118,14 @@ class DefaultPublishPushAlertPlaceNamesTaskTest {
 
     @Test
     fun aFailedSaveIsTriedAgainOnTheNextChange() = runTest {
-        val locationRepository = FakeLocationRepository(followedFavoriteIds = following(MALMO_FAVORITE))
+        val favoriteRepository = FakeFavoriteRepository(favorites = listOf(MALMO_FAVORITE))
         val pushAlertPlaceNameRepository = FakePushAlertPlaceNameRepository(failure = Failure(errorCode = ErrorCode.STORAGE_FAILED))
         publish(
-            favoriteRepository = FakeFavoriteRepository(favorites = listOf(MALMO_FAVORITE, GOTEBORG_FAVORITE)),
-            locationRepository = locationRepository,
+            favoriteRepository = favoriteRepository,
             pushAlertPlaceNameRepository = pushAlertPlaceNameRepository
         )
 
-        locationRepository.followedFavoriteIds.value = following(GOTEBORG_FAVORITE)
+        favoriteRepository.favorites.value = listOf(GOTEBORG_FAVORITE)
         runCurrent()
 
         assertEquals(
@@ -141,18 +140,14 @@ class DefaultPublishPushAlertPlaceNamesTaskTest {
 
 private fun TestScope.publish(
     favoriteRepository: FakeFavoriteRepository,
-    locationRepository: FakeLocationRepository,
     pushAlertPlaceNameRepository: FakePushAlertPlaceNameRepository
 ) {
     val publishPushAlertPlaceNamesTask = DefaultPublishPushAlertPlaceNamesTask(
         favoriteRepository = favoriteRepository,
-        locationRepository = locationRepository,
         pushAlertPlaceNameRepository = pushAlertPlaceNameRepository
     )
     backgroundScope.launch { publishPushAlertPlaceNamesTask() }
     runCurrent()
 }
-
-private fun following(vararg favorites: Favorite): Set<String> = favorites.map { favorite: Favorite -> favorite.favoriteId }.toSet()
 
 private fun Favorite.cell(): String = checkNotNull(value = toGeohashOrNull()).toCell()

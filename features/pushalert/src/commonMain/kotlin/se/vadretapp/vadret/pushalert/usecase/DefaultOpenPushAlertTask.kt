@@ -4,14 +4,11 @@ import io.github.sphrak.either.Either
 import io.github.sphrak.either.extension.asLeft
 import io.github.sphrak.either.extension.asRight
 import io.github.sphrak.either.flatMap
-import kotlinx.coroutines.flow.first
 import kotlinx.serialization.SerializationException
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.common.defaultJson
 import se.vadretapp.vadret.encryption.SealedMessageKey
-import se.vadretapp.vadret.location.LocationRepository
-import se.vadretapp.vadret.location.model.LocationPreference
 import se.vadretapp.vadret.logging.Logger
 import se.vadretapp.vadret.logging.LoggerFactory
 import se.vadretapp.vadret.pushalert.PushAlertRepository
@@ -25,19 +22,13 @@ import kotlin.io.encoding.Base64
 internal class DefaultOpenPushAlertTask(
     private val sealedMessageKey: SealedMessageKey,
     private val pushAlertRepository: PushAlertRepository,
-    private val locationRepository: LocationRepository,
     private val addPlaceNameTask: AddPlaceNameTask
 ) : OpenPushAlertTask {
     override suspend fun invoke(sealed: String): Either<Failure, PushAlertMessage> =
         open(sealed = sealed).flatMap { pushAlertMessage: PushAlertMessage ->
             pushAlertRepository.choices().flatMap { pushAlertChoices: PushAlertChoices ->
                 if (pushAlertChoices.isChosen(pushAlertKind = pushAlertMessage.kind)) {
-                    locationRepository.observeLocationPreference().first().flatMap { locationPreference: LocationPreference ->
-                        addPlaceNameTask(
-                            pushAlertMessage = pushAlertMessage,
-                            favoriteIds = locationPreference.followedFavoriteIds
-                        ).asRight()
-                    }
+                    addPlaceNameTask(pushAlertMessage = pushAlertMessage).asRight()
                 } else {
                     Failure(errorCode = ErrorCode.PUSH_ALERT_NOT_CHOSEN).asLeft()
                 }

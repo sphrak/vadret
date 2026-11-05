@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
@@ -20,10 +21,14 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
+import se.vadretapp.vadret.place.model.Place
 import se.vadretapp.vadret.ui.LocalLanguageTag
+import se.vadretapp.vadret.ui.PlaceSearchBar
 import se.vadretapp.vadret.ui.VadretProgressBar
 import se.vadretapp.vadret.ui.VadretPullToRefreshBox
 import se.vadretapp.vadret.ui.VadretTheme
+import se.vadretapp.vadret.ui.resources.Res
+import se.vadretapp.vadret.ui.resources.places_search
 import se.vadretapp.vadret.weatherforecast.WeatherForecastEvent
 import se.vadretapp.vadret.weatherforecast.WeatherForecastState
 import se.vadretapp.vadret.weatherforecast.model.CurrentWeather
@@ -31,7 +36,6 @@ import se.vadretapp.vadret.weatherforecast.model.ForecastView
 import se.vadretapp.vadret.weatherforecast.model.LatestWarning
 import se.vadretapp.vadret.weatherforecast.model.SearchState
 
-private const val SEARCH_KEY = "search"
 private const val CURRENT_WEATHER_KEY = "current-weather"
 private const val FORECAST_VIEW_KEY = "forecast-view"
 private const val FORECAST_CONTENT_KEY = "forecast-content"
@@ -92,18 +96,7 @@ internal fun ForecastScaffold(
                 ),
                 verticalArrangement = Arrangement.spacedBy(space = contentSpacing)
             ) {
-                if (search != null) {
-                    item(
-                        key = SEARCH_KEY,
-                        contentType = SEARCH_KEY
-                    ) {
-                        SearchPanel(
-                            modifier = Modifier.animateItem(),
-                            search = search,
-                            onEvent = onEvent
-                        )
-                    }
-                } else if (currentWeather != null) {
+                if (currentWeather != null) {
                     item(
                         key = CURRENT_WEATHER_KEY,
                         contentType = CURRENT_WEATHER_KEY
@@ -119,6 +112,20 @@ internal fun ForecastScaffold(
                 forecast(
                     state = state,
                     onEvent = onEvent
+                )
+            }
+            if (search != null) {
+                PlaceSearchBar(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = contentHorizontalPadding),
+                    placeholder = stringResource(resource = Res.string.places_search),
+                    suggestions = search.suggestions,
+                    onQueryChange = { query: String -> onEvent(WeatherForecastEvent.OnSearchQueryChanged(query = query)) },
+                    onSearch = { query: String -> onEvent(WeatherForecastEvent.OnSearchSubmitted(query = query)) },
+                    onSuggestionClick = { place: Place -> onEvent(WeatherForecastEvent.OnSuggestionClicked(place = place)) },
+                    onCollapse = { onEvent(WeatherForecastEvent.OnSearchDismissed) },
+                    isExpandedAtStart = true
                 )
             }
             if (state.isLoading) {

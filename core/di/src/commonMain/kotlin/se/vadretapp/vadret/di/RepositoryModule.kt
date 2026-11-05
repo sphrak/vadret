@@ -3,6 +3,7 @@ package se.vadretapp.vadret.di
 import okio.Path.Companion.toPath
 import org.koin.core.module.Module
 import org.koin.dsl.module
+import se.vadretapp.vadret.developermode.DeveloperModeRepository
 import se.vadretapp.vadret.di.model.AppDirectories
 import se.vadretapp.vadret.di.resources.Res
 import se.vadretapp.vadret.forecastpreference.ForecastPreferenceRepository
@@ -40,6 +41,7 @@ val repositoryModule: Module = module {
             coroutineDispatcher = get()
         )
     }
+    single<DeveloperModeRepository> { DeveloperModeRepository(dataStore = get()) }
     single<ForecastPreferenceRepository> { ForecastPreferenceRepository(dataStore = get()) }
     single<LanguageRepository> { LanguageRepository(dataStore = get()) }
     single<ThemeRepository> { ThemeRepository(dataStore = get()) }

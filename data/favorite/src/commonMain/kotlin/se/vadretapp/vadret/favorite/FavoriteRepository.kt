@@ -16,12 +16,14 @@ interface FavoriteRepository {
 
     fun observeFavorites(): Flow<Either<Failure, List<Favorite>>>
 
+    // A place already saved is returned as it is, and a new one past maximumFavorites is not saved but fails.
     suspend fun addFavorite(
         locality: String,
         municipality: String,
         county: String,
         latitude: Double,
-        longitude: Double
+        longitude: Double,
+        maximumFavorites: Int
     ): Either<Failure, Favorite>
 
     suspend fun removeFavorite(favoriteId: String): Either<Failure, Unit>

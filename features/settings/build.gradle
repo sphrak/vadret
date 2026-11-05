@@ -12,14 +12,18 @@ kotlin {
                 implementation project(':core:logging')
                 implementation project(':data:changelog')
                 implementation project(':data:common')
+                implementation project(':data:developermode')
+                implementation project(':data:favorite')
                 implementation project(':data:forecastpreference')
                 implementation project(':data:language')
                 implementation project(':data:library')
                 implementation project(':data:location')
                 implementation project(':data:pollen')
+                implementation project(':data:place')
                 implementation project(':data:pollenpreference')
                 implementation project(':data:theme')
                 implementation project(':domain:followedplace')
+                implementation project(':domain:pollenseason')
 
                 implementation libs.either
                 implementation libs.koin.core

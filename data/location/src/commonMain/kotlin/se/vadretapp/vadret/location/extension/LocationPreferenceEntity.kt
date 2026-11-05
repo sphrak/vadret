@@ -6,6 +6,5 @@ import se.vadretapp.vadret.location.model.LocationPreference
 internal fun LocationPreferenceEntity.toLocationPreference(): LocationPreference =
     LocationPreference(
         isAutomatic = isAutomatic,
-        storedLocation = storedLocationEntity.toStoredLocation(),
-        followedFavoriteIds = followedFavoriteIds
+        storedLocation = storedLocationEntity.toStoredLocation()
     )

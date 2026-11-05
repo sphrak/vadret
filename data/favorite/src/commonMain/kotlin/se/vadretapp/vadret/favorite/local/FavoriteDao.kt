@@ -45,9 +45,12 @@ internal interface FavoriteDao {
         locality: String,
         municipality: String,
         county: String
-    ): FavoriteEntity
+    ): FavoriteEntity?
 
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    @Query(value = "SELECT COUNT(favorite_id) FROM favorite")
+    suspend fun count(): Int
+
+    @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insert(favoriteEntity: FavoriteEntity)
 
     @Query(value = "DELETE FROM favorite WHERE favorite_id = :favoriteId")

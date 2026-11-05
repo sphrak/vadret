@@ -20,6 +20,7 @@ import kotlinx.serialization.json.Json
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.geohash.model.Geohash
+import se.vadretapp.vadret.pushalert.extension.decode
 import se.vadretapp.vadret.pushalert.model.AndroidAttestation
 import se.vadretapp.vadret.pushalert.model.Attestation
 import se.vadretapp.vadret.pushalert.model.DeviceRegistration
@@ -387,17 +388,31 @@ class DefaultPushAlertRepositoryTest {
     }
 
     @Test
-    fun strongWindAndPlacesAreStoredWithTheOtherChoices() = runTest {
+    fun strongWindIsStoredWithTheOtherChoices() = runTest {
         val pushAlertLocalDataSource = FakePushAlertLocalDataSource()
 
         repository(pushAlertLocalDataSource = pushAlertLocalDataSource).saveChoices(pushAlertChoices = CHOICES)
 
         assertEquals(
-            expected = """{"choices":{"warning_lowest_level":"ORANGE","pollen_choices":[{"pollen_type_id":"$BIRCH","lowest_level":4}],"temperature_trend":true,"strong_wind":true,"favorite_ids":["$MALMO_FAVORITE_ID","$GOTEBORG_FAVORITE_ID"]}}""",
+            expected = """{"choices":{"warning_lowest_level":"ORANGE","pollen_choices":[{"pollen_type_id":"$BIRCH","lowest_level":4}],"temperature_trend":true,"strong_wind":true}}""",
             actual = Json.encodeToString(
                 serializer = PushAlertStateEntity.serializer(),
                 value = pushAlertLocalDataSource.state.value
             )
+        )
+    }
+
+    // The file on the phone is read with the same decoder, which skips the places that used to be stored with the choices.
+    @Test
+    fun choicesStoredWhenPlacesWereChosenOneByOneReadTheSame() = runTest {
+        val storedWithPlaces = PushAlertStateEntity.serializer().decode(
+            bytes = """{"installation_token":"$INSTALLATION_TOKEN","choices":{"warning_lowest_level":"ORANGE","pollen_choices":[{"pollen_type_id":"$BIRCH","lowest_level":4}],"temperature_trend":true,"strong_wind":true,"favorite_ids":["favorite-malmo"]}}""".encodeToByteArray(),
+            fileName = PUSH_ALERT_FILE_NAME
+        )
+
+        assertEquals(
+            expected = CHOICES.asRight(),
+            actual = repository(pushAlertLocalDataSource = FakePushAlertLocalDataSource(initialState = storedWithPlaces)).choices()
         )
     }
 
@@ -409,24 +424,8 @@ class DefaultPushAlertRepositoryTest {
         )
 
         assertEquals(
-            expected = CHOICES.copy(
-                strongWind = false,
-                favoriteIds = emptySet()
-            ).asRight(),
+            expected = CHOICES.copy(strongWind = false).asRight(),
             actual = repository(pushAlertLocalDataSource = FakePushAlertLocalDataSource(initialState = storedBeforeStrongWind)).choices()
-        )
-    }
-
-    @Test
-    fun choicesStoredBeforePlacesExistedReadAsNoPlaceChosen() = runTest {
-        val storedBeforePlaces = Json.decodeFromString(
-            deserializer = PushAlertStateEntity.serializer(),
-            string = """{"installation_token":"$INSTALLATION_TOKEN","choices":{"warning_lowest_level":"ORANGE","pollen_choices":[{"pollen_type_id":"$BIRCH","lowest_level":4}],"temperature_trend":true,"strong_wind":true}}"""
-        )
-
-        assertEquals(
-            expected = CHOICES.copy(favoriteIds = emptySet()).asRight(),
-            actual = repository(pushAlertLocalDataSource = FakePushAlertLocalDataSource(initialState = storedBeforePlaces)).choices()
         )
     }
 
@@ -627,15 +626,11 @@ private const val CHALLENGE = "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8="
 private const val INSTALLATION_TOKEN = "vadret_secret"
 private const val BIRCH = "2a2a2a2a-2a2a-4a2a-aa2a-2a313a323236"
 private const val REGISTERED_AT_MILLIS = 1_793_000_000_000L
-private const val MALMO_FAVORITE_ID = "favorite-malmo"
-private const val GOTEBORG_FAVORITE_ID = "favorite-goteborg"
 private val CHOICES = PushAlertChoices(
     warningLowestLevel = WarningAlertLevel.ORANGE,
     pollenChoices = listOf(PollenChoice(pollenTypeId = BIRCH, lowestLevel = PollenAlertLevel.MODERATE_TO_HIGH)),
     temperatureTrend = true,
-    strongWind = true,
-    favoriteIds = setOf(
-        MALMO_FAVORITE_ID,
-        GOTEBORG_FAVORITE_ID
-    )
+    strongWind = true
 )
+
+private const val PUSH_ALERT_FILE_NAME = "push_alert.json"

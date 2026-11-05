@@ -6,6 +6,7 @@ import io.github.sphrak.either.extension.onResult
 import io.github.sphrak.either.flatMap
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.favorite.model.Favorite
+import se.vadretapp.vadret.followedplace.extension.chosenFavorite
 import se.vadretapp.vadret.followedplace.extension.toChosenPlace
 import se.vadretapp.vadret.followedplace.model.FollowedPlace
 import se.vadretapp.vadret.location.LocationRepository
@@ -26,7 +27,7 @@ internal class ChosenPlaceLookup(
         if (locationPreference.isAutomatic) {
             devicePlace()
         } else {
-            locationPreference.storedLocation.toChosenPlace(favorites = favorites).asRight()
+            locationPreference.storedLocation.toChosenPlace(chosenFavorite = locationPreference.chosenFavorite(favorites = favorites)).asRight()
         }
 
     // A device position Nominatim cannot name is still the chosen place, known by its coordinates.

@@ -10,6 +10,8 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.favorite.FavoriteRepository
 import se.vadretapp.vadret.favorite.model.Favorite
+import se.vadretapp.vadret.followedplace.extension.chosenFavorite
+import se.vadretapp.vadret.followedplace.extension.followedFavorites
 import se.vadretapp.vadret.followedplace.extension.toFollowedPlace
 import se.vadretapp.vadret.followedplace.model.FollowedPlace
 import se.vadretapp.vadret.location.LocationRepository
@@ -38,7 +40,7 @@ internal class DefaultObserveFollowedPlacesTask(
             }
         }.distinctUntilChanged()
 
-    // A chosen place that cannot be found leaves the followed favorites, which are known without it.
+    // A chosen place that cannot be found leaves the other saved places, which are known without it.
     private suspend fun followedPlaces(
         locationPreference: LocationPreference,
         favorites: List<Favorite>
@@ -54,13 +56,12 @@ internal class DefaultObserveFollowedPlacesTask(
                 },
                 onSuccess = { followedPlace: FollowedPlace -> followedPlace }
             )
-        val followedFavorites: List<FollowedPlace> = favorites
-            .filter { favorite: Favorite ->
-                favorite.favoriteId in locationPreference.followedFavoriteIds && favorite.favoriteId != chosenPlace?.favoriteId
-            }.map { favorite: Favorite -> favorite.toFollowedPlace() }
-        return (listOfNotNull(chosenPlace) + followedFavorites)
-            .take(n = MAXIMUM_FOLLOWED_PLACES)
-            .asRight()
+        val chosenFavorite: Favorite? = locationPreference.chosenFavorite(favorites = favorites)
+        val otherFollowedFavorites: List<FollowedPlace> = locationPreference
+            .followedFavorites(favorites = favorites)
+            .filter { favorite: Favorite -> favorite != chosenFavorite }
+            .map { favorite: Favorite -> favorite.toFollowedPlace() }
+        return (listOfNotNull(chosenPlace) + otherFollowedFavorites).asRight()
     }
 }
 

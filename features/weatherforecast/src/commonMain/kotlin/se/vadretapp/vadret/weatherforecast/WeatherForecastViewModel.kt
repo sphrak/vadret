@@ -4,7 +4,6 @@ import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.sphrak.either.Either
-import io.github.sphrak.either.extension.asRight
 import io.github.sphrak.either.extension.errorOrNull
 import io.github.sphrak.either.extension.onResult
 import kotlinx.collections.immutable.ImmutableList
@@ -22,8 +21,17 @@ import se.vadretapp.vadret.aggregatedfeed.model.AggregatedFeed
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.favorite.model.Favorite
+import se.vadretapp.vadret.followedplace.AddFavoriteTask
 import se.vadretapp.vadret.followedplace.GetChosenPlaceTask
+import se.vadretapp.vadret.followedplace.ObserveLocationChoicesTask
+import se.vadretapp.vadret.followedplace.RemoveFavoriteTask
+import se.vadretapp.vadret.followedplace.SearchPlacesTask
+import se.vadretapp.vadret.followedplace.SelectFavoriteTask
+import se.vadretapp.vadret.followedplace.SelectPlaceTask
+import se.vadretapp.vadret.followedplace.SetLocationModeTask
+import se.vadretapp.vadret.followedplace.model.FavoriteChoice
 import se.vadretapp.vadret.followedplace.model.FollowedPlace
+import se.vadretapp.vadret.followedplace.model.LocationChoices
 import se.vadretapp.vadret.forecastpreference.model.ForecastPreferences
 import se.vadretapp.vadret.location.model.Location
 import se.vadretapp.vadret.place.model.Place
@@ -42,9 +50,7 @@ import se.vadretapp.vadret.weatherforecast.extension.withDayToggled
 import se.vadretapp.vadret.weatherforecast.extension.withForecast
 import se.vadretapp.vadret.weatherforecast.extension.withNameTaken
 import se.vadretapp.vadret.weatherforecast.extension.withoutName
-import se.vadretapp.vadret.weatherforecast.model.FavoriteChoice
 import se.vadretapp.vadret.weatherforecast.model.ForecastView
-import se.vadretapp.vadret.weatherforecast.model.LocationChoices
 import se.vadretapp.vadret.weatherforecast.model.PlaceForecast
 import se.vadretapp.vadret.weatherforecast.model.PlaceNaming
 import se.vadretapp.vadret.weatherforecast.model.SearchState
@@ -138,7 +144,7 @@ class WeatherForecastViewModel internal constructor(
                 state.copy(search = SearchState())
             }
             WeatherForecastEvent.OnSearchDismissed -> onSearchDismissed()
-            WeatherForecastEvent.OnSearchSubmitted -> onSearchSubmitted()
+            is WeatherForecastEvent.OnSearchSubmitted -> onSearchSubmitted(query = event.query)
             is WeatherForecastEvent.OnSearchQueryChanged -> onSearchQueryChanged(query = event.query)
             is WeatherForecastEvent.OnSuggestionClicked -> onSuggestionClicked(place = event.place)
         }
@@ -533,7 +539,7 @@ class WeatherForecastViewModel internal constructor(
             context = coroutineDispatcher
         ) {
             delay(duration = searchDebounce)
-            search(query = query).onResult(
+            searchPlacesTask(prefix = query).onResult(
                 onError = { failure: Failure -> displayError(failure = failure) },
                 onSuccess = { suggestions: List<Place> ->
                     displaySuggestions(
@@ -544,13 +550,6 @@ class WeatherForecastViewModel internal constructor(
             )
         }
     }
-
-    private suspend fun search(query: String): Either<Failure, List<Place>> =
-        if (query.isBlank()) {
-            emptyList<Place>().asRight()
-        } else {
-            searchPlacesTask(prefix = query)
-        }
 
     private fun displaySuggestions(
         query: String,
@@ -566,9 +565,20 @@ class WeatherForecastViewModel internal constructor(
         }
     }
 
-    private fun onSearchSubmitted() {
-        val place: Place = state.value.search?.suggestions?.firstOrNull() ?: return
-        onSuggestionClicked(place = place)
+    // The places shown may still be for an earlier query, so the query as written is searched again.
+    private fun onSearchSubmitted(query: String) {
+        searchJob.exchange(newValue = null)?.cancel()
+        viewModelScope.launch(context = coroutineDispatcher) {
+            searchPlacesTask(prefix = query).onResult(
+                onError = { failure: Failure -> displayError(failure = failure) },
+                onSuccess = { places: List<Place> ->
+                    val place: Place? = places.firstOrNull()
+                    if (place != null) {
+                        onSuggestionClicked(place = place)
+                    }
+                }
+            )
+        }
     }
 
     private fun onSuggestionClicked(place: Place) {

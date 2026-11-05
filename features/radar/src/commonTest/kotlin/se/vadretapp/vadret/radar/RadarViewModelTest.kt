@@ -27,6 +27,7 @@ import se.vadretapp.vadret.location.model.Location
 import se.vadretapp.vadret.pollen.model.PollenLevel
 import se.vadretapp.vadret.pollen.model.PollenType
 import se.vadretapp.vadret.pollenpreference.model.PollenPreferences
+import se.vadretapp.vadret.pollenseason.ObservePollenInSeasonTask
 import se.vadretapp.vadret.radar.model.PollenMap
 import se.vadretapp.vadret.radar.model.PollenMarker
 import se.vadretapp.vadret.radar.model.PollenStation

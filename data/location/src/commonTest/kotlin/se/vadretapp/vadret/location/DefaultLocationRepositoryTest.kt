@@ -4,9 +4,11 @@ import androidx.datastore.core.IOException
 import io.github.sphrak.either.Either
 import io.github.sphrak.either.extension.asLeft
 import io.github.sphrak.either.extension.asRight
+import io.github.sphrak.either.map
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
@@ -51,8 +53,7 @@ private class FakeStoredLocationLocalDataSource : StoredLocationLocalDataSource 
     private val locationPreferenceEntity: MutableStateFlow<LocationPreferenceEntity> = MutableStateFlow(
         value = LocationPreferenceEntity(
             isAutomatic = true,
-            storedLocationEntity = stockholmEntity,
-            followedFavoriteIds = emptySet()
+            storedLocationEntity = stockholmEntity
         )
     )
 
@@ -61,8 +62,6 @@ private class FakeStoredLocationLocalDataSource : StoredLocationLocalDataSource 
     override suspend fun setAutomatic(isAutomatic: Boolean) {
         locationPreferenceEntity.update { entity: LocationPreferenceEntity -> entity.copy(isAutomatic = isAutomatic) }
     }
-
-    override suspend fun getStoredLocation(): StoredLocationEntity = locationPreferenceEntity.value.storedLocationEntity
 
     override fun observeLocationPreference(): Flow<LocationPreferenceEntity> = locationPreferenceEntity
 
@@ -74,36 +73,13 @@ private class FakeStoredLocationLocalDataSource : StoredLocationLocalDataSource 
             )
         }
     }
-
-    override suspend fun followFavorite(
-        favoriteId: String,
-        maximumFollowedFavorites: Int
-    ): Boolean {
-        locationPreferenceEntity.update { entity: LocationPreferenceEntity -> entity.copy(followedFavoriteIds = entity.followedFavoriteIds + favoriteId) }
-        return true
-    }
-
-    override suspend fun unfollowFavorite(favoriteId: String) {
-        locationPreferenceEntity.update { entity: LocationPreferenceEntity -> entity.copy(followedFavoriteIds = entity.followedFavoriteIds - favoriteId) }
-    }
-
-    override suspend fun adoptFollowedFavoriteIds(favoriteIds: Set<String>) {
-        locationPreferenceEntity.update { entity: LocationPreferenceEntity -> entity.copy(followedFavoriteIds = favoriteIds) }
-    }
 }
 
 private class BrokenStoredLocationLocalDataSource : StoredLocationLocalDataSource {
     override suspend fun isAutomatic(): Boolean = throw IOException("corrupt", null)
     override suspend fun setAutomatic(isAutomatic: Boolean) = throw IOException("corrupt", null)
-    override suspend fun getStoredLocation(): StoredLocationEntity = throw IOException("corrupt", null)
     override fun observeLocationPreference(): Flow<LocationPreferenceEntity> = flow { throw IOException("corrupt", null) }
     override suspend fun selectStoredLocation(storedLocationEntity: StoredLocationEntity) = throw IOException("corrupt", null)
-    override suspend fun followFavorite(
-        favoriteId: String,
-        maximumFollowedFavorites: Int
-    ): Boolean = throw IOException("corrupt", null)
-    override suspend fun unfollowFavorite(favoriteId: String) = throw IOException("corrupt", null)
-    override suspend fun adoptFollowedFavoriteIds(favoriteIds: Set<String>) = throw IOException("corrupt", null)
 }
 
 private val kiruna = StoredLocation(
@@ -199,7 +175,7 @@ class DefaultLocationRepositoryTest {
 
             locationRepository.selectStoredLocation(storedLocation = kiruna)
 
-            assertEquals(expected = kiruna.asRight(), actual = locationRepository.getStoredLocation())
+            assertEquals(expected = kiruna.asRight(), actual = locationRepository.observeLocationPreference().first().map { preference: LocationPreference -> preference.storedLocation })
             assertEquals(expected = false.asRight(), actual = locationRepository.isAutomatic())
         }
 
@@ -226,13 +202,11 @@ class DefaultLocationRepositoryTest {
                             county = "Stockholm",
                             latitude = 59.3293,
                             longitude = 18.0686
-                        ),
-                        followedFavoriteIds = emptySet()
+                        )
                     ).asRight(),
                     LocationPreference(
                         isAutomatic = false,
-                        storedLocation = kiruna,
-                        followedFavoriteIds = emptySet()
+                        storedLocation = kiruna
                     ).asRight()
                 ),
                 actual = emitted
@@ -251,7 +225,6 @@ class DefaultLocationRepositoryTest {
                 val results: List<Either<Failure, Any>> = listOf(
                     locationRepository.isAutomatic(),
                     locationRepository.setAutomatic(isAutomatic = true),
-                    locationRepository.getStoredLocation(),
                     locationRepository.selectStoredLocation(storedLocation = kiruna),
                     locationRepository.observeLocationPreference().toList().single()
                 )

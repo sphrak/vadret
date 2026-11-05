@@ -2,6 +2,7 @@ package se.vadretapp.vadret.favorite.local
 
 import androidx.room3.withWriteTransaction
 import kotlinx.coroutines.flow.Flow
+import se.vadretapp.vadret.favorite.exception.FavoriteLimitException
 
 internal class DefaultFavoriteLocalDataSource(
     private val favoriteDatabase: FavoriteDatabase
@@ -11,14 +12,25 @@ internal class DefaultFavoriteLocalDataSource(
 
     override fun observeFavorites(): Flow<List<FavoriteEntity>> = favoriteDao.observeAll()
 
-    override suspend fun addFavorite(favoriteEntity: FavoriteEntity): FavoriteEntity =
+    // The limit is counted in the same transaction that adds, so two quick adds cannot both pass it.
+    override suspend fun addFavorite(
+        favoriteEntity: FavoriteEntity,
+        maximumFavorites: Int
+    ): FavoriteEntity =
         favoriteDatabase.withWriteTransaction {
-            favoriteDao.insert(favoriteEntity = favoriteEntity)
-            favoriteDao.getByPlace(
+            val storedFavoriteEntity: FavoriteEntity? = favoriteDao.getByPlace(
                 locality = favoriteEntity.locality,
                 municipality = favoriteEntity.municipality,
                 county = favoriteEntity.county
             )
+            if (storedFavoriteEntity != null) {
+                storedFavoriteEntity
+            } else if (favoriteDao.count() >= maximumFavorites) {
+                throw FavoriteLimitException()
+            } else {
+                favoriteDao.insert(favoriteEntity = favoriteEntity)
+                favoriteEntity
+            }
         }
 
     override suspend fun removeFavorite(favoriteId: String) {

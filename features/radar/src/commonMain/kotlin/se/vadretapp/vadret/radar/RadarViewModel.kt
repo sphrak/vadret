@@ -31,6 +31,7 @@ import kotlinx.datetime.todayIn
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.location.model.Location
 import se.vadretapp.vadret.pollenpreference.model.PollenPreferences
+import se.vadretapp.vadret.pollenseason.ObservePollenInSeasonTask
 import se.vadretapp.vadret.radar.extension.markersFor
 import se.vadretapp.vadret.radar.extension.pollenTypesWithAllergensFirst
 import se.vadretapp.vadret.radar.extension.strongestPollenId

@@ -98,7 +98,6 @@
     <string name="permission_granted">Permission granted</string>
     <string name="permission_denied">Permission denied</string>
 
-    <string name="display">Display</string>
     <string name="theme">Theme</string>
     <string name="select_a_theme">Select a theme</string>
 
@@ -112,8 +111,7 @@
     <string name="m_s" translatable="false">m/s</string>
     <string name="degree" translatable="false">°</string>
 
-    <string name="about_app_about_title">About</string>
-    <string name="about_app_libraries_tab_title">Licenses</string>
+    <string name="licenses_title">Licenses</string>
     <string name="about_app_description">Weather app for Sweden</string>
 
     <string name="cd_about_app_icon" translatable="false">AboutAppImage</string>
@@ -122,7 +120,6 @@
     <string name="changelog_row_title">Changelog</string>
     <string name="source_code_row_title">Source code</string>
     <string name="privacy_policy_row_title">Privacy policy</string>
-    <string name="app_release_page" translatable="false">https://github.com/vadret/android/releases</string>
     <string name="license_row_hint" translatable="false">Apache License, Version 2.0</string>
     <string name="app_github_source_url" translatable="false">https://github.com/vadret/android</string>
     <string name="app_license_url" translatable="false">https://github.com/vadret/android/blob/master/LICENSE</string>
@@ -167,7 +164,8 @@
     <string name="openstreetmap_copyright_notice" translatable="false">OpenFreeMap © OpenMapTiles | Data © OpenStreetMap contributors</string>
 
     <string name="county">county</string>
-    <string name="close_search">Close search</string>
+    <string name="clear_search">Clear search</string>
+    <string name="place_municipality_county">%1$s, %2$s</string>
     <string name="search_failed">Search failed</string>
     <string name="search_results">Search results</string>
     <string name="no_results">No matching results</string>
@@ -175,19 +173,6 @@
 
     // settings
     <string name="settings">Settings</string>
-    <string name="setting_language_description">Select preferred language</string>
-    <string name="setting_language_title">Language</string>
-    <string name="setting_location_title">Location settings</string>
-    <string name="setting_municipality">Municipality</string>
-    <string name="setting_latitude">Latitude</string>
-    <string name="setting_longitude">Longitude</string>
-    <string name="setting_city">City</string>
-    <string name="setting_county">County</string>
-    <string name="use_gps_by_default">Use GPS by default</string>
-    <string name="preferences_use_gps_by_default_desc">Use GPS by default</string>
-    <string name="setting_current_location">Current location</string>
-    <string name="gps_is_not_being_used">GPS position will not be used to fetch weather</string>
-    <string name="gps_is_being_used">GPS position will be used each time to fetch weather for current location</string>
 
     // HTTP STATUS CODES
     <string name="http_forbidden_403" translatable="false">Access Forbidden 403</string>
@@ -239,10 +224,7 @@
     <string name="licenses_intro">Vädret is built with the following open source projects.</string>
     <string name="forecast_days">Days</string>
     <string name="forecast_hours">Hours</string>
-    <string name="enable_hourly_forecast">Enable weather by the hour</string>
-    <string name="hourly_forecast_is_enabled">You can switch between days and hours</string>
-    <string name="hourly_forecast_is_disabled">Only days are shown</string>
-    <string name="developer_settings_title">Developer</string>
+    <string name="developer_settings_title">Dev settings</string>
     <string name="allow_expand_once">Allow expand once</string>
     <string name="expand_once_is_enabled">Opening a day closes the day already open</string>
     <string name="expand_once_is_disabled">Several days can be open at the same time</string>
@@ -273,20 +255,9 @@
     <string name="close">Close</string>
     <string name="back">Back</string>
     <string name="warning_period" translatable="false">%1$s - %2$s</string>
-    <string name="push_alerts">Push alerts</string>
     <string name="warning_alerts">Weather warnings</string>
-    <string name="warning_alerts_on">You get a push for warnings where you are</string>
-    <string name="warning_alerts_off">No pushes for warnings</string>
-    <string name="lowest_warning_level">Lowest warning level</string>
-    <string name="temperature_alerts">Temperature changes</string>
-    <string name="temperature_alerts_on">You get a push when it gets 3° warmer or colder</string>
-    <string name="temperature_alerts_off">No pushes for temperature changes</string>
+    <string name="temperature_alerts">Temperature shifts</string>
     <string name="strong_wind_alerts">Strong wind</string>
-    <string name="strong_wind_alerts_on">You get a push the evening before and on the day when the SMHI forecast shows strong wind, a storm or a hurricane</string>
-    <string name="strong_wind_alerts_off">No pushes for strong wind</string>
-    <string name="pollen_alerts">Pollen alerts</string>
-    <string name="pollen_alerts_on">You get a push from the chosen level and up</string>
-    <string name="pollen_alerts_off">No pushes</string>
     <string name="lowest_pollen_level">Lowest pollen level</string>
     <string name="notifications_are_off">Notifications are turned off</string>
     <string name="notifications_are_off_text">Allow notifications for Vädret in the system settings to get push alerts.</string>
@@ -298,17 +269,6 @@
     <string name="push_alerts_only_in_sweden_text">Vädret sends push alerts for places in Sweden only, and this place is outside Sweden.</string>
     <string name="push_alerts_not_available">Push alerts are not available</string>
     <string name="attestation_refused">Vädret could not confirm this device, so push alerts cannot be turned on. This happens, for example, with an unlocked bootloader or a modified system.</string>
-    <string name="push_places">Places</string>
-    <string name="show_pollen">Show pollen</string>
-    <string name="pollen_is_shown">The pollen map is on</string>
-    <string name="pollen_is_hidden">Pollen is hidden</string>
-    <string name="pollen_allergies">Highlighted pollen</string>
-    <string name="pollen_no_allergies">None chosen</string>
-    <plurals name="pollen_allergens_selected">
-        <item quantity="one">%1$d chosen</item>
-        <item quantity="other">%1$d chosen</item>
-    </plurals>
-    <string name="pollen_allergies_description">Choose which pollen to highlight. The map shows them first.</string>
     <string name="pollen_types_not_available">The pollen types could not be loaded. Try again later.</string>
     <string name="pollen_hibernating_title">Pollen has gone into hibernation</string>
     <string name="pollen_hibernating_text">The pollen reports return when the season starts again, usually around February.</string>
@@ -318,19 +278,11 @@
     <string name="save_place">Save place</string>
     <string name="open_forecast">Open forecast</string>
     <string name="warning_affects_places">Affects %1$s</string>
-    <string name="followed_places">Followed places</string>
-    <string name="followed_places_text">Warnings and push alerts cover the chosen place and up to 4 followed places.</string>
-    <string name="followed_place_chosen">Chosen place</string>
     <string name="followed_place_position">Your position</string>
-    <string name="followed_place_on">Followed</string>
-    <string name="followed_place_off">Not followed</string>
-    <string name="followed_places_limit">At most 4 followed places</string>
-    <string name="followed_places_limit_text">At most 4 places besides the chosen place can be followed. Stop following another place first.</string>
-    <string name="followed_places_only_in_sweden">Warnings cover Sweden only</string>
-    <string name="followed_places_only_in_sweden_text">Vädret has warnings for places in Sweden only, and this place is outside Sweden.</string>
+    <string name="followed_places_limit">At most 5 places</string>
+    <string name="followed_places_limit_text">You can have up to 5 places, and your position counts as one while Follow my position is on. Remove a place first.</string>
     <string name="warnings_for_places">Warnings for %1$s</string>
     <string name="change_followed_places">Change</string>
-    <string name="push_places_followed_text">Push alerts are sent for the chosen place and your followed places.</string>
     <string name="not_saved">Not saved</string>
     <string name="saved">Saved</string>
     <string name="save">Save</string>
@@ -340,4 +292,34 @@
     <string name="place_name_taken_text">You already have a favorite called %1$s. Give this place a name of its own.</string>
     <string name="try_again">Try again</string>
     <string name="pegman_hint">Drag to a spot on the map to see the weather there</string>
+    <string name="settings_places">Places</string>
+    <string name="settings_notifications">Notifications</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_hourly_forecast">Hour by hour</string>
+    <string name="settings_hourly_forecast_summary">Show the forecast by the hour</string>
+    <string name="settings_about">About Vädret</string>
+    <string name="places_follow_position">Follow my position</string>
+    <string name="places_follow_position_summary">Vädret updates as you move</string>
+    <string name="places_search">Search and add a place</string>
+    <string name="places_mine">My places</string>
+    <string name="places_make_default">Make default</string>
+    <string name="places_remove">Remove</string>
+    <string name="places_options">Options for %1$s</string>
+    <string name="places_note">Warnings cover all your places. The place you choose is shown first. You can have up to 5.</string>
+    <string name="pollen_on_map">Pollen on the map</string>
+    <string name="pollen_on_map_summary">Shown as a layer in Radar</string>
+    <string name="pollen_off_season">No pollen forecasts right now. Naturhistoriska riksmuseet publishes forecasts during the pollen season, from February to September.</string>
+    <string name="pollen_marked_first">The map shows marked pollen first.</string>
+    <string name="pollen_group_trees">Trees</string>
+    <string name="pollen_group_grasses_and_herbs">Grasses and herbs</string>
+    <string name="pollen_group_spores">Fungal spores</string>
+    <string name="pollen_group_other">Other</string>
+    <string name="developer_unlocked">You are now a developer</string>
+    <string name="developer_already_unlocked">You are already a developer</string>
+    <string name="notifications_weather">Weather</string>
+    <string name="warning_alerts_summary">From SMHI</string>
+    <string name="warning_level">Level</string>
+    <string name="strong_wind_alerts_summary">The evening before and the same day</string>
+    <string name="notifications_cover_places">Notifications cover all your places.</string>
+    <string name="places_not_followed">No warnings, at most 5 places are followed</string>
 </resources>

@@ -23,6 +23,11 @@ import se.vadretapp.vadret.pushalert.usecase.SyncPushAlertsTask
 import se.vadretapp.vadret.radar.RadarViewModel
 import se.vadretapp.vadret.radar.di.iosRadarModule
 import se.vadretapp.vadret.radar.di.radarModule
+import se.vadretapp.vadret.settings.AboutViewModel
+import se.vadretapp.vadret.settings.DeveloperViewModel
+import se.vadretapp.vadret.settings.LicensesViewModel
+import se.vadretapp.vadret.settings.PlacesViewModel
+import se.vadretapp.vadret.settings.PollenSettingsViewModel
 import se.vadretapp.vadret.settings.SettingsViewModel
 import se.vadretapp.vadret.ui.SettingsSection
 import se.vadretapp.vadret.weatherforecast.WeatherForecastViewModel
@@ -76,6 +81,11 @@ class IosModulesTest {
         assertNotNull(actual = koin.get<MainViewModel>())
         assertNotNull(actual = koin.get<RadarViewModel>())
         assertNotNull(actual = koin.get<SettingsViewModel>())
+        assertNotNull(actual = koin.get<AboutViewModel>())
+        assertNotNull(actual = koin.get<DeveloperViewModel>())
+        assertNotNull(actual = koin.get<LicensesViewModel>())
+        assertNotNull(actual = koin.get<PlacesViewModel>())
+        assertNotNull(actual = koin.get<PollenSettingsViewModel>())
         assertNotNull(actual = koin.get<WarningViewModel>())
         assertNotNull(actual = koin.get<WarningDetailViewModel>())
         assertNotNull(actual = koin.get<WarningStoryViewModel>())

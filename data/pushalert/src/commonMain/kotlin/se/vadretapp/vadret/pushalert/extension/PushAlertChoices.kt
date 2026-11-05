@@ -13,6 +13,5 @@ internal fun PushAlertChoices.toPushAlertChoicesEntity(): PushAlertChoicesEntity
         )
     },
     temperatureTrend = temperatureTrend,
-    strongWind = strongWind,
-    favoriteIds = favoriteIds
+    strongWind = strongWind
 )

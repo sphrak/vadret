@@ -25,7 +25,8 @@ internal class FakeFavoriteRepository(
         municipality: String,
         county: String,
         latitude: Double,
-        longitude: Double
+        longitude: Double,
+        maximumFavorites: Int
     ): Either<Failure, Favorite> {
         val favorite = Favorite(
             favoriteId = "favorite-$locality",

@@ -1,25 +1,28 @@
 package se.vadretapp.vadret.ui
 
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemColors
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.ListItemShapes
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
-
-private val rowMinimumHeight = 52.dp
-private val trailingIconSize = 20.dp
+import se.vadretapp.vadret.ui.resources.Res
+import se.vadretapp.vadret.ui.resources.ic_info
 
 @Composable
 fun SettingsSectionHeader(
@@ -31,8 +34,8 @@ fun SettingsSectionHeader(
         style = VadretTheme.textStyles.detailStrong,
         color = VadretTheme.colorScheme.primary,
         modifier = modifier.padding(
-            start = VadretTheme.spacing.small,
-            end = VadretTheme.spacing.small,
+            start = VadretTheme.spacing.large,
+            end = VadretTheme.spacing.large,
             top = VadretTheme.spacing.large,
             bottom = VadretTheme.spacing.small
         )
@@ -43,54 +46,136 @@ fun SettingsSectionHeader(
 fun SettingsRowDivider(modifier: Modifier = Modifier) {
     HorizontalDivider(
         color = VadretTheme.colors.divider,
-        modifier = modifier.padding(start = VadretTheme.spacing.large)
+        modifier = modifier
     )
 }
 
+// Android's own settings give every row at least this height and this much room above and below the text, so the rows
+// here sit like the phone's settings do.
+private val settingsRowMinimumHeight: Dp = 72.dp
+private val settingsRowVerticalPadding: Dp = 16.dp
+private val settingsRowHorizontalPadding: Dp = 16.dp
+
+internal val settingsRowContentPadding: PaddingValues = PaddingValues(
+    horizontal = settingsRowHorizontalPadding,
+    vertical = settingsRowVerticalPadding
+)
+
+internal fun Modifier.settingsRowHeight(): Modifier = heightIn(min = settingsRowMinimumHeight)
+
 @Composable
-fun SettingsValueRow(
+fun SettingsRow(
     title: String,
-    value: String,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    trailingIconResource: DrawableResource? = null,
-    onClick: (() -> Unit)? = null
+    summary: String? = null,
+    iconResource: DrawableResource? = null,
+    trailingContent: (@Composable RowScope.() -> Unit)? = null
 ) {
-    val clickModifier: Modifier = if (onClick != null) {
-        Modifier.clickable(onClick = onClick)
-    } else {
-        Modifier
-    }
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(space = VadretTheme.spacing.medium),
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier
-            .fillMaxWidth()
-            .heightIn(min = rowMinimumHeight)
-            .then(clickModifier)
-            .padding(
-                horizontal = VadretTheme.spacing.large,
-                vertical = VadretTheme.spacing.medium
-            )
+    ListItem(
+        onClick = onClick,
+        modifier = modifier.settingsRowHeight(),
+        leadingContent = rowLeadingContent(iconResource = iconResource),
+        trailingContent = if (trailingContent != null) {
+            {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    content = trailingContent
+                )
+            }
+        } else {
+            null
+        },
+        supportingContent = rowSupportingContent(summary = summary),
+        shapes = settingsRowShapes(),
+        colors = settingsRowColors(),
+        contentPadding = settingsRowContentPadding
     ) {
-        Text(
-            text = title,
-            style = VadretTheme.textStyles.listItem,
-            color = VadretTheme.colorScheme.onSurface,
-            modifier = Modifier.weight(weight = 1f)
-        )
-        Text(
-            text = value,
-            style = VadretTheme.textStyles.body,
-            color = VadretTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.End
-        )
-        if (trailingIconResource != null) {
+        Text(text = title)
+    }
+}
+
+internal fun rowLeadingContent(iconResource: DrawableResource?): (@Composable () -> Unit)? =
+    if (iconResource != null) {
+        {
             Icon(
-                painter = painterResource(resource = trailingIconResource),
-                contentDescription = null,
-                tint = VadretTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(size = trailingIconSize)
+                painter = painterResource(resource = iconResource),
+                contentDescription = null
             )
         }
+    } else {
+        null
     }
+
+internal fun rowSupportingContent(summary: String?): (@Composable () -> Unit)? =
+    if (summary != null) {
+        { Text(text = summary) }
+    } else {
+        null
+    }
+
+// The screen colour shows through, so rows sit on the background like the rest of the screen. A row that is on looks
+// like any other row, since its switch already shows that it is on.
+@Composable
+internal fun settingsRowColors(): ListItemColors {
+    val defaultColors: ListItemColors = ListItemDefaults.colors()
+    return ListItemDefaults.colors(
+        containerColor = Color.Transparent,
+        selectedContainerColor = Color.Transparent,
+        selectedContentColor = defaultColors.contentColor,
+        selectedLeadingContentColor = defaultColors.leadingContentColor,
+        selectedTrailingContentColor = defaultColors.trailingContentColor,
+        selectedOverlineContentColor = defaultColors.overlineContentColor,
+        selectedSupportingContentColor = defaultColors.supportingContentColor
+    )
+}
+
+// Rows span the screen edge to edge, so a press fills the whole row instead of rounding into a card.
+@Composable
+internal fun settingsRowShapes(): ListItemShapes =
+    ListItemDefaults.shapes(
+        shape = RectangleShape,
+        selectedShape = RectangleShape,
+        pressedShape = RectangleShape,
+        focusedShape = RectangleShape,
+        hoveredShape = RectangleShape,
+        draggedShape = RectangleShape
+    )
+
+@Composable
+fun SettingsNote(
+    text: String,
+    modifier: Modifier = Modifier
+) {
+    ListItem(
+        modifier = modifier.settingsRowHeight(),
+        leadingContent = {
+            Icon(
+                painter = painterResource(resource = Res.drawable.ic_info),
+                contentDescription = null
+            )
+        },
+        colors = settingsRowColors(),
+        contentPadding = settingsRowContentPadding
+    ) {
+        Text(text = text)
+    }
+}
+
+@Composable
+fun SettingsFootnote(
+    text: String,
+    modifier: Modifier = Modifier
+) {
+    Text(
+        text = text,
+        style = VadretTheme.textStyles.detail,
+        color = VadretTheme.colorScheme.onSurfaceVariant,
+        modifier = modifier.padding(
+            start = VadretTheme.spacing.large,
+            end = VadretTheme.spacing.large,
+            top = VadretTheme.spacing.small,
+            bottom = VadretTheme.spacing.large
+        )
+    )
 }

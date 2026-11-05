@@ -34,6 +34,7 @@ kotlin {
                 implementation project(':data:language')
                 implementation project(':data:theme')
                 implementation project(':domain:followedplace')
+                implementation project(':domain:pollenseason')
                 implementation project(':domain:warning')
                 implementation project(':features:forecastwarning')
                 implementation project(':features:radar')

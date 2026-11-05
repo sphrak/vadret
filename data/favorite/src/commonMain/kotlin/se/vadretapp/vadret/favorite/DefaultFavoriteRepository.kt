@@ -43,7 +43,8 @@ internal class DefaultFavoriteRepository(
         municipality: String,
         county: String,
         latitude: Double,
-        longitude: Double
+        longitude: Double,
+        maximumFavorites: Int
     ): Either<Failure, Favorite> =
         either {
             favoriteLocalDataSource
@@ -56,7 +57,8 @@ internal class DefaultFavoriteRepository(
                         latitude = latitude,
                         longitude = longitude,
                         createdAt = clock.now().toEpochMilliseconds()
-                    )
+                    ),
+                    maximumFavorites = maximumFavorites
                 ).toFavorite()
         }.catch { exception: Exception -> exception.toFailure() }
 

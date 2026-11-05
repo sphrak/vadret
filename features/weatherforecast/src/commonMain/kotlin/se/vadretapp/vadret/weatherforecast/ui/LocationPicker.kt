@@ -28,6 +28,8 @@ import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
+import se.vadretapp.vadret.followedplace.model.FavoriteChoice
+import se.vadretapp.vadret.followedplace.model.LocationChoices
 import se.vadretapp.vadret.ui.VadretTheme
 import se.vadretapp.vadret.ui.resources.Res
 import se.vadretapp.vadret.ui.resources.add_place
@@ -40,8 +42,6 @@ import se.vadretapp.vadret.ui.resources.ic_my_location
 import se.vadretapp.vadret.ui.resources.remove_favorite
 import se.vadretapp.vadret.ui.resources.selected
 import se.vadretapp.vadret.weatherforecast.WeatherForecastEvent
-import se.vadretapp.vadret.weatherforecast.model.FavoriteChoice
-import se.vadretapp.vadret.weatherforecast.model.LocationChoices
 
 private val locationTextMaxWidth = 180.dp
 private val menuIconSize = 20.dp

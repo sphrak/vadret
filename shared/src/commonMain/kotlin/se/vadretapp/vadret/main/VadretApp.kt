@@ -34,13 +34,20 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
+import se.vadretapp.vadret.di.koinAll
 import se.vadretapp.vadret.forecastwarning.ui.WarningDetailRoute
 import se.vadretapp.vadret.forecastwarning.ui.WarningMapHost
 import se.vadretapp.vadret.forecastwarning.ui.WarningRoute
 import se.vadretapp.vadret.forecastwarning.ui.WarningStoryRoute
 import se.vadretapp.vadret.main.navigation.PlaceForecastKey
 import se.vadretapp.vadret.main.navigation.RadarKey
+import se.vadretapp.vadret.main.navigation.SettingsAboutKey
+import se.vadretapp.vadret.main.navigation.SettingsDeveloperKey
 import se.vadretapp.vadret.main.navigation.SettingsKey
+import se.vadretapp.vadret.main.navigation.SettingsLicensesKey
+import se.vadretapp.vadret.main.navigation.SettingsPlacesKey
+import se.vadretapp.vadret.main.navigation.SettingsPollenKey
+import se.vadretapp.vadret.main.navigation.SettingsSectionKey
 import se.vadretapp.vadret.main.navigation.TabNavigation
 import se.vadretapp.vadret.main.navigation.TopLevelDestination
 import se.vadretapp.vadret.main.navigation.VadretNavigationBar
@@ -54,10 +61,18 @@ import se.vadretapp.vadret.main.navigation.currentTabKey
 import se.vadretapp.vadret.main.navigation.goBack
 import se.vadretapp.vadret.main.navigation.navigationBarPadding
 import se.vadretapp.vadret.main.navigation.open
+import se.vadretapp.vadret.main.navigation.openOnTab
 import se.vadretapp.vadret.main.navigation.openPlaceForecast
 import se.vadretapp.vadret.main.navigation.openWeatherTab
 import se.vadretapp.vadret.main.navigation.selectTab
+import se.vadretapp.vadret.main.navigation.shownEntries
+import se.vadretapp.vadret.settings.ui.AboutRoute
+import se.vadretapp.vadret.settings.ui.DeveloperRoute
+import se.vadretapp.vadret.settings.ui.LicensesRoute
+import se.vadretapp.vadret.settings.ui.PlacesRoute
+import se.vadretapp.vadret.settings.ui.PollenSettingsRoute
 import se.vadretapp.vadret.settings.ui.SettingsRoute
+import se.vadretapp.vadret.ui.SettingsSection
 import se.vadretapp.vadret.ui.VadretTheme
 import se.vadretapp.vadret.weatherforecast.ui.PlaceForecastRoute
 import se.vadretapp.vadret.weatherforecast.ui.PlaceIslandRoute
@@ -94,6 +109,30 @@ private val navigationConfiguration: SavedStateConfiguration = SavedStateConfigu
                 subclass = SettingsKey::class,
                 serializer = SettingsKey.serializer()
             )
+            subclass(
+                subclass = SettingsPlacesKey::class,
+                serializer = SettingsPlacesKey.serializer()
+            )
+            subclass(
+                subclass = SettingsSectionKey::class,
+                serializer = SettingsSectionKey.serializer()
+            )
+            subclass(
+                subclass = SettingsPollenKey::class,
+                serializer = SettingsPollenKey.serializer()
+            )
+            subclass(
+                subclass = SettingsAboutKey::class,
+                serializer = SettingsAboutKey.serializer()
+            )
+            subclass(
+                subclass = SettingsLicensesKey::class,
+                serializer = SettingsLicensesKey.serializer()
+            )
+            subclass(
+                subclass = SettingsDeveloperKey::class,
+                serializer = SettingsDeveloperKey.serializer()
+            )
         }
     }
 }
@@ -127,6 +166,10 @@ internal fun VadretApp(
     modifier: Modifier = Modifier
 ) {
     val tabPadding: PaddingValues = navigationBarPadding()
+    val settingsSections: List<SettingsSection> = koinAll()
+    val settingsSectionsByKey: Map<String, SettingsSection> = remember(settingsSections) {
+        settingsSections.associateBy { settingsSection: SettingsSection -> settingsSection.key }
+    }
     val tabEntryProvider: (NavKey) -> NavEntry<NavKey> = entryProvider {
         entry<WeatherKey> {
             TabPage(paddingValues = tabPadding) {
@@ -137,7 +180,7 @@ internal fun VadretApp(
                 )
             }
         }
-        entry<PlaceForecastKey> { placeForecastKey: PlaceForecastKey ->
+        entry<PlaceForecastKey>(metadata = detailTransitions) { placeForecastKey: PlaceForecastKey ->
             TabPage(paddingValues = tabPadding) {
                 PlaceForecastRoute(
                     latitude = placeForecastKey.latitude,
@@ -155,7 +198,12 @@ internal fun VadretApp(
                     onWarningClick = { warningIdentifier: String ->
                         tabNavigation.open(key = WarningDetailKey(warningIdentifier = warningIdentifier))
                     },
-                    onFollowedPlacesClick = { tabNavigation.selectTab(tabKey = SettingsKey) }
+                    onFollowedPlacesClick = {
+                        tabNavigation.openOnTab(
+                            tabKey = SettingsKey,
+                            key = SettingsPlacesKey
+                        )
+                    }
                 )
             }
         }
@@ -199,7 +247,49 @@ internal fun VadretApp(
             }
         }
         entry<SettingsKey> {
-            TabPage(paddingValues = tabPadding) { SettingsRoute() }
+            TabPage(paddingValues = tabPadding) {
+                SettingsRoute(
+                    onPlacesClick = { tabNavigation.open(key = SettingsPlacesKey) },
+                    onSectionClick = { sectionKey: String -> tabNavigation.open(key = SettingsSectionKey(sectionKey = sectionKey)) },
+                    onPollenClick = { tabNavigation.open(key = SettingsPollenKey) },
+                    onDeveloperClick = { tabNavigation.open(key = SettingsDeveloperKey) },
+                    onAboutClick = { tabNavigation.open(key = SettingsAboutKey) },
+                    settingsSections = settingsSections
+                )
+            }
+        }
+        entry<SettingsPlacesKey>(metadata = detailTransitions) {
+            TabPage(paddingValues = tabPadding) {
+                PlacesRoute(onBack = { tabNavigation.close(key = SettingsPlacesKey) })
+            }
+        }
+        entry<SettingsSectionKey>(metadata = detailTransitions) { settingsSectionKey: SettingsSectionKey ->
+            TabPage(paddingValues = tabPadding) {
+                settingsSectionsByKey[settingsSectionKey.sectionKey]?.Content(onBack = { tabNavigation.close(key = settingsSectionKey) })
+            }
+        }
+        entry<SettingsPollenKey>(metadata = detailTransitions) {
+            TabPage(paddingValues = tabPadding) {
+                PollenSettingsRoute(onBack = { tabNavigation.close(key = SettingsPollenKey) })
+            }
+        }
+        entry<SettingsAboutKey>(metadata = detailTransitions) {
+            TabPage(paddingValues = tabPadding) {
+                AboutRoute(
+                    onLicensesClick = { tabNavigation.open(key = SettingsLicensesKey) },
+                    onBack = { tabNavigation.close(key = SettingsAboutKey) }
+                )
+            }
+        }
+        entry<SettingsLicensesKey>(metadata = detailTransitions) {
+            TabPage(paddingValues = tabPadding) {
+                LicensesRoute(onBack = { tabNavigation.close(key = SettingsLicensesKey) })
+            }
+        }
+        entry<SettingsDeveloperKey>(metadata = detailTransitions) {
+            TabPage(paddingValues = tabPadding) {
+                DeveloperRoute(onBack = { tabNavigation.close(key = SettingsDeveloperKey) })
+            }
         }
     }
     val tabEntries: Map<NavKey, List<NavEntry<NavKey>>> = tabNavigation.tabBackStacks.mapValues { tabBackStack: Map.Entry<NavKey, NavBackStack<NavKey>> ->
@@ -228,7 +318,7 @@ internal fun VadretApp(
         WarningMapHost {
             RadarHost(radarTab = radarTab) {
                 NavDisplay(
-                    entries = tabNavigation.tabHistory.flatMap { tabKey: NavKey -> tabEntries.getValue(key = tabKey) },
+                    entries = tabNavigation.shownEntries(tabEntries = tabEntries),
                     onBack = { tabNavigation.goBack() },
                     transitionSpec = { instantTransition() },
                     popTransitionSpec = { instantTransition() },
@@ -240,6 +330,7 @@ internal fun VadretApp(
     }
 }
 
+// Screens slide over each other and a back gesture draws two at once, so each page covers the one beneath it.
 @Composable
 private fun TabPage(
     paddingValues: PaddingValues,
@@ -251,6 +342,7 @@ private fun TabPage(
             .padding(paddingValues = paddingValues)
             .consumeWindowInsets(paddingValues = paddingValues)
             .clipToBounds()
+            .background(color = VadretTheme.colorScheme.background)
     ) {
         content()
     }

@@ -2,6 +2,7 @@ package se.vadretapp.vadret.pushalert.usecase
 
 import io.github.sphrak.either.Either
 import kotlinx.coroutines.flow.first
+import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.favorite.FavoriteRepository
 import se.vadretapp.vadret.favorite.model.Favorite
 import se.vadretapp.vadret.pushalert.PushAlertRepository
@@ -14,32 +15,23 @@ internal class DefaultAddPlaceNameTask(
     private val favoriteRepository: FavoriteRepository,
     private val pushAlertRepository: PushAlertRepository
 ) : AddPlaceNameTask {
-    override suspend fun invoke(
-        pushAlertMessage: PushAlertMessage,
-        favoriteIds: Set<String>
-    ): PushAlertMessage {
-        val cell = pushAlertMessage.cell
-        if (cell == null || favoriteIds.isEmpty() || !pushAlertMessage.kind.isAboutOneCell()) {
+    override suspend fun invoke(pushAlertMessage: PushAlertMessage): PushAlertMessage {
+        val cell: String? = pushAlertMessage.cell
+        if (cell == null || !pushAlertMessage.kind.isAboutOneCell()) {
             return pushAlertMessage
         }
-        val placeName = chosenPlaceNameIn(
-            cell = cell,
-            favoriteIds = favoriteIds
-        )
+        val placeName: String? = savedPlaceNameIn(cell = cell)
         if (placeName == null || isWhereThePhoneIs(cell = cell)) {
             return pushAlertMessage
         }
         return pushAlertMessage.copy(title = "${pushAlertMessage.title}$PLACE_NAME_SEPARATOR$placeName")
     }
 
-    private suspend fun chosenPlaceNameIn(
-        cell: String,
-        favoriteIds: Set<String>
-    ): String? =
-        when (val favorites = favoriteRepository.observeFavorites().first()) {
+    private suspend fun savedPlaceNameIn(cell: String): String? =
+        when (val favorites: Either<Failure, List<Favorite>> = favoriteRepository.observeFavorites().first()) {
             is Either.Left -> null
             is Either.Right -> favorites.b.firstOrNull { favorite: Favorite ->
-                favorite.favoriteId in favoriteIds && favorite.toGeohashOrNull()?.toCell() == cell
+                favorite.toGeohashOrNull()?.toCell() == cell
             }?.locality
         }
 

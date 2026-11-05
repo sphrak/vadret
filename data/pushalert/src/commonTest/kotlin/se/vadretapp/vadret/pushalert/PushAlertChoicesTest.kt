@@ -16,8 +16,7 @@ class PushAlertChoicesTest {
             "without warnings" to EVERYTHING.copy(warningLowestLevel = null),
             "without the temperature" to EVERYTHING.copy(temperatureTrend = false),
             "without strong wind" to EVERYTHING.copy(strongWind = false),
-            "without one pollen" to EVERYTHING.copy(pollenChoices = listOf(BIRCH_FROM_MODERATE)),
-            "without one place" to EVERYTHING.copy(favoriteIds = setOf(MALMO_FAVORITE_ID))
+            "without one pollen" to EVERYTHING.copy(pollenChoices = listOf(BIRCH_FROM_MODERATE))
         )
         val wider = mapOf(
             "another warning level" to EVERYTHING.copy(warningLowestLevel = WarningAlertLevel.RED),
@@ -27,14 +26,7 @@ class PushAlertChoicesTest {
                     GRASS_FROM_LOW
                 )
             ),
-            "another pollen" to EVERYTHING.copy(pollenChoices = listOf(BIRCH_FROM_MODERATE, GRASS_FROM_LOW, ALDER_FROM_LOW)),
-            "another place" to EVERYTHING.copy(
-                favoriteIds = setOf(
-                    MALMO_FAVORITE_ID,
-                    GOTEBORG_FAVORITE_ID,
-                    UPPSALA_FAVORITE_ID
-                )
-            )
+            "another pollen" to EVERYTHING.copy(pollenChoices = listOf(BIRCH_FROM_MODERATE, GRASS_FROM_LOW, ALDER_FROM_LOW))
         )
 
         assertEquals(
@@ -42,12 +34,11 @@ class PushAlertChoicesTest {
             actual = (narrower + wider).mapValues { (_, pushAlertChoices) -> pushAlertChoices.isWithin(other = EVERYTHING) }
         )
         assertEquals(
-            expected = listOf(false, false, false, false),
+            expected = listOf(false, false, false),
             actual = listOf(
                 EVERYTHING.isWithin(other = EVERYTHING.copy(warningLowestLevel = null)),
                 EVERYTHING.isWithin(other = EVERYTHING.copy(temperatureTrend = false)),
-                EVERYTHING.isWithin(other = EVERYTHING.copy(strongWind = false)),
-                EVERYTHING.isWithin(other = EVERYTHING.copy(favoriteIds = emptySet()))
+                EVERYTHING.isWithin(other = EVERYTHING.copy(strongWind = false))
             )
         )
     }
@@ -60,7 +51,6 @@ class PushAlertChoicesTest {
             "only pollen" to PushAlertChoices.NOTHING_CHOSEN.copy(pollenChoices = listOf(BIRCH_FROM_MODERATE)),
             "only the temperature" to PushAlertChoices.NOTHING_CHOSEN.copy(temperatureTrend = true),
             "only strong wind" to PushAlertChoices.NOTHING_CHOSEN.copy(strongWind = true),
-            "only places" to PushAlertChoices.NOTHING_CHOSEN.copy(favoriteIds = EVERYTHING.favoriteIds),
             "everything" to EVERYTHING
         )
 
@@ -71,7 +61,6 @@ class PushAlertChoicesTest {
                 "only pollen" to true,
                 "only the temperature" to true,
                 "only strong wind" to true,
-                "only places" to false,
                 "everything" to true
             ),
             actual = choices.mapValues { (_, pushAlertChoices) -> pushAlertChoices.isAnythingChosen() }
@@ -95,13 +84,5 @@ private val EVERYTHING = PushAlertChoices(
     warningLowestLevel = WarningAlertLevel.YELLOW,
     pollenChoices = listOf(BIRCH_FROM_MODERATE, GRASS_FROM_LOW),
     temperatureTrend = true,
-    strongWind = true,
-    favoriteIds = setOf(
-        MALMO_FAVORITE_ID,
-        GOTEBORG_FAVORITE_ID
-    )
+    strongWind = true
 )
-
-private const val MALMO_FAVORITE_ID = "favorite-malmo"
-private const val GOTEBORG_FAVORITE_ID = "favorite-goteborg"
-private const val UPPSALA_FAVORITE_ID = "favorite-uppsala"

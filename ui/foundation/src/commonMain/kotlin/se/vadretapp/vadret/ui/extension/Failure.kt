@@ -8,6 +8,7 @@ import se.vadretapp.vadret.ui.resources.attestation_failed
 import se.vadretapp.vadret.ui.resources.attestation_refused
 import se.vadretapp.vadret.ui.resources.data_not_available_at_this_location
 import se.vadretapp.vadret.ui.resources.failed_loading_file
+import se.vadretapp.vadret.ui.resources.followed_places_limit_text
 import se.vadretapp.vadret.ui.resources.http_bad_request_400
 import se.vadretapp.vadret.ui.resources.http_forbidden_403
 import se.vadretapp.vadret.ui.resources.http_gateway_timeout_504
@@ -48,9 +49,9 @@ fun Failure.messageResource(): StringResource =
         ErrorCode.ATTESTATION_FAILED -> Res.string.attestation_failed
         ErrorCode.ATTESTATION_REFUSED -> Res.string.attestation_refused
         ErrorCode.UNSUPPORTED_AREA -> Res.string.push_alerts_only_in_sweden_text
+        ErrorCode.FOLLOWED_PLACE_LIMIT -> Res.string.followed_places_limit_text
         ErrorCode.PUSH_ALERT_NOT_CHOSEN,
         ErrorCode.FAVORITE_NAME_TAKEN,
-        ErrorCode.FOLLOWED_PLACE_LIMIT,
         ErrorCode.STORAGE_FAILED,
         ErrorCode.UNKNOWN -> Res.string.unhandled_error
     }

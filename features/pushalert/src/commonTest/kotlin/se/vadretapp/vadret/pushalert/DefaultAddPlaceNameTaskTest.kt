@@ -49,7 +49,7 @@ class DefaultAddPlaceNameTaskTest {
     }
 
     @Test
-    fun anAlertWithoutACellOrWithoutAnyChosenSavedPlaceIsLeftAsItIs() = runTest {
+    fun anAlertWithoutACellOrWithoutAnySavedPlaceIsLeftAsItIs() = runTest {
         val withoutCell = WIND_IN_MALMO.copy(cell = null)
 
         assertEquals(
@@ -61,14 +61,14 @@ class DefaultAddPlaceNameTaskTest {
                 addPlaceName(pushAlertMessage = withoutCell),
                 addPlaceName(
                     pushAlertMessage = WIND_IN_MALMO,
-                    favoriteIds = emptySet()
+                    favoriteRepository = FakeFavoriteRepository()
                 )
             )
         )
     }
 
     @Test
-    fun aCellThatIsNoChosenSavedPlaceIsLeftAsItIs() = runTest {
+    fun aCellWithNoSavedPlaceIsLeftAsItIs() = runTest {
         assertEquals(
             expected = listOf(
                 WIND_IN_MALMO,
@@ -77,13 +77,7 @@ class DefaultAddPlaceNameTaskTest {
             actual = listOf(
                 addPlaceName(
                     pushAlertMessage = WIND_IN_MALMO,
-                    favoriteIds = setOf(GOTEBORG_FAVORITE.favoriteId),
-                    favoriteRepository = FakeFavoriteRepository(
-                        favorites = listOf(
-                            MALMO_FAVORITE,
-                            GOTEBORG_FAVORITE
-                        )
-                    )
+                    favoriteRepository = FakeFavoriteRepository(favorites = listOf(GOTEBORG_FAVORITE))
                 ),
                 addPlaceName(pushAlertMessage = WIND_IN_MALMO.copy(cell = "u628"))
             )
@@ -91,7 +85,7 @@ class DefaultAddPlaceNameTaskTest {
     }
 
     @Test
-    fun aChosenSavedPlaceThatWasRemovedNamesNothing() = runTest {
+    fun aSavedPlaceThatWasRemovedNamesNothing() = runTest {
         assertEquals(
             expected = WIND_IN_MALMO,
             actual = addPlaceName(
@@ -102,7 +96,7 @@ class DefaultAddPlaceNameTaskTest {
     }
 
     @Test
-    fun aCellWhereThePhoneWasAtTheLastSyncIsLeftAsItIsEvenWhenAChosenSavedPlaceIsInIt() = runTest {
+    fun aCellWhereThePhoneWasAtTheLastSyncIsLeftAsItIsEvenWhenASavedPlaceIsInIt() = runTest {
         val windInStockholm = WIND_IN_MALMO.copy(cell = "u6sc")
 
         assertEquals(
@@ -114,7 +108,6 @@ class DefaultAddPlaceNameTaskTest {
             actual = listOf(
                 addPlaceName(
                     pushAlertMessage = windInStockholm,
-                    favoriteIds = setOf(SOLNA_FAVORITE.favoriteId),
                     favoriteRepository = FakeFavoriteRepository(favorites = listOf(SOLNA_FAVORITE))
                 ),
                 addPlaceName(
@@ -130,7 +123,7 @@ class DefaultAddPlaceNameTaskTest {
     }
 
     @Test
-    fun withoutAKeptSyncOrWithOneThatCannotBeReadTheChosenSavedPlaceIsStillNamed() = runTest {
+    fun withoutAKeptSyncOrWithOneThatCannotBeReadTheSavedPlaceIsStillNamed() = runTest {
         assertEquals(
             expected = List(size = 2) { WIND_IN_MALMO.copy(title = "Storm i dag - Malmö") },
             actual = listOf(
@@ -150,15 +143,11 @@ class DefaultAddPlaceNameTaskTest {
     }
 
     @Test
-    fun twoChosenSavedPlacesInOneCellAreNamedAfterTheFirstSaved() = runTest {
+    fun twoSavedPlacesInOneCellAreNamedAfterTheFirstSaved() = runTest {
         assertEquals(
             expected = WIND_IN_MALMO.copy(title = "Storm i dag - Limhamn"),
             actual = addPlaceName(
                 pushAlertMessage = WIND_IN_MALMO,
-                favoriteIds = setOf(
-                    MALMO_FAVORITE.favoriteId,
-                    LIMHAMN_FAVORITE.favoriteId
-                ),
                 favoriteRepository = FakeFavoriteRepository(
                     favorites = listOf(
                         LIMHAMN_FAVORITE,
@@ -186,17 +175,13 @@ class DefaultAddPlaceNameTaskTest {
 
 private suspend fun addPlaceName(
     pushAlertMessage: PushAlertMessage,
-    favoriteIds: Set<String> = setOf(MALMO_FAVORITE.favoriteId),
     favoriteRepository: FakeFavoriteRepository = FakeFavoriteRepository(favorites = listOf(MALMO_FAVORITE)),
     pushAlertRepository: FakePushAlertRepository = FakePushAlertRepository(syncedCurrentGeohash = SYNCED_IN_STOCKHOLM)
 ): PushAlertMessage =
     DefaultAddPlaceNameTask(
         favoriteRepository = favoriteRepository,
         pushAlertRepository = pushAlertRepository
-    )(
-        pushAlertMessage = pushAlertMessage,
-        favoriteIds = favoriteIds
-    )
+    )(pushAlertMessage = pushAlertMessage)
 
 private val SYNCED_IN_STOCKHOLM = Geohash(value = "u6sce")
 private val WIND_IN_MALMO = PushAlertMessage(

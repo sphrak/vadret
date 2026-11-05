@@ -1,12 +1,15 @@
 package se.vadretapp.vadret.favorite.local
 
+import androidx.sqlite.SQLiteException
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
+import se.vadretapp.vadret.favorite.exception.FavoriteLimitException
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 private fun favorite(
     favoriteId: String,
@@ -22,6 +25,14 @@ private fun favorite(
         latitude = 59.3293,
         longitude = 18.0686,
         createdAt = createdAt
+    )
+
+private const val MAXIMUM_FAVORITES = 5
+
+private suspend fun FavoriteLocalDataSource.add(favoriteEntity: FavoriteEntity): FavoriteEntity =
+    addFavorite(
+        favoriteEntity = favoriteEntity,
+        maximumFavorites = MAXIMUM_FAVORITES
     )
 
 class FavoriteDatabaseTest {
@@ -90,12 +101,13 @@ class FavoriteDatabaseTest {
         }
 
     @Test
-    fun `inserting a stored place keeps the stored row`() =
+    fun `inserting a stored place fails and keeps the stored row`() =
         testScope.runTest {
             favoriteDao.insert(favoriteEntity = favorite(favoriteId = "first", locality = "Kista", createdAt = 1L))
 
-            favoriteDao.insert(favoriteEntity = favorite(favoriteId = "second", locality = "Kista", createdAt = 2L))
-
+            assertFailsWith<SQLiteException> {
+                favoriteDao.insert(favoriteEntity = favorite(favoriteId = "second", locality = "Kista", createdAt = 2L))
+            }
             assertEquals(
                 expected = listOf(favorite(favoriteId = "first", locality = "Kista", createdAt = 1L)),
                 actual = favoriteDao.observeAll().first()
@@ -103,12 +115,13 @@ class FavoriteDatabaseTest {
         }
 
     @Test
-    fun `inserting a stored id keeps the stored row`() =
+    fun `inserting a stored id fails and keeps the stored row`() =
         testScope.runTest {
             favoriteDao.insert(favoriteEntity = favorite(favoriteId = "first", locality = "Kista"))
 
-            favoriteDao.insert(favoriteEntity = favorite(favoriteId = "first", locality = "Solna"))
-
+            assertFailsWith<SQLiteException> {
+                favoriteDao.insert(favoriteEntity = favorite(favoriteId = "first", locality = "Solna"))
+            }
             assertEquals(
                 expected = listOf(favorite(favoriteId = "first", locality = "Kista")),
                 actual = favoriteDao.observeAll().first()
@@ -137,7 +150,7 @@ class FavoriteDatabaseTest {
                         locality = "Berga",
                         municipality = "Linköping",
                         county = "Stockholms län"
-                    ).favoriteId
+                    )?.favoriteId
             )
         }
 
@@ -148,7 +161,7 @@ class FavoriteDatabaseTest {
 
             assertEquals(
                 expected = favoriteEntity,
-                actual = favoriteLocalDataSource.addFavorite(favoriteEntity = favoriteEntity)
+                actual = favoriteLocalDataSource.add(favoriteEntity = favoriteEntity)
             )
         }
 
@@ -156,9 +169,9 @@ class FavoriteDatabaseTest {
     fun `adding a stored place returns the stored favorite`() =
         testScope.runTest {
             val storedFavoriteEntity: FavoriteEntity = favorite(favoriteId = "first", locality = "Kista", createdAt = 1L)
-            favoriteLocalDataSource.addFavorite(favoriteEntity = storedFavoriteEntity)
+            favoriteLocalDataSource.add(favoriteEntity = storedFavoriteEntity)
 
-            val addedFavoriteEntity: FavoriteEntity = favoriteLocalDataSource.addFavorite(
+            val addedFavoriteEntity: FavoriteEntity = favoriteLocalDataSource.add(
                 favoriteEntity = favorite(favoriteId = "second", locality = "Kista", createdAt = 2L)
             )
 
@@ -167,16 +180,33 @@ class FavoriteDatabaseTest {
         }
 
     @Test
-    fun `removing a favorite keeps the others`() =
+    fun `a new place past the limit is not added`() =
         testScope.runTest {
             favoriteLocalDataSource.addFavorite(
+                favoriteEntity = favorite(favoriteId = "a", locality = "Kista"),
+                maximumFavorites = 1
+            )
+
+            assertFailsWith<FavoriteLimitException> {
+                favoriteLocalDataSource.addFavorite(
+                    favoriteEntity = favorite(favoriteId = "b", locality = "Solna"),
+                    maximumFavorites = 1
+                )
+            }
+            assertEquals(expected = listOf("a"), actual = favoriteDao.observeAll().first().map { favoriteEntity: FavoriteEntity -> favoriteEntity.favoriteId })
+        }
+
+    @Test
+    fun `removing a favorite keeps the others`() =
+        testScope.runTest {
+            favoriteLocalDataSource.add(
                 favoriteEntity = favorite(
                     favoriteId = "a",
                     locality = "Kista",
                     createdAt = 1L
                 )
             )
-            favoriteLocalDataSource.addFavorite(
+            favoriteLocalDataSource.add(
                 favoriteEntity = favorite(
                     favoriteId = "b",
                     locality = "Solna",
@@ -195,7 +225,7 @@ class FavoriteDatabaseTest {
     @Test
     fun `removing an unknown favorite changes nothing`() =
         testScope.runTest {
-            favoriteLocalDataSource.addFavorite(favoriteEntity = favorite(favoriteId = "a", locality = "Kista"))
+            favoriteLocalDataSource.add(favoriteEntity = favorite(favoriteId = "a", locality = "Kista"))
 
             favoriteLocalDataSource.removeFavorite(favoriteId = "unknown")
 
@@ -208,10 +238,10 @@ class FavoriteDatabaseTest {
     @Test
     fun `a removed place can be added again`() =
         testScope.runTest {
-            favoriteLocalDataSource.addFavorite(favoriteEntity = favorite(favoriteId = "a", locality = "Kista"))
+            favoriteLocalDataSource.add(favoriteEntity = favorite(favoriteId = "a", locality = "Kista"))
             favoriteLocalDataSource.removeFavorite(favoriteId = "a")
 
-            favoriteLocalDataSource.addFavorite(favoriteEntity = favorite(favoriteId = "b", locality = "Kista"))
+            favoriteLocalDataSource.add(favoriteEntity = favorite(favoriteId = "b", locality = "Kista"))
 
             assertEquals(
                 expected = listOf(favorite(favoriteId = "b", locality = "Kista")),

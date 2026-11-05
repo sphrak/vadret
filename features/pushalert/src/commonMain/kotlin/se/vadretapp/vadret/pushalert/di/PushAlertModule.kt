@@ -10,9 +10,7 @@ import se.vadretapp.vadret.pushalert.PushAlertsAppStartHook
 import se.vadretapp.vadret.pushalert.PushAlertsSettingsSection
 import se.vadretapp.vadret.pushalert.PushAlertsViewModel
 import se.vadretapp.vadret.pushalert.usecase.AddPlaceNameTask
-import se.vadretapp.vadret.pushalert.usecase.AdoptPushAlertFavoritesTask
 import se.vadretapp.vadret.pushalert.usecase.DefaultAddPlaceNameTask
-import se.vadretapp.vadret.pushalert.usecase.DefaultAdoptPushAlertFavoritesTask
 import se.vadretapp.vadret.pushalert.usecase.DefaultGetCurrentGeohashTask
 import se.vadretapp.vadret.pushalert.usecase.DefaultGetPollenTypesTask
 import se.vadretapp.vadret.pushalert.usecase.DefaultGetPushAlertGeohashesTask
@@ -42,7 +40,6 @@ val pushAlertModule: Module = module {
             sealedMessageKey = get(),
             getCurrentGeohashTask = get(),
             getPushAlertGeohashesTask = get(),
-            locationRepository = get(),
             clock = get()
         )
     }
@@ -51,7 +48,6 @@ val pushAlertModule: Module = module {
     factoryOf(::DefaultIsOutsideSwedenTask) { bind<IsOutsideSwedenTask>() }
     factoryOf(::DefaultObservePushAlertChoicesTask) { bind<ObservePushAlertChoicesTask>() }
     factoryOf(::DefaultObservePushAlertSyncPendingTask) { bind<ObservePushAlertSyncPendingTask>() }
-    factoryOf(::DefaultAdoptPushAlertFavoritesTask) { bind<AdoptPushAlertFavoritesTask>() }
     factoryOf(::DefaultSavePushAlertChoicesTask) { bind<SavePushAlertChoicesTask>() }
     factoryOf(::DefaultGetPollenTypesTask) { bind<GetPollenTypesTask>() }
     factoryOf(::DefaultAddPlaceNameTask) { bind<AddPlaceNameTask>() }
@@ -70,7 +66,6 @@ val pushAlertModule: Module = module {
     single<SettingsSection>(qualifier = named(name = PUSH_ALERTS_QUALIFIER)) { PushAlertsSettingsSection() }
     single<AppStartHook>(qualifier = named(name = PUSH_ALERTS_QUALIFIER)) {
         PushAlertsAppStartHook(
-            adoptPushAlertFavoritesTask = get(),
             syncPushAlertsTask = get(),
             observeFollowedPlacesTask = get()
         )

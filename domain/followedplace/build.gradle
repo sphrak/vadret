@@ -15,9 +15,11 @@ kotlin {
                 implementation project(':data:favorite')
                 implementation project(':data:location')
                 implementation project(':data:nominatim')
+                implementation project(':data:place')
                 implementation libs.coroutines.core
                 implementation libs.either
                 implementation libs.koin.core
+                implementation libs.kotlinx.collections.immutable
             }
         }
         commonTest {

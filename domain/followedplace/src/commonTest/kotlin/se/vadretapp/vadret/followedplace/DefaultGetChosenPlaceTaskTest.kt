@@ -6,6 +6,7 @@ import io.github.sphrak.either.extension.asRight
 import kotlinx.coroutines.test.runTest
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
+import se.vadretapp.vadret.followedplace.extension.toStoredLocation
 import se.vadretapp.vadret.followedplace.model.FollowedPlace
 import se.vadretapp.vadret.location.model.StoredLocation
 import kotlin.test.Test

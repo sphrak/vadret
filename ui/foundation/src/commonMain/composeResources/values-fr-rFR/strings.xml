@@ -41,8 +41,7 @@
     <string name="permission_missing">Il manque les permissions requises pour que l\'application fonctionne.</string>
     <string name="permission_granted">Permission accordée !</string>
     <string name="permission_denied">Permission refusée !</string>
-    <string name="about_app_about_title">A propos de l\'application</string>
-    <string name="about_app_libraries_tab_title">Bibliothèques</string>
+    <string name="licenses_title">Licences</string>
     <string name="about_app_description">Application météo pour la Suède</string>
     <string name="project_third_party">Projet</string>
     <string name="warning">Avertissement</string>
@@ -78,9 +77,6 @@
     <string name="licenses_intro">Vädret est construit avec les projets open source suivants.</string>
     <string name="forecast_days">Jours</string>
     <string name="forecast_hours">Heures</string>
-    <string name="enable_hourly_forecast">Activer la météo heure par heure</string>
-    <string name="hourly_forecast_is_enabled">Vous pouvez passer des jours aux heures</string>
-    <string name="hourly_forecast_is_disabled">Seuls les jours sont affichés</string>
     <string name="today">Aujourd\'hui</string>
     <string name="expanded">Développé</string>
     <string name="collapsed">Réduit</string>
@@ -98,16 +94,6 @@
     <string name="warning_when">Quand</string>
     <string name="close">Fermer</string>
     <string name="back">Retour</string>
-    <string name="show_pollen">Afficher les pollens</string>
-    <string name="pollen_is_shown">La carte des pollens est activée</string>
-    <string name="pollen_is_hidden">Les pollens sont masqués</string>
-    <string name="pollen_allergies">Pollens mis en avant</string>
-    <string name="pollen_no_allergies">Aucun choisi</string>
-    <plurals name="pollen_allergens_selected">
-        <item quantity="one">%1$d choisi</item>
-        <item quantity="other">%1$d choisis</item>
-    </plurals>
-    <string name="pollen_allergies_description">Choisissez les pollens à mettre en avant. La carte les affiche en premier.</string>
     <string name="pollen_types_not_available">Impossible de charger les types de pollen. Réessayez plus tard.</string>
     <string name="pollen_hibernating_title">Les pollens hibernent</string>
     <string name="pollen_hibernating_text">Les bulletins polliniques reviendront au début de la saison, généralement vers février.</string>
@@ -115,19 +101,9 @@
     <string name="save_place">Enregistrer le lieu</string>
     <string name="open_forecast">Ouvrir la prévision</string>
     <string name="warning_affects_places">Concerne %1$s</string>
-    <string name="followed_places">Lieux suivis</string>
-    <string name="followed_places_text">Les alertes et les notifications concernent le lieu choisi et jusqu\'à 4 lieux suivis.</string>
-    <string name="followed_place_chosen">Lieu choisi</string>
     <string name="followed_place_position">Votre position</string>
-    <string name="followed_place_on">Suivi</string>
-    <string name="followed_place_off">Non suivi</string>
-    <string name="followed_places_limit">4 lieux suivis au maximum</string>
-    <string name="followed_places_limit_text">En plus du lieu choisi, 4 lieux au maximum peuvent être suivis. Arrêtez d\'abord de suivre un autre lieu.</string>
-    <string name="followed_places_only_in_sweden">Les alertes ne concernent que la Suède</string>
-    <string name="followed_places_only_in_sweden_text">Vädret ne montre les alertes que pour les lieux en Suède, et ce lieu est hors de Suède.</string>
     <string name="warnings_for_places">Alertes pour %1$s</string>
     <string name="change_followed_places">Modifier</string>
-    <string name="push_places_followed_text">Les notifications sont envoyées pour le lieu choisi et vos lieux suivis.</string>
     <string name="not_saved">Non enregistré</string>
     <string name="saved">Enregistré</string>
     <string name="save">Enregistrer</string>

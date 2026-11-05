@@ -1,12 +1,8 @@
 package se.vadretapp.vadret.pushalert.ui
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -14,7 +10,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.di.koinViewModel
@@ -27,44 +22,56 @@ import se.vadretapp.vadret.pushalert.model.PollenAlertLevel
 import se.vadretapp.vadret.pushalert.model.WarningAlertLevel
 import se.vadretapp.vadret.theme.model.Theme
 import se.vadretapp.vadret.ui.ChoiceDialog
-import se.vadretapp.vadret.ui.SettingsRowDivider
+import se.vadretapp.vadret.ui.InfoDialog
+import se.vadretapp.vadret.ui.SettingsFootnote
+import se.vadretapp.vadret.ui.SettingsNote
+import se.vadretapp.vadret.ui.SettingsRow
+import se.vadretapp.vadret.ui.SettingsScaffold
 import se.vadretapp.vadret.ui.SettingsSectionHeader
-import se.vadretapp.vadret.ui.SettingsValueRow
 import se.vadretapp.vadret.ui.SwitchRow
 import se.vadretapp.vadret.ui.ThemePreviewParameterProvider
-import se.vadretapp.vadret.ui.VadretCard
 import se.vadretapp.vadret.ui.VadretTheme
 import se.vadretapp.vadret.ui.extension.messageResource
 import se.vadretapp.vadret.ui.resources.Res
 import se.vadretapp.vadret.ui.resources.attestation_refused
-import se.vadretapp.vadret.ui.resources.ic_chevron_right
 import se.vadretapp.vadret.ui.resources.lowest_pollen_level
-import se.vadretapp.vadret.ui.resources.lowest_warning_level
 import se.vadretapp.vadret.ui.resources.notifications_are_off
 import se.vadretapp.vadret.ui.resources.notifications_are_off_text
-import se.vadretapp.vadret.ui.resources.ok
-import se.vadretapp.vadret.ui.resources.pollen_alerts
-import se.vadretapp.vadret.ui.resources.pollen_alerts_off
-import se.vadretapp.vadret.ui.resources.pollen_alerts_on
-import se.vadretapp.vadret.ui.resources.push_alerts
+import se.vadretapp.vadret.ui.resources.notifications_cover_places
+import se.vadretapp.vadret.ui.resources.notifications_weather
+import se.vadretapp.vadret.ui.resources.pollen
 import se.vadretapp.vadret.ui.resources.push_alerts_not_available
 import se.vadretapp.vadret.ui.resources.push_alerts_not_sent
 import se.vadretapp.vadret.ui.resources.push_alerts_only_in_sweden
 import se.vadretapp.vadret.ui.resources.push_alerts_only_in_sweden_text
-import se.vadretapp.vadret.ui.resources.push_places
-import se.vadretapp.vadret.ui.resources.push_places_followed_text
+import se.vadretapp.vadret.ui.resources.settings_notifications
 import se.vadretapp.vadret.ui.resources.strong_wind_alerts
-import se.vadretapp.vadret.ui.resources.strong_wind_alerts_off
-import se.vadretapp.vadret.ui.resources.strong_wind_alerts_on
+import se.vadretapp.vadret.ui.resources.strong_wind_alerts_summary
 import se.vadretapp.vadret.ui.resources.temperature_alerts
-import se.vadretapp.vadret.ui.resources.temperature_alerts_off
-import se.vadretapp.vadret.ui.resources.temperature_alerts_on
 import se.vadretapp.vadret.ui.resources.warning_alerts
-import se.vadretapp.vadret.ui.resources.warning_alerts_off
-import se.vadretapp.vadret.ui.resources.warning_alerts_on
+import se.vadretapp.vadret.ui.resources.warning_alerts_summary
+import se.vadretapp.vadret.ui.resources.warning_level
+
+private const val SYNC_PENDING_KEY = "sync-pending"
+private const val WEATHER_HEADER_KEY = "weather-header"
+private const val WARNINGS_KEY = "warnings"
+private const val WARNING_LEVEL_KEY = "warning-level"
+private const val TEMPERATURE_KEY = "temperature"
+private const val STRONG_WIND_KEY = "strong-wind"
+private const val POLLEN_HEADER_KEY = "pollen-header"
+private const val POLLEN_LEVEL_KEY = "pollen-level"
+private const val PLACES_KEY = "places"
+
+private enum class PushAlertsContentType {
+    NOTE,
+    HEADER,
+    ROW,
+    TEXT
+}
 
 @Composable
 internal fun PushAlertsRoute(
+    onBack: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: PushAlertsViewModel = koinViewModel()
 ) {
@@ -83,54 +90,49 @@ internal fun PushAlertsRoute(
     PushAlertsScreen(
         state = state,
         onEvent = viewModel::onEvent,
+        onBack = onBack,
         modifier = modifier
     )
 }
 
 @Composable
-internal fun PushAlertsScreen(
+private fun PushAlertsScreen(
     state: PushAlertsState,
     onEvent: (PushAlertsEvent) -> Unit,
+    onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(modifier = modifier) {
-        SettingsSectionHeader(text = stringResource(resource = Res.string.push_alerts))
+    val failure: Failure? = state.failure
+    SettingsScaffold(
+        title = stringResource(resource = Res.string.settings_notifications),
+        onBack = onBack,
+        modifier = modifier
+    ) {
         if (state.isSyncPending) {
-            Text(
-                text = stringResource(resource = Res.string.push_alerts_not_sent),
-                style = VadretTheme.textStyles.body,
-                color = VadretTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(all = VadretTheme.spacing.large)
-            )
+            item(key = SYNC_PENDING_KEY, contentType = PushAlertsContentType.NOTE) {
+                SettingsNote(text = stringResource(resource = Res.string.push_alerts_not_sent))
+            }
         }
-        WeatherAlertsCard(
+        weatherAlerts(
             state = state,
             onEvent = onEvent
         )
         if (state.pollenTypes.isNotEmpty()) {
-            SettingsSectionHeader(text = stringResource(resource = Res.string.pollen_alerts))
-            PollenAlertsCard(
+            pollenAlerts(
                 state = state,
                 onEvent = onEvent
             )
         }
-        SettingsSectionHeader(text = stringResource(resource = Res.string.push_places))
-        Text(
-            text = stringResource(resource = Res.string.push_places_followed_text),
-            style = VadretTheme.textStyles.body,
-            color = VadretTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(all = VadretTheme.spacing.large)
-        )
-        val failure: Failure? = state.failure
-        if (failure != null) {
-            Text(
-                text = stringResource(resource = failure.messageResource()),
-                color = VadretTheme.colorScheme.error,
-                modifier = Modifier
-                    .clickable { onEvent(PushAlertsEvent.OnFailureDismissed) }
-                    .padding(all = VadretTheme.spacing.large)
-            )
+        item(key = PLACES_KEY, contentType = PushAlertsContentType.TEXT) {
+            SettingsFootnote(text = stringResource(resource = Res.string.notifications_cover_places))
         }
+    }
+    if (failure != null) {
+        InfoDialog(
+            title = stringResource(resource = Res.string.settings_notifications),
+            text = stringResource(resource = failure.messageResource()),
+            onDismiss = { onEvent(PushAlertsEvent.OnFailureDismissed) }
+        )
     }
 
     PushAlertsDialogs(
@@ -139,81 +141,78 @@ internal fun PushAlertsScreen(
     )
 }
 
-@Composable
-private fun WeatherAlertsCard(
+private fun LazyListScope.weatherAlerts(
     state: PushAlertsState,
-    onEvent: (PushAlertsEvent) -> Unit,
-    modifier: Modifier = Modifier
+    onEvent: (PushAlertsEvent) -> Unit
 ) {
     val warningLowestLevel: WarningAlertLevel? = state.choices.warningLowestLevel
-    VadretCard(modifier = modifier) {
+    item(key = WEATHER_HEADER_KEY, contentType = PushAlertsContentType.HEADER) {
+        SettingsSectionHeader(text = stringResource(resource = Res.string.notifications_weather))
+    }
+    item(key = WARNINGS_KEY, contentType = PushAlertsContentType.ROW) {
         SwitchRow(
             title = stringResource(resource = Res.string.warning_alerts),
-            checkedSummary = stringResource(resource = Res.string.warning_alerts_on),
-            uncheckedSummary = stringResource(resource = Res.string.warning_alerts_off),
+            summary = stringResource(resource = Res.string.warning_alerts_summary),
             isChecked = warningLowestLevel != null,
             onCheckedChange = { isChecked: Boolean -> onEvent(PushAlertsEvent.OnWarningAlertsToggled(isEnabled = isChecked)) }
         )
-        if (warningLowestLevel != null) {
-            SettingsRowDivider()
-            SettingsValueRow(
-                title = stringResource(resource = Res.string.lowest_warning_level),
-                value = stringResource(resource = warningLowestLevel.labelResource()),
-                trailingIconResource = Res.drawable.ic_chevron_right,
+    }
+    if (warningLowestLevel != null) {
+        item(key = WARNING_LEVEL_KEY, contentType = PushAlertsContentType.ROW) {
+            SettingsRow(
+                title = stringResource(resource = Res.string.warning_level),
+                summary = stringResource(resource = warningLowestLevel.labelResource()),
                 onClick = { onEvent(PushAlertsEvent.OnWarningLevelRowClicked) }
             )
         }
-        SettingsRowDivider()
+    }
+    item(key = TEMPERATURE_KEY, contentType = PushAlertsContentType.ROW) {
         SwitchRow(
             title = stringResource(resource = Res.string.temperature_alerts),
-            checkedSummary = stringResource(resource = Res.string.temperature_alerts_on),
-            uncheckedSummary = stringResource(resource = Res.string.temperature_alerts_off),
             isChecked = state.choices.temperatureTrend,
             onCheckedChange = { isChecked: Boolean -> onEvent(PushAlertsEvent.OnTemperatureTrendToggled(isEnabled = isChecked)) }
         )
-        SettingsRowDivider()
+    }
+    item(key = STRONG_WIND_KEY, contentType = PushAlertsContentType.ROW) {
         SwitchRow(
             title = stringResource(resource = Res.string.strong_wind_alerts),
-            checkedSummary = stringResource(resource = Res.string.strong_wind_alerts_on),
-            uncheckedSummary = stringResource(resource = Res.string.strong_wind_alerts_off),
+            summary = stringResource(resource = Res.string.strong_wind_alerts_summary),
             isChecked = state.choices.strongWind,
             onCheckedChange = { isChecked: Boolean -> onEvent(PushAlertsEvent.OnStrongWindToggled(isEnabled = isChecked)) }
         )
     }
 }
 
-@Composable
-private fun PollenAlertsCard(
+private fun LazyListScope.pollenAlerts(
     state: PushAlertsState,
-    onEvent: (PushAlertsEvent) -> Unit,
-    modifier: Modifier = Modifier
+    onEvent: (PushAlertsEvent) -> Unit
 ) {
-    VadretCard(modifier = modifier) {
-        state.pollenTypes.forEachIndexed { index: Int, pollenType: PollenType ->
-            if (index > 0) {
-                SettingsRowDivider()
-            }
-            SwitchRow(
-                title = pollenType.name,
-                checkedSummary = stringResource(resource = Res.string.pollen_alerts_on),
-                uncheckedSummary = stringResource(resource = Res.string.pollen_alerts_off),
-                isChecked = pollenType.pollenId in state.chosenPollenTypeIds,
-                onCheckedChange = { isChecked: Boolean ->
-                    onEvent(
-                        PushAlertsEvent.OnPollenTypeToggled(
-                            pollenTypeId = pollenType.pollenId,
-                            isEnabled = isChecked
-                        )
+    item(key = POLLEN_HEADER_KEY, contentType = PushAlertsContentType.HEADER) {
+        SettingsSectionHeader(text = stringResource(resource = Res.string.pollen))
+    }
+    items(
+        items = state.pollenTypes,
+        key = { pollenType: PollenType -> pollenType.pollenId },
+        contentType = { PushAlertsContentType.ROW }
+    ) { pollenType: PollenType ->
+        SwitchRow(
+            title = pollenType.name,
+            isChecked = pollenType.pollenId in state.chosenPollenTypeIds,
+            onCheckedChange = { isChecked: Boolean ->
+                onEvent(
+                    PushAlertsEvent.OnPollenTypeToggled(
+                        pollenTypeId = pollenType.pollenId,
+                        isEnabled = isChecked
                     )
-                }
-            )
-        }
-        if (state.chosenPollenTypeIds.isNotEmpty()) {
-            SettingsRowDivider()
-            SettingsValueRow(
+                )
+            }
+        )
+    }
+    if (state.chosenPollenTypeIds.isNotEmpty()) {
+        item(key = POLLEN_LEVEL_KEY, contentType = PushAlertsContentType.ROW) {
+            SettingsRow(
                 title = stringResource(resource = Res.string.lowest_pollen_level),
-                value = stringResource(resource = state.pollenLevel.labelResource()),
-                trailingIconResource = Res.drawable.ic_chevron_right,
+                summary = stringResource(resource = state.pollenLevel.labelResource()),
                 onClick = { onEvent(PushAlertsEvent.OnPollenLevelRowClicked) }
             )
         }
@@ -229,7 +228,7 @@ private fun PushAlertsDialogs(
     val warningLowestLevel: WarningAlertLevel? = state.choices.warningLowestLevel
     if (state.isWarningLevelDialogVisible && warningLowestLevel != null) {
         ChoiceDialog(
-            title = stringResource(resource = Res.string.lowest_warning_level),
+            title = stringResource(resource = Res.string.warning_level),
             choices = WarningAlertLevel.entries,
             selectedChoice = warningLowestLevel,
             choiceLabel = { warningAlertLevel: WarningAlertLevel -> stringResource(resource = warningAlertLevel.labelResource()) },
@@ -250,49 +249,29 @@ private fun PushAlertsDialogs(
         )
     }
     if (state.isNotificationPermissionDialogVisible) {
-        ExplanationDialog(
-            titleResource = Res.string.notifications_are_off,
-            textResource = Res.string.notifications_are_off_text,
+        InfoDialog(
+            title = stringResource(resource = Res.string.notifications_are_off),
+            text = stringResource(resource = Res.string.notifications_are_off_text),
             onDismiss = { onEvent(PushAlertsEvent.OnNotificationPermissionDialogDismissed) },
             modifier = modifier
         )
     }
     if (state.isOutsideSwedenDialogVisible) {
-        ExplanationDialog(
-            titleResource = Res.string.push_alerts_only_in_sweden,
-            textResource = Res.string.push_alerts_only_in_sweden_text,
+        InfoDialog(
+            title = stringResource(resource = Res.string.push_alerts_only_in_sweden),
+            text = stringResource(resource = Res.string.push_alerts_only_in_sweden_text),
             onDismiss = { onEvent(PushAlertsEvent.OnOutsideSwedenDialogDismissed) },
             modifier = modifier
         )
     }
     if (state.isAttestationRefusedDialogVisible) {
-        ExplanationDialog(
-            titleResource = Res.string.push_alerts_not_available,
-            textResource = Res.string.attestation_refused,
+        InfoDialog(
+            title = stringResource(resource = Res.string.push_alerts_not_available),
+            text = stringResource(resource = Res.string.attestation_refused),
             onDismiss = { onEvent(PushAlertsEvent.OnAttestationRefusedDialogDismissed) },
             modifier = modifier
         )
     }
-}
-
-@Composable
-private fun ExplanationDialog(
-    titleResource: StringResource,
-    textResource: StringResource,
-    onDismiss: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    AlertDialog(
-        modifier = modifier,
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text(text = stringResource(resource = Res.string.ok))
-            }
-        },
-        title = { Text(text = stringResource(resource = titleResource)) },
-        text = { Text(text = stringResource(resource = textResource)) }
-    )
 }
 
 @Preview
@@ -304,6 +283,7 @@ private fun PushAlertsScreenPreview(
         PushAlertsScreen(
             state = pushAlertsPreviewState(),
             onEvent = {},
+            onBack = {},
             modifier = Modifier.background(color = VadretTheme.colorScheme.background)
         )
     }

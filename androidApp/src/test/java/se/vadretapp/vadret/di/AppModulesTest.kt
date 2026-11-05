@@ -18,6 +18,11 @@ import se.vadretapp.vadret.forecastwarning.WarningDetailViewModel
 import se.vadretapp.vadret.forecastwarning.WarningStoryViewModel
 import se.vadretapp.vadret.forecastwarning.WarningViewModel
 import se.vadretapp.vadret.radar.RadarViewModel
+import se.vadretapp.vadret.settings.AboutViewModel
+import se.vadretapp.vadret.settings.DeveloperViewModel
+import se.vadretapp.vadret.settings.LicensesViewModel
+import se.vadretapp.vadret.settings.PlacesViewModel
+import se.vadretapp.vadret.settings.PollenSettingsViewModel
 import se.vadretapp.vadret.settings.SettingsViewModel
 import se.vadretapp.vadret.weatherforecast.WeatherForecastViewModel
 import java.io.File
@@ -66,6 +71,11 @@ class AppModulesTest {
 
         assertNotNull(actual = koin.get<RadarViewModel>())
         assertNotNull(actual = koin.get<SettingsViewModel>())
+        assertNotNull(actual = koin.get<AboutViewModel>())
+        assertNotNull(actual = koin.get<DeveloperViewModel>())
+        assertNotNull(actual = koin.get<LicensesViewModel>())
+        assertNotNull(actual = koin.get<PlacesViewModel>())
+        assertNotNull(actual = koin.get<PollenSettingsViewModel>())
         assertNotNull(actual = koin.get<WarningViewModel>())
         assertNotNull(actual = koin.get<WarningDetailViewModel>())
         assertNotNull(actual = koin.get<WarningStoryViewModel>())

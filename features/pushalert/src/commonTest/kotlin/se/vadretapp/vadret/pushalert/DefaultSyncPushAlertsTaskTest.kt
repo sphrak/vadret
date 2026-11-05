@@ -210,18 +210,11 @@ class DefaultSyncPushAlertsTaskTest {
     }
 
     @Test
-    fun chosenSavedPlacesInSwedenAreFollowedAfterWhereThePhoneIs() = runTest {
+    fun savedPlacesInSwedenAreFollowedAfterWhereThePhoneIs() = runTest {
         val pushAlertRepository = FakePushAlertRepository(choices = WARNINGS_FROM_YELLOW)
 
         syncPushAlertsTask(
             pushAlertRepository = pushAlertRepository,
-            locationRepository = FakeLocationRepository(
-                followedFavoriteIds = setOf(
-                    MALMO_FAVORITE.favoriteId,
-                    GOTEBORG_FAVORITE.favoriteId,
-                    BERLIN_FAVORITE.favoriteId
-                )
-            ),
             favoriteRepository = FakeFavoriteRepository(
                 favorites = listOf(
                     GOTEBORG_FAVORITE,
@@ -233,7 +226,7 @@ class DefaultSyncPushAlertsTaskTest {
         )()
 
         assertEquals(
-            expected = "subscribe installation-1 u6sce,u6282,u3chr YELLOW false false",
+            expected = "subscribe installation-1 u6sce,u6282,u6ss9,u3chr YELLOW false false",
             actual = pushAlertRepository.calls.last()
         )
     }
@@ -250,7 +243,6 @@ class DefaultSyncPushAlertsTaskTest {
 
         syncPushAlertsTask(
             pushAlertRepository = pushAlertRepository,
-            locationRepository = FakeLocationRepository(followedFavoriteIds = sharingPlaces.map { favorite -> favorite.favoriteId }.toSet()),
             favoriteRepository = FakeFavoriteRepository(favorites = sharingPlaces)
         )()
 
@@ -274,7 +266,6 @@ class DefaultSyncPushAlertsTaskTest {
 
         syncPushAlertsTask(
             pushAlertRepository = pushAlertRepository,
-            locationRepository = FakeLocationRepository(followedFavoriteIds = manyPlaces.map { favorite -> favorite.favoriteId }.toSet()),
             favoriteRepository = FakeFavoriteRepository(favorites = manyPlaces)
         )()
 
@@ -295,12 +286,6 @@ class DefaultSyncPushAlertsTaskTest {
         val pushAlertRepository = FakePushAlertRepository(choices = WARNINGS_FROM_YELLOW)
         val syncPushAlertsTask = syncPushAlertsTask(
             pushAlertRepository = pushAlertRepository,
-            locationRepository = FakeLocationRepository(
-                followedFavoriteIds = setOf(
-                    MALMO_FAVORITE.favoriteId,
-                    GOTEBORG_FAVORITE.favoriteId
-                )
-            ),
             favoriteRepository = favoriteRepository
         )
 
@@ -331,7 +316,6 @@ class DefaultSyncPushAlertsTaskTest {
         ).map { pushAlertRepository: FakePushAlertRepository ->
             syncPushAlertsTask(
                 pushAlertRepository = pushAlertRepository,
-                locationRepository = FakeLocationRepository(followedFavoriteIds = setOf(MALMO_FAVORITE.favoriteId)),
                 favoriteRepository = FakeFavoriteRepository(favorites = listOf(MALMO_FAVORITE))
             )()
         }
@@ -358,7 +342,6 @@ class DefaultSyncPushAlertsTaskTest {
 
         val synced = syncPushAlertsTask(
             pushAlertRepository = pushAlertRepository,
-            locationRepository = FakeLocationRepository(followedFavoriteIds = setOf(MALMO_FAVORITE.favoriteId)),
             favoriteRepository = FakeFavoriteRepository(
                 favorites = listOf(MALMO_FAVORITE),
                 failure = Failure(errorCode = ErrorCode.STORAGE_FAILED)
@@ -382,7 +365,6 @@ class DefaultSyncPushAlertsTaskTest {
 
         syncPushAlertsTask(
             pushAlertRepository = followingTheGps,
-            locationRepository = FakeLocationRepository(followedFavoriteIds = setOf(MALMO_FAVORITE.favoriteId)),
             favoriteRepository = FakeFavoriteRepository(favorites = listOf(MALMO_FAVORITE))
         )()
         syncPushAlertsTask(
@@ -791,8 +773,10 @@ private fun syncPushAlertsTask(
     notificationPermissionSource = notificationPermissionSource,
     sealedMessageKey = sealedMessageKey,
     getCurrentGeohashTask = DefaultGetCurrentGeohashTask(getChosenPlaceTask = FakeGetChosenPlaceTask(locationRepository = locationRepository)),
-    getPushAlertGeohashesTask = DefaultGetPushAlertGeohashesTask(favoriteRepository = favoriteRepository),
-    locationRepository = locationRepository,
+    getPushAlertGeohashesTask = DefaultGetPushAlertGeohashesTask(
+        favoriteRepository = favoriteRepository,
+        locationRepository = locationRepository
+    ),
     clock = FIXED_CLOCK
 )
 
@@ -804,8 +788,7 @@ private val WARNINGS_FROM_YELLOW = PushAlertChoices(
     warningLowestLevel = WarningAlertLevel.YELLOW,
     pollenChoices = emptyList(),
     temperatureTrend = false,
-    strongWind = false,
-    favoriteIds = emptySet()
+    strongWind = false
 )
 
 private val STRONG_WIND_ONLY = PushAlertChoices.NOTHING_CHOSEN.copy(strongWind = true)

@@ -60,18 +60,27 @@ private class FailingFavoriteLocalDataSource(
     private val exception: Exception
 ) : FavoriteLocalDataSource {
     override fun observeFavorites(): Flow<List<FavoriteEntity>> = flow { throw exception }
-    override suspend fun addFavorite(favoriteEntity: FavoriteEntity): FavoriteEntity = throw exception
+    override suspend fun addFavorite(
+        favoriteEntity: FavoriteEntity,
+        maximumFavorites: Int
+    ): FavoriteEntity = throw exception
     override suspend fun removeFavorite(favoriteId: String) = throw exception
 }
 
-private suspend fun FavoriteRepository.add(favorite: Favorite): Either<Failure, Favorite> =
+private suspend fun FavoriteRepository.add(
+    favorite: Favorite,
+    maximumFavorites: Int = MAXIMUM_FAVORITES
+): Either<Failure, Favorite> =
     addFavorite(
         locality = favorite.locality,
         municipality = favorite.municipality,
         county = favorite.county,
         latitude = favorite.latitude,
-        longitude = favorite.longitude
+        longitude = favorite.longitude,
+        maximumFavorites = maximumFavorites
     )
+
+private const val MAXIMUM_FAVORITES = 5
 
 class DefaultFavoriteRepositoryTest {
 
@@ -114,6 +123,42 @@ class DefaultFavoriteRepositoryTest {
                 expected = kista.asRight(),
                 actual = favoriteRepository.add(favorite = kista)
             )
+            assertEquals(
+                expected = listOf(kista).asRight(),
+                actual = favoriteRepository.observeFavorites().first()
+            )
+        }
+
+    @Test
+    fun `a new place past the limit is not saved while a stored one is still returned`() =
+        testScope.runTest {
+            favoriteRepository.add(
+                favorite = kista,
+                maximumFavorites = 1
+            )
+
+            withRecordedLogs { recordingLogSink ->
+                assertEquals(
+                    expected = listOf(
+                        Failure(errorCode = ErrorCode.FOLLOWED_PLACE_LIMIT).asLeft(),
+                        kista.asRight()
+                    ),
+                    actual = listOf(
+                        favoriteRepository.add(
+                            favorite = solna,
+                            maximumFavorites = 1
+                        ),
+                        favoriteRepository.add(
+                            favorite = kista,
+                            maximumFavorites = 1
+                        )
+                    )
+                )
+                assertEquals(
+                    expected = listOf("se.vadretapp.vadret.favorite" to LogLevel.WARN),
+                    actual = recordingLogSink.lines.map { line: LogLine -> line.tag to line.level }
+                )
+            }
             assertEquals(
                 expected = listOf(kista).asRight(),
                 actual = favoriteRepository.observeFavorites().first()
@@ -189,7 +234,7 @@ class DefaultFavoriteRepositoryTest {
             )
 
             withRecordedLogs { recordingLogSink ->
-                val results: List<Either<Failure, Any>> = listOf(
+                val results: List<Either<Failure, Any?>> = listOf(
                     failingFavoriteRepository.add(favorite = kista),
                     failingFavoriteRepository.removeFavorite(favoriteId = kista.favoriteId),
                     failingFavoriteRepository.observeFavorites().toList().single()

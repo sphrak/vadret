@@ -40,8 +40,7 @@
     <string name="permission_denied">Adgang nægtet!</string>
     <string name="slogan">Åben kode, åben data</string>
     <string name="no_network_available">Intet netværk tilgængeligt</string>
-    <string name="about_app_about_title">Om app</string>
-    <string name="about_app_libraries_tab_title">Biblioteker</string>
+    <string name="licenses_title">Licenser</string>
     <string name="about_app_description">Vejr app for Sverige</string>
     <string name="version_row_title">Version</string>
     <string name="license_row_title">Licens</string>
@@ -86,9 +85,6 @@
     <string name="licenses_intro">Vädret er bygget med følgende open source-projekter.</string>
     <string name="forecast_days">Dage</string>
     <string name="forecast_hours">Timer</string>
-    <string name="enable_hourly_forecast">Aktivér vejret time for time</string>
-    <string name="hourly_forecast_is_enabled">Du kan skifte mellem dage og timer</string>
-    <string name="hourly_forecast_is_disabled">Kun dage vises</string>
     <string name="today">I dag</string>
     <string name="expanded">Udvidet</string>
     <string name="collapsed">Skjult</string>
@@ -106,16 +102,6 @@
     <string name="warning_when">Hvornår</string>
     <string name="close">Luk</string>
     <string name="back">Tilbage</string>
-    <string name="show_pollen">Vis pollen</string>
-    <string name="pollen_is_shown">Pollenkortet er slået til</string>
-    <string name="pollen_is_hidden">Pollen er skjult</string>
-    <string name="pollen_allergies">Markerede pollen</string>
-    <string name="pollen_no_allergies">Ingen valgt</string>
-    <plurals name="pollen_allergens_selected">
-        <item quantity="one">%1$d valgt</item>
-        <item quantity="other">%1$d valgt</item>
-    </plurals>
-    <string name="pollen_allergies_description">Vælg, hvilke pollen du vil markere. Kortet viser dem først.</string>
     <string name="pollen_types_not_available">Pollentyperne kunne ikke hentes. Prøv igen senere.</string>
     <string name="pollen_hibernating_title">Pollen er gået i hi</string>
     <string name="pollen_hibernating_text">Pollenrapporterne vender tilbage, når sæsonen starter igen, typisk omkring februar.</string>
@@ -123,19 +109,9 @@
     <string name="save_place">Gem sted</string>
     <string name="open_forecast">Åbn vejrudsigt</string>
     <string name="warning_affects_places">Gælder %1$s</string>
-    <string name="followed_places">Fulgte steder</string>
-    <string name="followed_places_text">Advarsler og notifikationer gælder det valgte sted og op til 4 fulgte steder.</string>
-    <string name="followed_place_chosen">Valgt sted</string>
     <string name="followed_place_position">Din position</string>
-    <string name="followed_place_on">Følges</string>
-    <string name="followed_place_off">Følges ikke</string>
-    <string name="followed_places_limit">Højst 4 fulgte steder</string>
-    <string name="followed_places_limit_text">Højst 4 steder ud over det valgte sted kan følges. Stop med at følge et andet sted først.</string>
-    <string name="followed_places_only_in_sweden">Advarsler gælder kun Sverige</string>
-    <string name="followed_places_only_in_sweden_text">Vädret viser kun advarsler for steder i Sverige, og dette sted ligger uden for Sverige.</string>
     <string name="warnings_for_places">Advarsler for %1$s</string>
     <string name="change_followed_places">Skift</string>
-    <string name="push_places_followed_text">Notifikationer sendes for det valgte sted og de steder, du følger.</string>
     <string name="not_saved">Ikke gemt</string>
     <string name="saved">Gemt</string>
     <string name="save">Gem</string>

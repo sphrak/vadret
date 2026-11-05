@@ -74,11 +74,6 @@ data class VadretTextStyles(
         fontSize = 15,
         lineHeight = 22
     ),
-    val bodyStrong: TextStyle = textStyle(
-        fontSize = 15,
-        lineHeight = 22,
-        fontWeight = FontWeight.Medium
-    ),
     val detail: TextStyle = textStyle(
         fontSize = 14,
         lineHeight = 20

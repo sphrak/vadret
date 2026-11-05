@@ -596,7 +596,6 @@ private val WARNINGS_FROM_YELLOW = PushAlertChoices(
     warningLowestLevel = WarningAlertLevel.YELLOW,
     pollenChoices = emptyList(),
     temperatureTrend = false,
-    strongWind = false,
-    favoriteIds = emptySet()
+    strongWind = false
 )
 private val STRONG_WIND_ONLY = PushAlertChoices.NOTHING_CHOSEN.copy(strongWind = true)

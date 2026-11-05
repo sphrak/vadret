@@ -12,6 +12,8 @@ import kotlinx.coroutines.flow.update
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.favorite.model.Favorite
+import se.vadretapp.vadret.followedplace.AddFavoriteTask
+import se.vadretapp.vadret.followedplace.SelectFavoriteTask
 import se.vadretapp.vadret.location.model.Location
 import se.vadretapp.vadret.ui.extension.launchReplacing
 import se.vadretapp.vadret.ui.extension.messageResource

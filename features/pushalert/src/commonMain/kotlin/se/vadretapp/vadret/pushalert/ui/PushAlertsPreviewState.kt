@@ -17,8 +17,7 @@ internal fun pushAlertsPreviewState(): PushAlertsState = PushAlertsState(
             )
         ),
         temperatureTrend = true,
-        strongWind = false,
-        favoriteIds = setOf(PREVIEW_MALMO_ID)
+        strongWind = false
     ),
     chosenPollenTypeIds = setOf(PREVIEW_BIRCH_ID),
     pollenLevel = PollenAlertLevel.MODERATE_TO_HIGH,
@@ -39,5 +38,3 @@ internal fun pushAlertsPreviewState(): PushAlertsState = PushAlertsState(
 
 private const val PREVIEW_BIRCH_ID = "2a2a2a2a-2a2a-4a2a-aa2a-2a313a323236"
 private const val PREVIEW_GRASS_ID = "2a2a2a2a-2a2a-4a2a-aa2a-2a313a323237"
-private const val PREVIEW_MALMO_ID = "preview-malmo"
-private const val PREVIEW_GOTEBORG_ID = "preview-goteborg"

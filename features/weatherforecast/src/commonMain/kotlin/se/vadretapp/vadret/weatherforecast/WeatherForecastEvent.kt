@@ -26,7 +26,7 @@ sealed interface WeatherForecastEvent {
     data class OnFavoriteRemoveClicked(val favoriteId: String) : WeatherForecastEvent
     data object OnAddPlaceClicked : WeatherForecastEvent
     data object OnSearchDismissed : WeatherForecastEvent
-    data object OnSearchSubmitted : WeatherForecastEvent
+    data class OnSearchSubmitted(val query: String) : WeatherForecastEvent
     data class OnSearchQueryChanged(val query: String) : WeatherForecastEvent
     data class OnSuggestionClicked(val place: Place) : WeatherForecastEvent
 }

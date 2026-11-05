@@ -1,0 +1,27 @@
+plugins {
+    id 'vadret.kmp.library'
+}
+
+kotlin {
+    android {
+        namespace = 'se.vadretapp.vadret.pollenseason'
+    }
+    sourceSets {
+        commonMain {
+            dependencies {
+                implementation project(':data:common')
+                implementation project(':data:pollen')
+                implementation project(':data:pollenpreference')
+                implementation libs.coroutines.core
+                implementation libs.either
+                implementation libs.koin.core
+            }
+        }
+        commonTest {
+            dependencies {
+                implementation project(':core:testing')
+                implementation libs.kotlinx.datetime
+            }
+        }
+    }
+}

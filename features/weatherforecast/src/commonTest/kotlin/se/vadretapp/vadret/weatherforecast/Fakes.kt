@@ -5,16 +5,19 @@ import io.github.sphrak.either.extension.asLeft
 import io.github.sphrak.either.extension.asRight
 import io.github.sphrak.either.extension.successOrNull
 import io.github.sphrak.either.flatMap
+import io.github.sphrak.either.map
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import se.vadretapp.vadret.aggregatedfeed.model.AggregatedFeed
 import se.vadretapp.vadret.aggregatedfeed.model.FeedArea
 import se.vadretapp.vadret.aggregatedfeed.model.FeedSource
 import se.vadretapp.vadret.aggregatedfeed.model.WarningLevel
+import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.favorite.FavoriteRepository
 import se.vadretapp.vadret.favorite.model.Favorite
@@ -54,6 +57,14 @@ internal val stockholm = StoredLocation(
 )
 
 internal val kiruna = Place(
+    locality = "Kiruna",
+    municipality = "Kiruna",
+    county = "Norrbotten",
+    latitude = 67.8558,
+    longitude = 20.2253
+)
+
+internal val kirunaStoredLocation = StoredLocation(
     locality = "Kiruna",
     municipality = "Kiruna",
     county = "Norrbotten",
@@ -125,8 +136,7 @@ internal class FakeLocationRepository(
     val locationPreference: MutableStateFlow<LocationPreference> = MutableStateFlow(
         value = LocationPreference(
             isAutomatic = isAutomatic.successOrNull ?: false,
-            storedLocation = stockholm,
-            followedFavoriteIds = emptySet()
+            storedLocation = stockholm
         )
     )
 
@@ -149,8 +159,6 @@ internal class FakeLocationRepository(
         return Unit.asRight()
     }
 
-    override suspend fun getStoredLocation(): Either<Failure, StoredLocation> = locationPreference.value.storedLocation.asRight()
-
     override fun observeLocationPreference(): Flow<Either<Failure, LocationPreference>> = locationPreference.map { preference: LocationPreference -> preference.asRight() }
 
     override suspend fun selectStoredLocation(storedLocation: StoredLocation): Either<Failure, Unit> {
@@ -163,24 +171,6 @@ internal class FakeLocationRepository(
             )
         }
         return selectStoredLocationResult
-    }
-
-    override suspend fun followFavorite(
-        favoriteId: String,
-        maximumFollowedFavorites: Int
-    ): Either<Failure, Boolean> {
-        locationPreference.value = locationPreference.value.copy(followedFavoriteIds = locationPreference.value.followedFavoriteIds + favoriteId)
-        return true.asRight()
-    }
-
-    override suspend fun unfollowFavorite(favoriteId: String): Either<Failure, Unit> {
-        locationPreference.value = locationPreference.value.copy(followedFavoriteIds = locationPreference.value.followedFavoriteIds - favoriteId)
-        return Unit.asRight()
-    }
-
-    override suspend fun adoptFollowedFavoriteIds(favoriteIds: Set<String>): Either<Failure, Unit> {
-        locationPreference.value = locationPreference.value.copy(followedFavoriteIds = favoriteIds)
-        return Unit.asRight()
     }
 }
 
@@ -207,7 +197,8 @@ internal class FakeFavoriteRepository(
         municipality: String,
         county: String,
         latitude: Double,
-        longitude: Double
+        longitude: Double,
+        maximumFavorites: Int
     ): Either<Failure, Favorite> {
         val currentFailure: Failure? = failure
         if (currentFailure != null) {
@@ -218,6 +209,9 @@ internal class FakeFavoriteRepository(
         }
         if (storedFavorite != null) {
             return storedFavorite.asRight()
+        }
+        if (favorites.value.size >= maximumFavorites) {
+            return Failure(errorCode = ErrorCode.FOLLOWED_PLACE_LIMIT).asLeft()
         }
         val favorite = Favorite(
             favoriteId = "favorite-${nextFavoriteNumber.fetchAndIncrement()}",
@@ -413,7 +407,7 @@ internal class FakeGetChosenPlaceTask(
                     ).asRight()
                 }
             } else {
-                locationRepository.getStoredLocation().flatMap { storedLocation: StoredLocation ->
+                locationRepository.observeLocationPreference().first().map { preference: LocationPreference -> preference.storedLocation }.flatMap { storedLocation: StoredLocation ->
                     FollowedPlace(
                         favoriteId = null,
                         name = storedLocation.locality,

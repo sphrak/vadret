@@ -21,6 +21,11 @@ class TabNavigationTest {
 
     private fun tabBackStack(tabKey: NavKey): List<NavKey> = tabNavigation.tabBackStacks.getValue(key = tabKey).toList()
 
+    private fun shownKeys(): List<NavKey> =
+        tabNavigation.shownEntries(
+            tabEntries = tabNavigation.tabBackStacks.mapValues { tabBackStack: Map.Entry<NavKey, NavBackStack<NavKey>> -> tabBackStack.value.toList() }
+        )
+
     @Test
     fun `a tab keeps what it showed while another tab is open`() {
         tabNavigation.selectTab(tabKey = WarningKey)
@@ -30,6 +35,30 @@ class TabNavigationTest {
 
         assertEquals(expected = listOf(WeatherKey, WarningKey), actual = tabNavigation.tabHistory.toList())
         assertEquals(expected = listOf(WarningKey, detailKey), actual = tabBackStack(tabKey = WarningKey))
+    }
+
+    @Test
+    fun `a screen already on top is not opened twice`() {
+        tabNavigation.selectTab(tabKey = SettingsKey)
+        tabNavigation.open(key = SettingsPlacesKey)
+        tabNavigation.open(key = SettingsPlacesKey)
+
+        assertEquals(expected = listOf(SettingsKey, SettingsPlacesKey), actual = tabBackStack(tabKey = SettingsKey))
+    }
+
+    @Test
+    fun `the places opened from the warnings show on the settings tab right above the settings`() {
+        tabNavigation.selectTab(tabKey = SettingsKey)
+        tabNavigation.open(key = SettingsAboutKey)
+        tabNavigation.selectTab(tabKey = WarningKey)
+
+        tabNavigation.openOnTab(
+            tabKey = SettingsKey,
+            key = SettingsPlacesKey
+        )
+
+        assertEquals(expected = SettingsKey, actual = tabNavigation.currentTabKey)
+        assertEquals(expected = listOf(SettingsKey, SettingsPlacesKey), actual = tabBackStack(tabKey = SettingsKey))
     }
 
     @Test
@@ -98,6 +127,78 @@ class TabNavigationTest {
 
         assertEquals(expected = listOf(WeatherKey, RadarKey), actual = tabNavigation.tabHistory.toList())
         assertEquals(expected = listOf(WeatherKey), actual = tabBackStack(tabKey = WeatherKey))
+    }
+
+    @Test
+    fun `the tabs are shown in the order they were opened`() {
+        tabNavigation.selectTab(tabKey = WarningKey)
+        tabNavigation.open(key = detailKey)
+
+        assertEquals(expected = listOf(WeatherKey, WarningKey, detailKey), actual = shownKeys())
+    }
+
+    @Test
+    fun `the map lies beneath a place forecast so going back only uncovers it`() {
+        tabNavigation.selectTab(tabKey = RadarKey)
+        tabNavigation.openPlaceForecast(placeForecastKey = placeForecastKey)
+        val shownWithForecast: List<NavKey> = shownKeys()
+
+        tabNavigation.goBack()
+
+        assertEquals(
+            expected = listOf(
+                listOf(WeatherKey, RadarKey, placeForecastKey),
+                listOf(WeatherKey, RadarKey)
+            ),
+            actual = listOf(shownWithForecast, shownKeys())
+        )
+    }
+
+    @Test
+    fun `going to the map leaves the place forecast opened from it`() {
+        tabNavigation.selectTab(tabKey = RadarKey)
+        tabNavigation.openPlaceForecast(placeForecastKey = placeForecastKey)
+        tabNavigation.open(key = storyKey)
+        val shownWithForecast: List<NavKey> = shownKeys()
+
+        tabNavigation.selectTab(tabKey = RadarKey)
+
+        assertEquals(
+            expected = listOf(
+                listOf(WeatherKey, RadarKey, placeForecastKey, storyKey),
+                listOf(WeatherKey, RadarKey)
+            ),
+            actual = listOf(shownWithForecast, shownKeys())
+        )
+        assertEquals(expected = listOf(WeatherKey), actual = tabBackStack(tabKey = WeatherKey))
+    }
+
+    @Test
+    fun `closing a story over a place forecast only uncovers the forecast`() {
+        tabNavigation.selectTab(tabKey = RadarKey)
+        tabNavigation.openPlaceForecast(placeForecastKey = placeForecastKey)
+        tabNavigation.open(key = storyKey)
+        val shownWithStory: List<NavKey> = shownKeys()
+
+        tabNavigation.close(key = storyKey)
+
+        assertEquals(
+            expected = listOf(
+                listOf(WeatherKey, RadarKey, placeForecastKey, storyKey),
+                listOf(WeatherKey, RadarKey, placeForecastKey)
+            ),
+            actual = listOf(shownWithStory, shownKeys())
+        )
+    }
+
+    @Test
+    fun `another tab opened from a place forecast lies above the forecast and the map`() {
+        tabNavigation.selectTab(tabKey = RadarKey)
+        tabNavigation.openPlaceForecast(placeForecastKey = placeForecastKey)
+
+        tabNavigation.selectTab(tabKey = SettingsKey)
+
+        assertEquals(expected = listOf(WeatherKey, RadarKey, placeForecastKey, SettingsKey), actual = shownKeys())
     }
 
     @Test

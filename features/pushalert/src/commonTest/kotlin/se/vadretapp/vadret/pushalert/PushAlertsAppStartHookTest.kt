@@ -12,8 +12,6 @@ import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.followedplace.model.FollowedPlace
 import se.vadretapp.vadret.logging.LogLevel
-import se.vadretapp.vadret.pushalert.model.PushAlertChoices
-import se.vadretapp.vadret.pushalert.usecase.DefaultAdoptPushAlertFavoritesTask
 import se.vadretapp.vadret.testing.withRecordedLogs
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -37,27 +35,15 @@ class PushAlertsAppStartHookTest {
             pushAlertsAppStartHook(syncPushAlertsTask = FakeSyncPushAlertsTask(result = Unit.asRight())).startInBackground(scope = this@runTest)
 
             assertEquals(
-                expected = listOf(LogLevel.DEBUG, LogLevel.DEBUG),
+                expected = listOf(LogLevel.DEBUG),
                 actual = recordingLogSink.lines.map { line -> line.level }
             )
         }
     }
 
-    @Test
-    fun theFavoritesChosenForPushAlertsAreFollowedBeforeTheFirstSync() = runTest {
-        val locationRepository = FakeLocationRepository()
-
-        pushAlertsAppStartHook(
-            pushAlertRepository = FakePushAlertRepository(choices = PushAlertChoices.NOTHING_CHOSEN.copy(favoriteIds = setOf("favorite-1"))),
-            locationRepository = locationRepository
-        ).startInBackground(scope = this)
-
-        assertEquals(expected = listOf(setOf("favorite-1")), actual = locationRepository.adoptedFavoriteIds)
-    }
-
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun followingAnotherPlaceAnywhereInTheAppSyncsAgain() = runTest {
+    fun savingAnotherPlaceAnywhereInTheAppSyncsAgain() = runTest {
         val syncPushAlertsTask = FakeSyncPushAlertsTask()
         val observeFollowedPlacesTask = FakeObserveFollowedPlacesTask()
         val hook = launch {
@@ -88,15 +74,9 @@ private fun PushAlertsAppStartHook.startInBackground(scope: TestScope) {
 
 private fun pushAlertsAppStartHook(
     syncPushAlertsTask: FakeSyncPushAlertsTask = FakeSyncPushAlertsTask(),
-    pushAlertRepository: FakePushAlertRepository = FakePushAlertRepository(),
-    locationRepository: FakeLocationRepository = FakeLocationRepository(),
     observeFollowedPlacesTask: FakeObserveFollowedPlacesTask = FakeObserveFollowedPlacesTask()
 ): PushAlertsAppStartHook =
     PushAlertsAppStartHook(
-        adoptPushAlertFavoritesTask = DefaultAdoptPushAlertFavoritesTask(
-            pushAlertRepository = pushAlertRepository,
-            locationRepository = locationRepository
-        ),
         syncPushAlertsTask = syncPushAlertsTask,
         observeFollowedPlacesTask = observeFollowedPlacesTask
     )

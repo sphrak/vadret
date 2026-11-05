@@ -20,22 +20,29 @@ import se.vadretapp.vadret.aggregatedfeed.model.WarningLevel
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.favorite.model.Favorite
+import se.vadretapp.vadret.followedplace.AddFavoriteTask
+import se.vadretapp.vadret.followedplace.ObserveLocationChoicesTask
+import se.vadretapp.vadret.followedplace.RemoveFavoriteTask
+import se.vadretapp.vadret.followedplace.SearchPlacesTask
+import se.vadretapp.vadret.followedplace.SelectFavoriteTask
+import se.vadretapp.vadret.followedplace.SelectPlaceTask
+import se.vadretapp.vadret.followedplace.SetLocationModeTask
+import se.vadretapp.vadret.followedplace.model.FavoriteChoice
+import se.vadretapp.vadret.followedplace.model.LocationChoices
 import se.vadretapp.vadret.testing.FixedClock
 import se.vadretapp.vadret.ui.extension.messageResource
 import se.vadretapp.vadret.ui.format.currentLanguageTag
 import se.vadretapp.vadret.ui.format.toDayTimeText
 import se.vadretapp.vadret.ui.resources.Res
 import se.vadretapp.vadret.ui.resources.data_not_available_at_this_location
+import se.vadretapp.vadret.ui.resources.followed_places_limit_text
 import se.vadretapp.vadret.ui.resources.unhandled_error
 import se.vadretapp.vadret.warning.model.WarningPlace
-import se.vadretapp.vadret.weatherforecast.extension.toStoredLocation
 import se.vadretapp.vadret.weatherforecast.model.ComingDay
-import se.vadretapp.vadret.weatherforecast.model.FavoriteChoice
 import se.vadretapp.vadret.weatherforecast.model.Forecast
 import se.vadretapp.vadret.weatherforecast.model.ForecastDay
 import se.vadretapp.vadret.weatherforecast.model.ForecastView
 import se.vadretapp.vadret.weatherforecast.model.LatestWarning
-import se.vadretapp.vadret.weatherforecast.model.LocationChoices
 import se.vadretapp.vadret.weatherforecast.model.PlaceNaming
 import se.vadretapp.vadret.weatherforecast.model.SearchState
 import kotlin.test.AfterTest
@@ -80,7 +87,10 @@ class WeatherForecastViewModelTest {
             locationRepository = locationRepository,
             nominatimRepository = FakeNominatimRepository()
         ),
-        setLocationModeTask = DefaultSetLocationModeTask(locationRepository = locationRepository),
+        setLocationModeTask = SetLocationModeTask(
+            locationRepository = locationRepository,
+            favoriteRepository = favoriteRepository
+        ),
         getWeatherForecastTask = DefaultGetWeatherForecastTask(
             getChosenPlaceTask = FakeGetChosenPlaceTask(
                 locationRepository = locationRepository,
@@ -88,15 +98,15 @@ class WeatherForecastViewModelTest {
             ),
             weatherForecastRepository = weatherForecastRepository
         ),
-        observeLocationChoicesTask = DefaultObserveLocationChoicesTask(
+        observeLocationChoicesTask = ObserveLocationChoicesTask(
             favoriteRepository = favoriteRepository,
             locationRepository = locationRepository
         ),
         observeForecastPreferencesTask = DefaultObserveForecastPreferencesTask(forecastPreferenceRepository = forecastPreferenceRepository),
-        selectFavoriteTask = DefaultSelectFavoriteTask(locationRepository = locationRepository),
-        removeFavoriteTask = DefaultRemoveFavoriteTask(favoriteRepository = favoriteRepository),
-        searchPlacesTask = DefaultSearchPlacesTask(placeRepository = placeRepository),
-        selectPlaceTask = DefaultSelectPlaceTask(
+        selectFavoriteTask = SelectFavoriteTask(locationRepository = locationRepository),
+        removeFavoriteTask = RemoveFavoriteTask(favoriteRepository = favoriteRepository),
+        searchPlacesTask = SearchPlacesTask(placeRepository = placeRepository),
+        selectPlaceTask = SelectPlaceTask(
             favoriteRepository = favoriteRepository,
             locationRepository = locationRepository
         ),
@@ -104,7 +114,10 @@ class WeatherForecastViewModelTest {
             weatherForecastRepository = weatherForecastRepository,
             nominatimRepository = nominatimRepository
         ),
-        addFavoriteTask = DefaultAddFavoriteTask(favoriteRepository = favoriteRepository),
+        addFavoriteTask = AddFavoriteTask(
+            favoriteRepository = favoriteRepository,
+            locationRepository = locationRepository
+        ),
         observeUnseenWarningsTask = observeUnseenWarningsTask,
         observeUnseenFollowedPlaceWarningsTask = observeUnseenWarningsTask,
         clock = clock,
@@ -411,10 +424,10 @@ class WeatherForecastViewModelTest {
     fun `submitting picks the first suggestion and loads its forecast`() =
         testScope.runTest {
             weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnAddPlaceClicked)
-            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnSearchQueryChanged(query = "Kir"))
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnSearchQueryChanged(query = "Ki"))
             advanceUntilIdle()
 
-            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnSearchSubmitted)
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnSearchSubmitted(query = "Kir"))
             advanceUntilIdle()
 
             val state: WeatherForecastState = weatherForecastViewModel.state.value
@@ -444,10 +457,36 @@ class WeatherForecastViewModelTest {
             assertEquals(
                 expected = LocationChoices(
                     isAutomatic = false,
-                    favorites = persistentListOf(FavoriteChoice(favorite = kirunaFavorite, isSelected = true))
+                    chosenPlaceName = "Kiruna",
+                    favorites = persistentListOf(
+                        FavoriteChoice(
+                            favorite = kirunaFavorite,
+                            isSelected = true,
+                            isFollowed = true
+                        )
+                    )
                 ),
                 actual = weatherForecastViewModel.state.value.locationChoices
             )
+        }
+
+    @Test
+    fun `a sixth saved place is refused and says why`() =
+        testScope.runTest {
+            favoriteRepository.favorites.value = (1..5).map { number: Int ->
+                kirunaFavorite.copy(
+                    favoriteId = "favorite-$number",
+                    locality = "Plats $number"
+                )
+            }
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnShown)
+            advanceUntilIdle()
+
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnSuggestionClicked(place = kiruna))
+            advanceUntilIdle()
+
+            assertEquals(expected = Res.string.followed_places_limit_text, actual = weatherForecastViewModel.state.value.errorMessageResource)
+            assertEquals(expected = 5, actual = favoriteRepository.favorites.value.size)
         }
 
     @Test
@@ -735,7 +774,7 @@ class WeatherForecastViewModelTest {
         testScope.runTest {
             weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnShown)
             advanceUntilIdle()
-            locationRepository.selectStoredLocation(storedLocation = kirunaFavorite.toStoredLocation())
+            locationRepository.selectStoredLocation(storedLocation = kirunaStoredLocation)
 
             weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnShown)
             advanceUntilIdle()
