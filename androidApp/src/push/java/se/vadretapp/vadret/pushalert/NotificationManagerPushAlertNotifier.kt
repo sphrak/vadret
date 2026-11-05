@@ -16,6 +16,7 @@ import se.vadretapp.vadret.logging.LoggerFactory
 import se.vadretapp.vadret.main.MainActivity
 import se.vadretapp.vadret.pushalert.model.PushAlertKind
 import se.vadretapp.vadret.pushalert.model.PushAlertMessage
+import se.vadretapp.vadret.pushalert.model.PushAlertType
 
 internal class NotificationManagerPushAlertNotifier(
     private val context: Context
@@ -28,7 +29,7 @@ internal class NotificationManagerPushAlertNotifier(
         }
         notificationManager.createNotificationChannelsCompat(notificationChannels())
         val notification = NotificationCompat.Builder(context, pushAlertMessage.kind.channelId())
-            .setSmallIcon(R.drawable.ic_push_alert)
+            .setSmallIcon(pushAlertMessage.pushAlertType.smallIconResource())
             .setColor(ContextCompat.getColor(context, R.color.push_alert_accent))
             .setContentTitle(pushAlertMessage.title)
             .setContentText(pushAlertMessage.body)
@@ -89,6 +90,18 @@ internal class NotificationManagerPushAlertNotifier(
         PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
     )
 }
+
+internal fun PushAlertType?.smallIconResource(): Int =
+    when (this) {
+        PushAlertType.WARNING -> R.drawable.ic_push_alert_warning
+        PushAlertType.POLLEN -> R.drawable.ic_push_alert_pollen
+        PushAlertType.WARMER -> R.drawable.ic_push_alert_warmer
+        PushAlertType.COLDER -> R.drawable.ic_push_alert_colder
+        PushAlertType.HARD_WIND -> R.drawable.ic_push_alert_hard_wind
+        PushAlertType.STORM -> R.drawable.ic_push_alert_storm
+        PushAlertType.HURRICANE -> R.drawable.ic_push_alert_hurricane
+        null -> R.drawable.ic_push_alert
+    }
 
 private fun PushAlertKind.channelId(): String =
     when (this) {

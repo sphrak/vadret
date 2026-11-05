@@ -18,6 +18,7 @@ internal fun PushAlertSubscription?.toSubscriptionDto(): SubscriptionDto =
                 )
             },
             temperatureTrend = temperatureTrend,
-            strongWind = strongWind
+            strongWind = strongWind,
+            forecastGeohashes = forecastGeohashes.map { geohash -> geohash.value }
         )
     }

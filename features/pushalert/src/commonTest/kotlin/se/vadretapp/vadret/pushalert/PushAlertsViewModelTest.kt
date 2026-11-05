@@ -195,6 +195,70 @@ class PushAlertsViewModelTest {
     }
 
     @Test
+    fun temperatureAndWindForAllPlacesIsSavedAndSyncedAtOnceBothOnAndOff() = runTest(context = testDispatcher) {
+        val savePushAlertChoicesTask = FakeSavePushAlertChoicesTask()
+        val syncPushAlertsTask = FakeSyncPushAlertsTask()
+        val viewModel = startedViewModel(
+            choices = STRONG_WIND_ONLY,
+            savePushAlertChoicesTask = savePushAlertChoicesTask,
+            syncPushAlertsTask = syncPushAlertsTask
+        )
+
+        viewModel.onEvent(event = PushAlertsEvent.OnForecastForAllPlacesToggled(isEnabled = true))
+        advanceUntilIdle()
+        val shown = viewModel.state.value.choices.forecastForAllPlaces
+        viewModel.onEvent(event = PushAlertsEvent.OnForecastForAllPlacesToggled(isEnabled = false))
+        advanceUntilIdle()
+
+        assertEquals(
+            expected = listOf(
+                STRONG_WIND_ONLY.copy(forecastForAllPlaces = true),
+                STRONG_WIND_ONLY
+            ),
+            actual = savePushAlertChoicesTask.saved
+        )
+        assertEquals(
+            expected = Triple(
+                first = true,
+                second = false,
+                third = 2
+            ),
+            actual = Triple(
+                first = shown,
+                second = viewModel.state.value.choices.forecastForAllPlaces,
+                third = syncPushAlertsTask.syncs
+            )
+        )
+    }
+
+    @Test
+    fun outsideSwedenTemperatureAndWindForAllPlacesIsSavedWithoutAskingWhereThePhoneIs() = runTest(context = testDispatcher) {
+        val savePushAlertChoicesTask = FakeSavePushAlertChoicesTask()
+        val isOutsideSwedenTask = FakeIsOutsideSwedenTask(isOutsideSweden = true)
+        val viewModel = startedViewModel(
+            choices = STRONG_WIND_ONLY,
+            savePushAlertChoicesTask = savePushAlertChoicesTask,
+            isOutsideSwedenTask = isOutsideSwedenTask
+        )
+
+        viewModel.onEvent(event = PushAlertsEvent.OnForecastForAllPlacesToggled(isEnabled = true))
+        advanceUntilIdle()
+
+        assertEquals(
+            expected = Triple(
+                first = listOf(STRONG_WIND_ONLY.copy(forecastForAllPlaces = true)),
+                second = 0,
+                third = false
+            ),
+            actual = Triple(
+                first = savePushAlertChoicesTask.saved,
+                second = isOutsideSwedenTask.checks,
+                third = viewModel.state.value.isOutsideSwedenDialogVisible
+            )
+        )
+    }
+
+    @Test
     fun changesMadeFasterThanTheyCanBeSavedEndInTheLastOne() = runTest(context = testDispatcher) {
         val savePushAlertChoicesTask = FakeSavePushAlertChoicesTask()
         val viewModel = startedViewModel(
@@ -596,6 +660,7 @@ private val WARNINGS_FROM_YELLOW = PushAlertChoices(
     warningLowestLevel = WarningAlertLevel.YELLOW,
     pollenChoices = emptyList(),
     temperatureTrend = false,
-    strongWind = false
+    strongWind = false,
+    forecastForAllPlaces = false
 )
 private val STRONG_WIND_ONLY = PushAlertChoices.NOTHING_CHOSEN.copy(strongWind = true)

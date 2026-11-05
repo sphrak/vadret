@@ -17,7 +17,8 @@ internal fun pushAlertsPreviewState(): PushAlertsState = PushAlertsState(
             )
         ),
         temperatureTrend = true,
-        strongWind = false
+        strongWind = false,
+        forecastForAllPlaces = false
     ),
     chosenPollenTypeIds = setOf(PREVIEW_BIRCH_ID),
     pollenLevel = PollenAlertLevel.MODERATE_TO_HIGH,

@@ -4,7 +4,8 @@ data class PushAlertChoices(
     val warningLowestLevel: WarningAlertLevel?,
     val pollenChoices: List<PollenChoice>,
     val temperatureTrend: Boolean,
-    val strongWind: Boolean
+    val strongWind: Boolean,
+    val forecastForAllPlaces: Boolean
 ) {
     fun isAnythingChosen(): Boolean =
         warningLowestLevel != null ||
@@ -23,7 +24,8 @@ data class PushAlertChoices(
             warningLowestLevel = null,
             pollenChoices = emptyList(),
             temperatureTrend = false,
-            strongWind = false
+            strongWind = false,
+            forecastForAllPlaces = false
         )
     }
 }

@@ -11,7 +11,8 @@ internal fun PushAlertChoicesEntity.toPushAlertChoices(): PushAlertChoices = Pus
     warningLowestLevel = WarningAlertLevel.entries.firstOrNull { warningAlertLevel -> warningAlertLevel.name == warningLowestLevel },
     pollenChoices = pollenChoices.mapNotNull { pollenChoiceEntity -> pollenChoiceEntity.toPollenChoiceOrNull() },
     temperatureTrend = temperatureTrend,
-    strongWind = strongWind
+    strongWind = strongWind,
+    forecastForAllPlaces = forecastForAllPlaces
 )
 
 private fun PollenChoiceEntity.toPollenChoiceOrNull(): PollenChoice? {

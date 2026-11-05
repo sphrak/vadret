@@ -279,7 +279,8 @@ class DefaultPushAlertRepositoryTest {
                 warningLowestLevel = WarningAlertLevel.YELLOW,
                 pollenChoices = listOf(PollenChoice(pollenTypeId = BIRCH, lowestLevel = PollenAlertLevel.HIGH)),
                 temperatureTrend = true,
-                strongWind = true
+                strongWind = true,
+                forecastGeohashes = listOf(Geohash(value = "u3chr"))
             )
         )
         pushAlertRepository.replaceSubscription(
@@ -289,7 +290,7 @@ class DefaultPushAlertRepositoryTest {
 
         assertEquals(
             expected = listOf(
-                """PUT /api/v1/subscription Bearer $INSTALLATION_TOKEN {"geohashes":["u6sce","u3chr"],"warning_lowest_level":"YELLOW","pollen":[{"pollen_type_id":"$BIRCH","lowest_level":5}],"temperature_trend":true,"strong_wind":true}""",
+                """PUT /api/v1/subscription Bearer $INSTALLATION_TOKEN {"geohashes":["u6sce","u3chr"],"warning_lowest_level":"YELLOW","pollen":[{"pollen_type_id":"$BIRCH","lowest_level":5}],"temperature_trend":true,"strong_wind":true,"forecast_geohashes":["u3chr"]}""",
                 "PUT /api/v1/subscription Bearer $INSTALLATION_TOKEN {}"
             ),
             actual = requests
@@ -305,12 +306,13 @@ class DefaultPushAlertRepositoryTest {
                 warningLowestLevel = null,
                 pollenChoices = emptyList(),
                 temperatureTrend = false,
-                strongWind = false
+                strongWind = false,
+                forecastGeohashes = listOf(Geohash(value = "u6sce"))
             )
         )
 
         assertEquals(
-            expected = listOf("""PUT /api/v1/subscription Bearer $INSTALLATION_TOKEN {"geohashes":["u6sce"],"pollen":[],"temperature_trend":false,"strong_wind":false}"""),
+            expected = listOf("""PUT /api/v1/subscription Bearer $INSTALLATION_TOKEN {"geohashes":["u6sce"],"pollen":[],"temperature_trend":false,"strong_wind":false,"forecast_geohashes":["u6sce"]}"""),
             actual = requests
         )
     }
@@ -413,6 +415,39 @@ class DefaultPushAlertRepositoryTest {
         assertEquals(
             expected = CHOICES.asRight(),
             actual = repository(pushAlertLocalDataSource = FakePushAlertLocalDataSource(initialState = storedWithPlaces)).choices()
+        )
+    }
+
+    @Test
+    fun temperatureAndWindForAllPlacesIsStoredWithTheOtherChoices() = runTest {
+        val pushAlertLocalDataSource = FakePushAlertLocalDataSource()
+        val pushAlertRepository = repository(pushAlertLocalDataSource = pushAlertLocalDataSource)
+
+        pushAlertRepository.saveChoices(pushAlertChoices = CHOICES.copy(forecastForAllPlaces = true))
+
+        assertEquals(
+            expected = """{"choices":{"warning_lowest_level":"ORANGE","pollen_choices":[{"pollen_type_id":"$BIRCH","lowest_level":4}],"temperature_trend":true,"strong_wind":true,"forecast_for_all_places":true}}""",
+            actual = Json.encodeToString(
+                serializer = PushAlertStateEntity.serializer(),
+                value = pushAlertLocalDataSource.state.value
+            )
+        )
+        assertEquals(
+            expected = CHOICES.copy(forecastForAllPlaces = true).asRight(),
+            actual = pushAlertRepository.choices()
+        )
+    }
+
+    @Test
+    fun choicesStoredBeforeTheForecastPlacesExistedReadAsOnePlace() = runTest {
+        val storedBeforeForecastPlaces = Json.decodeFromString(
+            deserializer = PushAlertStateEntity.serializer(),
+            string = """{"installation_token":"$INSTALLATION_TOKEN","choices":{"warning_lowest_level":"ORANGE","pollen_choices":[{"pollen_type_id":"$BIRCH","lowest_level":4}],"temperature_trend":true,"strong_wind":true}}"""
+        )
+
+        assertEquals(
+            expected = CHOICES.asRight(),
+            actual = repository(pushAlertLocalDataSource = FakePushAlertLocalDataSource(initialState = storedBeforeForecastPlaces)).choices()
         )
     }
 
@@ -630,7 +665,8 @@ private val CHOICES = PushAlertChoices(
     warningLowestLevel = WarningAlertLevel.ORANGE,
     pollenChoices = listOf(PollenChoice(pollenTypeId = BIRCH, lowestLevel = PollenAlertLevel.MODERATE_TO_HIGH)),
     temperatureTrend = true,
-    strongWind = true
+    strongWind = true,
+    forecastForAllPlaces = false
 )
 
 private const val PUSH_ALERT_FILE_NAME = "push_alert.json"

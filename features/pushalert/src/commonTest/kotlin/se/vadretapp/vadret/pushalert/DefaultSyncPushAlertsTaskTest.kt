@@ -232,6 +232,47 @@ class DefaultSyncPushAlertsTaskTest {
     }
 
     @Test
+    fun temperatureAndWindFollowTheFirstSavedPlaceUnlessAllPlacesAreChosen() = runTest {
+        val favorites = listOf(
+            GOTEBORG_FAVORITE,
+            UPPSALA_FAVORITE,
+            BERLIN_FAVORITE,
+            MALMO_FAVORITE
+        )
+        val onePlace = FakePushAlertRepository(choices = STRONG_WIND_ONLY)
+        val allPlaces = FakePushAlertRepository(choices = STRONG_WIND_ONLY.copy(forecastForAllPlaces = true))
+
+        listOf(onePlace, allPlaces).forEach { pushAlertRepository: FakePushAlertRepository ->
+            syncPushAlertsTask(
+                pushAlertRepository = pushAlertRepository,
+                favoriteRepository = FakeFavoriteRepository(favorites = favorites)
+            )()
+        }
+
+        assertEquals(
+            expected = listOf(
+                listOf("u6282"),
+                listOf("u6sce", "u6282", "u6ss9", "u3chr")
+            ),
+            actual = listOf(onePlace, allPlaces).map { pushAlertRepository: FakePushAlertRepository ->
+                pushAlertRepository.forecastGeohashes.last()?.map { geohash: Geohash -> geohash.value }
+            }
+        )
+    }
+
+    @Test
+    fun withoutSavedPlacesTemperatureAndWindFollowWhereThePhoneIs() = runTest {
+        val pushAlertRepository = FakePushAlertRepository(choices = STRONG_WIND_ONLY)
+
+        syncPushAlertsTask(pushAlertRepository = pushAlertRepository)()
+
+        assertEquals(
+            expected = listOf(Geohash(value = "u6sce")),
+            actual = pushAlertRepository.forecastGeohashes.last()
+        )
+    }
+
+    @Test
     fun placesSharingAGeohashWithEachOtherOrWithWhereThePhoneIsAreSentOnce() = runTest {
         val sharingPlaces = listOf(
             STOCKHOLM_NORRMALM_FAVORITE,
@@ -788,7 +829,8 @@ private val WARNINGS_FROM_YELLOW = PushAlertChoices(
     warningLowestLevel = WarningAlertLevel.YELLOW,
     pollenChoices = emptyList(),
     temperatureTrend = false,
-    strongWind = false
+    strongWind = false,
+    forecastForAllPlaces = false
 )
 
 private val STRONG_WIND_ONLY = PushAlertChoices.NOTHING_CHOSEN.copy(strongWind = true)

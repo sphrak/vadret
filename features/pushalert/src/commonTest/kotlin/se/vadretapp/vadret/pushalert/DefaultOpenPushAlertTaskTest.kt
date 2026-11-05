@@ -12,6 +12,7 @@ import se.vadretapp.vadret.pushalert.model.PollenChoice
 import se.vadretapp.vadret.pushalert.model.PushAlertChoices
 import se.vadretapp.vadret.pushalert.model.PushAlertKind
 import se.vadretapp.vadret.pushalert.model.PushAlertMessage
+import se.vadretapp.vadret.pushalert.model.PushAlertType
 import se.vadretapp.vadret.pushalert.model.WarningAlertLevel
 import se.vadretapp.vadret.pushalert.usecase.DefaultAddPlaceNameTask
 import se.vadretapp.vadret.pushalert.usecase.DefaultOpenPushAlertTask
@@ -28,6 +29,7 @@ class DefaultOpenPushAlertTaskTest {
                     title = "Gul varning: Stockholms län",
                     body = "Kuling",
                     kind = PushAlertKind.WARNING,
+                    pushAlertType = null,
                     notificationId = "n-1",
                     cell = null
                 ).asRight(),
@@ -35,6 +37,7 @@ class DefaultOpenPushAlertTaskTest {
                     title = "Björkpollen",
                     body = "Höga halter",
                     kind = PushAlertKind.POLLEN,
+                    pushAlertType = null,
                     notificationId = null,
                     cell = null
                 ).asRight(),
@@ -42,6 +45,7 @@ class DefaultOpenPushAlertTaskTest {
                     title = "Kallare",
                     body = "3° kallare i morgon",
                     kind = PushAlertKind.TEMPERATURE,
+                    pushAlertType = null,
                     notificationId = "n-3",
                     cell = null
                 ).asRight(),
@@ -120,12 +124,39 @@ class DefaultOpenPushAlertTaskTest {
     }
 
     @Test
+    fun everyAlertTypeFromTheServerIsKeptWithTheAlertAndAnUnknownOneIsLeftOut() = runTest {
+        assertEquals(
+            expected = listOf(
+                PushAlertType.WARNING,
+                PushAlertType.POLLEN,
+                PushAlertType.WARMER,
+                PushAlertType.COLDER,
+                PushAlertType.HARD_WIND,
+                PushAlertType.STORM,
+                PushAlertType.HURRICANE,
+                null
+            ).map { pushAlertType -> pushAlertType.asRight() },
+            actual = ALERT_TYPES.map { alertType ->
+                openPushAlert(
+                    pushAlertChoices = EVERYTHING_CHOSEN,
+                    sealedMessageKey = FakeSealedMessageKey(
+                        openedBySealed = mapOf(
+                            SEALED_WIND.toList() to """{"title":"Storm i morgon","body":"Upp till 26 m/s i medelvind.","data":{"kind":"wind","alert_type":"$alertType"}}""".encodeToByteArray()
+                        )
+                    )
+                )(sealed = Base64.encode(source = SEALED_WIND)).map { pushAlertMessage -> pushAlertMessage.pushAlertType }
+            }
+        )
+    }
+
+    @Test
     fun aCellFromTheServerIsKeptWithTheAlert() = runTest {
         assertEquals(
             expected = PushAlertMessage(
                 title = "Storm i dag",
                 body = "Upp till 25 m/s i medelvind.",
                 kind = PushAlertKind.WIND,
+                pushAlertType = null,
                 notificationId = "n-5",
                 cell = "u3ch"
             ).asRight(),
@@ -153,14 +184,15 @@ class DefaultOpenPushAlertTaskTest {
 
 private fun openPushAlert(
     pushAlertChoices: PushAlertChoices,
-    favoriteRepository: FakeFavoriteRepository = FakeFavoriteRepository()
+    favoriteRepository: FakeFavoriteRepository = FakeFavoriteRepository(),
+    sealedMessageKey: FakeSealedMessageKey = FAKE_SEALED_MESSAGE_KEY
 ): DefaultOpenPushAlertTask {
     val pushAlertRepository = FakePushAlertRepository(
         choices = pushAlertChoices,
         syncedCurrentGeohash = Geohash(value = "u6sce")
     )
     return DefaultOpenPushAlertTask(
-        sealedMessageKey = FAKE_SEALED_MESSAGE_KEY,
+        sealedMessageKey = sealedMessageKey,
         pushAlertRepository = pushAlertRepository,
         addPlaceNameTask = DefaultAddPlaceNameTask(
             favoriteRepository = favoriteRepository,
@@ -224,13 +256,17 @@ private val EVERYTHING_CHOSEN = PushAlertChoices(
         )
     ),
     temperatureTrend = true,
-    strongWind = true
+    strongWind = true,
+    forecastForAllPlaces = false
 )
+
+private val ALERT_TYPES = listOf("warning", "pollen", "warmer", "colder", "hard_wind", "storm", "hurricane", "earthquake")
 
 private val WIND_MESSAGE = PushAlertMessage(
     title = "Hård vind i morgon",
     body = "Upp till 16 m/s i medelvind, 24 m/s i byarna.",
     kind = PushAlertKind.WIND,
+    pushAlertType = null,
     notificationId = "n-4",
     cell = null
 )

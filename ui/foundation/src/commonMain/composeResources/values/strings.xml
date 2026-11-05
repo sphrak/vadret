@@ -321,5 +321,8 @@
     <string name="warning_level">Level</string>
     <string name="strong_wind_alerts_summary">The evening before and the same day</string>
     <string name="notifications_cover_places">Notifications cover all your places.</string>
+    <string name="notifications_cover_places_except_forecast">Warnings and pollen cover all your places.</string>
+    <string name="forecast_alerts_all_places">Temperature and wind for all places</string>
+    <string name="forecast_alerts_all_places_summary">Otherwise only your first saved place</string>
     <string name="places_not_followed">No warnings, at most 5 places are followed</string>
 </resources>

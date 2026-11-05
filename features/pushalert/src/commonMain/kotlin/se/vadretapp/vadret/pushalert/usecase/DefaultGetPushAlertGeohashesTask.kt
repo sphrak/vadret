@@ -13,6 +13,7 @@ import se.vadretapp.vadret.geohash.model.Geohash
 import se.vadretapp.vadret.location.LocationRepository
 import se.vadretapp.vadret.location.model.LocationPreference
 import se.vadretapp.vadret.pushalert.extension.toGeohashOrNull
+import se.vadretapp.vadret.pushalert.model.PushAlertGeohashes
 
 internal class DefaultGetPushAlertGeohashesTask(
     private val favoriteRepository: FavoriteRepository,
@@ -20,15 +21,27 @@ internal class DefaultGetPushAlertGeohashesTask(
 ) : GetPushAlertGeohashesTask {
 
     // The same saved places as for the warnings are followed, after where the phone is and only in Sweden.
-    override suspend fun invoke(currentGeohash: Geohash): Either<Failure, List<Geohash>> =
+    override suspend fun invoke(
+        currentGeohash: Geohash,
+        forecastForAllPlaces: Boolean
+    ): Either<Failure, PushAlertGeohashes> =
         locationRepository
             .observeLocationPreference()
             .first()
             .flatMap { locationPreference: LocationPreference ->
                 favoriteRepository.observeFavorites().first().map { favorites: List<Favorite> ->
-                    (listOf(currentGeohash) + locationPreference.followedFavorites(favorites = favorites).geohashesInSweden())
+                    val savedGeohashes: List<Geohash> = locationPreference.followedFavorites(favorites = favorites).geohashesInSweden()
+                    val geohashes: List<Geohash> = (listOf(currentGeohash) + savedGeohashes)
                         .distinct()
                         .take(n = MAXIMUM_FOLLOWED_PLACES)
+                    PushAlertGeohashes(
+                        geohashes = geohashes,
+                        forecastGeohashes = if (forecastForAllPlaces) {
+                            geohashes
+                        } else {
+                            listOf(savedGeohashes.firstOrNull() ?: currentGeohash)
+                        }
+                    )
                 }
             }
 }

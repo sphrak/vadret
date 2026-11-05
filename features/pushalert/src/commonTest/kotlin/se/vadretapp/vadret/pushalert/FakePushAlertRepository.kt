@@ -29,6 +29,7 @@ internal class FakePushAlertRepository(
     private val installGate: Deferred<Unit> = CompletableDeferred(value = Unit)
 ) : PushAlertRepository {
     val calls = mutableListOf<String>()
+    val forecastGeohashes = mutableListOf<List<Geohash>?>()
     val savedChoices = MutableStateFlow(value = choices)
     val isSyncPending = MutableStateFlow(value = false)
     var installFailure: Failure? = null
@@ -75,6 +76,7 @@ internal class FakePushAlertRepository(
         pushAlertSubscription: PushAlertSubscription?
     ): Either<Failure, Unit> {
         calls += "subscribe ${installationToken.value} ${pushAlertSubscription?.geohashes?.joinToString(separator = ",") { geohash -> geohash.value }} ${pushAlertSubscription?.warningLowestLevel} ${pushAlertSubscription?.temperatureTrend} ${pushAlertSubscription?.strongWind}"
+        forecastGeohashes += pushAlertSubscription?.forecastGeohashes
         return if (subscriptionFailures.isEmpty()) {
             Unit.asRight()
         } else {

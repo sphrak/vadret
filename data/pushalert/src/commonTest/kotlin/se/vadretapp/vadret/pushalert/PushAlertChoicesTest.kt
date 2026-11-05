@@ -44,6 +44,18 @@ class PushAlertChoicesTest {
     }
 
     @Test
+    fun temperatureAndWindForAllPlacesTurnsNoAlertOnOrOff() {
+        assertEquals(
+            expected = listOf(true, true, false),
+            actual = listOf(
+                EVERYTHING.copy(forecastForAllPlaces = true).isWithin(other = EVERYTHING),
+                EVERYTHING.isWithin(other = EVERYTHING.copy(forecastForAllPlaces = true)),
+                PushAlertChoices.NOTHING_CHOSEN.copy(forecastForAllPlaces = true).isAnythingChosen()
+            )
+        )
+    }
+
+    @Test
     fun anyOneAlertTurnedOnIsEnoughForSomethingToBeChosen() {
         val choices = mapOf(
             "nothing" to PushAlertChoices.NOTHING_CHOSEN,
@@ -84,5 +96,6 @@ private val EVERYTHING = PushAlertChoices(
     warningLowestLevel = WarningAlertLevel.YELLOW,
     pollenChoices = listOf(BIRCH_FROM_MODERATE, GRASS_FROM_LOW),
     temperatureTrend = true,
-    strongWind = true
+    strongWind = true,
+    forecastForAllPlaces = false
 )

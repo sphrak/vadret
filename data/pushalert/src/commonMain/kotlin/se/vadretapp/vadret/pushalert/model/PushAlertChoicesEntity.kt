@@ -12,5 +12,7 @@ internal data class PushAlertChoicesEntity(
     @SerialName(value = "temperature_trend")
     val temperatureTrend: Boolean = false,
     @SerialName(value = "strong_wind")
-    val strongWind: Boolean = false
+    val strongWind: Boolean = false,
+    @SerialName(value = "forecast_for_all_places")
+    val forecastForAllPlaces: Boolean = false
 )

@@ -34,10 +34,13 @@ import se.vadretapp.vadret.ui.VadretTheme
 import se.vadretapp.vadret.ui.extension.messageResource
 import se.vadretapp.vadret.ui.resources.Res
 import se.vadretapp.vadret.ui.resources.attestation_refused
+import se.vadretapp.vadret.ui.resources.forecast_alerts_all_places
+import se.vadretapp.vadret.ui.resources.forecast_alerts_all_places_summary
 import se.vadretapp.vadret.ui.resources.lowest_pollen_level
 import se.vadretapp.vadret.ui.resources.notifications_are_off
 import se.vadretapp.vadret.ui.resources.notifications_are_off_text
 import se.vadretapp.vadret.ui.resources.notifications_cover_places
+import se.vadretapp.vadret.ui.resources.notifications_cover_places_except_forecast
 import se.vadretapp.vadret.ui.resources.notifications_weather
 import se.vadretapp.vadret.ui.resources.pollen
 import se.vadretapp.vadret.ui.resources.push_alerts_not_available
@@ -58,6 +61,7 @@ private const val WARNINGS_KEY = "warnings"
 private const val WARNING_LEVEL_KEY = "warning-level"
 private const val TEMPERATURE_KEY = "temperature"
 private const val STRONG_WIND_KEY = "strong-wind"
+private const val FORECAST_PLACES_KEY = "forecast-places"
 private const val POLLEN_HEADER_KEY = "pollen-header"
 private const val POLLEN_LEVEL_KEY = "pollen-level"
 private const val PLACES_KEY = "places"
@@ -124,7 +128,15 @@ private fun PushAlertsScreen(
             )
         }
         item(key = PLACES_KEY, contentType = PushAlertsContentType.TEXT) {
-            SettingsFootnote(text = stringResource(resource = Res.string.notifications_cover_places))
+            SettingsFootnote(
+                text = stringResource(
+                    resource = if (state.choices.forecastForAllPlaces) {
+                        Res.string.notifications_cover_places
+                    } else {
+                        Res.string.notifications_cover_places_except_forecast
+                    }
+                )
+            )
         }
     }
     if (failure != null) {
@@ -180,6 +192,16 @@ private fun LazyListScope.weatherAlerts(
             isChecked = state.choices.strongWind,
             onCheckedChange = { isChecked: Boolean -> onEvent(PushAlertsEvent.OnStrongWindToggled(isEnabled = isChecked)) }
         )
+    }
+    if (state.choices.temperatureTrend || state.choices.strongWind) {
+        item(key = FORECAST_PLACES_KEY, contentType = PushAlertsContentType.ROW) {
+            SwitchRow(
+                title = stringResource(resource = Res.string.forecast_alerts_all_places),
+                summary = stringResource(resource = Res.string.forecast_alerts_all_places_summary),
+                isChecked = state.choices.forecastForAllPlaces,
+                onCheckedChange = { isChecked: Boolean -> onEvent(PushAlertsEvent.OnForecastForAllPlacesToggled(isEnabled = isChecked)) }
+            )
+        }
     }
 }
 

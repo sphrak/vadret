@@ -6,6 +6,7 @@ import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.geohash.model.Geohash
 import se.vadretapp.vadret.pushalert.model.PushAlertKind
 import se.vadretapp.vadret.pushalert.model.PushAlertMessage
+import se.vadretapp.vadret.pushalert.model.PushAlertType
 import se.vadretapp.vadret.pushalert.usecase.DefaultAddPlaceNameTask
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -188,6 +189,7 @@ private val WIND_IN_MALMO = PushAlertMessage(
     title = "Storm i dag",
     body = "Upp till 25 m/s i medelvind.",
     kind = PushAlertKind.WIND,
+    pushAlertType = PushAlertType.STORM,
     notificationId = "n-1",
     cell = "u3ch"
 )
