@@ -5,11 +5,14 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.drawable.Drawable
 import android.os.Build
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toBitmap
 import se.vadretapp.vadret.R
 import se.vadretapp.vadret.logging.Logger
 import se.vadretapp.vadret.logging.LoggerFactory
@@ -17,6 +20,7 @@ import se.vadretapp.vadret.main.MainActivity
 import se.vadretapp.vadret.pushalert.model.PushAlertKind
 import se.vadretapp.vadret.pushalert.model.PushAlertMessage
 import se.vadretapp.vadret.pushalert.model.PushAlertType
+import android.R as AndroidR
 
 internal class NotificationManagerPushAlertNotifier(
     private val context: Context
@@ -29,7 +33,8 @@ internal class NotificationManagerPushAlertNotifier(
         }
         notificationManager.createNotificationChannelsCompat(notificationChannels())
         val notification = NotificationCompat.Builder(context, pushAlertMessage.kind.channelId())
-            .setSmallIcon(pushAlertMessage.pushAlertType.smallIconResource())
+            .setSmallIcon(R.drawable.ic_push_alert)
+            .setLargeIcon(largeIcon(pushAlertType = pushAlertMessage.pushAlertType))
             .setColor(ContextCompat.getColor(context, R.color.push_alert_accent))
             .setContentTitle(pushAlertMessage.title)
             .setContentText(pushAlertMessage.body)
@@ -41,6 +46,24 @@ internal class NotificationManagerPushAlertNotifier(
             pushAlertMessage.kind.channelId(),
             (pushAlertMessage.notificationId ?: pushAlertMessage.title).hashCode(),
             notification
+        )
+    }
+
+    // The weather shows as a large coloured icon in the notification, while the small icon stays the app's own. An
+    // alert of an unknown type shows no large icon.
+    private fun largeIcon(pushAlertType: PushAlertType?): Bitmap? {
+        if (pushAlertType == null) {
+            return null
+        }
+        val drawable: Drawable? = ContextCompat.getDrawable(context, pushAlertType.largeIconResource())
+        if (drawable == null) {
+            return null
+        }
+        drawable.mutate().setTint(ContextCompat.getColor(context, pushAlertType.largeIconColorResource()))
+        val largeIconSize: Int = context.resources.getDimensionPixelSize(AndroidR.dimen.notification_large_icon_width)
+        return drawable.toBitmap(
+            width = largeIconSize,
+            height = largeIconSize
         )
     }
 
@@ -91,7 +114,7 @@ internal class NotificationManagerPushAlertNotifier(
     )
 }
 
-internal fun PushAlertType?.smallIconResource(): Int =
+internal fun PushAlertType.largeIconResource(): Int =
     when (this) {
         PushAlertType.WARNING -> R.drawable.ic_push_alert_warning
         PushAlertType.POLLEN -> R.drawable.ic_push_alert_pollen
@@ -100,7 +123,17 @@ internal fun PushAlertType?.smallIconResource(): Int =
         PushAlertType.HARD_WIND -> R.drawable.ic_push_alert_hard_wind
         PushAlertType.STORM -> R.drawable.ic_push_alert_storm
         PushAlertType.HURRICANE -> R.drawable.ic_push_alert_hurricane
-        null -> R.drawable.ic_push_alert
+    }
+
+internal fun PushAlertType.largeIconColorResource(): Int =
+    when (this) {
+        PushAlertType.WARNING -> R.color.push_alert_warning
+        PushAlertType.POLLEN -> R.color.push_alert_pollen
+        PushAlertType.WARMER -> R.color.push_alert_warmer
+        PushAlertType.COLDER -> R.color.push_alert_colder
+        PushAlertType.HARD_WIND,
+        PushAlertType.STORM,
+        PushAlertType.HURRICANE -> R.color.push_alert_wind
     }
 
 private fun PushAlertKind.channelId(): String =

@@ -60,6 +60,9 @@ internal data object SettingsLicensesKey : NavKey
 @Serializable
 internal data object SettingsDeveloperKey : NavKey
 
+@Serializable
+internal data class SettingsDeveloperSectionKey(val sectionKey: String) : NavKey
+
 internal enum class TopLevelDestination(
     val key: NavKey,
     val iconResource: DrawableResource,

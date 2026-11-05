@@ -110,4 +110,17 @@
     <string name="place_name_taken_text">Masz już ulubione miejsce o nazwie %1$s. Nadaj temu miejscu własną nazwę.</string>
     <string name="try_again">Spróbuj ponownie</string>
     <string name="pegman_hint">Przeciągnij na mapę, aby zobaczyć pogodę w tym miejscu</string>
+    <string name="allow_expand_once">Tylko jeden otwarty dzień naraz</string>
+    <string name="expand_once_is_enabled">Otwarcie dnia zamyka dzień, który jest już otwarty</string>
+    <string name="expand_once_is_disabled">Kilka dni może być otwartych jednocześnie</string>
+    <string name="simulate_end_of_season">Symuluj koniec sezonu na radarze</string>
+    <string name="end_of_season_is_simulated">Pyłki są ukryte, a przy następnym otwarciu radar pokaże, że zapadły w sen zimowy</string>
+    <string name="end_of_season_is_not_simulated">Radar pokazuje prawdziwy sezon</string>
+    <string name="simulate_notifications">Symuluj powiadomienia</string>
+    <string name="developer_unlocked">Jesteś teraz deweloperem</string>
+    <string name="developer_already_unlocked">Jesteś już deweloperem</string>
+    <string name="settings_notifications">Powiadomienia</string>
+    <string name="notifications_are_off">Powiadomienia są wyłączone</string>
+    <string name="notifications_are_off_text">Zezwól na powiadomienia z aplikacji Vädret w ustawieniach systemu, aby otrzymywać powiadomienia push.</string>
+    <string name="weather">Pogoda</string>
 </resources>

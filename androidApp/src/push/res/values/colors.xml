@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="push_alert_accent">#FF3F51B5</color>
+    <color name="push_alert_warning">#FFC25E00</color>
+    <color name="push_alert_pollen">#FF2E7D32</color>
+    <color name="push_alert_warmer">#FFC4501A</color>
+    <color name="push_alert_colder">#FF1F6FA8</color>
+    <color name="push_alert_wind">#FF4A57C2</color>
 </resources>

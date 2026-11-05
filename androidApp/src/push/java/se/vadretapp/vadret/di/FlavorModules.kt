@@ -13,14 +13,17 @@ import se.vadretapp.vadret.encryption.model.KeyAlias
 import se.vadretapp.vadret.pushalert.AndroidDeviceTokenSource
 import se.vadretapp.vadret.pushalert.AndroidNotificationPermissionSource
 import se.vadretapp.vadret.pushalert.DeviceTokenSource
+import se.vadretapp.vadret.pushalert.NotificationManagerPushAlertNotifier
 import se.vadretapp.vadret.pushalert.NotificationPermissionSource
 import se.vadretapp.vadret.pushalert.PushAlertNotifier
 import se.vadretapp.vadret.pushalert.PushAlertRepository
 import se.vadretapp.vadret.pushalert.di.pushAlertModule
+import se.vadretapp.vadret.pushalert.di.pushAlertSimulationModule
 import java.io.File
 
 internal fun flavorModules(context: Context): List<Module> = listOf(
     pushAlertModule,
+    pushAlertSimulationModule,
     githubPushAlertModule(context = context)
 )
 
@@ -40,7 +43,7 @@ private fun githubPushAlertModule(context: Context): Module = module {
             ioDispatcher = get()
         )
     }
-    single<PushAlertNotifier> { PushAlertNotifier(context = context) }
+    single<PushAlertNotifier> { NotificationManagerPushAlertNotifier(context = context) }
     single<CoroutineScope>(qualifier = named(name = PUSH_ALERT_SCOPE)) { CoroutineScope(context = SupervisorJob() + get<CoroutineDispatcher>()) }
 }
 

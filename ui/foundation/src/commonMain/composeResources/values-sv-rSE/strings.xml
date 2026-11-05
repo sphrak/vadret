@@ -258,4 +258,11 @@
     <string name="forecast_alerts_all_places">Temperatur och vind för alla platser</string>
     <string name="forecast_alerts_all_places_summary">Annars bara din första sparade plats</string>
     <string name="places_not_followed">Får inga varningar, högst 5 platser bevakas</string>
+    <string name="allow_expand_once">En öppen dag i taget</string>
+    <string name="expand_once_is_enabled">När du öppnar en dag stängs den som redan är öppen</string>
+    <string name="expand_once_is_disabled">Flera dagar kan vara öppna samtidigt</string>
+    <string name="simulate_end_of_season">Simulera säsongsslut på radarn</string>
+    <string name="end_of_season_is_simulated">Pollen döljs och radarn visar att pollen gått i ide nästa gång du öppnar den</string>
+    <string name="end_of_season_is_not_simulated">Radarn följer den riktiga säsongen</string>
+    <string name="simulate_notifications">Simulera notiser</string>
 </resources>

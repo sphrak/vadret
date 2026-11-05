@@ -119,4 +119,16 @@
     <string name="place_name_taken_text">Du har allerede en favoritt som heter %1$s. Gi dette stedet et eget navn.</string>
     <string name="try_again">Prøv igjen</string>
     <string name="pegman_hint">Dra til et sted på kartet for å se været der</string>
+    <string name="allow_expand_once">Én åpen dag om gangen</string>
+    <string name="expand_once_is_enabled">Når du åpner en dag, lukkes den som allerede er åpen</string>
+    <string name="expand_once_is_disabled">Flere dager kan være åpne samtidig</string>
+    <string name="simulate_end_of_season">Simuler sesongslutt på radaren</string>
+    <string name="end_of_season_is_simulated">Pollen skjules, og radaren viser at pollen har gått i hi neste gang du åpner den</string>
+    <string name="end_of_season_is_not_simulated">Radaren følger den virkelige sesongen</string>
+    <string name="simulate_notifications">Simuler varsler</string>
+    <string name="developer_unlocked">Du er nå utvikler</string>
+    <string name="developer_already_unlocked">Du er allerede utvikler</string>
+    <string name="settings_notifications">Varsler</string>
+    <string name="notifications_are_off">Varsler er slått av</string>
+    <string name="notifications_are_off_text">Tillat varsler for Vädret i systeminnstillingene for å få push-varsler.</string>
 </resources>

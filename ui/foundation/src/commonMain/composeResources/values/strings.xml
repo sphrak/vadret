@@ -275,6 +275,7 @@
     <string name="simulate_end_of_season">Simulate end of season on the radar</string>
     <string name="end_of_season_is_simulated">Pollen is hidden and the hibernation notice shows on the next radar visit</string>
     <string name="end_of_season_is_not_simulated">The radar follows the real season</string>
+    <string name="simulate_notifications">Simulate notifications</string>
     <string name="save_place">Save place</string>
     <string name="open_forecast">Open forecast</string>
     <string name="warning_affects_places">Affects %1$s</string>

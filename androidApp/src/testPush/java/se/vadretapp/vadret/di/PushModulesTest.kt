@@ -15,8 +15,10 @@ import org.koin.core.Koin
 import org.koin.dsl.koinApplication
 import org.koin.dsl.module
 import se.vadretapp.vadret.lifecycle.AppStartHook
+import se.vadretapp.vadret.pushalert.PushAlertNotifier
 import se.vadretapp.vadret.pushalert.usecase.OpenPushAlertTask
 import se.vadretapp.vadret.pushalert.usecase.SyncPushAlertsTask
+import se.vadretapp.vadret.ui.DeveloperSettingsSection
 import se.vadretapp.vadret.ui.SettingsSection
 import java.io.File
 import java.nio.file.Files
@@ -62,9 +64,14 @@ class PushModulesTest {
 
         assertNotNull(actual = koin.get<SyncPushAlertsTask>())
         assertNotNull(actual = koin.get<OpenPushAlertTask>())
+        assertNotNull(actual = koin.get<PushAlertNotifier>())
         assertEquals(
             expected = 1 to 1,
             actual = koin.getAll<SettingsSection>().size to koin.getAll<AppStartHook>().size
+        )
+        assertEquals(
+            expected = 1,
+            actual = koin.getAll<DeveloperSettingsSection>().size
         )
     }
 }

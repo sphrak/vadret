@@ -1,6 +1,7 @@
 package se.vadretapp.vadret.settings.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -11,12 +12,16 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
+import se.vadretapp.vadret.di.koinAll
 import se.vadretapp.vadret.di.koinViewModel
 import se.vadretapp.vadret.settings.DeveloperEvent
 import se.vadretapp.vadret.settings.DeveloperState
 import se.vadretapp.vadret.settings.DeveloperViewModel
 import se.vadretapp.vadret.settings.Settings
 import se.vadretapp.vadret.theme.model.Theme
+import se.vadretapp.vadret.ui.DeveloperSettingsSection
+import se.vadretapp.vadret.ui.SettingsRow
+import se.vadretapp.vadret.ui.SettingsRowDivider
 import se.vadretapp.vadret.ui.SettingsScaffold
 import se.vadretapp.vadret.ui.SettingsSectionHeader
 import se.vadretapp.vadret.ui.SwitchRow
@@ -37,17 +42,21 @@ private const val WEATHER_HEADER_KEY = "weather-header"
 private const val EXPAND_ONCE_KEY = "expand-once"
 private const val POLLEN_HEADER_KEY = "pollen-header"
 private const val END_OF_SEASON_KEY = "end-of-season"
+private const val SECTIONS_DIVIDER_KEY = "sections-divider"
 
 private enum class DeveloperContentType {
     HEADER,
-    ROW
+    ROW,
+    DIVIDER
 }
 
 @Composable
 fun DeveloperRoute(
+    onSectionClick: (sectionKey: String) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: DeveloperViewModel = koinViewModel()
+    viewModel: DeveloperViewModel = koinViewModel(),
+    developerSettingsSections: List<DeveloperSettingsSection> = koinAll()
 ) {
     val state: DeveloperState by viewModel.state.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) {
@@ -55,7 +64,9 @@ fun DeveloperRoute(
     }
     DeveloperScreen(
         state = state,
+        developerSettingsSections = developerSettingsSections,
         onEvent = viewModel::onEvent,
+        onSectionClick = onSectionClick,
         onBack = onBack,
         modifier = modifier
     )
@@ -64,7 +75,9 @@ fun DeveloperRoute(
 @Composable
 private fun DeveloperScreen(
     state: DeveloperState,
+    developerSettingsSections: List<DeveloperSettingsSection>,
     onEvent: (DeveloperEvent) -> Unit,
+    onSectionClick: (sectionKey: String) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -109,6 +122,22 @@ private fun DeveloperScreen(
                     onCheckedChange = { isChecked: Boolean -> onEvent(DeveloperEvent.OnEndOfSeasonSimulationToggled(isEndOfSeasonSimulated = isChecked)) }
                 )
             }
+            if (developerSettingsSections.isNotEmpty()) {
+                item(key = SECTIONS_DIVIDER_KEY, contentType = DeveloperContentType.DIVIDER) {
+                    SettingsRowDivider()
+                }
+            }
+            items(
+                items = developerSettingsSections,
+                key = { developerSettingsSection: DeveloperSettingsSection -> developerSettingsSection.key },
+                contentType = { DeveloperContentType.ROW }
+            ) { developerSettingsSection: DeveloperSettingsSection ->
+                SettingsRow(
+                    title = stringResource(resource = developerSettingsSection.titleResource),
+                    summary = stringResource(resource = developerSettingsSection.summaryResource),
+                    onClick = { onSectionClick(developerSettingsSection.key) }
+                )
+            }
         }
     }
 }
@@ -132,7 +161,9 @@ private fun DeveloperScreenPreview(
     VadretTheme(theme = theme) {
         DeveloperScreen(
             state = developerPreviewState(theme = theme),
+            developerSettingsSections = emptyList(),
             onEvent = {},
+            onSectionClick = {},
             onBack = {},
             modifier = Modifier.background(color = VadretTheme.colorScheme.background)
         )

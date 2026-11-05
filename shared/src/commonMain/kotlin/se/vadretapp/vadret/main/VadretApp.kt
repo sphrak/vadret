@@ -43,6 +43,7 @@ import se.vadretapp.vadret.main.navigation.PlaceForecastKey
 import se.vadretapp.vadret.main.navigation.RadarKey
 import se.vadretapp.vadret.main.navigation.SettingsAboutKey
 import se.vadretapp.vadret.main.navigation.SettingsDeveloperKey
+import se.vadretapp.vadret.main.navigation.SettingsDeveloperSectionKey
 import se.vadretapp.vadret.main.navigation.SettingsKey
 import se.vadretapp.vadret.main.navigation.SettingsLicensesKey
 import se.vadretapp.vadret.main.navigation.SettingsPlacesKey
@@ -72,6 +73,7 @@ import se.vadretapp.vadret.settings.ui.LicensesRoute
 import se.vadretapp.vadret.settings.ui.PlacesRoute
 import se.vadretapp.vadret.settings.ui.PollenSettingsRoute
 import se.vadretapp.vadret.settings.ui.SettingsRoute
+import se.vadretapp.vadret.ui.DeveloperSettingsSection
 import se.vadretapp.vadret.ui.SettingsSection
 import se.vadretapp.vadret.ui.VadretTheme
 import se.vadretapp.vadret.weatherforecast.ui.PlaceForecastRoute
@@ -133,6 +135,10 @@ private val navigationConfiguration: SavedStateConfiguration = SavedStateConfigu
                 subclass = SettingsDeveloperKey::class,
                 serializer = SettingsDeveloperKey.serializer()
             )
+            subclass(
+                subclass = SettingsDeveloperSectionKey::class,
+                serializer = SettingsDeveloperSectionKey.serializer()
+            )
         }
     }
 }
@@ -169,6 +175,10 @@ internal fun VadretApp(
     val settingsSections: List<SettingsSection> = koinAll()
     val settingsSectionsByKey: Map<String, SettingsSection> = remember(settingsSections) {
         settingsSections.associateBy { settingsSection: SettingsSection -> settingsSection.key }
+    }
+    val developerSettingsSections: List<DeveloperSettingsSection> = koinAll()
+    val developerSettingsSectionsByKey: Map<String, DeveloperSettingsSection> = remember(developerSettingsSections) {
+        developerSettingsSections.associateBy { developerSettingsSection: DeveloperSettingsSection -> developerSettingsSection.key }
     }
     val tabEntryProvider: (NavKey) -> NavEntry<NavKey> = entryProvider {
         entry<WeatherKey> {
@@ -288,7 +298,16 @@ internal fun VadretApp(
         }
         entry<SettingsDeveloperKey>(metadata = detailTransitions) {
             TabPage(paddingValues = tabPadding) {
-                DeveloperRoute(onBack = { tabNavigation.close(key = SettingsDeveloperKey) })
+                DeveloperRoute(
+                    onSectionClick = { sectionKey: String -> tabNavigation.open(key = SettingsDeveloperSectionKey(sectionKey = sectionKey)) },
+                    onBack = { tabNavigation.close(key = SettingsDeveloperKey) },
+                    developerSettingsSections = developerSettingsSections
+                )
+            }
+        }
+        entry<SettingsDeveloperSectionKey>(metadata = detailTransitions) { settingsDeveloperSectionKey: SettingsDeveloperSectionKey ->
+            TabPage(paddingValues = tabPadding) {
+                developerSettingsSectionsByKey[settingsDeveloperSectionKey.sectionKey]?.Content(onBack = { tabNavigation.close(key = settingsDeveloperSectionKey) })
             }
         }
     }

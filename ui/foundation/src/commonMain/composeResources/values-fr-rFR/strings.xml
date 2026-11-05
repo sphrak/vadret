@@ -113,4 +113,16 @@
     <string name="place_name_taken_text">Vous avez déjà un favori nommé %1$s. Donnez un autre nom à ce lieu.</string>
     <string name="try_again">Réessayer</string>
     <string name="pegman_hint">Faites glisser sur la carte pour voir la météo à cet endroit</string>
+    <string name="allow_expand_once">Un seul jour ouvert à la fois</string>
+    <string name="expand_once_is_enabled">Ouvrir un jour ferme celui qui est déjà ouvert</string>
+    <string name="expand_once_is_disabled">Plusieurs jours peuvent être ouverts en même temps</string>
+    <string name="simulate_end_of_season">Simuler la fin de saison sur le radar</string>
+    <string name="end_of_season_is_simulated">Les pollens sont masqués et le radar indique qu\'ils hibernent à la prochaine ouverture</string>
+    <string name="end_of_season_is_not_simulated">Le radar suit la vraie saison</string>
+    <string name="simulate_notifications">Simuler des notifications</string>
+    <string name="developer_unlocked">Vous êtes maintenant développeur</string>
+    <string name="developer_already_unlocked">Vous êtes déjà développeur</string>
+    <string name="settings_notifications">Notifications</string>
+    <string name="notifications_are_off">Les notifications sont désactivées</string>
+    <string name="notifications_are_off_text">Autorisez les notifications de Vädret dans les paramètres du système pour recevoir des alertes push.</string>
 </resources>
