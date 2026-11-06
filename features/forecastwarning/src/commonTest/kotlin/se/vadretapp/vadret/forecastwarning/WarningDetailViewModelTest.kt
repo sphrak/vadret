@@ -54,7 +54,7 @@ class WarningDetailViewModelTest {
             assertEquals(expected = "smhi-1-1", actual = warningDetailViewModel.state.value.warning?.identifier)
             assertEquals(expected = false, actual = warningDetailViewModel.state.value.isLoading)
             assertEquals(expected = null, actual = warningDetailViewModel.state.value.messageResource)
-            assertEquals(expected = listOf(false), actual = getWarningsTask.refreshes)
+            assertEquals(expected = 1, actual = getWarningsTask.calls)
         }
 
     @Test

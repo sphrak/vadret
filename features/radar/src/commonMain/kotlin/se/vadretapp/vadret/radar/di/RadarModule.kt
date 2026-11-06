@@ -7,17 +7,17 @@ import org.koin.dsl.module
 import se.vadretapp.vadret.radar.DefaultDownloadRadarDayTask
 import se.vadretapp.vadret.radar.DefaultGetDeviceLocationTask
 import se.vadretapp.vadret.radar.DefaultGetPollenMapTask
-import se.vadretapp.vadret.radar.DefaultGetRadarTask
 import se.vadretapp.vadret.radar.DefaultGetWindForecastTask
 import se.vadretapp.vadret.radar.DefaultObservePollenPreferencesTask
+import se.vadretapp.vadret.radar.DefaultObserveRadarTask
 import se.vadretapp.vadret.radar.DefaultRadarImageLoader
 import se.vadretapp.vadret.radar.DefaultSetPollenHibernationNoticeShownTask
 import se.vadretapp.vadret.radar.DownloadRadarDayTask
 import se.vadretapp.vadret.radar.GetDeviceLocationTask
 import se.vadretapp.vadret.radar.GetPollenMapTask
-import se.vadretapp.vadret.radar.GetRadarTask
 import se.vadretapp.vadret.radar.GetWindForecastTask
 import se.vadretapp.vadret.radar.ObservePollenPreferencesTask
+import se.vadretapp.vadret.radar.ObserveRadarTask
 import se.vadretapp.vadret.radar.RadarImageLoader
 import se.vadretapp.vadret.radar.RadarViewModel
 import se.vadretapp.vadret.radar.SetPollenHibernationNoticeShownTask
@@ -33,7 +33,7 @@ val radarModule: Module = module {
     factoryOf(::DefaultGetPollenMapTask) { bind<GetPollenMapTask>() }
     factoryOf(::DefaultObservePollenPreferencesTask) { bind<ObservePollenPreferencesTask>() }
     factoryOf(::DefaultSetPollenHibernationNoticeShownTask) { bind<SetPollenHibernationNoticeShownTask>() }
-    factoryOf(::DefaultGetRadarTask) { bind<GetRadarTask>() }
+    factoryOf(::DefaultObserveRadarTask) { bind<ObserveRadarTask>() }
     factoryOf(::DefaultDownloadRadarDayTask) { bind<DownloadRadarDayTask>() }
     factoryOf(::DefaultGetWindForecastTask) { bind<GetWindForecastTask>() }
     single<WindFieldRenderer> { DefaultWindFieldRenderer(coroutineDispatcher = get()) }

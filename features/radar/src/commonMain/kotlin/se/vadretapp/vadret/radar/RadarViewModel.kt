@@ -78,7 +78,7 @@ private class PreparedWindField(
 
 @Immutable
 class RadarViewModel internal constructor(
-    private val getRadarTask: GetRadarTask,
+    private val observeRadarTask: ObserveRadarTask,
     private val downloadRadarDayTask: DownloadRadarDayTask,
     private val getWindForecastTask: GetWindForecastTask,
     private val getDeviceLocationTask: GetDeviceLocationTask,
@@ -237,28 +237,72 @@ class RadarViewModel internal constructor(
 
     private fun loadPrecipitation(initialImageUrl: String?) {
         viewModelScope.launch(context = coroutineDispatcher) {
-            getRadarTask(imageUrl = initialImageUrl)
-                .onResult(
+            observeRadarTask(imageUrl = initialImageUrl).collect { result: Either<Failure, Radar> ->
+                result.onResult(
                     onError = { failure: Failure -> displayPrecipitationError(failure = failure) },
                     onSuccess = { loadedRadar: Radar ->
-                        radar.store(newValue = loadedRadar)
-                        val updatedState: RadarState = state.updateAndGet { state: RadarState ->
-                            val frames: ImmutableList<RadarFrame> = loadedRadar.toFrames()
-                            state.copy(
-                                precipitationFrames = frames,
-                                precipitationIndex = frames.initialIndex(initialImageUrl = initialImageUrl),
-                                isPrecipitationUnavailable = frames.isEmpty(),
-                                isLoading = state.isLoading && state.layer == RadarLayer.WIND && state.windField == null
-                            )
-                        }
-                        if (updatedState.layer == RadarLayer.PRECIPITATION) {
-                            showFrame(
-                                layer = RadarLayer.PRECIPITATION,
-                                index = updatedState.precipitationIndex
-                            )
-                        }
+                        showRadar(
+                            loadedRadar = loadedRadar,
+                            initialImageUrl = initialImageUrl
+                        )
                     }
                 )
+            }
+        }
+    }
+
+    private fun showRadar(
+        loadedRadar: Radar,
+        initialImageUrl: String?
+    ) {
+        radar.store(newValue = loadedRadar)
+        val shownState: RadarState = state.value
+        val updatedState: RadarState = state.updateAndGet { state: RadarState ->
+            val frames: ImmutableList<RadarFrame> = loadedRadar.toFrames()
+            state.copy(
+                precipitationFrames = frames,
+                precipitationIndex = frames.indexAfterUpdate(
+                    shownFrames = state.precipitationFrames,
+                    shownIndex = state.precipitationIndex,
+                    isPlaying = state.isPlaying,
+                    initialImageUrl = initialImageUrl
+                ),
+                isPrecipitationUnavailable = frames.isEmpty(),
+                isLoading = state.isLoading && state.layer == RadarLayer.WIND && state.windField == null
+            )
+        }
+        val isShownFrameChanged: Boolean = updatedState.shownImageUrl() != shownState.shownImageUrl() || updatedState.precipitationOverlay == null
+        if (updatedState.layer == RadarLayer.PRECIPITATION && !updatedState.isPlaying && isShownFrameChanged) {
+            showFrame(
+                layer = RadarLayer.PRECIPITATION,
+                index = updatedState.precipitationIndex
+            )
+        }
+    }
+
+    private fun RadarState.shownImageUrl(): String? = precipitationFrames.getOrNull(index = precipitationIndex)?.imageUrl
+
+    private fun ImmutableList<RadarFrame>.indexAfterUpdate(
+        shownFrames: List<RadarFrame>,
+        shownIndex: Int,
+        isPlaying: Boolean,
+        initialImageUrl: String?
+    ): Int {
+        if (shownFrames.isEmpty()) {
+            return initialIndex(initialImageUrl = initialImageUrl)
+        }
+        if (shownIndex == shownFrames.lastIndex && !isPlaying) {
+            return lastIndex.coerceAtLeast(minimumValue = 0)
+        }
+        val shownImageUrl: String? = shownFrames.getOrNull(index = shownIndex)?.imageUrl
+        val sameFrameIndex: Int = indexOfFirst { frame: RadarFrame -> frame.imageUrl == shownImageUrl }
+        return if (sameFrameIndex >= 0) {
+            sameFrameIndex
+        } else {
+            shownIndex.coerceIn(
+                minimumValue = 0,
+                maximumValue = lastIndex.coerceAtLeast(minimumValue = 0)
+            )
         }
     }
 

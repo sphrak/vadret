@@ -3,6 +3,8 @@ package se.vadretapp.vadret.aggregatedfeed
 import io.github.sphrak.either.Either
 import io.github.sphrak.either.extension.asLeft
 import io.github.sphrak.either.extension.asRight
+import io.github.sphrak.either.map
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -19,6 +21,7 @@ import se.vadretapp.vadret.aggregatedfeed.model.FeedSource
 import se.vadretapp.vadret.aggregatedfeed.model.GeoLine
 import se.vadretapp.vadret.aggregatedfeed.model.GeoPolygon
 import se.vadretapp.vadret.aggregatedfeed.model.GeoPosition
+import se.vadretapp.vadret.aggregatedfeed.model.SavedFeed
 import se.vadretapp.vadret.aggregatedfeed.model.WarningLevel
 import se.vadretapp.vadret.aggregatedfeed.remote.GeoJsonDto
 import se.vadretapp.vadret.aggregatedfeed.remote.GeoJsonGeometryDto
@@ -165,7 +168,7 @@ class DefaultFeedRepositoryTest {
         clock = clock
     )
 
-    private suspend fun getFeed(isRefresh: Boolean = false): Either<Failure, List<AggregatedFeed>> = feedRepository.getAggregatedFeed(isRefresh = isRefresh)
+    private suspend fun fetchFeed(): Either<Failure, List<AggregatedFeed>> = feedRepository.refreshAggregatedFeed().map { savedFeed: SavedFeed -> savedFeed.aggregatedFeeds }
 
     private fun Either<Failure, List<AggregatedFeed>>.identifiers(): List<String>? = (this as? Either.Right)?.b?.map { aggregatedFeed: AggregatedFeed -> aggregatedFeed.identifier }
 
@@ -262,7 +265,7 @@ class DefaultFeedRepositoryTest {
                         area = noArea.copy(regions = smhiRegions(14))
                     )
                 ).asRight(),
-                actual = getFeed()
+                actual = fetchFeed()
             )
         }
 
@@ -396,7 +399,7 @@ class DefaultFeedRepositoryTest {
                     ),
                     regions = smhiRegions(14)
                 ),
-                actual = (getFeed() as Either.Right).b.single().area
+                actual = (fetchFeed() as Either.Right).b.single().area
             )
         }
 
@@ -423,7 +426,7 @@ class DefaultFeedRepositoryTest {
             withRecordedLogs { recordingLogSink ->
                 assertEquals(
                     expected = noArea.copy(regions = smhiRegions(14)),
-                    actual = (getFeed() as Either.Right).b.single().area
+                    actual = (fetchFeed() as Either.Right).b.single().area
                 )
                 assertEquals(
                     expected = listOf("Ignoring [GeometryCollection] geometry on SMHI warning area 1"),
@@ -467,9 +470,12 @@ class DefaultFeedRepositoryTest {
                 )
             }
 
-            val fetchedFeed: Either<Failure, List<AggregatedFeed>> = getFeed()
+            val fetchedFeed: Either<Failure, List<AggregatedFeed>> = fetchFeed()
 
-            assertEquals(expected = fetchedFeed, actual = getFeed())
+            assertEquals(
+                expected = fetchedFeed to fetchedFeed,
+                actual = feedRepository.getAggregatedFeed() to feedRepository.observeAggregatedFeed().first().map { savedFeed: SavedFeed -> savedFeed.aggregatedFeeds }
+            )
             assertEquals(expected = 1, actual = smhiWarningRemoteDataSource.requestCount)
         }
 
@@ -510,7 +516,7 @@ class DefaultFeedRepositoryTest {
                 )
             }
 
-            val feed: List<AggregatedFeed> = (getFeed() as Either.Right).b
+            val feed: List<AggregatedFeed> = (fetchFeed() as Either.Right).b
 
             assertEquals(
                 expected = listOf(
@@ -553,7 +559,7 @@ class DefaultFeedRepositoryTest {
                 )
             )
 
-            val feed: List<AggregatedFeed> = (getFeed() as Either.Right).b
+            val feed: List<AggregatedFeed> = (fetchFeed() as Either.Right).b
 
             assertEquals(
                 expected = listOf(WarningLevel.RED, WarningLevel.ORANGE, WarningLevel.YELLOW, WarningLevel.MESSAGE),
@@ -594,7 +600,7 @@ class DefaultFeedRepositoryTest {
             )
 
             withRecordedLogs { recordingLogSink ->
-                val feed: List<AggregatedFeed> = (getFeed() as Either.Right).b
+                val feed: List<AggregatedFeed> = (fetchFeed() as Either.Right).b
 
                 assertEquals(
                     expected = listOf(null),
@@ -709,7 +715,7 @@ class DefaultFeedRepositoryTest {
                         area = noArea
                     )
                 ).asRight(),
-                actual = getFeed()
+                actual = fetchFeed()
             )
         }
 
@@ -725,7 +731,7 @@ class DefaultFeedRepositoryTest {
             )
 
             withRecordedLogs { recordingLogSink ->
-                assertEquals(expected = emptyList(), actual = getFeed().identifiers())
+                assertEquals(expected = emptyList(), actual = feedRepository.getAggregatedFeed().identifiers())
                 assertEquals(expected = 1, actual = smhiWarningRemoteDataSource.requestCount)
                 assertEquals(
                     expected = listOf(LogLevel.WARN),
@@ -751,7 +757,7 @@ class DefaultFeedRepositoryTest {
             }
 
             withRecordedLogs { recordingLogSink ->
-                assertEquals(expected = listOf("krisinformation-b"), actual = getFeed().identifiers())
+                assertEquals(expected = listOf("krisinformation-b"), actual = fetchFeed().identifiers())
                 assertEquals(expected = LogLevel.WARN, actual = recordingLogSink.lines.single().level)
             }
         }
@@ -770,7 +776,7 @@ class DefaultFeedRepositoryTest {
             krisinformationRemoteDataSource.publicAlerts = { throw IOException("reset") }
 
             withRecordedLogs { recordingLogSink ->
-                assertEquals(expected = listOf("krisinformation-a"), actual = getFeed().identifiers())
+                assertEquals(expected = listOf("krisinformation-a"), actual = fetchFeed().identifiers())
                 assertEquals(
                     expected = listOf("Skipping public alerts: IOException: reset"),
                     actual = recordingLogSink.lines.map { line: LogLine -> line.message }
@@ -786,7 +792,7 @@ class DefaultFeedRepositoryTest {
             withRecordedLogs { recordingLogSink ->
                 assertEquals(
                     expected = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft(),
-                    actual = getFeed()
+                    actual = fetchFeed()
                 )
                 assertEquals(
                     expected = listOf(LogLevel.WARN),
@@ -803,7 +809,7 @@ class DefaultFeedRepositoryTest {
             withRecordedLogs { recordingLogSink ->
                 assertEquals(
                     expected = Failure.unknown().asLeft(),
-                    actual = getFeed()
+                    actual = fetchFeed()
                 )
                 assertEquals(
                     expected = listOf(LogLevel.ERROR),
@@ -813,28 +819,42 @@ class DefaultFeedRepositoryTest {
         }
 
     @Test
-    fun `the feed is reused within five minutes`() =
+    fun `a saved feed is got without asking again`() =
         testScope.runTest {
-            getFeed()
-            clock.now = now + 4.minutes
-            getFeed()
+            fetchFeed()
+            clock.now = now + 2.days
+            feedRepository.getAggregatedFeed()
 
             assertEquals(expected = 1, actual = smhiWarningRemoteDataSource.requestCount)
         }
 
     @Test
-    fun `a refresh or an old feed is fetched again`() =
+    fun `every refresh asks again and saves what it gets with the time it was fetched`() =
         testScope.runTest {
-            getFeed()
-            getFeed(isRefresh = true)
-            clock.now = now + 5.minutes
-            getFeed()
+            fetchFeed()
+            clock.now = now + 1.minutes
+            fetchFeed()
 
-            assertEquals(expected = 3, actual = smhiWarningRemoteDataSource.requestCount)
+            assertEquals(
+                expected = 2 to now + 1.minutes,
+                actual = smhiWarningRemoteDataSource.requestCount to (feedRepository.observeAggregatedFeed().first() as Either.Right).b.fetchedAt
+            )
         }
 
     @Test
-    fun `the saved feed is used however old it is when fetching fails`() =
+    fun `nothing saved is observed as a feed never fetched`() =
+        testScope.runTest {
+            assertEquals<Either<Failure, SavedFeed>>(
+                expected = SavedFeed(
+                    aggregatedFeeds = emptyList(),
+                    fetchedAt = null
+                ).asRight(),
+                actual = feedRepository.observeAggregatedFeed().first()
+            )
+        }
+
+    @Test
+    fun `a refresh that fails keeps the saved feed`() =
         testScope.runTest {
             smhiWarningRemoteDataSource.smhiWarningDtos = listOf(
                 SmhiWarningDto(
@@ -850,28 +870,13 @@ class DefaultFeedRepositoryTest {
                     )
                 )
             )
-            getFeed()
-            clock.now = now + 2.days
-            krisinformationRemoteDataSource.news = { throw networkUnavailableException(host = "api.krisinformation.se") }
-
-            withRecordedLogs { recordingLogSink ->
-                assertEquals(
-                    expected = listOf("smhi-7-1") to listOf(LogLevel.WARN),
-                    actual = getFeed().identifiers() to recordingLogSink.lines.map { line: LogLine -> line.level }
-                )
-            }
-        }
-
-    @Test
-    fun `a refresh that fails uses the saved feed`() =
-        testScope.runTest {
-            getFeed()
+            fetchFeed()
             krisinformationRemoteDataSource.news = { throw networkUnavailableException(host = "api.krisinformation.se") }
 
             withRecordedLogs {
-                assertEquals(
-                    expected = emptyList<String>() to 2,
-                    actual = getFeed(isRefresh = true).identifiers() to smhiWarningRemoteDataSource.requestCount
+                assertEquals<Pair<Either<Failure, List<AggregatedFeed>>, List<String>?>>(
+                    expected = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft() to listOf("smhi-7-1"),
+                    actual = fetchFeed() to feedRepository.getAggregatedFeed().identifiers()
                 )
             }
         }

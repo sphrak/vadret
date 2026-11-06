@@ -63,7 +63,7 @@ class WarningStoryViewModelTest {
 
             assertEquals(expected = listOf("smhi-1-1", "smhi-1-2"), actual = storyWarningIdentifiers())
             assertEquals(expected = 0, actual = warningStoryViewModel.state.value.currentIndex)
-            assertEquals(expected = listOf(false), actual = getWarningsTask.refreshes)
+            assertEquals(expected = 1, actual = getWarningsTask.calls)
         }
 
     @Test

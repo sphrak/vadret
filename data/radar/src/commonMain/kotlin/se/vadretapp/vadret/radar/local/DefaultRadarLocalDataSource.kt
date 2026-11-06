@@ -1,6 +1,9 @@
 package se.vadretapp.vadret.radar.local
 
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerializationException
 import se.vadretapp.vadret.common.DiskCache
@@ -26,6 +29,17 @@ internal class DefaultRadarLocalDataSource(
                 null
             }
         }
+
+    override fun observeRadar(): Flow<RadarCacheEntity?> =
+        diskCache
+            .observe(key = CACHE_KEY)
+            .map { text: String? ->
+                if (text != null) {
+                    decode(text = text)
+                } else {
+                    null
+                }
+            }.flowOn(context = coroutineDispatcher)
 
     override suspend fun setRadar(radarCacheEntity: RadarCacheEntity) {
         withContext(context = coroutineDispatcher) {

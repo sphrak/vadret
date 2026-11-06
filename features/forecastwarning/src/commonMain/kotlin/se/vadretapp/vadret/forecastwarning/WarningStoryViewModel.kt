@@ -68,7 +68,7 @@ class WarningStoryViewModel internal constructor(
             return
         }
         viewModelScope.launch(context = coroutineDispatcher) {
-            getWarningsTask(isRefresh = false)
+            getWarningsTask()
                 .onResult(
                     onError = { _: Failure -> finish() },
                     onSuccess = { aggregatedFeeds: List<AggregatedFeed> ->

@@ -173,6 +173,6 @@ class DefaultObserveFollowedPlaceWarningsTaskTest {
         runTest {
             observeFollowedPlaceWarningsTask(isRefresh = true).first()
 
-            assertEquals(expected = listOf(true), actual = feedRepository.refreshes)
+            assertEquals(expected = 1, actual = feedRepository.refreshCount)
         }
 }

@@ -3,10 +3,12 @@ package se.vadretapp.vadret.radar
 import io.github.sphrak.either.Either
 import io.github.sphrak.either.extension.asLeft
 import io.github.sphrak.either.extension.asRight
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.test.runTest
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.radar.model.Radar
+import se.vadretapp.vadret.radar.model.SavedRadar
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -22,7 +24,9 @@ private class CountingRadarRepository(
 
     val downloadedImageUrls = mutableListOf<List<String>>()
 
-    override suspend fun getRadar(): Either<Failure, Radar> = Radar(images = emptyList()).asRight()
+    override fun observeRadar(): Flow<Either<Failure, SavedRadar>> = error("Downloading a day never observes the radar")
+
+    override suspend fun refreshRadar(): Either<Failure, SavedRadar> = error("Downloading a day never refreshes the radar")
 
     override suspend fun getRadarContaining(imageUrl: String): Either<Failure, Radar> = Radar(images = emptyList()).asRight()
 

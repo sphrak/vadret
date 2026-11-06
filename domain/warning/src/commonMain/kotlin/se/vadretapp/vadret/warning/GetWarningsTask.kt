@@ -7,7 +7,7 @@ import se.vadretapp.vadret.common.Failure
 
 interface GetWarningsTask {
 
-    suspend operator fun invoke(isRefresh: Boolean): Either<Failure, List<AggregatedFeed>>
+    suspend operator fun invoke(): Either<Failure, List<AggregatedFeed>>
 }
 
 fun GetWarningsTask(feedRepository: FeedRepository): GetWarningsTask = DefaultGetWarningsTask(feedRepository = feedRepository)

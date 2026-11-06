@@ -9,5 +9,5 @@ internal class DefaultGetWarningsTask(
     private val feedRepository: FeedRepository
 ) : GetWarningsTask {
 
-    override suspend fun invoke(isRefresh: Boolean): Either<Failure, List<AggregatedFeed>> = feedRepository.getAggregatedFeed(isRefresh = isRefresh)
+    override suspend fun invoke(): Either<Failure, List<AggregatedFeed>> = feedRepository.getAggregatedFeed()
 }

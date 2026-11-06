@@ -69,10 +69,10 @@ internal class FakeGetWarningsTask(
     ).asRight()
 ) : GetWarningsTask {
 
-    val refreshes = mutableListOf<Boolean>()
+    var calls: Int = 0
 
-    override suspend fun invoke(isRefresh: Boolean): Either<Failure, List<AggregatedFeed>> {
-        refreshes.add(element = isRefresh)
+    override suspend fun invoke(): Either<Failure, List<AggregatedFeed>> {
+        calls++
         return result
     }
 }

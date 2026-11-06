@@ -19,17 +19,17 @@ class DefaultGetWarningsTaskTest {
         runTest {
             assertEquals<Either<Failure, List<AggregatedFeed>>>(
                 expected = feedRepository.result,
-                actual = getWarningsTask(isRefresh = false)
+                actual = getWarningsTask()
             )
         }
 
     @Test
-    fun `a refresh is passed on to the feed`() =
+    fun `saved warnings are got without fetching them again`() =
         runTest {
-            getWarningsTask(isRefresh = true)
-            getWarningsTask(isRefresh = false)
+            getWarningsTask()
+            getWarningsTask()
 
-            assertEquals(expected = listOf(true, false), actual = feedRepository.refreshes)
+            assertEquals(expected = 1, actual = feedRepository.refreshCount)
         }
 
     @Test
@@ -39,7 +39,7 @@ class DefaultGetWarningsTaskTest {
 
             assertEquals<Either<Failure, List<AggregatedFeed>>>(
                 expected = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft(),
-                actual = getWarningsTask(isRefresh = false)
+                actual = getWarningsTask()
             )
         }
 }

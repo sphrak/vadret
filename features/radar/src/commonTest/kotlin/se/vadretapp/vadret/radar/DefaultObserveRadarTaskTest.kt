@@ -2,15 +2,21 @@ package se.vadretapp.vadret.radar
 
 import io.github.sphrak.either.Either
 import io.github.sphrak.either.extension.asRight
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.radar.model.Radar
 import se.vadretapp.vadret.radar.model.RadarImage
+import se.vadretapp.vadret.radar.model.SavedRadar
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.time.Instant
 
 private val todayRadar = Radar(images = emptyList())
+
+private val SAVED_AT: Instant = Instant.parse(input = "2026-10-24T13:00:00Z")
 
 private val archivedRadar = Radar(
     images = listOf(
@@ -25,7 +31,23 @@ private class FakeRadarRepository : RadarRepository {
 
     val requestedImageUrls = mutableListOf<String>()
 
-    override suspend fun getRadar(): Either<Failure, Radar> = todayRadar.asRight()
+    var refreshes: Int = 0
+
+    override fun observeRadar(): Flow<Either<Failure, SavedRadar>> =
+        flowOf(
+            SavedRadar(
+                radar = todayRadar,
+                fetchedAt = SAVED_AT
+            ).asRight()
+        )
+
+    override suspend fun refreshRadar(): Either<Failure, SavedRadar> {
+        refreshes++
+        return SavedRadar(
+            radar = todayRadar,
+            fetchedAt = SAVED_AT
+        ).asRight()
+    }
 
     override suspend fun getRadarContaining(imageUrl: String): Either<Failure, Radar> {
         requestedImageUrls.add(imageUrl)
@@ -39,19 +61,19 @@ private class FakeRadarRepository : RadarRepository {
     override suspend fun downloadRadarDays(imageUrls: List<String>): Either<Failure, Unit> = Unit.asRight()
 }
 
-class DefaultGetRadarTaskTest {
+class DefaultObserveRadarTaskTest {
 
     private val radarRepository = FakeRadarRepository()
-    private val getRadarTask: GetRadarTask = DefaultGetRadarTask(radarRepository = radarRepository)
+    private val observeRadarTask: ObserveRadarTask = DefaultObserveRadarTask(radarRepository = radarRepository)
 
     @Test
     fun `without an image the radar of today is loaded`() =
         runTest {
             assertEquals<Either<Failure, Radar>>(
                 expected = todayRadar.asRight(),
-                actual = getRadarTask(imageUrl = null)
+                actual = observeRadarTask(imageUrl = null).first()
             )
-            assertEquals(expected = emptyList(), actual = radarRepository.requestedImageUrls)
+            assertEquals(expected = emptyList<String>() to 1, actual = radarRepository.requestedImageUrls to radarRepository.refreshes)
         }
 
     @Test
@@ -59,8 +81,8 @@ class DefaultGetRadarTaskTest {
         runTest {
             assertEquals<Either<Failure, Radar>>(
                 expected = archivedRadar.asRight(),
-                actual = getRadarTask(imageUrl = "https://smhi.se/archived.tif")
+                actual = observeRadarTask(imageUrl = "https://smhi.se/archived.tif").first()
             )
-            assertEquals(expected = listOf("https://smhi.se/archived.tif"), actual = radarRepository.requestedImageUrls)
+            assertEquals(expected = listOf("https://smhi.se/archived.tif") to 0, actual = radarRepository.requestedImageUrls to radarRepository.refreshes)
         }
 }

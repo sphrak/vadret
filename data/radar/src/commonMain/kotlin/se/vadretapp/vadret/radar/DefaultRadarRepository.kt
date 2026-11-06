@@ -1,6 +1,11 @@
 package se.vadretapp.vadret.radar
 
 import io.github.sphrak.either.Either
+import io.github.sphrak.either.extension.asLeft
+import io.github.sphrak.either.extension.asRight
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.LocalDate
@@ -10,27 +15,19 @@ import okio.BufferedSink
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.common.catch
 import se.vadretapp.vadret.common.either
-import se.vadretapp.vadret.logging.Logger
-import se.vadretapp.vadret.logging.LoggerFactory
 import se.vadretapp.vadret.radar.extension.toFailure
 import se.vadretapp.vadret.radar.extension.toRadar
 import se.vadretapp.vadret.radar.extension.toRadarCacheEntity
 import se.vadretapp.vadret.radar.extension.toRadarDate
 import se.vadretapp.vadret.radar.extension.toRadarImageName
+import se.vadretapp.vadret.radar.extension.toSavedRadar
 import se.vadretapp.vadret.radar.local.RadarCacheEntity
 import se.vadretapp.vadret.radar.local.RadarImageLocalDataSource
 import se.vadretapp.vadret.radar.local.RadarLocalDataSource
 import se.vadretapp.vadret.radar.model.Radar
+import se.vadretapp.vadret.radar.model.SavedRadar
 import se.vadretapp.vadret.radar.remote.RadarRemoteDataSource
-import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Clock
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.minutes
-import kotlin.time.Instant
-
-private val logger: Logger = LoggerFactory.getLogger(tag = "se.vadretapp.vadret.radar")
-
-private val cacheLifetime: Duration = 15.minutes
 
 internal class DefaultRadarRepository(
     private val radarRemoteDataSource: RadarRemoteDataSource,
@@ -42,16 +39,39 @@ internal class DefaultRadarRepository(
     // An image asked for while its day is downloading is read from disk afterwards instead of downloaded twice.
     private val imageDownloadMutex: Mutex = Mutex()
 
-    override suspend fun getRadar(): Either<Failure, Radar> = either {
-        getRadarCacheEntity(
-            date = clock.now().toLocalDateTime(timeZone = TimeZone.UTC).date
-        ).toRadar()
+    override fun observeRadar(): Flow<Either<Failure, SavedRadar>> =
+        radarLocalDataSource
+            .observeRadar()
+            .map<RadarCacheEntity?, Either<Failure, SavedRadar>> { radarCacheEntity: RadarCacheEntity? ->
+                val savedToday: RadarCacheEntity? = if (radarCacheEntity?.date == today().toString()) {
+                    radarCacheEntity
+                } else {
+                    null
+                }
+                savedToday.toSavedRadar().asRight()
+            }.catch { throwable: Throwable ->
+                if (throwable is Exception) {
+                    emit(throwable.toFailure().asLeft())
+                } else {
+                    throw throwable
+                }
+            }
+
+    override suspend fun refreshRadar(): Either<Failure, SavedRadar> = either {
+        fetchRadar(date = today()).toSavedRadar()
     }.catch { exception: Exception -> exception.toFailure() }
 
     override suspend fun getRadarContaining(
         imageUrl: String
     ): Either<Failure, Radar> = either {
-        getRadarCacheEntity(date = imageUrl.toRadarDate()).toRadar()
+        val date: LocalDate = imageUrl.toRadarDate()
+        val savedRadar: RadarCacheEntity? = radarLocalDataSource.getRadar()
+        val radarOfTheDay: RadarCacheEntity = if (savedRadar != null && savedRadar.date == date.toString() && savedRadar.images.isNotEmpty()) {
+            savedRadar
+        } else {
+            fetchRadar(date = date)
+        }
+        radarOfTheDay.toRadar()
     }.catch { exception: Exception -> exception.toFailure() }
 
     override suspend fun getRadarImage(imageUrl: String): Either<Failure, ByteArray> = either {
@@ -116,55 +136,16 @@ internal class DefaultRadarRepository(
         return image
     }
 
-    private suspend fun getRadarCacheEntity(date: LocalDate): RadarCacheEntity {
-        val now: Instant = clock.now()
-        val cachedRadar: RadarCacheEntity? = radarLocalDataSource.getRadar()
-        return if (cachedRadar != null && cachedRadar.isCurrent(now = now, date = date)) {
-            cachedRadar
-        } else {
-            fetchRadar(
-                now = now,
-                date = date,
-                cachedRadar = cachedRadar
+    private suspend fun fetchRadar(date: LocalDate): RadarCacheEntity {
+        val fetchedRadar: RadarCacheEntity = radarRemoteDataSource
+            .getRadar(date = date)
+            .toRadarCacheEntity(
+                fetchedAt = clock.now(),
+                date = date
             )
-        }
-    }
-
-    // The saved radar of the same day is used when fetching fails, however old it is. A saved radar of another day is
-    // not, since its images are not the ones of the day asked for.
-    private suspend fun fetchRadar(
-        now: Instant,
-        date: LocalDate,
-        cachedRadar: RadarCacheEntity?
-    ): RadarCacheEntity {
-        val fetchedRadar: RadarCacheEntity = try {
-            radarRemoteDataSource
-                .getRadar(date = date)
-                .toRadarCacheEntity(
-                    fetchedAt = now,
-                    date = date
-                )
-        } catch (cancellationException: CancellationException) {
-            throw cancellationException
-        } catch (exception: Exception) {
-            if (cachedRadar == null || cachedRadar.date != date.toString() || cachedRadar.images.isEmpty()) {
-                throw exception
-            }
-            logger.warn { "Using the radar fetched at ${cachedRadar.fetchedAtEpochMillis}: ${exception::class.simpleName}: ${exception.message}" }
-            return cachedRadar
-        }
         radarLocalDataSource.setRadar(radarCacheEntity = fetchedRadar)
         return fetchedRadar
     }
 
-    private fun RadarCacheEntity.isCurrent(
-        now: Instant,
-        date: LocalDate
-    ): Boolean {
-        val age: Duration = now - Instant.fromEpochMilliseconds(epochMilliseconds = fetchedAtEpochMillis)
-        return this.date == date.toString() &&
-            age >= Duration.ZERO &&
-            age < cacheLifetime &&
-            images.isNotEmpty()
-    }
+    private fun today(): LocalDate = clock.now().toLocalDateTime(timeZone = TimeZone.UTC).date
 }

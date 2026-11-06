@@ -5,6 +5,7 @@ import io.github.sphrak.either.extension.asLeft
 import io.github.sphrak.either.extension.asRight
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -149,7 +150,7 @@ class DefaultObserveUnseenWarningsTaskTest {
                 ),
                 actual = emitted
             )
-            assertEquals(expected = listOf(true), actual = feedRepository.refreshes)
+            assertEquals(expected = 1, actual = feedRepository.refreshCount)
         }
 
     @Test
@@ -162,7 +163,7 @@ class DefaultObserveUnseenWarningsTaskTest {
                 actual = observeUnseenWarningsTask(
                     warningPlace = funasdalen,
                     isRefresh = false
-                ).toList()
+                ).take(count = 1).toList()
             )
         }
 

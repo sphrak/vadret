@@ -4,11 +4,13 @@ import androidx.compose.ui.graphics.ImageBitmap
 import io.github.sphrak.either.Either
 import io.github.sphrak.either.extension.asLeft
 import io.github.sphrak.either.extension.asRight
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -64,16 +66,24 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 
-private class FakeGetRadarTask(
-    var result: Either<Failure, Radar>
-) : GetRadarTask {
+private class FakeObserveRadarTask(
+    var result: Either<Failure, Radar>,
+    var refreshedResult: Either<Failure, Radar>? = null
+) : ObserveRadarTask {
 
     val requestedImageUrls = mutableListOf<String?>()
+    val refreshGate: CompletableDeferred<Unit> = CompletableDeferred()
 
-    override suspend fun invoke(imageUrl: String?): Either<Failure, Radar> {
-        requestedImageUrls.add(imageUrl)
-        return result
-    }
+    override fun invoke(imageUrl: String?): Flow<Either<Failure, Radar>> =
+        flow {
+            requestedImageUrls.add(imageUrl)
+            emit(value = result)
+            val refreshed: Either<Failure, Radar>? = refreshedResult
+            if (refreshed != null) {
+                refreshGate.await()
+                emit(value = refreshed)
+            }
+        }
 }
 
 private class FakeRadarImageLoader : RadarImageLoader {
@@ -311,12 +321,23 @@ private val radar = Radar(
     }
 )
 
+private val newerRadar = Radar(
+    images = (0..3).map { minute: Int ->
+        RadarImage(
+            imageUrl = "https://smhi.se/$minute.png",
+            validAt = Instant.parse(input = "2026-10-24T12:0$minute:00Z")
+        )
+    }
+)
+
+private fun RadarState.shownImageUrl(): String? = precipitationFrames.getOrNull(index = precipitationIndex)?.imageUrl
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class RadarViewModelTest {
 
     private val testDispatcher: TestDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
-    private val getRadarTask = FakeGetRadarTask(result = radar.asRight())
+    private val getRadarTask = FakeObserveRadarTask(result = radar.asRight())
     private val getWindForecastTask = FakeGetWindForecastTask(result = windForecast.asRight())
     private val getPollenMapTask = FakeGetPollenMapTask(result = pollenMap.asRight())
     private val pollenCloudRenderer = FakePollenCloudRenderer()
@@ -344,7 +365,7 @@ class RadarViewModelTest {
         initialImageUrl: String? = null
     ): RadarViewModel {
         val radarViewModel = RadarViewModel(
-            getRadarTask = getRadarTask,
+            observeRadarTask = getRadarTask,
             downloadRadarDayTask = downloadRadarDayTask,
             getWindForecastTask = getWindForecastTask,
             getDeviceLocationTask = getDeviceLocationTask,
@@ -1244,6 +1265,42 @@ class RadarViewModelTest {
             }
 
             assertEquals(expected = List(size = failures.size) { false }, actual = covered)
+        }
+
+    @Test
+    fun `a refreshed radar moves on to its newest image when the newest one was shown`() =
+        testScope.runTest {
+            getRadarTask.refreshedResult = newerRadar.asRight()
+            val radarViewModel: RadarViewModel = viewModel()
+            advanceUntilIdle()
+            val beforeRefresh: String? = radarViewModel.state.value.shownImageUrl()
+
+            getRadarTask.refreshGate.complete(value = Unit)
+            advanceUntilIdle()
+
+            assertEquals(
+                expected = "https://smhi.se/2.png" to "https://smhi.se/3.png",
+                actual = beforeRefresh to radarViewModel.state.value.shownImageUrl()
+            )
+            assertEquals(expected = "https://smhi.se/3.png", actual = radarImageLoader.loadedUrls.last())
+        }
+
+    @Test
+    fun `a refreshed radar keeps an earlier image that was picked`() =
+        testScope.runTest {
+            getRadarTask.refreshedResult = newerRadar.asRight()
+            val radarViewModel: RadarViewModel = viewModel()
+            advanceUntilIdle()
+            radarViewModel.onEvent(event = RadarEvent.OnIndexChanged(index = 0))
+            advanceUntilIdle()
+
+            getRadarTask.refreshGate.complete(value = Unit)
+            advanceUntilIdle()
+
+            assertEquals(
+                expected = "https://smhi.se/0.png" to 4,
+                actual = radarViewModel.state.value.shownImageUrl() to radarViewModel.state.value.precipitationFrames.size
+            )
         }
 
     @Test
