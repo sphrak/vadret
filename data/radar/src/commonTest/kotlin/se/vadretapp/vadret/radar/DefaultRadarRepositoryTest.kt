@@ -32,11 +32,13 @@ import se.vadretapp.vadret.testing.FixedClock
 import se.vadretapp.vadret.testing.LogLine
 import se.vadretapp.vadret.testing.deleteRecursively
 import se.vadretapp.vadret.testing.mockHttpClient
+import se.vadretapp.vadret.testing.networkUnavailableException
 import se.vadretapp.vadret.testing.temporaryDirectory
 import se.vadretapp.vadret.testing.withRecordedLogs
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
 
@@ -346,5 +348,46 @@ class DefaultRadarRepositoryTest {
                 expected = emptyList(),
                 actual = radarRemoteDataSource.requestedDates
             )
+        }
+
+    @Test
+    fun `the saved radar of the day is used however old it is when fetching fails`() =
+        testScope.runTest {
+            cache(fetchedAt = now - 3.hours)
+            radarRemoteDataSource.radarException = networkUnavailableException(host = "opendata-download-radar.smhi.se")
+
+            withRecordedLogs { recordingLogSink ->
+                assertEquals<Pair<Either<Failure, Radar>, List<LogLevel>>>(
+                    expected = Radar(
+                        images = listOf(
+                            RadarImage(
+                                imageUrl = "https://smhi.se/cached.tif",
+                                validAt = now
+                            )
+                        )
+                    ).asRight() to listOf(LogLevel.WARN),
+                    actual = radarRepository.getRadar() to recordingLogSink.lines.map { line: LogLine -> line.level }
+                )
+            }
+        }
+
+    @Test
+    fun `a saved radar of another day or without images is not used when fetching fails`() =
+        testScope.runTest {
+            val caches: List<() -> Unit> = listOf(
+                { cache(fetchedAt = now - 3.hours, date = "2026-10-23") },
+                { cache(fetchedAt = now - 3.hours, images = emptyList()) }
+            )
+            radarRemoteDataSource.radarException = networkUnavailableException(host = "opendata-download-radar.smhi.se")
+
+            withRecordedLogs {
+                assertEquals(
+                    expected = List(size = caches.size) { Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft() },
+                    actual = caches.map { writeCache: () -> Unit ->
+                        writeCache()
+                        radarRepository.getRadar()
+                    }
+                )
+            }
         }
 }

@@ -51,7 +51,13 @@ val repositoryModule: Module = module {
     single<ForecastPreferenceRepository> { ForecastPreferenceRepository(dataStore = get()) }
     single<LanguageRepository> { LanguageRepository(dataStore = get()) }
     single<ThemeRepository> { ThemeRepository(dataStore = get()) }
-    single<WeatherForecastRepository> { WeatherForecastRepository(httpClient = inject()) }
+    single<WeatherForecastRepository> {
+        WeatherForecastRepository(
+            httpClient = inject(),
+            diskCache = get(),
+            coroutineDispatcher = get()
+        )
+    }
     single<WindRepository> {
         WindRepository(
             httpClient = inject(),

@@ -9,13 +9,18 @@ import io.ktor.client.request.HttpRequestData
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.logging.LogLevel
+import se.vadretapp.vadret.testing.FakeDiskCache
 import se.vadretapp.vadret.testing.LogLine
 import se.vadretapp.vadret.testing.mockHttpClient
+import se.vadretapp.vadret.testing.networkUnavailableException
 import se.vadretapp.vadret.testing.withRecordedLogs
+import se.vadretapp.vadret.weatherforecast.local.DefaultWeatherForecastLocalDataSource
 import se.vadretapp.vadret.weatherforecast.model.Analysis
 import se.vadretapp.vadret.weatherforecast.model.Forecast
 import se.vadretapp.vadret.weatherforecast.remote.DefaultWeatherForecastRemoteDataSource
@@ -98,7 +103,9 @@ private fun analysisTimeSeries(
 
 class DefaultWeatherForecastRepositoryTest {
 
+    private val testScope = TestScope(StandardTestDispatcher())
     private val requests = mutableListOf<HttpRequestData>()
+    private val diskCache = FakeDiskCache()
 
     private fun repository(handler: MockRequestHandler): WeatherForecastRepository =
         DefaultWeatherForecastRepository(
@@ -109,12 +116,40 @@ class DefaultWeatherForecastRepositoryTest {
                         handler(request)
                     }
                 }
+            ),
+            weatherForecastLocalDataSource = DefaultWeatherForecastLocalDataSource(
+                diskCache = diskCache,
+                coroutineDispatcher = StandardTestDispatcher(scheduler = testScope.testScheduler)
             )
         )
 
+    private fun respondingWith(body: String): WeatherForecastRepository =
+        repository {
+            respond(
+                content = body,
+                headers = jsonHeaders
+            )
+        }
+
+    private fun unreachableRepository(): WeatherForecastRepository = repository { throw networkUnavailableException(host = "opendata-download-metfcst.smhi.se") }
+
+    private suspend fun WeatherForecastRepository.airTemperatures(
+        latitude: Double,
+        longitude: Double
+    ): Either<Failure, List<Double>> =
+        when (
+            val forecasts: Either<Failure, List<Forecast>> = getForecasts(
+                latitude = latitude,
+                longitude = longitude
+            )
+        ) {
+            is Either.Left -> forecasts
+            is Either.Right -> forecasts.b.map { forecast: Forecast -> forecast.airTemperature }.asRight()
+        }
+
     @Test
     fun `the forecast is asked for at six decimals at most`() =
-        runTest {
+        testScope.runTest {
             repository {
                 respond(
                     content = """{"timeSeries":[]}""",
@@ -133,7 +168,7 @@ class DefaultWeatherForecastRepositoryTest {
 
     @Test
     fun `the time series become forecasts in time order`() =
-        runTest {
+        testScope.runTest {
             val laterHour: String = timeSeries(
                 time = "2026-10-24T12:00:00Z",
                 airTemperature = 8.5,
@@ -195,7 +230,7 @@ class DefaultWeatherForecastRepositoryTest {
 
     @Test
     fun `a missing or impossible precipitation amount is unknown`() =
-        runTest {
+        testScope.runTest {
             val body = """
             {
               "timeSeries": [
@@ -225,7 +260,7 @@ class DefaultWeatherForecastRepositoryTest {
 
     @Test
     fun `a time series without its interval start is an invalid response`() =
-        runTest {
+        testScope.runTest {
             withRecordedLogs { recordingLogSink ->
                 val result: Either<Failure, List<Forecast>> = repository {
                     respond(
@@ -250,7 +285,7 @@ class DefaultWeatherForecastRepositoryTest {
 
     @Test
     fun `a place outside the forecast area is told apart from other failures`() =
-        runTest {
+        testScope.runTest {
             withRecordedLogs { recordingLogSink ->
                 val results: List<Either<Failure, List<Forecast>>> = listOf(
                     repository {
@@ -302,7 +337,7 @@ class DefaultWeatherForecastRepositoryTest {
 
     @Test
     fun `the analysis is asked for at six decimals at most`() =
-        runTest {
+        testScope.runTest {
             repository {
                 respond(
                     content = """{"timeSeries":[]}""",
@@ -321,7 +356,7 @@ class DefaultWeatherForecastRepositoryTest {
 
     @Test
     fun `only the analysis refuses a cached answer older than ten minutes`() =
-        runTest {
+        testScope.runTest {
             val weatherForecastRepository: WeatherForecastRepository = repository {
                 respond(
                     content = """{"timeSeries":[]}""",
@@ -346,7 +381,7 @@ class DefaultWeatherForecastRepositoryTest {
 
     @Test
     fun `the analysed hours come in time order`() =
-        runTest {
+        testScope.runTest {
             val body = """
             {
               "referenceTime": "2026-10-26T17:00:00Z",
@@ -396,7 +431,7 @@ class DefaultWeatherForecastRepositoryTest {
 
     @Test
     fun `a missing or impossible analysed precipitation amount is unknown`() =
-        runTest {
+        testScope.runTest {
             val body = """
             {
               "timeSeries": [
@@ -426,7 +461,7 @@ class DefaultWeatherForecastRepositoryTest {
 
     @Test
     fun `a place outside the analysis area is told apart from other failures`() =
-        runTest {
+        testScope.runTest {
             withRecordedLogs { recordingLogSink ->
                 val results: List<Either<Failure, List<Analysis>>> = listOf(
                     repository {
@@ -465,6 +500,143 @@ class DefaultWeatherForecastRepositoryTest {
                 assertEquals(
                     expected = List(size = results.size) { LogLevel.WARN },
                     actual = recordingLogSink.lines.map { line: LogLine -> line.level }
+                )
+            }
+        }
+
+    @Test
+    fun `a saved forecast is used for the same place when the forecast cannot be fetched`() =
+        testScope.runTest {
+            respondingWith(body = """{"timeSeries":[${timeSeries(time = "2026-10-24T12:00:00Z", airTemperature = 7.5)}]}""").getForecasts(
+                latitude = 59.3293,
+                longitude = 18.0686
+            )
+
+            withRecordedLogs { recordingLogSink ->
+                assertEquals(
+                    expected = listOf(7.5).asRight() to listOf(LogLevel.WARN),
+                    actual = unreachableRepository().airTemperatures(
+                        latitude = 59.3271,
+                        longitude = 18.0712
+                    ) to recordingLogSink.lines.map { line: LogLine -> line.level }
+                )
+            }
+        }
+
+    @Test
+    fun `a forecast saved for another place is not used`() =
+        testScope.runTest {
+            respondingWith(body = """{"timeSeries":[${timeSeries(time = "2026-10-24T12:00:00Z", airTemperature = 7.5)}]}""").getForecasts(
+                latitude = 59.3293,
+                longitude = 18.0686
+            )
+
+            withRecordedLogs {
+                assertEquals(
+                    expected = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft(),
+                    actual = unreachableRepository().airTemperatures(
+                        latitude = 57.7089,
+                        longitude = 11.9746
+                    )
+                )
+            }
+        }
+
+    @Test
+    fun `a fetched forecast replaces the saved one for the place`() =
+        testScope.runTest {
+            listOf(7.5, 9.0).forEach { airTemperature: Double ->
+                respondingWith(body = """{"timeSeries":[${timeSeries(time = "2026-10-24T12:00:00Z", airTemperature = airTemperature)}]}""").getForecasts(
+                    latitude = 59.3293,
+                    longitude = 18.0686
+                )
+            }
+
+            withRecordedLogs {
+                assertEquals(
+                    expected = listOf(9.0).asRight(),
+                    actual = unreachableRepository().airTemperatures(
+                        latitude = 59.3293,
+                        longitude = 18.0686
+                    )
+                )
+            }
+        }
+
+    @Test
+    fun `only the ten places fetched last keep a saved forecast`() =
+        testScope.runTest {
+            val latitudes: List<Double> = List(size = 11) { index: Int -> 55.0 + index }
+            latitudes.forEach { latitude: Double ->
+                respondingWith(body = """{"timeSeries":[${timeSeries(time = "2026-10-24T12:00:00Z", airTemperature = latitude)}]}""").getForecasts(
+                    latitude = latitude,
+                    longitude = 15.0
+                )
+            }
+
+            withRecordedLogs {
+                assertEquals(
+                    expected = listOf(Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft()) + latitudes.drop(n = 1).map { latitude: Double -> listOf(latitude).asRight() },
+                    actual = latitudes.map { latitude: Double ->
+                        unreachableRepository().airTemperatures(
+                            latitude = latitude,
+                            longitude = 15.0
+                        )
+                    }
+                )
+            }
+        }
+
+    @Test
+    fun `unreadable saved forecasts are dropped`() =
+        testScope.runTest {
+            diskCache.write(
+                key = "weather_forecasts.json",
+                value = "not json"
+            )
+
+            withRecordedLogs {
+                assertEquals(
+                    expected = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft<Failure>() to emptyMap<String, String>(),
+                    actual = unreachableRepository().airTemperatures(
+                        latitude = 59.3293,
+                        longitude = 18.0686
+                    ) to diskCache.entries
+                )
+            }
+        }
+
+    @Test
+    fun `a saved analysis is used for the same place when the analysis cannot be fetched`() =
+        testScope.runTest {
+            respondingWith(body = """{"timeSeries":[${analysisTimeSeries(time = "2026-10-24T10:00:00Z", airTemperature = 6.1)}]}""").getAnalyses(
+                latitude = 59.3293,
+                longitude = 18.0686
+            )
+
+            withRecordedLogs {
+                val analyses: Either<Failure, List<Analysis>> = unreachableRepository().getAnalyses(
+                    latitude = 59.3293,
+                    longitude = 18.0686
+                )
+
+                assertEquals(
+                    expected = listOf(6.1),
+                    actual = (analyses as Either.Right).b.map { analysis: Analysis -> analysis.airTemperature }
+                )
+            }
+        }
+
+    @Test
+    fun `an analysis that is neither fetched nor saved is a failure`() =
+        testScope.runTest {
+            withRecordedLogs {
+                assertEquals(
+                    expected = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft(),
+                    actual = unreachableRepository().getAnalyses(
+                        latitude = 59.3293,
+                        longitude = 18.0686
+                    )
                 )
             }
         }

@@ -8,7 +8,8 @@ import se.vadretapp.vadret.radar.remote.RadarDto
 import se.vadretapp.vadret.radar.remote.RadarRemoteDataSource
 
 internal class FakeRadarRemoteDataSource(
-    var radarDto: RadarDto
+    var radarDto: RadarDto,
+    var radarException: Exception? = null
 ) : RadarRemoteDataSource {
 
     val archives = mutableMapOf<LocalDate, ByteArray>()
@@ -18,6 +19,10 @@ internal class FakeRadarRemoteDataSource(
 
     override suspend fun getRadar(date: LocalDate): RadarDto {
         requestedDates.add(date)
+        val failure: Exception? = radarException
+        if (failure != null) {
+            throw failure
+        }
         return radarDto
     }
 

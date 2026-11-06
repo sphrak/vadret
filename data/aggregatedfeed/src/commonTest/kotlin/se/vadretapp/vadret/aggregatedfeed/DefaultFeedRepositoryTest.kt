@@ -39,6 +39,7 @@ import se.vadretapp.vadret.testing.networkUnavailableException
 import se.vadretapp.vadret.testing.withRecordedLogs
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
 
@@ -830,5 +831,48 @@ class DefaultFeedRepositoryTest {
             getFeed()
 
             assertEquals(expected = 3, actual = smhiWarningRemoteDataSource.requestCount)
+        }
+
+    @Test
+    fun `the saved feed is used however old it is when fetching fails`() =
+        testScope.runTest {
+            smhiWarningRemoteDataSource.smhiWarningDtos = listOf(
+                SmhiWarningDto(
+                    id = 7,
+                    event = text(sv = "Regn"),
+                    descriptions = emptyList(),
+                    warningAreas = listOf(
+                        warningArea(
+                            id = 1,
+                            published = "2026-10-24T09:00:00Z",
+                            districtIds = listOf(14)
+                        )
+                    )
+                )
+            )
+            getFeed()
+            clock.now = now + 2.days
+            krisinformationRemoteDataSource.news = { throw networkUnavailableException(host = "api.krisinformation.se") }
+
+            withRecordedLogs { recordingLogSink ->
+                assertEquals(
+                    expected = listOf("smhi-7-1") to listOf(LogLevel.WARN),
+                    actual = getFeed().identifiers() to recordingLogSink.lines.map { line: LogLine -> line.level }
+                )
+            }
+        }
+
+    @Test
+    fun `a refresh that fails uses the saved feed`() =
+        testScope.runTest {
+            getFeed()
+            krisinformationRemoteDataSource.news = { throw networkUnavailableException(host = "api.krisinformation.se") }
+
+            withRecordedLogs {
+                assertEquals(
+                    expected = emptyList<String>() to 2,
+                    actual = getFeed(isRefresh = true).identifiers() to smhiWarningRemoteDataSource.requestCount
+                )
+            }
         }
 }

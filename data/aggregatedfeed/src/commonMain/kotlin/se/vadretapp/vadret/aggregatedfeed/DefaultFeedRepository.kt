@@ -82,21 +82,38 @@ internal class DefaultFeedRepository(
 
     private suspend fun getAggregatedFeedCacheEntity(isRefresh: Boolean): AggregatedFeedCacheEntity {
         val now: Instant = clock.now()
-        val cachedFeed: AggregatedFeedCacheEntity? = if (isRefresh) {
-            null
-        } else {
-            aggregatedFeedLocalDataSource.getAggregatedFeed()
-        }
-        return if (cachedFeed != null && cachedFeed.isFresh(now = now)) {
+        val cachedFeed: AggregatedFeedCacheEntity? = aggregatedFeedLocalDataSource.getAggregatedFeed()
+        return if (!isRefresh && cachedFeed != null && cachedFeed.isFresh(now = now)) {
             cachedFeed
         } else {
-            val fetchedFeed = AggregatedFeedCacheEntity(
+            fetchAggregatedFeed(
+                now = now,
+                cachedFeed = cachedFeed
+            )
+        }
+    }
+
+    // A refresh or an old feed is fetched again, and the saved feed is used when fetching fails, however old it is.
+    private suspend fun fetchAggregatedFeed(
+        now: Instant,
+        cachedFeed: AggregatedFeedCacheEntity?
+    ): AggregatedFeedCacheEntity {
+        val fetchedFeed: AggregatedFeedCacheEntity = try {
+            AggregatedFeedCacheEntity(
                 fetchedAtEpochMillis = now.toEpochMilliseconds(),
                 items = fetchItems()
             )
-            aggregatedFeedLocalDataSource.setAggregatedFeed(aggregatedFeedCacheEntity = fetchedFeed)
-            fetchedFeed
+        } catch (cancellationException: CancellationException) {
+            throw cancellationException
+        } catch (exception: Exception) {
+            if (cachedFeed == null) {
+                throw exception
+            }
+            logger.warn { "Using the feed fetched at ${cachedFeed.fetchedAtEpochMillis}: ${exception::class.simpleName}: ${exception.message}" }
+            return cachedFeed
         }
+        aggregatedFeedLocalDataSource.setAggregatedFeed(aggregatedFeedCacheEntity = fetchedFeed)
+        return fetchedFeed
     }
 
     private suspend fun fetchItems(): List<AggregatedFeedEntity> =

@@ -8,6 +8,8 @@ import kotlinx.coroutines.coroutineScope
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.common.catch
 import se.vadretapp.vadret.common.either
+import se.vadretapp.vadret.logging.Logger
+import se.vadretapp.vadret.logging.LoggerFactory
 import se.vadretapp.vadret.wind.exception.InvalidWindGridException
 import se.vadretapp.vadret.wind.exception.WindNotAvailableException
 import se.vadretapp.vadret.wind.extension.columnCount
@@ -24,9 +26,12 @@ import se.vadretapp.vadret.wind.remote.MultiPointDto
 import se.vadretapp.vadret.wind.remote.WindParameter
 import se.vadretapp.vadret.wind.remote.WindParameterDto
 import se.vadretapp.vadret.wind.remote.WindRemoteDataSource
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Instant
+
+private val logger: Logger = LoggerFactory.getLogger(tag = "se.vadretapp.vadret.wind")
 
 private const val FORECAST_HOUR_COUNT = 12
 private const val MILLISECONDS_IN_HOUR = 3_600_000L
@@ -41,10 +46,25 @@ internal class DefaultWindRepository(
         either { getWindForecastEntity().toWindForecast() }
             .catch { exception: Exception -> exception.toFailure() }
 
+    // The saved wind is used when the newest model run cannot be fetched, however old it is.
     private suspend fun getWindForecastEntity(): WindForecastEntity {
+        val cachedWindForecast: WindForecastEntity? = windLocalDataSource.getWindForecast()
+        return try {
+            getCurrentWindForecastEntity(cachedWindForecast = cachedWindForecast)
+        } catch (cancellationException: CancellationException) {
+            throw cancellationException
+        } catch (exception: Exception) {
+            if (cachedWindForecast == null) {
+                throw exception
+            }
+            logger.warn { "Using the wind of the model run at ${cachedWindForecast.referenceTimeEpochMillis}: ${exception::class.simpleName}: ${exception.message}" }
+            cachedWindForecast
+        }
+    }
+
+    private suspend fun getCurrentWindForecastEntity(cachedWindForecast: WindForecastEntity?): WindForecastEntity {
         val referenceTime: Instant = Instant.parse(input = windRemoteDataSource.getCreatedTime().referenceTime)
         val firstValidAt: Instant = firstValidAt(referenceTime = referenceTime)
-        val cachedWindForecast: WindForecastEntity? = windLocalDataSource.getWindForecast()
         val isCurrent: Boolean = cachedWindForecast != null &&
             cachedWindForecast.isFor(
                 referenceTime = referenceTime,

@@ -10,6 +10,8 @@ import okio.BufferedSink
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.common.catch
 import se.vadretapp.vadret.common.either
+import se.vadretapp.vadret.logging.Logger
+import se.vadretapp.vadret.logging.LoggerFactory
 import se.vadretapp.vadret.radar.extension.toFailure
 import se.vadretapp.vadret.radar.extension.toRadar
 import se.vadretapp.vadret.radar.extension.toRadarCacheEntity
@@ -20,10 +22,13 @@ import se.vadretapp.vadret.radar.local.RadarImageLocalDataSource
 import se.vadretapp.vadret.radar.local.RadarLocalDataSource
 import se.vadretapp.vadret.radar.model.Radar
 import se.vadretapp.vadret.radar.remote.RadarRemoteDataSource
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
+
+private val logger: Logger = LoggerFactory.getLogger(tag = "se.vadretapp.vadret.radar")
 
 private val cacheLifetime: Duration = 15.minutes
 
@@ -117,15 +122,39 @@ internal class DefaultRadarRepository(
         return if (cachedRadar != null && cachedRadar.isCurrent(now = now, date = date)) {
             cachedRadar
         } else {
-            val fetchedRadar: RadarCacheEntity = radarRemoteDataSource
+            fetchRadar(
+                now = now,
+                date = date,
+                cachedRadar = cachedRadar
+            )
+        }
+    }
+
+    // The saved radar of the same day is used when fetching fails, however old it is. A saved radar of another day is
+    // not, since its images are not the ones of the day asked for.
+    private suspend fun fetchRadar(
+        now: Instant,
+        date: LocalDate,
+        cachedRadar: RadarCacheEntity?
+    ): RadarCacheEntity {
+        val fetchedRadar: RadarCacheEntity = try {
+            radarRemoteDataSource
                 .getRadar(date = date)
                 .toRadarCacheEntity(
                     fetchedAt = now,
                     date = date
                 )
-            radarLocalDataSource.setRadar(radarCacheEntity = fetchedRadar)
-            fetchedRadar
+        } catch (cancellationException: CancellationException) {
+            throw cancellationException
+        } catch (exception: Exception) {
+            if (cachedRadar == null || cachedRadar.date != date.toString() || cachedRadar.images.isEmpty()) {
+                throw exception
+            }
+            logger.warn { "Using the radar fetched at ${cachedRadar.fetchedAtEpochMillis}: ${exception::class.simpleName}: ${exception.message}" }
+            return cachedRadar
         }
+        radarLocalDataSource.setRadar(radarCacheEntity = fetchedRadar)
+        return fetchedRadar
     }
 
     private fun RadarCacheEntity.isCurrent(

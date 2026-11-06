@@ -16,6 +16,7 @@ import se.vadretapp.vadret.logging.LogLevel
 import se.vadretapp.vadret.testing.FixedClock
 import se.vadretapp.vadret.testing.LogLine
 import se.vadretapp.vadret.testing.mockHttpClient
+import se.vadretapp.vadret.testing.networkUnavailableException
 import se.vadretapp.vadret.testing.withRecordedLogs
 import se.vadretapp.vadret.wind.local.DefaultWindLocalDataSource
 import se.vadretapp.vadret.wind.model.WindForecast
@@ -50,9 +51,13 @@ class DefaultWindRepositoryTest {
     private var lastForecastTime: String = "20261025T090000Z"
     private var coordinates: String = gridCoordinates
     private var speedValues: String = "[1.0,2.0,3.0,4.0,5.0,9999]"
+    private var isOffline: Boolean = false
 
     private fun MockRequestHandleScope.answer(request: HttpRequestData): HttpResponseData {
         recordedRequests.update { recorded: List<HttpRequestData> -> recorded + request }
+        if (isOffline) {
+            throw networkUnavailableException(host = "opendata-download-metfcst.smhi.se")
+        }
         val path: String = request.url.encodedPath
         if (path.endsWith("createdtime.json")) {
             return respond(
@@ -254,6 +259,34 @@ class DefaultWindRepositoryTest {
                 assertEquals(
                     expected = listOf(LogLevel.WARN),
                     actual = recordingLogSink.lines.map { line: LogLine -> line.level }
+                )
+            }
+        }
+
+    @Test
+    fun `the saved wind is used when the newest model run cannot be asked for`() =
+        runTest {
+            val fetched: WindForecast = windRepository.getWindForecast().forecast()
+            isOffline = true
+            clock.now = Instant.parse(input = "2026-10-24T23:05:00Z")
+
+            withRecordedLogs { recordingLogSink ->
+                assertEquals(
+                    expected = fetched to listOf(LogLevel.WARN),
+                    actual = windRepository.getWindForecast().forecast() to recordingLogSink.lines.map { line: LogLine -> line.level }
+                )
+            }
+        }
+
+    @Test
+    fun `wind that is neither fetched nor saved is a failure`() =
+        runTest {
+            isOffline = true
+
+            withRecordedLogs {
+                assertEquals(
+                    expected = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft(),
+                    actual = windRepository.getWindForecast()
                 )
             }
         }
