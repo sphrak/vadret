@@ -9,6 +9,8 @@ import io.ktor.client.request.HttpRequestData
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -16,6 +18,7 @@ import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.logging.LogLevel
 import se.vadretapp.vadret.testing.FakeDiskCache
+import se.vadretapp.vadret.testing.FixedClock
 import se.vadretapp.vadret.testing.LogLine
 import se.vadretapp.vadret.testing.mockHttpClient
 import se.vadretapp.vadret.testing.networkUnavailableException
@@ -23,6 +26,7 @@ import se.vadretapp.vadret.testing.withRecordedLogs
 import se.vadretapp.vadret.weatherforecast.local.DefaultWeatherForecastLocalDataSource
 import se.vadretapp.vadret.weatherforecast.model.Analysis
 import se.vadretapp.vadret.weatherforecast.model.Forecast
+import se.vadretapp.vadret.weatherforecast.model.PlaceWeather
 import se.vadretapp.vadret.weatherforecast.remote.DefaultWeatherForecastRemoteDataSource
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -101,68 +105,120 @@ private fun analysisTimeSeries(
     """.trimIndent()
 }
 
+private const val ANALYSIS_HOST = "opendata-download-metanalys.smhi.se"
+private const val NO_HOURS = """{"timeSeries":[]}"""
+private const val WEATHER_CACHE_KEY = "weather.json"
+
+private val now: Instant = Instant.parse(input = "2026-11-06T14:05:00Z")
+
+private val nothingSaved = PlaceWeather(
+    forecasts = emptyList(),
+    analyses = emptyList(),
+    fetchedAt = null
+)
+
+private fun json(body: String): MockRequestHandler =
+    {
+        respond(
+            content = body,
+            headers = jsonHeaders
+        )
+    }
+
+private fun status(httpStatusCode: HttpStatusCode): MockRequestHandler =
+    {
+        respond(
+            content = "",
+            status = httpStatusCode
+        )
+    }
+
+private fun forecastBody(airTemperature: Double): String = """{"timeSeries":[${timeSeries(time = "2026-10-24T12:00:00Z", airTemperature = airTemperature)}]}"""
+
 class DefaultWeatherForecastRepositoryTest {
 
     private val testScope = TestScope(StandardTestDispatcher())
     private val requests = mutableListOf<HttpRequestData>()
     private val diskCache = FakeDiskCache()
 
-    private fun repository(handler: MockRequestHandler): WeatherForecastRepository =
+    private fun repository(
+        forecastHandler: MockRequestHandler = json(body = NO_HOURS),
+        analysisHandler: MockRequestHandler = json(body = NO_HOURS)
+    ): WeatherForecastRepository =
         DefaultWeatherForecastRepository(
             weatherForecastRemoteDataSource = DefaultWeatherForecastRemoteDataSource(
                 httpClient = lazy {
                     mockHttpClient { request: HttpRequestData ->
                         requests.add(request)
-                        handler(request)
+                        if (request.url.host == ANALYSIS_HOST) {
+                            analysisHandler(request)
+                        } else {
+                            forecastHandler(request)
+                        }
                     }
                 }
             ),
             weatherForecastLocalDataSource = DefaultWeatherForecastLocalDataSource(
                 diskCache = diskCache,
                 coroutineDispatcher = StandardTestDispatcher(scheduler = testScope.testScheduler)
-            )
+            ),
+            clock = FixedClock(now = now)
         )
 
-    private fun respondingWith(body: String): WeatherForecastRepository =
-        repository {
-            respond(
-                content = body,
-                headers = jsonHeaders
-            )
-        }
+    private fun unreachableRepository(): WeatherForecastRepository =
+        repository(
+            forecastHandler = { throw networkUnavailableException(host = "opendata-download-metfcst.smhi.se") },
+            analysisHandler = { throw networkUnavailableException(host = ANALYSIS_HOST) }
+        )
 
-    private fun unreachableRepository(): WeatherForecastRepository = repository { throw networkUnavailableException(host = "opendata-download-metfcst.smhi.se") }
+    private suspend fun WeatherForecastRepository.refreshStockholm(): Either<Failure, PlaceWeather> =
+        refreshWeather(
+            latitude = 59.3293,
+            longitude = 18.0686
+        )
 
-    private suspend fun WeatherForecastRepository.airTemperatures(
+    private suspend fun WeatherForecastRepository.savedAirTemperatures(
         latitude: Double,
         longitude: Double
-    ): Either<Failure, List<Double>> =
+    ): List<Double>? =
         when (
-            val forecasts: Either<Failure, List<Forecast>> = getForecasts(
+            val saved: Either<Failure, PlaceWeather> = observeWeather(
                 latitude = latitude,
                 longitude = longitude
-            )
+            ).first()
         ) {
-            is Either.Left -> forecasts
-            is Either.Right -> forecasts.b.map { forecast: Forecast -> forecast.airTemperature }.asRight()
+            is Either.Left -> null
+            is Either.Right -> saved.b.forecasts.map { forecast: Forecast -> forecast.airTemperature }
         }
 
     @Test
-    fun `the forecast is asked for at six decimals at most`() =
+    fun `the forecast and the analysis are asked for at six decimals at most`() =
         testScope.runTest {
-            repository {
-                respond(
-                    content = """{"timeSeries":[]}""",
-                    headers = jsonHeaders
-                )
-            }.getForecasts(
+            repository().refreshWeather(
                 latitude = 59.32938123,
                 longitude = 18.0686
             )
 
             assertEquals(
-                expected = "https://opendata-download-metfcst.smhi.se/api/category/snow1g/version/1/geotype/point/lon/18.0686/lat/59.329381/data.json",
-                actual = requests.single().url.toString()
+                expected = listOf(
+                    "https://opendata-download-metanalys.smhi.se/api/category/mesan2g/version/3/geotype/point/lon/18.0686/lat/59.329381/data.json",
+                    "https://opendata-download-metfcst.smhi.se/api/category/snow1g/version/1/geotype/point/lon/18.0686/lat/59.329381/data.json"
+                ),
+                actual = requests.map { request: HttpRequestData -> request.url.toString() }.sorted()
+            )
+        }
+
+    @Test
+    fun `only the analysis refuses a cached answer older than ten minutes`() =
+        testScope.runTest {
+            repository().refreshStockholm()
+
+            assertEquals(
+                expected = mapOf(
+                    ANALYSIS_HOST to "max-age=600",
+                    "opendata-download-metfcst.smhi.se" to null
+                ),
+                actual = requests.associate { request: HttpRequestData -> request.url.host to request.headers[HttpHeaders.CacheControl] }
             )
         }
 
@@ -179,82 +235,57 @@ class DefaultWeatherForecastRepositoryTest {
                 airTemperature = 7.0,
                 intervalStartTime = "2026-10-24T10:00:00Z"
             )
-            val body = """
-            {
-              "createdTime": "2026-10-24T10:00:00Z",
-              "timeSeries": [
-                $laterHour,
-                $earlierHour
-              ]
-            }
-            """.trimIndent()
 
-            val result: Either<Failure, List<Forecast>> = repository {
-                respond(
-                    content = body,
-                    headers = jsonHeaders
-                )
-            }.getForecasts(
-                latitude = 59.3293,
-                longitude = 18.0686
-            )
+            val refreshed: Either<Failure, PlaceWeather> = repository(forecastHandler = json(body = """{"createdTime":"2026-10-24T10:00:00Z","timeSeries":[$laterHour,$earlierHour]}""")).refreshStockholm()
 
-            assertEquals<Either<Failure, List<Forecast>>>(
-                expected = listOf(
-                    Forecast(
-                        validAt = Instant.parse(input = "2026-10-24T11:00:00Z"),
-                        intervalStartedAt = Instant.parse(input = "2026-10-24T10:00:00Z"),
-                        airTemperature = 7.0,
-                        windFromDirection = 225.0,
-                        windSpeed = 4.2,
-                        relativeHumidity = 81,
-                        precipitationType = 1,
-                        symbolCode = 18,
-                        precipitationAmount = 0.3
+            assertEquals<Either<Failure, PlaceWeather>>(
+                expected = PlaceWeather(
+                    forecasts = listOf(
+                        Forecast(
+                            validAt = Instant.parse(input = "2026-10-24T11:00:00Z"),
+                            intervalStartedAt = Instant.parse(input = "2026-10-24T10:00:00Z"),
+                            airTemperature = 7.0,
+                            windFromDirection = 225.0,
+                            windSpeed = 4.2,
+                            relativeHumidity = 81,
+                            precipitationType = 1,
+                            symbolCode = 18,
+                            precipitationAmount = 0.3
+                        ),
+                        Forecast(
+                            validAt = Instant.parse(input = "2026-10-24T12:00:00Z"),
+                            intervalStartedAt = Instant.parse(input = "2026-10-24T11:00:00Z"),
+                            airTemperature = 8.5,
+                            windFromDirection = 225.0,
+                            windSpeed = 4.2,
+                            relativeHumidity = 81,
+                            precipitationType = 1,
+                            symbolCode = 18,
+                            precipitationAmount = 0.3
+                        )
                     ),
-                    Forecast(
-                        validAt = Instant.parse(input = "2026-10-24T12:00:00Z"),
-                        intervalStartedAt = Instant.parse(input = "2026-10-24T11:00:00Z"),
-                        airTemperature = 8.5,
-                        windFromDirection = 225.0,
-                        windSpeed = 4.2,
-                        relativeHumidity = 81,
-                        precipitationType = 1,
-                        symbolCode = 18,
-                        precipitationAmount = 0.3
-                    )
+                    analyses = emptyList(),
+                    fetchedAt = now
                 ).asRight(),
-                actual = result
+                actual = refreshed
             )
         }
 
     @Test
     fun `a missing or impossible precipitation amount is unknown`() =
         testScope.runTest {
-            val body = """
-            {
-              "timeSeries": [
-                ${timeSeries(time = "2026-10-24T11:00:00Z", airTemperature = 7.0, precipitationAmountMean = "9999")},
-                ${timeSeries(time = "2026-10-24T12:00:00Z", airTemperature = 7.0, precipitationAmountMean = null)},
-                ${timeSeries(time = "2026-10-24T13:00:00Z", airTemperature = 7.0, precipitationAmountMean = "-0.1")},
-                ${timeSeries(time = "2026-10-24T14:00:00Z", airTemperature = 7.0, precipitationAmountMean = "1.2")}
-              ]
-            }
-            """.trimIndent()
+            val hours: String = listOf(
+                timeSeries(time = "2026-10-24T11:00:00Z", airTemperature = 7.0, precipitationAmountMean = "9999"),
+                timeSeries(time = "2026-10-24T12:00:00Z", airTemperature = 7.0, precipitationAmountMean = null),
+                timeSeries(time = "2026-10-24T13:00:00Z", airTemperature = 7.0, precipitationAmountMean = "-0.1"),
+                timeSeries(time = "2026-10-24T14:00:00Z", airTemperature = 7.0, precipitationAmountMean = "1.2")
+            ).joinToString(separator = ",")
 
-            val result: Either<Failure, List<Forecast>> = repository {
-                respond(
-                    content = body,
-                    headers = jsonHeaders
-                )
-            }.getForecasts(
-                latitude = 59.3293,
-                longitude = 18.0686
-            )
+            val refreshed: Either<Failure, PlaceWeather> = repository(forecastHandler = json(body = """{"timeSeries":[$hours]}""")).refreshStockholm()
 
             assertEquals(
                 expected = listOf(null, null, null, 1.2),
-                actual = (result as Either.Right).b.map { forecast: Forecast -> forecast.precipitationAmount }
+                actual = (refreshed as Either.Right).b.forecasts.map { forecast: Forecast -> forecast.precipitationAmount }
             )
         }
 
@@ -262,23 +293,10 @@ class DefaultWeatherForecastRepositoryTest {
     fun `a time series without its interval start is an invalid response`() =
         testScope.runTest {
             withRecordedLogs { recordingLogSink ->
-                val result: Either<Failure, List<Forecast>> = repository {
-                    respond(
-                        content = """{"timeSeries":[{"time":"2026-10-24T12:00:00Z","data":{}}]}""",
-                        headers = jsonHeaders
-                    )
-                }.getForecasts(
-                    latitude = 59.3293,
-                    longitude = 18.0686
-                )
-
                 assertEquals(
-                    expected = Failure(errorCode = ErrorCode.INVALID_RESPONSE).asLeft(),
-                    actual = result
-                )
-                assertEquals(
-                    expected = listOf(LogLevel.WARN),
-                    actual = recordingLogSink.lines.map { line: LogLine -> line.level }
+                    expected = Failure(errorCode = ErrorCode.INVALID_RESPONSE).asLeft() to listOf(LogLevel.WARN),
+                    actual = repository(forecastHandler = json(body = """{"timeSeries":[{"time":"2026-10-24T12:00:00Z","data":{}}]}""")).refreshStockholm() to
+                        recordingLogSink.lines.map { line: LogLine -> line.level }
                 )
             }
         }
@@ -287,33 +305,13 @@ class DefaultWeatherForecastRepositoryTest {
     fun `a place outside the forecast area is told apart from other failures`() =
         testScope.runTest {
             withRecordedLogs { recordingLogSink ->
-                val results: List<Either<Failure, List<Forecast>>> = listOf(
-                    repository {
-                        respond(
-                            content = "",
-                            status = HttpStatusCode.NotFound
-                        )
-                    },
-                    repository {
-                        respond(
-                            content = "",
-                            status = HttpStatusCode.ServiceUnavailable
-                        )
-                    },
-                    repository {
-                        respond(
-                            content = """{"timeSeries":[${timeSeries(time = "noon", airTemperature = 1.0)}]}""",
-                            headers = jsonHeaders
-                        )
-                    },
-                    repository {
-                        respond(
-                            content = """{"unexpected":true}""",
-                            headers = jsonHeaders
-                        )
-                    }
-                ).map { weatherForecastRepository: WeatherForecastRepository ->
-                    weatherForecastRepository.getForecasts(
+                val results: List<Either<Failure, PlaceWeather>> = listOf(
+                    status(httpStatusCode = HttpStatusCode.NotFound),
+                    status(httpStatusCode = HttpStatusCode.ServiceUnavailable),
+                    json(body = """{"timeSeries":[${timeSeries(time = "noon", airTemperature = 1.0)}]}"""),
+                    json(body = """{"unexpected":true}""")
+                ).map { forecastHandler: MockRequestHandler ->
+                    repository(forecastHandler = forecastHandler).refreshWeather(
                         latitude = 70.0,
                         longitude = 40.0
                     )
@@ -336,73 +334,15 @@ class DefaultWeatherForecastRepositoryTest {
         }
 
     @Test
-    fun `the analysis is asked for at six decimals at most`() =
-        testScope.runTest {
-            repository {
-                respond(
-                    content = """{"timeSeries":[]}""",
-                    headers = jsonHeaders
-                )
-            }.getAnalyses(
-                latitude = 59.32938123,
-                longitude = 18.0686
-            )
-
-            assertEquals(
-                expected = "https://opendata-download-metanalys.smhi.se/api/category/mesan2g/version/3/geotype/point/lon/18.0686/lat/59.329381/data.json",
-                actual = requests.single().url.toString()
-            )
-        }
-
-    @Test
-    fun `only the analysis refuses a cached answer older than ten minutes`() =
-        testScope.runTest {
-            val weatherForecastRepository: WeatherForecastRepository = repository {
-                respond(
-                    content = """{"timeSeries":[]}""",
-                    headers = jsonHeaders
-                )
-            }
-
-            weatherForecastRepository.getAnalyses(
-                latitude = 59.3293,
-                longitude = 18.0686
-            )
-            weatherForecastRepository.getForecasts(
-                latitude = 59.3293,
-                longitude = 18.0686
-            )
-
-            assertEquals(
-                expected = listOf("max-age=600", null),
-                actual = requests.map { request: HttpRequestData -> request.headers[HttpHeaders.CacheControl] }
-            )
-        }
-
-    @Test
     fun `the analysed hours come in time order`() =
         testScope.runTest {
-            val body = """
-            {
-              "referenceTime": "2026-10-26T17:00:00Z",
-              "timeSeries": [
-                ${analysisTimeSeries(time = "2026-10-26T17:00:00Z", airTemperature = 11.1)},
-                ${analysisTimeSeries(time = "2026-10-26T16:00:00Z", airTemperature = 11.3)}
-              ]
-            }
-            """.trimIndent()
-
-            val result: Either<Failure, List<Analysis>> = repository {
-                respond(
-                    content = body,
-                    headers = jsonHeaders
+            val refreshed: Either<Failure, PlaceWeather> = repository(
+                analysisHandler = json(
+                    body = """{"referenceTime":"2026-10-26T17:00:00Z","timeSeries":[${analysisTimeSeries(time = "2026-10-26T17:00:00Z", airTemperature = 11.1)},${analysisTimeSeries(time = "2026-10-26T16:00:00Z", airTemperature = 11.3)}]}"""
                 )
-            }.getAnalyses(
-                latitude = 59.3293,
-                longitude = 18.0686
-            )
+            ).refreshStockholm()
 
-            assertEquals<Either<Failure, List<Analysis>>>(
+            assertEquals(
                 expected = listOf(
                     Analysis(
                         analysedAt = Instant.parse(input = "2026-10-26T16:00:00Z"),
@@ -424,138 +364,126 @@ class DefaultWeatherForecastRepositoryTest {
                         symbolCode = 6,
                         precipitationAmountLastHour = 0.04
                     )
-                ).asRight(),
-                actual = result
+                ),
+                actual = (refreshed as Either.Right).b.analyses
             )
         }
 
     @Test
     fun `a missing or impossible analysed precipitation amount is unknown`() =
         testScope.runTest {
-            val body = """
-            {
-              "timeSeries": [
-                ${analysisTimeSeries(time = "2026-10-26T11:00:00Z", airTemperature = 7.0, precipitationAmountLastHour = "9999")},
-                ${analysisTimeSeries(time = "2026-10-26T12:00:00Z", airTemperature = 7.0, precipitationAmountLastHour = null)},
-                ${analysisTimeSeries(time = "2026-10-26T13:00:00Z", airTemperature = 7.0, precipitationAmountLastHour = "-0.1")},
-                ${analysisTimeSeries(time = "2026-10-26T14:00:00Z", airTemperature = 7.0, precipitationAmountLastHour = "0.22")}
-              ]
-            }
-            """.trimIndent()
+            val hours: String = listOf(
+                analysisTimeSeries(time = "2026-10-26T11:00:00Z", airTemperature = 7.0, precipitationAmountLastHour = "9999"),
+                analysisTimeSeries(time = "2026-10-26T12:00:00Z", airTemperature = 7.0, precipitationAmountLastHour = null),
+                analysisTimeSeries(time = "2026-10-26T13:00:00Z", airTemperature = 7.0, precipitationAmountLastHour = "-0.1"),
+                analysisTimeSeries(time = "2026-10-26T14:00:00Z", airTemperature = 7.0, precipitationAmountLastHour = "0.22")
+            ).joinToString(separator = ",")
 
-            val result: Either<Failure, List<Analysis>> = repository {
-                respond(
-                    content = body,
-                    headers = jsonHeaders
-                )
-            }.getAnalyses(
-                latitude = 59.3293,
-                longitude = 18.0686
-            )
+            val refreshed: Either<Failure, PlaceWeather> = repository(analysisHandler = json(body = """{"timeSeries":[$hours]}""")).refreshStockholm()
 
             assertEquals(
                 expected = listOf(null, null, null, 0.22),
-                actual = (result as Either.Right).b.map { analysis: Analysis -> analysis.precipitationAmountLastHour }
+                actual = (refreshed as Either.Right).b.analyses.map { analysis: Analysis -> analysis.precipitationAmountLastHour }
             )
         }
 
     @Test
-    fun `a place outside the analysis area is told apart from other failures`() =
+    fun `an analysis that cannot be fetched leaves the forecast without its past hours`() =
         testScope.runTest {
             withRecordedLogs { recordingLogSink ->
-                val results: List<Either<Failure, List<Analysis>>> = listOf(
-                    repository {
-                        respond(
-                            content = "",
-                            status = HttpStatusCode.NotFound
-                        )
-                    },
-                    repository {
-                        respond(
-                            content = "",
-                            status = HttpStatusCode.ServiceUnavailable
-                        )
-                    },
-                    repository {
-                        respond(
-                            content = """{"timeSeries":[{"time":"2026-10-26T12:00:00Z","data":{}}]}""",
-                            headers = jsonHeaders
-                        )
-                    }
-                ).map { weatherForecastRepository: WeatherForecastRepository ->
-                    weatherForecastRepository.getAnalyses(
-                        latitude = 70.0,
-                        longitude = 40.0
-                    )
+                val results: List<Either<Failure, PlaceWeather>> = listOf(
+                    status(httpStatusCode = HttpStatusCode.NotFound),
+                    status(httpStatusCode = HttpStatusCode.ServiceUnavailable),
+                    json(body = """{"timeSeries":[{"time":"2026-10-26T12:00:00Z","data":{}}]}""")
+                ).map { analysisHandler: MockRequestHandler ->
+                    repository(
+                        forecastHandler = json(body = forecastBody(airTemperature = 7.5)),
+                        analysisHandler = analysisHandler
+                    ).refreshStockholm()
                 }
 
                 assertEquals(
-                    expected = listOf(
-                        ErrorCode.WEATHER_ANALYSIS_NOT_AVAILABLE_FOR_LOCATION,
-                        ErrorCode.HTTP_SERVICE_UNAVAILABLE,
-                        ErrorCode.INVALID_RESPONSE
-                    ).map { errorCode: ErrorCode -> Failure(errorCode = errorCode).asLeft() },
-                    actual = results
+                    expected = List(size = results.size) { listOf(7.5) to emptyList<Analysis>() },
+                    actual = results.map { result: Either<Failure, PlaceWeather> ->
+                        val placeWeather: PlaceWeather = (result as Either.Right).b
+                        placeWeather.forecasts.map { forecast: Forecast -> forecast.airTemperature } to placeWeather.analyses
+                    }
                 )
                 assertEquals(
-                    expected = List(size = results.size) { LogLevel.WARN },
+                    expected = List(size = results.size) { listOf(LogLevel.WARN, LogLevel.INFO) }.flatten(),
                     actual = recordingLogSink.lines.map { line: LogLine -> line.level }
                 )
             }
         }
 
     @Test
-    fun `a saved forecast is used for the same place when the forecast cannot be fetched`() =
+    fun `a forecast that fails stops waiting for the analysis`() =
         testScope.runTest {
-            respondingWith(body = """{"timeSeries":[${timeSeries(time = "2026-10-24T12:00:00Z", airTemperature = 7.5)}]}""").getForecasts(
-                latitude = 59.3293,
-                longitude = 18.0686
-            )
-
-            withRecordedLogs { recordingLogSink ->
-                assertEquals(
-                    expected = listOf(7.5).asRight() to listOf(LogLevel.WARN),
-                    actual = unreachableRepository().airTemperatures(
-                        latitude = 59.3271,
-                        longitude = 18.0712
-                    ) to recordingLogSink.lines.map { line: LogLine -> line.level }
-                )
-            }
-        }
-
-    @Test
-    fun `a forecast saved for another place is not used`() =
-        testScope.runTest {
-            respondingWith(body = """{"timeSeries":[${timeSeries(time = "2026-10-24T12:00:00Z", airTemperature = 7.5)}]}""").getForecasts(
-                latitude = 59.3293,
-                longitude = 18.0686
-            )
+            val analysisGate = CompletableDeferred<Unit>()
 
             withRecordedLogs {
                 assertEquals(
-                    expected = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft(),
-                    actual = unreachableRepository().airTemperatures(
-                        latitude = 57.7089,
-                        longitude = 11.9746
-                    )
+                    expected = Failure(errorCode = ErrorCode.HTTP_SERVICE_UNAVAILABLE).asLeft(),
+                    actual = repository(
+                        forecastHandler = status(httpStatusCode = HttpStatusCode.ServiceUnavailable),
+                        analysisHandler = {
+                            analysisGate.await()
+                            respond(
+                                content = NO_HOURS,
+                                headers = jsonHeaders
+                            )
+                        }
+                    ).refreshStockholm()
                 )
             }
         }
 
     @Test
-    fun `a fetched forecast replaces the saved one for the place`() =
+    fun `a refresh saves the weather and the place shows it`() =
         testScope.runTest {
-            listOf(7.5, 9.0).forEach { airTemperature: Double ->
-                respondingWith(body = """{"timeSeries":[${timeSeries(time = "2026-10-24T12:00:00Z", airTemperature = airTemperature)}]}""").getForecasts(
+            val weatherForecastRepository: WeatherForecastRepository = repository(forecastHandler = json(body = forecastBody(airTemperature = 7.5)))
+            val beforeRefresh: Either<Failure, PlaceWeather> = weatherForecastRepository.observeWeather(
+                latitude = 59.3293,
+                longitude = 18.0686
+            ).first()
+
+            weatherForecastRepository.refreshStockholm()
+
+            assertEquals(
+                expected = nothingSaved.asRight<PlaceWeather>() to listOf(7.5),
+                actual = beforeRefresh to weatherForecastRepository.savedAirTemperatures(
                     latitude = 59.3293,
                     longitude = 18.0686
                 )
-            }
+            )
+        }
+
+    @Test
+    fun `the saved weather is found by place to about a kilometre`() =
+        testScope.runTest {
+            repository(forecastHandler = json(body = forecastBody(airTemperature = 7.5))).refreshStockholm()
+
+            assertEquals(
+                expected = listOf(7.5) to emptyList(),
+                actual = unreachableRepository().savedAirTemperatures(
+                    latitude = 59.3271,
+                    longitude = 18.0712
+                ) to unreachableRepository().savedAirTemperatures(
+                    latitude = 57.7089,
+                    longitude = 11.9746
+                )
+            )
+        }
+
+    @Test
+    fun `a refresh that fails keeps the saved weather`() =
+        testScope.runTest {
+            repository(forecastHandler = json(body = forecastBody(airTemperature = 7.5))).refreshStockholm()
 
             withRecordedLogs {
-                assertEquals(
-                    expected = listOf(9.0).asRight(),
-                    actual = unreachableRepository().airTemperatures(
+                assertEquals<Pair<Either<Failure, PlaceWeather>, List<Double>?>>(
+                    expected = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft() to listOf(7.5),
+                    actual = unreachableRepository().refreshStockholm() to unreachableRepository().savedAirTemperatures(
                         latitude = 59.3293,
                         longitude = 18.0686
                     )
@@ -564,79 +492,58 @@ class DefaultWeatherForecastRepositoryTest {
         }
 
     @Test
-    fun `only the ten places fetched last keep a saved forecast`() =
+    fun `a refresh replaces the saved weather of the place`() =
+        testScope.runTest {
+            listOf(7.5, 9.0).forEach { airTemperature: Double ->
+                repository(forecastHandler = json(body = forecastBody(airTemperature = airTemperature))).refreshStockholm()
+            }
+
+            assertEquals(
+                expected = listOf(9.0),
+                actual = unreachableRepository().savedAirTemperatures(
+                    latitude = 59.3293,
+                    longitude = 18.0686
+                )
+            )
+        }
+
+    @Test
+    fun `only the ten places refreshed last keep their weather`() =
         testScope.runTest {
             val latitudes: List<Double> = List(size = 11) { index: Int -> 55.0 + index }
             latitudes.forEach { latitude: Double ->
-                respondingWith(body = """{"timeSeries":[${timeSeries(time = "2026-10-24T12:00:00Z", airTemperature = latitude)}]}""").getForecasts(
+                repository(forecastHandler = json(body = forecastBody(airTemperature = latitude))).refreshWeather(
                     latitude = latitude,
                     longitude = 15.0
                 )
             }
 
-            withRecordedLogs {
-                assertEquals(
-                    expected = listOf(Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft()) + latitudes.drop(n = 1).map { latitude: Double -> listOf(latitude).asRight() },
-                    actual = latitudes.map { latitude: Double ->
-                        unreachableRepository().airTemperatures(
-                            latitude = latitude,
-                            longitude = 15.0
-                        )
-                    }
-                )
-            }
+            assertEquals(
+                expected = listOf(emptyList<Double>()) + latitudes.drop(n = 1).map { latitude: Double -> listOf(latitude) },
+                actual = latitudes.map { latitude: Double ->
+                    unreachableRepository().savedAirTemperatures(
+                        latitude = latitude,
+                        longitude = 15.0
+                    )
+                }
+            )
         }
 
     @Test
-    fun `unreadable saved forecasts are dropped`() =
+    fun `unreadable saved weather is dropped and shows as nothing saved`() =
         testScope.runTest {
             diskCache.write(
-                key = "weather_forecasts.json",
+                key = WEATHER_CACHE_KEY,
                 value = "not json"
             )
 
             withRecordedLogs {
                 assertEquals(
-                    expected = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft<Failure>() to emptyMap<String, String>(),
-                    actual = unreachableRepository().airTemperatures(
+                    expected = emptyList<Double>() to emptyMap(),
+                    actual = unreachableRepository().savedAirTemperatures(
                         latitude = 59.3293,
                         longitude = 18.0686
                     ) to diskCache.entries
-                )
-            }
-        }
-
-    @Test
-    fun `a saved analysis is used for the same place when the analysis cannot be fetched`() =
-        testScope.runTest {
-            respondingWith(body = """{"timeSeries":[${analysisTimeSeries(time = "2026-10-24T10:00:00Z", airTemperature = 6.1)}]}""").getAnalyses(
-                latitude = 59.3293,
-                longitude = 18.0686
-            )
-
-            withRecordedLogs {
-                val analyses: Either<Failure, List<Analysis>> = unreachableRepository().getAnalyses(
-                    latitude = 59.3293,
-                    longitude = 18.0686
-                )
-
-                assertEquals(
-                    expected = listOf(6.1),
-                    actual = (analyses as Either.Right).b.map { analysis: Analysis -> analysis.airTemperature }
-                )
-            }
-        }
-
-    @Test
-    fun `an analysis that is neither fetched nor saved is a failure`() =
-        testScope.runTest {
-            withRecordedLogs {
-                assertEquals(
-                    expected = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft(),
-                    actual = unreachableRepository().getAnalyses(
-                        latitude = 59.3293,
-                        longitude = 18.0686
-                    )
                 )
             }
         }

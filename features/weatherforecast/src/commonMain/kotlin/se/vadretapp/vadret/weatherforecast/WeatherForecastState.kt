@@ -14,6 +14,7 @@ import se.vadretapp.vadret.weatherforecast.model.WeatherForecast
 data class WeatherForecastState(
     val forecast: WeatherForecast = WeatherForecast(),
     val localityName: String? = null,
+    val outdatedForecastTimeText: String? = null,
     val locationChoices: LocationChoices = LocationChoices(
         isAutomatic = true,
         chosenPlaceName = null,

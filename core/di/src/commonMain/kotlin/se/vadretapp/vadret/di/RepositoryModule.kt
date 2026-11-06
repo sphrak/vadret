@@ -55,6 +55,7 @@ val repositoryModule: Module = module {
         WeatherForecastRepository(
             httpClient = inject(),
             diskCache = get(),
+            clock = get(),
             coroutineDispatcher = get()
         )
     }

@@ -94,7 +94,8 @@ private fun previewWeatherForecast(): WeatherForecast =
         latitude = PREVIEW_LATITUDE,
         longitude = PREVIEW_LONGITUDE,
         forecasts = previewHours(hourOffsets = FIRST_FORECAST_HOUR until FORECAST_HOURS),
-        analyses = previewAnalyses()
+        analyses = previewAnalyses(),
+        outdatedSince = null
     ).toWeatherForecast(
         now = previewNow,
         timeZone = previewTimeZone,

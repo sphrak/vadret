@@ -3,8 +3,7 @@ package se.vadretapp.vadret.weatherforecast
 import io.github.sphrak.either.Either
 import io.github.sphrak.either.extension.asLeft
 import io.github.sphrak.either.extension.asRight
-import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
@@ -12,11 +11,11 @@ import se.vadretapp.vadret.weatherforecast.model.PlaceForecast
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class DefaultGetPlaceForecastTaskTest {
+class DefaultObservePlaceForecastTaskTest {
 
     private val weatherForecastRepository = FakeWeatherForecastRepository()
     private val nominatimRepository = FakeNominatimRepository()
-    private val getPlaceForecastTask = DefaultGetPlaceForecastTask(
+    private val observePlaceForecastTask: ObservePlaceForecastTask = DefaultObservePlaceForecastTask(
         weatherForecastRepository = weatherForecastRepository,
         nominatimRepository = nominatimRepository
     )
@@ -24,10 +23,11 @@ class DefaultGetPlaceForecastTaskTest {
     @Test
     fun `a place gets its forecast and the name Nominatim knows it by`() =
         runTest {
-            val placeForecast: Either<Failure, PlaceForecast> = getPlaceForecastTask(
+            val placeForecast: Either<Failure, PlaceForecast> = observePlaceForecastTask(
                 latitude = GOTHENBURG_LATITUDE,
-                longitude = GOTHENBURG_LONGITUDE
-            )
+                longitude = GOTHENBURG_LONGITUDE,
+                isRefresh = false
+            ).first()
 
             assertEquals(
                 expected = PlaceForecast(
@@ -37,7 +37,8 @@ class DefaultGetPlaceForecastTaskTest {
                     latitude = GOTHENBURG_LATITUDE,
                     longitude = GOTHENBURG_LONGITUDE,
                     forecasts = listOf(noon),
-                    analyses = emptyList()
+                    analyses = emptyList(),
+                    outdatedSince = null
                 ).asRight(),
                 actual = placeForecast
             )
@@ -49,10 +50,11 @@ class DefaultGetPlaceForecastTaskTest {
         runTest {
             nominatimRepository.locality = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft()
 
-            val placeForecast: Either<Failure, PlaceForecast> = getPlaceForecastTask(
+            val placeForecast: Either<Failure, PlaceForecast> = observePlaceForecastTask(
                 latitude = GOTHENBURG_LATITUDE,
-                longitude = GOTHENBURG_LONGITUDE
-            )
+                longitude = GOTHENBURG_LONGITUDE,
+                isRefresh = false
+            ).first()
 
             assertEquals(
                 expected = PlaceForecast(
@@ -62,7 +64,8 @@ class DefaultGetPlaceForecastTaskTest {
                     latitude = GOTHENBURG_LATITUDE,
                     longitude = GOTHENBURG_LONGITUDE,
                     forecasts = listOf(noon),
-                    analyses = emptyList()
+                    analyses = emptyList(),
+                    outdatedSince = null
                 ).asRight(),
                 actual = placeForecast
             )
@@ -74,10 +77,11 @@ class DefaultGetPlaceForecastTaskTest {
             val failure = Failure(errorCode = ErrorCode.WEATHER_ANALYSIS_NOT_AVAILABLE_FOR_LOCATION)
             weatherForecastRepository.forecasts = failure.asLeft()
 
-            val placeForecast: Either<Failure, PlaceForecast> = getPlaceForecastTask(
+            val placeForecast: Either<Failure, PlaceForecast> = observePlaceForecastTask(
                 latitude = GOTHENBURG_LATITUDE,
-                longitude = GOTHENBURG_LONGITUDE
-            )
+                longitude = GOTHENBURG_LONGITUDE,
+                isRefresh = false
+            ).first()
 
             assertEquals(expected = failure.asLeft(), actual = placeForecast)
         }
@@ -87,10 +91,11 @@ class DefaultGetPlaceForecastTaskTest {
         runTest {
             weatherForecastRepository.analyses = listOf(morning).asRight()
 
-            val placeForecast: Either<Failure, PlaceForecast> = getPlaceForecastTask(
+            val placeForecast: Either<Failure, PlaceForecast> = observePlaceForecastTask(
                 latitude = GOTHENBURG_LATITUDE,
-                longitude = GOTHENBURG_LONGITUDE
-            )
+                longitude = GOTHENBURG_LONGITUDE,
+                isRefresh = false
+            ).first()
 
             assertEquals(
                 expected = PlaceForecast(
@@ -100,51 +105,11 @@ class DefaultGetPlaceForecastTaskTest {
                     latitude = GOTHENBURG_LATITUDE,
                     longitude = GOTHENBURG_LONGITUDE,
                     forecasts = listOf(noon),
-                    analyses = listOf(morning)
+                    analyses = listOf(morning),
+                    outdatedSince = null
                 ).asRight(),
                 actual = placeForecast
             )
-            assertEquals(expected = listOf(GOTHENBURG_LATITUDE to GOTHENBURG_LONGITUDE), actual = weatherForecastRepository.requestedAnalysisCoordinates)
-        }
-
-    @Test
-    fun `analyses that fail leave the place with its forecast`() =
-        runTest {
-            weatherForecastRepository.analyses = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft()
-
-            val placeForecast: Either<Failure, PlaceForecast> = getPlaceForecastTask(
-                latitude = GOTHENBURG_LATITUDE,
-                longitude = GOTHENBURG_LONGITUDE
-            )
-
-            assertEquals(
-                expected = PlaceForecast(
-                    placeName = "Göteborg",
-                    municipality = "Göteborgs kommun",
-                    county = "Västra Götalands län",
-                    latitude = GOTHENBURG_LATITUDE,
-                    longitude = GOTHENBURG_LONGITUDE,
-                    forecasts = listOf(noon),
-                    analyses = emptyList()
-                ).asRight(),
-                actual = placeForecast
-            )
-        }
-
-    @Test
-    fun `a forecast that fails stops waiting for the analyses`() =
-        runTest(context = UnconfinedTestDispatcher()) {
-            val failure = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE)
-            weatherForecastRepository.forecasts = failure.asLeft()
-            weatherForecastRepository.analysisGate = CompletableDeferred()
-
-            val placeForecast: Either<Failure, PlaceForecast> = getPlaceForecastTask(
-                latitude = GOTHENBURG_LATITUDE,
-                longitude = GOTHENBURG_LONGITUDE
-            )
-
-            assertEquals(expected = failure.asLeft(), actual = placeForecast)
-            assertEquals(expected = true, actual = weatherForecastRepository.isAnalysisCancelled)
         }
 }
 

@@ -91,7 +91,7 @@ class WeatherForecastViewModelTest {
             locationRepository = locationRepository,
             favoriteRepository = favoriteRepository
         ),
-        getWeatherForecastTask = DefaultGetWeatherForecastTask(
+        observeWeatherForecastTask = DefaultObserveWeatherForecastTask(
             getChosenPlaceTask = FakeGetChosenPlaceTask(
                 locationRepository = locationRepository,
                 nominatimRepository = FakeNominatimRepository()
@@ -110,7 +110,7 @@ class WeatherForecastViewModelTest {
             favoriteRepository = favoriteRepository,
             locationRepository = locationRepository
         ),
-        getPlaceForecastTask = DefaultGetPlaceForecastTask(
+        observePlaceForecastTask = DefaultObservePlaceForecastTask(
             weatherForecastRepository = weatherForecastRepository,
             nominatimRepository = nominatimRepository
         ),
@@ -242,6 +242,63 @@ class WeatherForecastViewModelTest {
             advanceUntilIdle()
 
             assertEquals(expected = 3, actual = weatherForecastRepository.requestedCoordinates.size)
+        }
+
+    @Test
+    fun `a refresh that fails keeps the saved forecast and tells when it was fetched until a refresh works`() =
+        testScope.runTest {
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnShown)
+            advanceUntilIdle()
+            val beforeFailing: String? = weatherForecastViewModel.state.value.outdatedForecastTimeText
+            weatherForecastRepository.forecasts = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft()
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnRefresh)
+            advanceUntilIdle()
+            val afterFailing: WeatherForecastState = weatherForecastViewModel.state.value
+            weatherForecastRepository.forecasts = listOf(noon).asRight()
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnRefresh)
+            advanceUntilIdle()
+
+            assertEquals(
+                expected = listOf(
+                    null,
+                    FAKE_FETCHED_AT.toDayTimeText(
+                        now = clock.now,
+                        timeZone = TimeZone.currentSystemDefault(),
+                        languageTag = currentLanguageTag()
+                    ),
+                    null
+                ),
+                actual = listOf(
+                    beforeFailing,
+                    afterFailing.outdatedForecastTimeText,
+                    weatherForecastViewModel.state.value.outdatedForecastTimeText
+                )
+            )
+            assertEquals(
+                expected = Triple(
+                    first = true,
+                    second = null,
+                    third = false
+                ),
+                actual = Triple(
+                    first = afterFailing.forecast.days.isNotEmpty(),
+                    second = afterFailing.errorMessageResource,
+                    third = afterFailing.isRefreshing
+                )
+            )
+        }
+
+    @Test
+    fun `a first load that fails says why instead of telling of a saved forecast`() =
+        testScope.runTest {
+            weatherForecastRepository.forecasts = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft()
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnShown)
+            advanceUntilIdle()
+
+            assertEquals(
+                expected = null to true,
+                actual = weatherForecastViewModel.state.value.outdatedForecastTimeText to (weatherForecastViewModel.state.value.errorMessageResource != null)
+            )
         }
 
     @Test

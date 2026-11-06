@@ -80,7 +80,8 @@ class PlaceForecastTest {
             latitude = 59.33,
             longitude = 18.07,
             forecasts = forecasts,
-            analyses = analyses
+            analyses = analyses,
+            outdatedSince = null
         ).toWeatherForecast(
             now = now,
             timeZone = stockholm,
@@ -194,7 +195,8 @@ class PlaceForecastTest {
                     analysedAt = Instant.parse(input = "2026-10-24T12:00:00Z"),
                     airTemperature = 7.3
                 )
-            )
+            ),
+            outdatedSince = null
         )
 
         assertEquals(expected = "7.3", actual = placeForecast.toCurrentWeather(now = now)?.temperatureText)
@@ -220,7 +222,8 @@ class PlaceForecastTest {
                     analysedAt = hour,
                     airTemperature = 7.3
                 )
-            )
+            ),
+            outdatedSince = null
         )
 
         assertEquals(expected = "9.1", actual = placeForecast.toCurrentWeather(now = hour)?.temperatureText)

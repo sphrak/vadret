@@ -102,7 +102,8 @@ class ForecastTest {
             latitude = latitude,
             longitude = longitude,
             forecasts = forecasts,
-            analyses = analyses
+            analyses = analyses,
+            outdatedSince = null
         ).toWeatherForecast(
             now = now,
             timeZone = stockholm,

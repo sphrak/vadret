@@ -38,6 +38,7 @@ import se.vadretapp.vadret.place.model.Place
 import se.vadretapp.vadret.ui.extension.launchReplacing
 import se.vadretapp.vadret.ui.extension.messageResource
 import se.vadretapp.vadret.ui.format.currentLanguageTag
+import se.vadretapp.vadret.ui.format.toDayTimeText
 import se.vadretapp.vadret.warning.ObserveUnseenFollowedPlaceWarningsTask
 import se.vadretapp.vadret.warning.ObserveUnseenWarningsTask
 import se.vadretapp.vadret.warning.model.WarningPlace
@@ -71,14 +72,14 @@ class WeatherForecastViewModel internal constructor(
     private val getLocationModeTask: GetLocationModeTask,
     private val getChosenPlaceTask: GetChosenPlaceTask,
     private val setLocationModeTask: SetLocationModeTask,
-    private val getWeatherForecastTask: GetWeatherForecastTask,
+    private val observeWeatherForecastTask: ObserveWeatherForecastTask,
     private val observeLocationChoicesTask: ObserveLocationChoicesTask,
     private val observeForecastPreferencesTask: ObserveForecastPreferencesTask,
     private val selectFavoriteTask: SelectFavoriteTask,
     private val removeFavoriteTask: RemoveFavoriteTask,
     private val searchPlacesTask: SearchPlacesTask,
     private val selectPlaceTask: SelectPlaceTask,
-    private val getPlaceForecastTask: GetPlaceForecastTask,
+    private val observePlaceForecastTask: ObservePlaceForecastTask,
     private val addFavoriteTask: AddFavoriteTask,
     private val observeUnseenWarningsTask: ObserveUnseenWarningsTask,
     private val observeUnseenFollowedPlaceWarningsTask: ObserveUnseenFollowedPlaceWarningsTask,
@@ -348,25 +349,30 @@ class WeatherForecastViewModel internal constructor(
             currentJob = loadJob,
             context = coroutineDispatcher
         ) {
-            getForecast()
-                .onResult(
+            val isObservingWarnings = AtomicBoolean(value = false)
+            observeForecast(isRefresh = isRefresh).collect { result: Either<Failure, PlaceForecast> ->
+                result.onResult(
                     onError = { failure: Failure -> displayError(failure = failure) },
                     onSuccess = { placeForecast: PlaceForecast ->
                         displayForecast(placeForecast = placeForecast)
-                        observeWarnings(
-                            placeForecast = placeForecast,
-                            isRefresh = isRefresh
-                        )
+                        if (isObservingWarnings.compareAndSet(expectedValue = false, newValue = true)) {
+                            observeWarnings(
+                                placeForecast = placeForecast,
+                                isRefresh = isRefresh
+                            )
+                        }
                     }
                 )
+            }
         }
     }
 
-    private suspend fun getForecast(): Either<Failure, PlaceForecast> {
-        val place: Location = droppedPlace.load() ?: return getWeatherForecastTask()
-        return getPlaceForecastTask(
+    private fun observeForecast(isRefresh: Boolean): Flow<Either<Failure, PlaceForecast>> {
+        val place: Location = droppedPlace.load() ?: return observeWeatherForecastTask(isRefresh = isRefresh)
+        return observePlaceForecastTask(
             latitude = place.latitude,
-            longitude = place.longitude
+            longitude = place.longitude,
+            isRefresh = isRefresh
         )
     }
 
@@ -425,7 +431,9 @@ class WeatherForecastViewModel internal constructor(
     }
 
     private fun displayForecast(placeForecast: PlaceForecast) {
-        fetchedAt.store(newValue = clock.now())
+        if (placeForecast.outdatedSince == null) {
+            fetchedAt.store(newValue = clock.now())
+        }
         val previousPlaceForecast: PlaceForecast? = this.placeForecast.exchange(newValue = placeForecast)
         val isSamePlace: Boolean = previousPlaceForecast?.placeName == placeForecast.placeName
         state.update { state: WeatherForecastState ->
@@ -435,6 +443,7 @@ class WeatherForecastViewModel internal constructor(
                     isSamePlace = isSamePlace
                 ).copy(
                     localityName = placeForecast.placeName,
+                    outdatedForecastTimeText = placeForecast.outdatedTimeText(),
                     isLoading = false,
                     isRefreshing = false
                 ).withPlaceSaved()
@@ -503,16 +512,24 @@ class WeatherForecastViewModel internal constructor(
             displayLatestWarning()
             val loadedPlaceForecast: PlaceForecast = placeForecast.load() ?: return@launch
             state.update { state: WeatherForecastState ->
-                state.withForecast(
-                    forecast = loadedPlaceForecast.toForecast(),
-                    isSamePlace = true
-                )
+                state
+                    .withForecast(
+                        forecast = loadedPlaceForecast.toForecast(),
+                        isSamePlace = true
+                    ).copy(outdatedForecastTimeText = loadedPlaceForecast.outdatedTimeText())
             }
         }
     }
 
     private fun PlaceForecast.toForecast(): WeatherForecast =
         toWeatherForecast(
+            now = clock.now(),
+            timeZone = TimeZone.currentSystemDefault(),
+            languageTag = languageTag.load()
+        )
+
+    private fun PlaceForecast.outdatedTimeText(): String? =
+        outdatedSince?.toDayTimeText(
             now = clock.now(),
             timeZone = TimeZone.currentSystemDefault(),
             languageTag = languageTag.load()

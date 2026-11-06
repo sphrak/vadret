@@ -3,29 +3,31 @@ package se.vadretapp.vadret.weatherforecast
 import io.github.sphrak.either.Either
 import io.ktor.client.HttpClient
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.flow.Flow
 import se.vadretapp.vadret.common.DiskCache
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.weatherforecast.local.DefaultWeatherForecastLocalDataSource
-import se.vadretapp.vadret.weatherforecast.model.Analysis
-import se.vadretapp.vadret.weatherforecast.model.Forecast
+import se.vadretapp.vadret.weatherforecast.model.PlaceWeather
 import se.vadretapp.vadret.weatherforecast.remote.DefaultWeatherForecastRemoteDataSource
+import kotlin.time.Clock
 
 interface WeatherForecastRepository {
 
-    suspend fun getForecasts(
+    fun observeWeather(
         latitude: Double,
         longitude: Double
-    ): Either<Failure, List<Forecast>>
+    ): Flow<Either<Failure, PlaceWeather>>
 
-    suspend fun getAnalyses(
+    suspend fun refreshWeather(
         latitude: Double,
         longitude: Double
-    ): Either<Failure, List<Analysis>>
+    ): Either<Failure, PlaceWeather>
 }
 
 fun WeatherForecastRepository(
     httpClient: Lazy<HttpClient>,
     diskCache: DiskCache,
+    clock: Clock,
     coroutineDispatcher: CoroutineDispatcher
 ): WeatherForecastRepository =
     DefaultWeatherForecastRepository(
@@ -33,5 +35,6 @@ fun WeatherForecastRepository(
         weatherForecastLocalDataSource = DefaultWeatherForecastLocalDataSource(
             diskCache = diskCache,
             coroutineDispatcher = coroutineDispatcher
-        )
+        ),
+        clock = clock
     )

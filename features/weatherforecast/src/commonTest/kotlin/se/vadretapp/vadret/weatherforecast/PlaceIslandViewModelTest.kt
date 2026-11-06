@@ -40,7 +40,7 @@ class PlaceIslandViewModelTest {
     private val favoriteRepository = FakeFavoriteRepository()
     private val locationRepository = FakeLocationRepository()
     private val placeIslandViewModel = PlaceIslandViewModel(
-        getPlaceForecastTask = DefaultGetPlaceForecastTask(
+        observePlaceForecastTask = DefaultObservePlaceForecastTask(
             weatherForecastRepository = weatherForecastRepository,
             nominatimRepository = nominatimRepository
         ),

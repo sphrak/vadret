@@ -4,22 +4,28 @@ import io.github.sphrak.either.Either
 import io.github.sphrak.either.extension.asLeft
 import io.github.sphrak.either.extension.asRight
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.nominatim.model.Locality
+import se.vadretapp.vadret.weatherforecast.model.Forecast
 import se.vadretapp.vadret.weatherforecast.model.PlaceForecast
+import se.vadretapp.vadret.weatherforecast.model.PlaceWeather
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-class DefaultGetWeatherForecastTaskTest {
+private val savedForecast: Forecast = noon.copy(airTemperature = SAVED_AIR_TEMPERATURE)
+
+class DefaultObserveWeatherForecastTaskTest {
 
     private val locationRepository = FakeLocationRepository()
     private val weatherForecastRepository = FakeWeatherForecastRepository(analyses = listOf(morning).asRight())
     private val nominatimRepository = FakeNominatimRepository()
-    private val getWeatherForecastTask: GetWeatherForecastTask = DefaultGetWeatherForecastTask(
+    private val observeWeatherForecastTask: ObserveWeatherForecastTask = DefaultObserveWeatherForecastTask(
         getChosenPlaceTask = FakeGetChosenPlaceTask(
             locationRepository = locationRepository,
             nominatimRepository = nominatimRepository
@@ -38,9 +44,10 @@ class DefaultGetWeatherForecastTaskTest {
                     latitude = 59.3293,
                     longitude = 18.0686,
                     forecasts = listOf(noon),
-                    analyses = listOf(morning)
+                    analyses = listOf(morning),
+                    outdatedSince = null
                 ).asRight(),
-                actual = getWeatherForecastTask()
+                actual = observeWeatherForecastTask(isRefresh = false).first()
             )
         }
 
@@ -57,44 +64,12 @@ class DefaultGetWeatherForecastTaskTest {
                     latitude = 57.7,
                     longitude = 11.97,
                     forecasts = listOf(noon),
-                    analyses = listOf(morning)
+                    analyses = listOf(morning),
+                    outdatedSince = null
                 ).asRight(),
-                actual = getWeatherForecastTask()
+                actual = observeWeatherForecastTask(isRefresh = false).first()
             )
             assertEquals(expected = listOf(57.7 to 11.97), actual = weatherForecastRepository.requestedCoordinates)
-            assertEquals(expected = listOf(57.7 to 11.97), actual = weatherForecastRepository.requestedAnalysisCoordinates)
-        }
-
-    @Test
-    fun `a failed forecast stops asking for the past hours`() =
-        runTest(context = UnconfinedTestDispatcher()) {
-            val forecastFailure = Failure(errorCode = ErrorCode.HTTP_SERVICE_UNAVAILABLE)
-            weatherForecastRepository.analysisGate = CompletableDeferred()
-            weatherForecastRepository.forecasts = forecastFailure.asLeft()
-
-            val result: Either<Failure, PlaceForecast> = getWeatherForecastTask()
-
-            assertEquals(expected = forecastFailure.asLeft(), actual = result)
-            assertTrue(actual = weatherForecastRepository.isAnalysisCancelled)
-        }
-
-    @Test
-    fun `a place without its past hours still gets its forecast`() =
-        runTest {
-            weatherForecastRepository.analyses = Failure(errorCode = ErrorCode.HTTP_SERVICE_UNAVAILABLE).asLeft()
-
-            assertEquals<Either<Failure, PlaceForecast>>(
-                expected = PlaceForecast(
-                    placeName = "Stockholm",
-                    municipality = "Stockholm",
-                    county = "Stockholm",
-                    latitude = 59.3293,
-                    longitude = 18.0686,
-                    forecasts = listOf(noon),
-                    analyses = emptyList()
-                ).asRight(),
-                actual = getWeatherForecastTask()
-            )
         }
 
     @Test
@@ -112,7 +87,7 @@ class DefaultGetWeatherForecastTaskTest {
 
             val places: List<Triple<String?, String?, String?>> = failures.map { locality: Either<Failure, Locality> ->
                 nominatimRepository.locality = locality
-                val placeForecast: PlaceForecast = (getWeatherForecastTask() as Either.Right).b
+                val placeForecast: PlaceForecast = (observeWeatherForecastTask(isRefresh = false).first() as Either.Right).b
                 Triple(
                     first = placeForecast.placeName,
                     second = placeForecast.municipality,
@@ -140,13 +115,13 @@ class DefaultGetWeatherForecastTaskTest {
             val forecastFailure = Failure(errorCode = ErrorCode.WEATHER_FORECAST_NOT_AVAILABLE_FOR_LOCATION)
 
             locationRepository.isAutomatic = modeFailure.asLeft()
-            val withoutMode: Either<Failure, PlaceForecast> = getWeatherForecastTask()
+            val withoutMode: Either<Failure, PlaceForecast> = observeWeatherForecastTask(isRefresh = false).first()
             locationRepository.isAutomatic = true.asRight()
             locationRepository.deviceLocation = locationFailure.asLeft()
-            val withoutLocation: Either<Failure, PlaceForecast> = getWeatherForecastTask()
+            val withoutLocation: Either<Failure, PlaceForecast> = observeWeatherForecastTask(isRefresh = false).first()
             locationRepository.isAutomatic = false.asRight()
             weatherForecastRepository.forecasts = forecastFailure.asLeft()
-            val withoutForecast: Either<Failure, PlaceForecast> = getWeatherForecastTask()
+            val withoutForecast: Either<Failure, PlaceForecast> = observeWeatherForecastTask(isRefresh = false).first()
 
             assertEquals(
                 expected = listOf(modeFailure, locationFailure, forecastFailure).map { failure: Failure -> failure.asLeft() },
@@ -154,4 +129,53 @@ class DefaultGetWeatherForecastTaskTest {
             )
             assertTrue(actual = weatherForecastRepository.requestedCoordinates.size == 1)
         }
+
+    @Test
+    fun `saved weather shows at once and the refreshed weather after it`() =
+        runTest {
+            weatherForecastRepository.savedWeather.value = mapOf(
+                (59.3293 to 18.0686) to PlaceWeather(
+                    forecasts = listOf(savedForecast),
+                    analyses = emptyList(),
+                    fetchedAt = FAKE_FETCHED_AT
+                )
+            )
+            val refreshGate = CompletableDeferred<Unit>()
+            weatherForecastRepository.forecastGates[59.3293 to 18.0686] = refreshGate
+            val seen = mutableListOf<List<Forecast>>()
+
+            val observing = launch {
+                observeWeatherForecastTask(isRefresh = false)
+                    .take(count = 2)
+                    .collect { placeForecast: Either<Failure, PlaceForecast> -> seen += (placeForecast as Either.Right).b.forecasts }
+            }
+            testScheduler.advanceUntilIdle()
+            val beforeRefresh: List<List<Forecast>> = seen.toList()
+            refreshGate.complete(value = Unit)
+            observing.join()
+
+            assertEquals(
+                expected = listOf(listOf(savedForecast)) to listOf(listOf(savedForecast), listOf(noon)),
+                actual = beforeRefresh to seen
+            )
+        }
+
+    @Test
+    fun `a refresh shows the refreshed weather first`() =
+        runTest {
+            weatherForecastRepository.savedWeather.value = mapOf(
+                (59.3293 to 18.0686) to PlaceWeather(
+                    forecasts = listOf(savedForecast),
+                    analyses = emptyList(),
+                    fetchedAt = FAKE_FETCHED_AT
+                )
+            )
+
+            assertEquals(
+                expected = listOf(noon),
+                actual = (observeWeatherForecastTask(isRefresh = true).first() as Either.Right).b.forecasts
+            )
+        }
 }
+
+private const val SAVED_AIR_TEMPERATURE = -3.0

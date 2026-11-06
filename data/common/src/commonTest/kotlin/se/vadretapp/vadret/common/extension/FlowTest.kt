@@ -16,6 +16,8 @@ import se.vadretapp.vadret.common.Failure
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
+private const val NOT_REFRESHED = "not refreshed"
+
 private val nothingSaved: List<String> = emptyList()
 private val networkUnavailable = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE)
 
@@ -25,10 +27,15 @@ class FlowTest {
 
     private fun savedFlow(): Flow<Either<Failure, List<String>>> = saved.map { names: List<String> -> names.asRight() }
 
-    private fun refreshing(refresh: suspend () -> Either<Failure, List<String>>): Flow<Either<Failure, List<String>>> =
+    private fun refreshing(
+        isRefreshFirst: Boolean = false,
+        refresh: suspend () -> Either<Failure, List<String>>
+    ): Flow<Either<Failure, List<String>>> =
         savedFlow().whileRefreshing(
             refresh = refresh,
-            isNothingSaved = { names: List<String> -> names.isEmpty() }
+            isNothingSaved = { names: List<String> -> names.isEmpty() },
+            whenRefreshFails = { names: List<String> -> names + NOT_REFRESHED },
+            isRefreshFirst = isRefreshFirst
         )
 
     @Test
@@ -78,19 +85,25 @@ class FlowTest {
         }
 
     @Test
-    fun `with saved data a refresh that fails leaves the saved data`() =
+    fun `with saved data a refresh that fails shows the saved data as not refreshed`() =
         runTest {
             saved.value = listOf("hassel")
+            val refreshGate = CompletableDeferred<Unit>()
             val seen = mutableListOf<Either<Failure, List<String>>>()
 
             val collecting = launch {
-                refreshing { networkUnavailable.asLeft() }.toList(destination = seen)
+                refreshing {
+                    refreshGate.await()
+                    networkUnavailable.asLeft()
+                }.toList(destination = seen)
             }
+            testScheduler.advanceUntilIdle()
+            refreshGate.complete(value = Unit)
             testScheduler.advanceUntilIdle()
             collecting.cancel()
 
             assertEquals<List<Either<Failure, List<String>>>>(
-                expected = listOf(listOf("hassel").asRight()),
+                expected = listOf(listOf("hassel").asRight(), listOf("hassel", NOT_REFRESHED).asRight()),
                 actual = seen
             )
         }
@@ -101,6 +114,40 @@ class FlowTest {
             assertEquals(
                 expected = listOf(nothingSaved.asRight()),
                 actual = refreshing { nothingSaved.asRight() }.take(count = 1).toList()
+            )
+        }
+
+    @Test
+    fun `refreshing first shows the refreshed data and not the saved data before it`() =
+        runTest {
+            saved.value = listOf("hassel")
+
+            assertEquals(
+                expected = listOf(listOf("hassel", "björk").asRight()),
+                actual = refreshing(isRefreshFirst = true) {
+                    saved.value = listOf("hassel", "björk")
+                    saved.value.asRight()
+                }.take(count = 1).toList()
+            )
+        }
+
+    @Test
+    fun `refreshing first that fails shows only the saved data as not refreshed`() =
+        runTest {
+            saved.value = listOf("hassel")
+
+            assertEquals(
+                expected = listOf(listOf("hassel", NOT_REFRESHED).asRight()),
+                actual = refreshing(isRefreshFirst = true) { networkUnavailable.asLeft() }.take(count = 1).toList()
+            )
+        }
+
+    @Test
+    fun `refreshing first that fails without saved data is the failure`() =
+        runTest {
+            assertEquals(
+                expected = listOf(networkUnavailable.asLeft()),
+                actual = refreshing(isRefreshFirst = true) { networkUnavailable.asLeft() }.take(count = 1).toList()
             )
         }
 }

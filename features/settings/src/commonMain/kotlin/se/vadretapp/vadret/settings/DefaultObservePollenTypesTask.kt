@@ -18,7 +18,9 @@ internal class DefaultObservePollenTypesTask(
             .observePollenTypes()
             .whileRefreshing(
                 refresh = { pollenRepository.refreshPollenTypes() },
-                isNothingSaved = { pollenTypes: List<PollenType> -> pollenTypes.isEmpty() }
+                isNothingSaved = { pollenTypes: List<PollenType> -> pollenTypes.isEmpty() },
+                whenRefreshFails = { pollenTypes: List<PollenType> -> pollenTypes },
+                isRefreshFirst = false
             ).map { pollenTypes: Either<Failure, List<PollenType>> ->
                 pollenTypes.map { types: List<PollenType> -> types.filter { pollenType: PollenType -> pollenType.hasForecasts } }
             }

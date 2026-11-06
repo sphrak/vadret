@@ -88,6 +88,7 @@
     <string name="attestation_failed">Vädret could not check this device just now, so push alerts are not on yet. Try again later.</string>
     <string name="no_location_permission">No location permission</string>
     <string name="location_failure">Location not available</string>
+    <string name="showing_saved_forecast">Showing the saved forecast from %1$s</string>
     <string name="no_network_available">No network available</string>
     <string name="location_provider_disabled">Location provider is disabled</string>
     <string name="failed_loading_file">Could not read file</string>

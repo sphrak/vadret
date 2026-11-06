@@ -38,6 +38,7 @@
     <string name="permission_granted">Tillstånd medgivet!</string>
     <string name="permission_denied">Tillstånd nekat!</string>
     <string name="slogan">Öppen kod, öppna data</string>
+    <string name="showing_saved_forecast">Visar sparad prognos från %1$s</string>
     <string name="no_network_available">Nätverket ej tillgängligt</string>
     <string name="licenses_title">Licenser</string>
     <string name="about_app_description">Väderapp för Sverige!</string>

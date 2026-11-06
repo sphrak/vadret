@@ -3,6 +3,7 @@ package se.vadretapp.vadret.weatherforecast
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import io.github.sphrak.either.Either
 import io.github.sphrak.either.extension.onResult
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
@@ -28,7 +29,7 @@ import kotlin.time.Clock
 
 @Immutable
 class PlaceIslandViewModel internal constructor(
-    private val getPlaceForecastTask: GetPlaceForecastTask,
+    private val observePlaceForecastTask: ObservePlaceForecastTask,
     private val addFavoriteTask: AddFavoriteTask,
     private val selectFavoriteTask: SelectFavoriteTask,
     private val clock: Clock,
@@ -93,30 +94,33 @@ class PlaceIslandViewModel internal constructor(
             currentJob = loadJob,
             context = coroutineDispatcher
         ) {
-            getPlaceForecastTask(
+            observePlaceForecastTask(
                 latitude = location.latitude,
-                longitude = location.longitude
-            ).onResult(
-                onError = { failure: Failure ->
-                    updateFor(location = location) { state: PlaceIslandState ->
-                        state.copy(
-                            isLoading = false,
-                            errorMessageResource = failure.messageResource()
-                        )
+                longitude = location.longitude,
+                isRefresh = false
+            ).collect { result: Either<Failure, PlaceForecast> ->
+                result.onResult(
+                    onError = { failure: Failure ->
+                        updateFor(location = location) { state: PlaceIslandState ->
+                            state.copy(
+                                isLoading = false,
+                                errorMessageResource = failure.messageResource()
+                            )
+                        }
+                    },
+                    onSuccess = { placeForecast: PlaceForecast ->
+                        updateFor(location = location) { state: PlaceIslandState ->
+                            state.copy(
+                                placeName = placeForecast.placeName,
+                                municipality = placeForecast.municipality,
+                                county = placeForecast.county,
+                                currentWeather = placeForecast.toCurrentWeather(now = clock.now()),
+                                isLoading = false
+                            )
+                        }
                     }
-                },
-                onSuccess = { placeForecast: PlaceForecast ->
-                    updateFor(location = location) { state: PlaceIslandState ->
-                        state.copy(
-                            placeName = placeForecast.placeName,
-                            municipality = placeForecast.municipality,
-                            county = placeForecast.county,
-                            currentWeather = placeForecast.toCurrentWeather(now = clock.now()),
-                            isLoading = false
-                        )
-                    }
-                }
-            )
+                )
+            }
         }
     }
 
