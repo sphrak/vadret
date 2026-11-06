@@ -7,6 +7,7 @@ import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
@@ -84,6 +85,7 @@ private val attributionPadding = PaddingValues(
 private const val NO_DOCK_HEIGHT = 0
 private const val UNMEASURED_SCREEN_HEIGHT = 0
 private const val COVER_FADE_MILLISECONDS = 250
+private const val DOCK_FADE_MILLISECONDS = 250
 private const val ATTRIBUTION_BACKGROUND_ALPHA = 0.85f
 private const val ATTRIBUTION_WEIGHT = 1f
 
@@ -329,11 +331,17 @@ private fun RadarBottomPanel(
                     placeIsland(location)
                 }
             } else {
-                RadarDock(
-                    state = state,
-                    onEvent = onEvent,
-                    modifier = dockModifier
-                )
+                AnimatedVisibility(
+                    visible = state.isDockReady,
+                    enter = dockEnterTransition(isMotionEnabled = isMotionEnabled),
+                    exit = ExitTransition.None
+                ) {
+                    RadarDock(
+                        state = state,
+                        onEvent = onEvent,
+                        modifier = dockModifier
+                    )
+                }
             }
         }
     }
@@ -355,7 +363,7 @@ private fun RadarDock(
             onPollenTypeSelected = { pollenId: String -> onEvent(RadarEvent.OnPollenTypeSelected(pollenId = pollenId)) },
             modifier = modifier
         )
-    } else if (timeline != null || state.isLoading || state.isInitialLoading) {
+    } else if (timeline != null) {
         RadarTimelineCard(
             layer = state.layer,
             timeline = timeline,
@@ -366,6 +374,13 @@ private fun RadarDock(
         )
     }
 }
+
+private fun dockEnterTransition(isMotionEnabled: Boolean): EnterTransition =
+    if (isMotionEnabled) {
+        fadeIn(animationSpec = tween(durationMillis = DOCK_FADE_MILLISECONDS))
+    } else {
+        EnterTransition.None
+    }
 
 private fun dockTransition(isMotionEnabled: Boolean): ContentTransform {
     if (!isMotionEnabled) {

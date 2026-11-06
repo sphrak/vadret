@@ -1,35 +1,25 @@
 package se.vadretapp.vadret.radar.ui
 
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.shape.ZeroCornerSize
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -59,15 +49,6 @@ private val playIconSize = 28.dp
 private val timelineSpacing = 6.dp
 private val legendHeight = 6.dp
 private val legendScaleSpacing = 4.dp
-private val sliderHeight = 48.dp
-private val placeholderTrackHeight = 4.dp
-private val boneShape = RoundedCornerShape(size = 4.dp)
-private const val DISABLED_ALPHA = 0.38f
-private const val PLACEHOLDER_MINIMUM_ALPHA = 0.4f
-private const val PLACEHOLDER_PULSE_MILLISECONDS = 900
-private const val TIMELINE_LABEL_COUNT = 3
-private const val TIME_PLACEHOLDER = "00:00"
-private const val CAPTION_PLACEHOLDER = "Wednesday, 00 minutes"
 
 private val precipitationLegend: List<Color> = listOf(
     Color(color = 0xFF9CC9FF),
@@ -120,7 +101,7 @@ private val nightWindLegend: List<Color> = listOf(
 @Composable
 internal fun RadarTimelineCard(
     layer: RadarLayer,
-    timeline: RadarTimeline?,
+    timeline: RadarTimeline,
     isPlaying: Boolean,
     onPlayClick: () -> Unit,
     onIndexChange: (Int) -> Unit,
@@ -131,86 +112,17 @@ internal fun RadarTimelineCard(
             horizontalArrangement = Arrangement.spacedBy(space = cardSectionSpacing),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            if (timeline != null) {
-                PlayButton(
-                    isPlaying = isPlaying,
-                    onClick = onPlayClick
-                )
-                TimelineColumn(
-                    timeline = timeline,
-                    onIndexChange = onIndexChange,
-                    modifier = Modifier.weight(weight = 1f)
-                )
-            } else {
-                TimelinePlaceholder(modifier = Modifier.weight(weight = 1f))
-            }
+            PlayButton(
+                isPlaying = isPlaying,
+                onClick = onPlayClick
+            )
+            TimelineColumn(
+                timeline = timeline,
+                onIndexChange = onIndexChange,
+                modifier = Modifier.weight(weight = 1f)
+            )
         }
         Legend(layer = layer)
-    }
-}
-
-@Composable
-private fun RowScope.TimelinePlaceholder(modifier: Modifier = Modifier) {
-    val boneAlpha: Float by rememberInfiniteTransition(label = "placeholder").animateFloat(
-        initialValue = 1f,
-        targetValue = PLACEHOLDER_MINIMUM_ALPHA,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = PLACEHOLDER_PULSE_MILLISECONDS),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "placeholderAlpha"
-    )
-    Surface(
-        shape = CircleShape,
-        color = VadretTheme.colorScheme.primary.copy(alpha = DISABLED_ALPHA),
-        modifier = Modifier.size(size = playButtonSize),
-        content = {}
-    )
-    Column(
-        verticalArrangement = Arrangement.spacedBy(space = timelineSpacing),
-        modifier = modifier
-    ) {
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            TextBone(
-                text = TIME_PLACEHOLDER,
-                style = VadretTheme.textStyles.heading,
-                alpha = { boneAlpha }
-            )
-            TextBone(
-                text = CAPTION_PLACEHOLDER,
-                style = VadretTheme.textStyles.label,
-                alpha = { boneAlpha }
-            )
-        }
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(height = sliderHeight)
-        ) {
-            Bone(
-                alpha = { boneAlpha },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(height = placeholderTrackHeight)
-            )
-        }
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            repeat(times = TIMELINE_LABEL_COUNT) {
-                TextBone(
-                    text = TIME_PLACEHOLDER,
-                    style = VadretTheme.textStyles.label,
-                    alpha = { boneAlpha }
-                )
-            }
-        }
     }
 }
 
@@ -239,41 +151,6 @@ internal fun TimelineCardSurface(
             content = content
         )
     }
-}
-
-@Composable
-private fun TextBone(
-    text: String,
-    style: TextStyle,
-    alpha: () -> Float,
-    modifier: Modifier = Modifier
-) {
-    Text(
-        text = text,
-        style = style,
-        color = Color.Transparent,
-        modifier = modifier
-            .graphicsLayer { this.alpha = alpha() }
-            .background(
-                color = VadretTheme.colorScheme.outlineVariant,
-                shape = boneShape
-            )
-    )
-}
-
-@Composable
-private fun Bone(
-    alpha: () -> Float,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .graphicsLayer { this.alpha = alpha() }
-            .background(
-                color = VadretTheme.colorScheme.outlineVariant,
-                shape = boneShape
-            )
-    )
 }
 
 @Composable

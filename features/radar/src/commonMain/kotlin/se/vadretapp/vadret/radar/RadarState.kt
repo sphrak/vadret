@@ -55,5 +55,12 @@ internal data class RadarState(
 
     val isProgressShown: Boolean = isLoading || isInitialLoading || isWaitingForFrame || isDownloadingRadarDay
 
+    val isDockReady: Boolean = isMapLoaded &&
+        when (layer) {
+            RadarLayer.PRECIPITATION -> precipitationFrames.isNotEmpty() && precipitationOverlay != null
+            RadarLayer.WIND -> windFrames.isNotEmpty() && windField != null
+            RadarLayer.POLLEN -> pollenDayText != null && pollenDateText != null
+        }
+
     val shownWindField: WindField? = windTransitionField ?: windField
 }

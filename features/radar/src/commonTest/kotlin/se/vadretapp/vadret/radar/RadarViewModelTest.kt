@@ -1247,6 +1247,74 @@ class RadarViewModelTest {
         }
 
     @Test
+    fun `the dock waits for the map and the newest image so play works when it shows`() =
+        testScope.runTest {
+            val radarViewModel: RadarViewModel = viewModel()
+            val beforeAnything: Boolean = radarViewModel.state.value.isDockReady
+            advanceUntilIdle()
+            val imageWithoutMap: Boolean = radarViewModel.state.value.isDockReady
+
+            radarViewModel.onEvent(event = RadarEvent.OnMapLoaded)
+
+            assertEquals(
+                expected = Triple(
+                    first = false,
+                    second = false,
+                    third = true
+                ),
+                actual = Triple(
+                    first = beforeAnything,
+                    second = imageWithoutMap,
+                    third = radarViewModel.state.value.isDockReady
+                )
+            )
+        }
+
+    @Test
+    fun `the dock hides while another layer loads and shows when it is drawn`() =
+        testScope.runTest {
+            val radarViewModel: RadarViewModel = viewModel()
+            radarViewModel.onEvent(event = RadarEvent.OnMapLoaded)
+            advanceUntilIdle()
+            val seen = mutableListOf<Boolean>()
+
+            listOf(RadarLayer.WIND, RadarLayer.POLLEN).forEach { layer: RadarLayer ->
+                radarViewModel.onEvent(event = RadarEvent.OnLayerSelected(layer = layer))
+                seen += radarViewModel.state.value.isDockReady
+                advanceUntilIdle()
+                seen += radarViewModel.state.value.isDockReady
+            }
+
+            assertEquals(
+                expected = listOf(false, true, false, true),
+                actual = seen
+            )
+        }
+
+    @Test
+    fun `a radar or image that cannot be loaded shows no dock`() =
+        testScope.runTest {
+            val failures: List<() -> Unit> = listOf(
+                { getRadarTask.result = Failure(errorCode = ErrorCode.RADAR_NOT_AVAILABLE).asLeft() },
+                {
+                    getRadarTask.result = radar.asRight()
+                    radarImageLoader.failingUrls = setOf("https://smhi.se/2.png")
+                },
+                { getRadarTask.result = Radar(images = emptyList()).asRight() }
+            )
+
+            val isDockReady: List<Boolean> = failures.map { fail: () -> Unit ->
+                fail()
+                val radarViewModel: RadarViewModel = viewModel()
+                radarViewModel.onEvent(event = RadarEvent.OnMapLoaded)
+                advanceUntilIdle()
+                radarViewModel.state.value.isDockReady
+            }
+
+            assertEquals(expected = List(size = failures.size) { false }, actual = isDockReady)
+        }
+
+    @Test
     fun `the radar stations start hidden and toggle on and off`() =
         testScope.runTest {
             val radarViewModel: RadarViewModel = viewModel()
