@@ -1,10 +1,11 @@
 package se.vadretapp.vadret.radar
 
 import io.github.sphrak.either.Either
+import kotlinx.coroutines.flow.Flow
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.wind.model.WindForecast
 
-internal interface GetWindForecastTask {
+internal interface ObserveWindForecastTask {
 
-    suspend operator fun invoke(): Either<Failure, WindForecast>
+    operator fun invoke(): Flow<Either<Failure, WindForecast>>
 }

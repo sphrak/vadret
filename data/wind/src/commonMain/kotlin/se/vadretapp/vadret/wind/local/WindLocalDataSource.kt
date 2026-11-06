@@ -1,6 +1,9 @@
 package se.vadretapp.vadret.wind.local
 
+import kotlinx.coroutines.flow.Flow
+
 internal interface WindLocalDataSource {
-    fun getWindForecast(): WindForecastEntity?
-    fun setWindForecast(windForecastEntity: WindForecastEntity)
+    suspend fun getWindForecast(): WindForecastEntity?
+    fun observeWindForecast(): Flow<WindForecastEntity?>
+    suspend fun setWindForecast(windForecastEntity: WindForecastEntity)
 }

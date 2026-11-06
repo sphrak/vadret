@@ -62,7 +62,9 @@ val repositoryModule: Module = module {
     single<WindRepository> {
         WindRepository(
             httpClient = inject(),
-            clock = get()
+            diskCache = get(),
+            clock = get(),
+            coroutineDispatcher = get()
         )
     }
 }

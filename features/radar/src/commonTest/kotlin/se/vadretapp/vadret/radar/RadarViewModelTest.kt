@@ -146,16 +146,17 @@ private val RadarState.shownEchoes: ImageBitmap?
 private val RadarState.shownMotion: PrecipitationMotion?
     get() = (precipitationOverlay as? PrecipitationOverlay.Echoes)?.motion
 
-private class FakeGetWindForecastTask(
+private class FakeObserveWindForecastTask(
     var result: Either<Failure, WindForecast>
-) : GetWindForecastTask {
+) : ObserveWindForecastTask {
 
     var requestCount: Int = 0
 
-    override suspend fun invoke(): Either<Failure, WindForecast> {
-        requestCount++
-        return result
-    }
+    override fun invoke(): Flow<Either<Failure, WindForecast>> =
+        flow {
+            requestCount++
+            emit(value = result)
+        }
 }
 
 private class FakeGetPollenMapTask(
@@ -338,7 +339,7 @@ class RadarViewModelTest {
     private val testDispatcher: TestDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
     private val getRadarTask = FakeObserveRadarTask(result = radar.asRight())
-    private val getWindForecastTask = FakeGetWindForecastTask(result = windForecast.asRight())
+    private val getWindForecastTask = FakeObserveWindForecastTask(result = windForecast.asRight())
     private val getPollenMapTask = FakeGetPollenMapTask(result = pollenMap.asRight())
     private val pollenCloudRenderer = FakePollenCloudRenderer()
     private val getDeviceLocationTask = FakeGetDeviceLocationTask(result = Location(latitude = 59.3, longitude = 18.0).asRight())
@@ -367,7 +368,7 @@ class RadarViewModelTest {
         val radarViewModel = RadarViewModel(
             observeRadarTask = getRadarTask,
             downloadRadarDayTask = downloadRadarDayTask,
-            getWindForecastTask = getWindForecastTask,
+            observeWindForecastTask = getWindForecastTask,
             getDeviceLocationTask = getDeviceLocationTask,
             getPollenMapTask = getPollenMapTask,
             observePollenPreferencesTask = observePollenPreferencesTask,

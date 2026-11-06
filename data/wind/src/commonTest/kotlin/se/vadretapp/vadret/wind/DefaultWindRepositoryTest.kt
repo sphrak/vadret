@@ -2,6 +2,7 @@ package se.vadretapp.vadret.wind
 
 import io.github.sphrak.either.Either
 import io.github.sphrak.either.extension.asLeft
+import io.github.sphrak.either.extension.asRight
 import io.ktor.client.engine.mock.MockRequestHandleScope
 import io.ktor.client.engine.mock.respond
 import io.ktor.client.request.HttpRequestData
@@ -9,10 +10,14 @@ import io.ktor.client.request.HttpResponseData
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.logging.LogLevel
+import se.vadretapp.vadret.testing.FakeDiskCache
 import se.vadretapp.vadret.testing.FixedClock
 import se.vadretapp.vadret.testing.LogLine
 import se.vadretapp.vadret.testing.mockHttpClient
@@ -47,6 +52,8 @@ class DefaultWindRepositoryTest {
         get() = recordedRequests.load()
 
     private val clock = FixedClock(now = Instant.parse(input = "2026-10-24T21:50:00Z"))
+    private val testScope = TestScope(StandardTestDispatcher())
+    private val diskCache = FakeDiskCache()
 
     private var lastForecastTime: String = "20261025T090000Z"
     private var coordinates: String = gridCoordinates
@@ -93,7 +100,10 @@ class DefaultWindRepositoryTest {
         windRemoteDataSource = DefaultWindRemoteDataSource(
             httpClient = lazy { mockHttpClient { request: HttpRequestData -> answer(request = request) } }
         ),
-        windLocalDataSource = DefaultWindLocalDataSource(),
+        windLocalDataSource = DefaultWindLocalDataSource(
+            diskCache = diskCache,
+            coroutineDispatcher = StandardTestDispatcher(scheduler = testScope.testScheduler)
+        ),
         clock = clock
     )
 
@@ -101,8 +111,8 @@ class DefaultWindRepositoryTest {
 
     @Test
     fun `twelve hours start at the first hour after the model run`() =
-        runTest {
-            val windForecast: WindForecast = windRepository.getWindForecast().forecast()
+        testScope.runTest {
+            val windForecast: WindForecast = windRepository.refreshWindForecast().forecast()
 
             assertEquals(expected = Instant.parse(input = REFERENCE_TIME), actual = windForecast.referenceTime)
             assertEquals(
@@ -113,19 +123,19 @@ class DefaultWindRepositoryTest {
 
     @Test
     fun `an old model run starts at the current hour`() =
-        runTest {
+        testScope.runTest {
             clock.now = Instant.parse(input = "2026-10-25T01:20:00Z")
 
             assertEquals(
                 expected = Instant.parse(input = "2026-10-25T01:00:00Z"),
-                actual = windRepository.getWindForecast().forecast().frames.first().validAt
+                actual = windRepository.refreshWindForecast().forecast().frames.first().validAt
             )
         }
 
     @Test
     fun `the grid keeps its rows and missing values become not a number`() =
-        runTest {
-            val windForecast: WindForecast = windRepository.getWindForecast().forecast()
+        testScope.runTest {
+            val windForecast: WindForecast = windRepository.refreshWindForecast().forecast()
 
             assertEquals(
                 expected = WindGrid(
@@ -147,8 +157,8 @@ class DefaultWindRepositoryTest {
 
     @Test
     fun `only the first speed request asks for the geometry`() =
-        runTest {
-            windRepository.getWindForecast()
+        testScope.runTest {
+            windRepository.refreshWindForecast()
 
             val withGeometry: List<HttpRequestData> = requests.filter { request: HttpRequestData -> request.url.parameters["with-geo"] == "true" }
             assertEquals(
@@ -164,21 +174,21 @@ class DefaultWindRepositoryTest {
 
     @Test
     fun `the forecast ends where smhi has no more hours`() =
-        runTest {
+        testScope.runTest {
             lastForecastTime = "20261025T010000Z"
 
-            assertEquals(expected = 4, actual = windRepository.getWindForecast().forecast().frames.size)
+            assertEquals(expected = 4, actual = windRepository.refreshWindForecast().forecast().frames.size)
         }
 
     @Test
     fun `no hours at all is no wind`() =
-        runTest {
+        testScope.runTest {
             lastForecastTime = "20261024T000000Z"
 
             withRecordedLogs { recordingLogSink ->
                 assertEquals(
                     expected = Failure(errorCode = ErrorCode.WIND_NOT_AVAILABLE).asLeft(),
-                    actual = windRepository.getWindForecast()
+                    actual = windRepository.refreshWindForecast()
                 )
                 assertEquals(
                     expected = listOf(LogLevel.WARN),
@@ -189,11 +199,11 @@ class DefaultWindRepositoryTest {
 
     @Test
     fun `the same model run is fetched once`() =
-        runTest {
-            windRepository.getWindForecast()
+        testScope.runTest {
+            windRepository.refreshWindForecast()
             val firstRequestCount: Int = requests.size
 
-            windRepository.getWindForecast()
+            windRepository.refreshWindForecast()
 
             assertEquals(expected = 25, actual = firstRequestCount)
             assertEquals(expected = firstRequestCount + 1, actual = requests.size)
@@ -201,26 +211,26 @@ class DefaultWindRepositoryTest {
 
     @Test
     fun `a new hour fetches again`() =
-        runTest {
-            windRepository.getWindForecast()
+        testScope.runTest {
+            windRepository.refreshWindForecast()
             clock.now = Instant.parse(input = "2026-10-24T23:05:00Z")
 
             assertEquals(
                 expected = Instant.parse(input = "2026-10-24T23:00:00Z"),
-                actual = windRepository.getWindForecast().forecast().frames.first().validAt
+                actual = windRepository.refreshWindForecast().forecast().frames.first().validAt
             )
             assertEquals(expected = 50, actual = requests.size)
         }
 
     @Test
     fun `values that do not match the grid are an invalid response`() =
-        runTest {
+        testScope.runTest {
             speedValues = "[1.0,2.0]"
 
             withRecordedLogs { recordingLogSink ->
                 assertEquals(
                     expected = Failure(errorCode = ErrorCode.INVALID_RESPONSE).asLeft(),
-                    actual = windRepository.getWindForecast()
+                    actual = windRepository.refreshWindForecast()
                 )
                 assertEquals(
                     expected = listOf(LogLevel.WARN),
@@ -231,13 +241,13 @@ class DefaultWindRepositoryTest {
 
     @Test
     fun `a grid without regular rows is an invalid response`() =
-        runTest {
+        testScope.runTest {
             coordinates = "[[10.0,55.0],[12.0,55.1],[10.1,57.0],[12.1,57.1],[14.1,57.2],[16.1,57.3]]"
 
             withRecordedLogs { recordingLogSink ->
                 assertEquals(
                     expected = Failure(errorCode = ErrorCode.INVALID_RESPONSE).asLeft(),
-                    actual = windRepository.getWindForecast()
+                    actual = windRepository.refreshWindForecast()
                 )
                 assertEquals(
                     expected = listOf(LogLevel.WARN),
@@ -248,13 +258,13 @@ class DefaultWindRepositoryTest {
 
     @Test
     fun `coordinates that are not pairs are an invalid response`() =
-        runTest {
+        testScope.runTest {
             coordinates = "[[10.0],[12.0,55.1],[14.0,55.2],[10.1,57.0],[12.1,57.1],[14.1,57.2]]"
 
             withRecordedLogs { recordingLogSink ->
                 assertEquals(
                     expected = Failure(errorCode = ErrorCode.INVALID_RESPONSE).asLeft(),
-                    actual = windRepository.getWindForecast()
+                    actual = windRepository.refreshWindForecast()
                 )
                 assertEquals(
                     expected = listOf(LogLevel.WARN),
@@ -264,29 +274,43 @@ class DefaultWindRepositoryTest {
         }
 
     @Test
-    fun `the saved wind is used when the newest model run cannot be asked for`() =
-        runTest {
-            val fetched: WindForecast = windRepository.getWindForecast().forecast()
-            isOffline = true
-            clock.now = Instant.parse(input = "2026-10-24T23:05:00Z")
+    fun `a refreshed wind is observed as the saved wind`() =
+        testScope.runTest {
+            val nothingSaved: Either<Failure, WindForecast?> = windRepository.observeWindForecast().first()
+            val refreshed: WindForecast = windRepository.refreshWindForecast().forecast()
 
-            withRecordedLogs { recordingLogSink ->
-                assertEquals(
-                    expected = fetched to listOf(LogLevel.WARN),
-                    actual = windRepository.getWindForecast().forecast() to recordingLogSink.lines.map { line: LogLine -> line.level }
+            assertEquals(
+                expected = null to refreshed,
+                actual = (nothingSaved as Either.Right).b to (windRepository.observeWindForecast().first() as Either.Right).b
+            )
+        }
+
+    @Test
+    fun `a refresh that fails keeps the saved wind`() =
+        testScope.runTest {
+            val refreshed: WindForecast = windRepository.refreshWindForecast().forecast()
+            isOffline = true
+
+            withRecordedLogs {
+                assertEquals<Pair<Either<Failure, WindForecast>, WindForecast?>>(
+                    expected = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft() to refreshed,
+                    actual = windRepository.refreshWindForecast() to (windRepository.observeWindForecast().first() as Either.Right).b
                 )
             }
         }
 
     @Test
-    fun `wind that is neither fetched nor saved is a failure`() =
-        runTest {
-            isOffline = true
+    fun `unreadable saved wind is dropped and observed as nothing saved`() =
+        testScope.runTest {
+            diskCache.write(
+                key = "wind.json",
+                value = "not json"
+            )
 
             withRecordedLogs {
-                assertEquals(
-                    expected = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft(),
-                    actual = windRepository.getWindForecast()
+                assertEquals<Pair<Either<Failure, WindForecast?>, Map<String, String>>>(
+                    expected = null.asRight() to emptyMap(),
+                    actual = windRepository.observeWindForecast().first() to diskCache.entries
                 )
             }
         }

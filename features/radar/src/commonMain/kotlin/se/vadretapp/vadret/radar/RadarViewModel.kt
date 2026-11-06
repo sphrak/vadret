@@ -22,6 +22,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.isActive
@@ -80,7 +81,7 @@ private class PreparedWindField(
 class RadarViewModel internal constructor(
     private val observeRadarTask: ObserveRadarTask,
     private val downloadRadarDayTask: DownloadRadarDayTask,
-    private val getWindForecastTask: GetWindForecastTask,
+    private val observeWindForecastTask: ObserveWindForecastTask,
     private val getDeviceLocationTask: GetDeviceLocationTask,
     private val getPollenMapTask: GetPollenMapTask,
     private val observePollenPreferencesTask: ObservePollenPreferencesTask,
@@ -397,29 +398,46 @@ class RadarViewModel internal constructor(
             state.copy(isLoading = true)
         }
         viewModelScope.launch(context = coroutineDispatcher) {
-            getWindForecastTask()
-                .onResult(
-                    onError = { failure: Failure ->
-                        isWindRequested.store(newValue = false)
-                        displayError(failure = failure)
-                    },
-                    onSuccess = { forecast: WindForecast ->
-                        windForecast.store(newValue = forecast)
-                        val updatedState: RadarState = state.updateAndGet { state: RadarState ->
-                            state.copy(
-                                windFrames = forecast.toTimeFrames(),
-                                windIndex = 0,
-                                isLoading = state.layer == RadarLayer.WIND
-                            )
-                        }
-                        if (updatedState.layer == RadarLayer.WIND) {
-                            showFrame(
-                                layer = RadarLayer.WIND,
-                                index = 0
-                            )
-                        }
-                    }
-                )
+            observeWindForecastTask()
+                .transformWhile { result: Either<Failure, WindForecast> ->
+                    emit(value = result)
+                    result is Either.Right
+                }.collect { result: Either<Failure, WindForecast> ->
+                    result.onResult(
+                        onError = { failure: Failure ->
+                            isWindRequested.store(newValue = false)
+                            displayError(failure = failure)
+                        },
+                        onSuccess = { forecast: WindForecast -> showWindForecast(forecast = forecast) }
+                    )
+                }
+        }
+    }
+
+    private fun showWindForecast(forecast: WindForecast) {
+        val isFirstForecast: Boolean = windForecast.exchange(newValue = forecast) == null
+        val updatedState: RadarState = state.updateAndGet { state: RadarState ->
+            val windFrames: ImmutableList<WindTimeFrame> = forecast.toTimeFrames()
+            state.copy(
+                windFrames = windFrames,
+                windIndex = if (isFirstForecast) {
+                    0
+                } else {
+                    state.windIndex.coerceIn(
+                        minimumValue = 0,
+                        maximumValue = windFrames.lastIndex.coerceAtLeast(minimumValue = 0)
+                    )
+                },
+                isLoading = state.layer == RadarLayer.WIND
+            )
+        }
+        if (updatedState.layer == RadarLayer.WIND && !updatedState.isPlaying) {
+            showFrame(
+                layer = RadarLayer.WIND,
+                index = updatedState.windIndex
+            )
+        } else if (updatedState.isLoading && updatedState.layer == RadarLayer.WIND) {
+            state.update { state: RadarState -> state.copy(isLoading = false) }
         }
     }
 
