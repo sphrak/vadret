@@ -8,6 +8,9 @@ import kotlinx.coroutines.test.runTest
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.weatherforecast.model.PlaceForecast
+import se.vadretapp.vadret.weatherforecast.model.WeatherPlaceKind
+import se.vadretapp.vadret.weatherforecast.usecase.DefaultObservePlaceForecastTask
+import se.vadretapp.vadret.weatherforecast.usecase.ObservePlaceForecastTask
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -38,7 +41,8 @@ class DefaultObservePlaceForecastTaskTest {
                     longitude = GOTHENBURG_LONGITUDE,
                     forecasts = listOf(noon),
                     analyses = emptyList(),
-                    outdatedSince = null
+                    fetchedAt = FAKE_FETCHED_AT,
+                    isRefreshFailed = false
                 ).asRight(),
                 actual = placeForecast
             )
@@ -65,7 +69,8 @@ class DefaultObservePlaceForecastTaskTest {
                     longitude = GOTHENBURG_LONGITUDE,
                     forecasts = listOf(noon),
                     analyses = emptyList(),
-                    outdatedSince = null
+                    fetchedAt = FAKE_FETCHED_AT,
+                    isRefreshFailed = false
                 ).asRight(),
                 actual = placeForecast
             )
@@ -106,9 +111,40 @@ class DefaultObservePlaceForecastTaskTest {
                     longitude = GOTHENBURG_LONGITUDE,
                     forecasts = listOf(noon),
                     analyses = listOf(morning),
-                    outdatedSince = null
+                    fetchedAt = FAKE_FETCHED_AT,
+                    isRefreshFailed = false
                 ).asRight(),
                 actual = placeForecast
+            )
+        }
+
+    @Test
+    fun `a dropped pin is refreshed without being saved`() =
+        runTest {
+            observePlaceForecastTask(
+                latitude = GOTHENBURG_LATITUDE,
+                longitude = GOTHENBURG_LONGITUDE,
+                isRefresh = false
+            ).first()
+
+            assertEquals(
+                expected = listOf(WeatherPlaceKind.DROPPED_PIN) to emptyMap(),
+                actual = weatherForecastRepository.requestedWeatherPlaceKinds to weatherForecastRepository.savedWeather.value
+            )
+        }
+
+    @Test
+    fun `a refresh asks for the weather before showing it`() =
+        runTest {
+            assertEquals(
+                expected = listOf(noon) to 1,
+                actual = (
+                    observePlaceForecastTask(
+                        latitude = GOTHENBURG_LATITUDE,
+                        longitude = GOTHENBURG_LONGITUDE,
+                        isRefresh = true
+                    ).first() as Either.Right
+                    ).b.forecasts to weatherForecastRepository.requestedCoordinates.size
             )
         }
 }

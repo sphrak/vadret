@@ -20,42 +20,35 @@ internal class DefaultPollenLocalDataSource(
     private val coroutineDispatcher: CoroutineDispatcher
 ) : PollenLocalDataSource {
 
-    override suspend fun getPollenTypes(): List<PollenTypeEntity>? =
+    override suspend fun getPollenTypes(): PollenTypesCacheEntity? =
         withContext(context = coroutineDispatcher) {
-            val text: String? = diskCache.read(key = POLLEN_TYPES_CACHE_KEY)
-            if (text != null) {
-                decode(text = text)
-            } else {
-                null
-            }
+            decode(text = diskCache.read(key = POLLEN_TYPES_CACHE_KEY))
         }
 
-    override fun observePollenTypes(): Flow<List<PollenTypeEntity>?> =
+    override fun observePollenTypes(): Flow<PollenTypesCacheEntity?> =
         diskCache
             .observe(key = POLLEN_TYPES_CACHE_KEY)
-            .map { text: String? ->
-                if (text != null) {
-                    decode(text = text)
-                } else {
-                    null
-                }
-            }.flowOn(context = coroutineDispatcher)
+            .map { text: String? -> decode(text = text) }
+            .flowOn(context = coroutineDispatcher)
 
-    override suspend fun setPollenTypes(pollenTypeEntities: List<PollenTypeEntity>) {
+    override suspend fun setPollenTypes(pollenTypesCacheEntity: PollenTypesCacheEntity) {
         withContext(context = coroutineDispatcher) {
             diskCache.write(
                 key = POLLEN_TYPES_CACHE_KEY,
-                value = defaultJson.encodeToString(value = pollenTypeEntities)
+                value = defaultJson.encodeToString(value = pollenTypesCacheEntity)
             )
         }
     }
 
-    private fun decode(text: String): List<PollenTypeEntity>? =
-        try {
-            defaultJson.decodeFromString<List<PollenTypeEntity>>(string = text)
+    private fun decode(text: String?): PollenTypesCacheEntity? {
+        if (text == null) {
+            return null
+        }
+        return try {
+            defaultJson.decodeFromString<PollenTypesCacheEntity>(string = text)
         } catch (serializationException: SerializationException) {
-            logger.warn { "Dropping unreadable saved pollen types: ${serializationException.message}" }
-            diskCache.remove(key = POLLEN_TYPES_CACHE_KEY)
+            logger.warn { "Unreadable saved pollen types are left to be replaced: ${serializationException.message}" }
             null
         }
+    }
 }

@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import se.vadretapp.vadret.library.model.Library
 import se.vadretapp.vadret.settings.extension.toLibraryGroups
+import se.vadretapp.vadret.settings.usecase.GetLibrariesTask
 import kotlin.concurrent.atomics.AtomicBoolean
 
 class LicensesViewModel internal constructor(

@@ -28,6 +28,7 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
+                implementation project(':core:refresh')
                 implementation project(':core:logging')
                 implementation project(':data:common')
                 implementation project(':data:location')

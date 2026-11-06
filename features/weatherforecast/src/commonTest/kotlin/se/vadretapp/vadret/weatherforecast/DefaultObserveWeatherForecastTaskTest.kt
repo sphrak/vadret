@@ -14,6 +14,9 @@ import se.vadretapp.vadret.nominatim.model.Locality
 import se.vadretapp.vadret.weatherforecast.model.Forecast
 import se.vadretapp.vadret.weatherforecast.model.PlaceForecast
 import se.vadretapp.vadret.weatherforecast.model.PlaceWeather
+import se.vadretapp.vadret.weatherforecast.model.WeatherPlaceKind
+import se.vadretapp.vadret.weatherforecast.usecase.DefaultObserveWeatherForecastTask
+import se.vadretapp.vadret.weatherforecast.usecase.ObserveWeatherForecastTask
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -45,7 +48,8 @@ class DefaultObserveWeatherForecastTaskTest {
                     longitude = 18.0686,
                     forecasts = listOf(noon),
                     analyses = listOf(morning),
-                    outdatedSince = null
+                    fetchedAt = FAKE_FETCHED_AT,
+                    isRefreshFailed = false
                 ).asRight(),
                 actual = observeWeatherForecastTask(isRefresh = false).first()
             )
@@ -65,7 +69,8 @@ class DefaultObserveWeatherForecastTaskTest {
                     longitude = 11.97,
                     forecasts = listOf(noon),
                     analyses = listOf(morning),
-                    outdatedSince = null
+                    fetchedAt = FAKE_FETCHED_AT,
+                    isRefreshFailed = false
                 ).asRight(),
                 actual = observeWeatherForecastTask(isRefresh = false).first()
             )
@@ -142,6 +147,7 @@ class DefaultObserveWeatherForecastTaskTest {
             )
             val refreshGate = CompletableDeferred<Unit>()
             weatherForecastRepository.forecastGates[59.3293 to 18.0686] = refreshGate
+            weatherForecastRepository.analyses = Failure(errorCode = ErrorCode.HTTP_SERVICE_UNAVAILABLE).asLeft()
             val seen = mutableListOf<List<Forecast>>()
 
             val observing = launch {
@@ -174,6 +180,43 @@ class DefaultObserveWeatherForecastTaskTest {
             assertEquals(
                 expected = listOf(noon),
                 actual = (observeWeatherForecastTask(isRefresh = true).first() as Either.Right).b.forecasts
+            )
+        }
+
+    @Test
+    fun `the chosen place that is no favorite is refreshed as the chosen place`() =
+        runTest {
+            locationRepository.isAutomatic = true.asRight()
+            observeWeatherForecastTask(isRefresh = false).first()
+
+            assertEquals(
+                expected = listOf(WeatherPlaceKind.CHOSEN_PLACE),
+                actual = weatherForecastRepository.requestedWeatherPlaceKinds
+            )
+        }
+
+    @Test
+    fun `a forecast that fails does not wait for the past hours`() =
+        runTest {
+            weatherForecastRepository.analysisGate = CompletableDeferred()
+            weatherForecastRepository.forecasts = Failure(errorCode = ErrorCode.HTTP_SERVICE_UNAVAILABLE).asLeft()
+
+            assertEquals<Either<Failure, PlaceForecast>>(
+                expected = Failure(errorCode = ErrorCode.HTTP_SERVICE_UNAVAILABLE).asLeft(),
+                actual = observeWeatherForecastTask(isRefresh = false).first()
+            )
+        }
+
+    @Test
+    fun `past hours that cannot be fetched leave the forecast`() =
+        runTest {
+            weatherForecastRepository.analyses = Failure(errorCode = ErrorCode.HTTP_SERVICE_UNAVAILABLE).asLeft()
+
+            val placeForecast: PlaceForecast = (observeWeatherForecastTask(isRefresh = false).first() as Either.Right).b
+
+            assertEquals(
+                expected = listOf(noon) to emptyList(),
+                actual = placeForecast.forecasts to placeForecast.analyses
             )
         }
 }

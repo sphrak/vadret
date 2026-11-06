@@ -5,5 +5,5 @@ import kotlin.time.Instant
 data class PlaceWeather(
     val forecasts: List<Forecast>,
     val analyses: List<Analysis>,
-    val fetchedAt: Instant?
+    val fetchedAt: Instant
 )

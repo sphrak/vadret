@@ -14,6 +14,11 @@ import se.vadretapp.vadret.followedplace.ObserveLocationChoicesTask
 import se.vadretapp.vadret.followedplace.model.LocationChoices
 import se.vadretapp.vadret.language.model.AppLanguage
 import se.vadretapp.vadret.settings.extension.toPlacesSummary
+import se.vadretapp.vadret.settings.usecase.GetSettingsTask
+import se.vadretapp.vadret.settings.usecase.ObserveDeveloperModeTask
+import se.vadretapp.vadret.settings.usecase.SetHourlyForecastTask
+import se.vadretapp.vadret.settings.usecase.SetLanguageTask
+import se.vadretapp.vadret.settings.usecase.SetThemeTask
 import se.vadretapp.vadret.theme.model.Theme
 import kotlin.concurrent.atomics.AtomicBoolean
 

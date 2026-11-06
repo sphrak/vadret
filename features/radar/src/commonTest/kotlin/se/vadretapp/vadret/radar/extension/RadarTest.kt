@@ -26,7 +26,8 @@ class RadarTest {
             images = listOf(
                 RadarImage(imageUrl = "https://smhi.se/2350.png", validAt = Instant.parse(input = "2026-10-24T21:50:00Z")),
                 RadarImage(imageUrl = "https://smhi.se/0055.png", validAt = Instant.parse(input = "2026-10-24T22:55:00Z"))
-            )
+            ),
+            fetchedAt = Instant.parse(input = "2026-10-24T23:00:00Z")
         )
 
         assertEquals(
@@ -68,7 +69,8 @@ class RadarTest {
                     windSpeeds = listOf(1f),
                     windFromDirections = listOf(0f)
                 )
-            }
+            },
+            fetchedAt = Instant.parse(input = "2026-10-24T21:40:00Z")
         )
 
         assertEquals(

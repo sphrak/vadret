@@ -14,6 +14,9 @@ import se.vadretapp.vadret.aggregatedfeed.model.GeoPolygon
 import se.vadretapp.vadret.aggregatedfeed.model.SeenWarning
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
+import se.vadretapp.vadret.testing.FixedClock
+import se.vadretapp.vadret.warning.usecase.DefaultObserveUnseenFollowedPlaceWarningsTask
+import se.vadretapp.vadret.warning.usecase.ObserveUnseenFollowedPlaceWarningsTask
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.time.Instant
@@ -53,10 +56,12 @@ class DefaultObserveUnseenFollowedPlaceWarningsTaskTest {
         )
     )
     private val feedRepository = FakeFeedRepository(result = listOf(inFunasdalen, onGotland).asRight())
+    private val clock = FixedClock(now = NOW)
     private val observeFollowedPlacesTask = FakeObserveFollowedPlacesTask()
     private val observeUnseenFollowedPlaceWarningsTask: ObserveUnseenFollowedPlaceWarningsTask = DefaultObserveUnseenFollowedPlaceWarningsTask(
         observeFollowedPlacesTask = observeFollowedPlacesTask,
-        feedRepository = feedRepository
+        feedRepository = feedRepository,
+        clock = clock
     )
 
     @Test

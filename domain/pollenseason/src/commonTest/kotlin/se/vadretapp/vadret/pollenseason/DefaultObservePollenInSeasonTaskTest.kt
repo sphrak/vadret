@@ -15,6 +15,7 @@ import se.vadretapp.vadret.pollen.model.PollenForecast
 import se.vadretapp.vadret.pollen.model.PollenLevel
 import se.vadretapp.vadret.pollen.model.PollenRegion
 import se.vadretapp.vadret.pollen.model.PollenType
+import se.vadretapp.vadret.pollen.model.PollenTypes
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -26,9 +27,9 @@ private class FakeCurrentForecastsPollenRepository(
 
     override suspend fun getPollenTypes(): Either<Failure, List<PollenType>> = error("Only the current forecasts tell the season")
 
-    override fun observePollenTypes(): Flow<Either<Failure, List<PollenType>>> = error("Only the current forecasts tell the season")
+    override fun observePollenTypes(): Flow<Either<Failure, PollenTypes?>> = error("Only the current forecasts tell the season")
 
-    override suspend fun refreshPollenTypes(): Either<Failure, List<PollenType>> = error("Only the current forecasts tell the season")
+    override suspend fun refreshPollenTypes(): Either<Failure, PollenTypes> = error("Only the current forecasts tell the season")
 
     override suspend fun getForecasts(
         startDate: LocalDate,

@@ -17,6 +17,9 @@ import se.vadretapp.vadret.di.model.AppInfo
 import se.vadretapp.vadret.settings.model.AboutRow
 import se.vadretapp.vadret.settings.model.AboutRowAction
 import se.vadretapp.vadret.settings.model.RowSummary
+import se.vadretapp.vadret.settings.usecase.DefaultGetChangelogTask
+import se.vadretapp.vadret.settings.usecase.DefaultObserveDeveloperModeTask
+import se.vadretapp.vadret.settings.usecase.DefaultUnlockDeveloperModeTask
 import se.vadretapp.vadret.ui.resources.Res
 import se.vadretapp.vadret.ui.resources.developer_already_unlocked
 import se.vadretapp.vadret.ui.resources.developer_unlocked

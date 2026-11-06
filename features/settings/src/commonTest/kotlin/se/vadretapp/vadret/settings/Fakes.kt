@@ -35,6 +35,7 @@ import se.vadretapp.vadret.pollen.PollenRepository
 import se.vadretapp.vadret.pollen.model.PollenForecast
 import se.vadretapp.vadret.pollen.model.PollenRegion
 import se.vadretapp.vadret.pollen.model.PollenType
+import se.vadretapp.vadret.pollen.model.PollenTypes
 import se.vadretapp.vadret.pollenpreference.PollenPreferenceRepository
 import se.vadretapp.vadret.pollenpreference.model.PollenPreferences
 import se.vadretapp.vadret.pollenseason.ObservePollenInSeasonTask
@@ -42,6 +43,7 @@ import se.vadretapp.vadret.theme.ThemeRepository
 import se.vadretapp.vadret.theme.model.Theme
 import kotlin.concurrent.atomics.AtomicInt
 import kotlin.concurrent.atomics.fetchAndIncrement
+import kotlin.time.Instant
 
 internal val umea = Favorite(
     favoriteId = "favorite-umea",
@@ -210,20 +212,28 @@ internal val birchType = PollenType(
     hasForecasts = true
 )
 
+internal val POLLEN_FETCHED_AT: Instant = Instant.parse(input = "2026-10-24T11:30:00Z")
+
 internal class FakePollenRepository(
     var pollenTypes: Either<Failure, List<PollenType>> = listOf(hazelType, grassType, alternariaType, birchType).asRight()
 ) : PollenRepository {
-    val savedPollenTypes: MutableStateFlow<List<PollenType>> = MutableStateFlow(value = emptyList())
+    val savedPollenTypes: MutableStateFlow<PollenTypes?> = MutableStateFlow(value = null)
 
     override suspend fun getRegions(): Either<Failure, List<PollenRegion>> = error("Settings never ask for regions")
     override suspend fun getPollenTypes(): Either<Failure, List<PollenType>> = error("Settings observe the pollen types")
-    override fun observePollenTypes(): Flow<Either<Failure, List<PollenType>>> = savedPollenTypes.map { saved: List<PollenType> -> saved.asRight() }
-    override suspend fun refreshPollenTypes(): Either<Failure, List<PollenType>> {
+    override fun observePollenTypes(): Flow<Either<Failure, PollenTypes?>> =
+        savedPollenTypes.map { saved: PollenTypes? -> saved.asRight() }
+    override suspend fun refreshPollenTypes(): Either<Failure, PollenTypes> {
         val refreshed: Either<Failure, List<PollenType>> = pollenTypes
-        if (refreshed is Either.Right) {
-            savedPollenTypes.value = refreshed.b
+        if (refreshed is Either.Left) {
+            return refreshed
         }
-        return refreshed
+        val saved = PollenTypes(
+            pollenTypes = (refreshed as Either.Right).b,
+            fetchedAt = POLLEN_FETCHED_AT
+        )
+        savedPollenTypes.value = saved
+        return saved.asRight()
     }
     override suspend fun getForecasts(
         startDate: LocalDate,

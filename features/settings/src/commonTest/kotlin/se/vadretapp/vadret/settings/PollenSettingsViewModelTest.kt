@@ -17,9 +17,14 @@ import kotlinx.coroutines.test.setMain
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.pollen.model.PollenType
+import se.vadretapp.vadret.pollen.model.PollenTypes
 import se.vadretapp.vadret.settings.model.PollenAllergenRow
 import se.vadretapp.vadret.settings.model.PollenGroup
 import se.vadretapp.vadret.settings.model.PollenGroupRows
+import se.vadretapp.vadret.settings.usecase.DefaultGetSettingsTask
+import se.vadretapp.vadret.settings.usecase.DefaultObservePollenTypesTask
+import se.vadretapp.vadret.settings.usecase.DefaultSetPollenAllergenTask
+import se.vadretapp.vadret.settings.usecase.DefaultSetPollenEnabledTask
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -213,7 +218,10 @@ class PollenSettingsViewModelTest {
     @Test
     fun `fetched pollen types replace the saved ones that showed first`() =
         testScope.runTest {
-            pollenRepository.savedPollenTypes.value = listOf(hazelType)
+            pollenRepository.savedPollenTypes.value = PollenTypes(
+                pollenTypes = listOf(hazelType),
+                fetchedAt = POLLEN_FETCHED_AT
+            )
             pollenRepository.pollenTypes = listOf(hazelType, birchType).asRight()
 
             val pollenSettingsViewModel: PollenSettingsViewModel = viewModel()

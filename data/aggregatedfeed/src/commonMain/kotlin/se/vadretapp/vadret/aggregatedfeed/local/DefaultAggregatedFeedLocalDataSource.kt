@@ -54,8 +54,7 @@ internal class DefaultAggregatedFeedLocalDataSource(
         try {
             defaultJson.decodeFromString<AggregatedFeedCacheEntity>(string = text)
         } catch (serializationException: SerializationException) {
-            logger.warn { "Dropping unreadable feed cache: ${serializationException.message}" }
-            diskCache.remove(key = CACHE_KEY)
+            logger.warn { "Unreadable feed saved data is left to be replaced: ${serializationException.message}" }
             null
         }
 }

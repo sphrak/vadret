@@ -25,7 +25,6 @@ import se.vadretapp.vadret.radar.local.RadarCacheEntity
 import se.vadretapp.vadret.radar.local.RadarImageEntity
 import se.vadretapp.vadret.radar.model.Radar
 import se.vadretapp.vadret.radar.model.RadarImage
-import se.vadretapp.vadret.radar.model.SavedRadar
 import se.vadretapp.vadret.radar.remote.DefaultRadarRemoteDataSource
 import se.vadretapp.vadret.radar.remote.RadarDto
 import se.vadretapp.vadret.radar.remote.RadarFileDto
@@ -48,6 +47,8 @@ import kotlin.time.Instant
 private const val CACHE_KEY = "radar_geotiff.json"
 
 private val now: Instant = Instant.parse(input = "2026-10-24T14:00:00Z")
+
+private val today: LocalDate = LocalDate.parse(input = "2026-10-24")
 
 private fun file(
     valid: String,
@@ -107,7 +108,8 @@ class DefaultRadarRepositoryTest {
                 imageUrl = "https://smhi.se/1355.tif",
                 validAt = Instant.parse(input = "2026-10-24T13:55:00Z")
             )
-        )
+        ),
+        fetchedAt = now
     )
 
     private fun cache(
@@ -138,7 +140,7 @@ class DefaultRadarRepositoryTest {
             withRecordedLogs { recordingLogSink ->
                 assertEquals<Either<Failure, Radar>>(
                     expected = fetchedRadar.asRight(),
-                    actual = radarRepository.refreshRadar().map { savedRadar: SavedRadar -> savedRadar.radar }
+                    actual = radarRepository.refreshRadar(date = today)
                 )
                 assertEquals(
                     expected = listOf(
@@ -158,7 +160,7 @@ class DefaultRadarRepositoryTest {
         }
 
     @Test
-    fun `the radar of the UTC day is asked for as GeoTIFF in GMT`() =
+    fun `the radar of a day is asked for as GeoTIFF in GMT`() =
         testScope.runTest {
             val requests = mutableListOf<HttpRequestData>()
             clock.now = Instant.parse(input = "2026-01-05T23:30:00Z")
@@ -186,8 +188,11 @@ class DefaultRadarRepositoryTest {
             )
 
             assertEquals<Either<Failure, Radar>>(
-                expected = Radar(images = emptyList()).asRight(),
-                actual = remoteRepository.refreshRadar().map { savedRadar: SavedRadar -> savedRadar.radar }
+                expected = Radar(
+                    images = emptyList(),
+                    fetchedAt = Instant.parse(input = "2026-01-05T23:30:00Z")
+                ).asRight(),
+                actual = remoteRepository.refreshRadar(date = LocalDate.parse(input = "2026-01-05"))
             )
             assertEquals(
                 expected = "https://opendata-download-radar.smhi.se/api/version/latest/area/sweden/product/comp/2026/1/5?format=tif&timeZone=GMT",
@@ -225,7 +230,7 @@ class DefaultRadarRepositoryTest {
                             coroutineDispatcher = StandardTestDispatcher(testScope.testScheduler)
                         ),
                         clock = clock
-                    ).refreshRadar().map { savedRadar: SavedRadar -> savedRadar.radar }
+                    ).refreshRadar(date = today)
                 }
 
                 assertEquals(
@@ -276,19 +281,13 @@ class DefaultRadarRepositoryTest {
     @Test
     fun `a refreshed radar is observed as the radar of today`() =
         testScope.runTest {
-            val nothingSaved: Either<Failure, SavedRadar> = radarRepository.observeRadar().first()
+            val nothingSaved: Either<Failure, Radar?> = radarRepository.observeRadar(date = today).first()
 
-            radarRepository.refreshRadar()
+            radarRepository.refreshRadar(date = today)
 
-            assertEquals<Pair<Either<Failure, SavedRadar>, Either<Failure, SavedRadar>>>(
-                expected = SavedRadar(
-                    radar = Radar(images = emptyList()),
-                    fetchedAt = null
-                ).asRight() to SavedRadar(
-                    radar = fetchedRadar,
-                    fetchedAt = now
-                ).asRight(),
-                actual = nothingSaved to radarRepository.observeRadar().first()
+            assertEquals<Pair<Either<Failure, Radar?>, Either<Failure, Radar?>>>(
+                expected = null.asRight() to fetchedRadar.asRight(),
+                actual = nothingSaved to radarRepository.observeRadar(date = today).first()
             )
         }
 
@@ -328,7 +327,7 @@ class DefaultRadarRepositoryTest {
                     actual = saves.map { save: () -> Unit ->
                         diskCache.remove(key = CACHE_KEY)
                         save()
-                        (radarRepository.observeRadar().first() as Either.Right).b.fetchedAt
+                        (radarRepository.observeRadar(date = today).first() as Either.Right).b?.fetchedAt
                     }
                 )
             }
@@ -341,9 +340,9 @@ class DefaultRadarRepositoryTest {
             radarRemoteDataSource.radarException = networkUnavailableException(host = "opendata-download-radar.smhi.se")
 
             withRecordedLogs {
-                assertEquals<Pair<Either<Failure, SavedRadar>, Instant?>>(
+                assertEquals<Pair<Either<Failure, Radar>, Instant?>>(
                     expected = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft() to now - 3.hours,
-                    actual = radarRepository.refreshRadar() to (radarRepository.observeRadar().first() as Either.Right).b.fetchedAt
+                    actual = radarRepository.refreshRadar(date = today) to (radarRepository.observeRadar(date = today).first() as Either.Right).b?.fetchedAt
                 )
             }
         }
@@ -360,10 +359,24 @@ class DefaultRadarRepositoryTest {
                             imageUrl = "https://smhi.se/cached.tif",
                             validAt = now
                         )
-                    )
+                    ),
+                    fetchedAt = now - 3.hours
                 ).asRight() to 0,
                 actual = radarRepository.getRadarContaining(imageUrl = "https://opendata-download-radar.smhi.se/api/version/latest/area/sweden/product/comp/2026/10/24/radar_2610241300.tif") to
                     radarRemoteDataSource.requestedDates.size
+            )
+        }
+
+    @Test
+    fun `an image of another day is fetched without replacing the saved radar of today`() =
+        testScope.runTest {
+            cache(fetchedAt = now - 3.hours)
+
+            radarRepository.getRadarContaining(imageUrl = "https://opendata-download-radar.smhi.se/api/version/latest/area/sweden/product/comp/2026/10/20/radar_2610201300.tif")
+
+            assertEquals<Pair<List<LocalDate>, Instant?>>(
+                expected = listOf(LocalDate.parse(input = "2026-10-20")) to now - 3.hours,
+                actual = radarRemoteDataSource.requestedDates to (radarRepository.observeRadar(date = today).first() as Either.Right).b?.fetchedAt
             )
         }
 }

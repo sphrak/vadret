@@ -29,14 +29,17 @@ import se.vadretapp.vadret.pollen.model.PollenForecast
 import se.vadretapp.vadret.pollen.model.PollenLevel
 import se.vadretapp.vadret.pollen.model.PollenRegion
 import se.vadretapp.vadret.pollen.model.PollenType
+import se.vadretapp.vadret.pollen.model.PollenTypes
 import se.vadretapp.vadret.pollen.remote.DefaultPollenRemoteDataSource
 import se.vadretapp.vadret.testing.FakeDiskCache
+import se.vadretapp.vadret.testing.FixedClock
 import se.vadretapp.vadret.testing.LogLine
 import se.vadretapp.vadret.testing.mockHttpClient
 import se.vadretapp.vadret.testing.networkUnavailableException
 import se.vadretapp.vadret.testing.withRecordedLogs
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.time.Instant
 
 private val jsonHeaders = headersOf(HttpHeaders.ContentType, "application/json")
 
@@ -58,7 +61,11 @@ private val repositoryCalls: List<suspend (PollenRepository) -> Either<Failure, 
     { pollenRepository: PollenRepository -> pollenRepository.getCurrentForecasts() }
 )
 
-private const val SAVED_HAZEL = """[{"pollen_id":"hazel","name":"Hassel","has_forecasts":true}]"""
+private val now: Instant = Instant.parse(input = "2026-11-06T08:00:00Z")
+
+private val savedAt: Instant = Instant.parse(input = "2026-11-05T08:00:00Z")
+
+private val SAVED_HAZEL = """{"fetched_at_epoch_millis":${savedAt.toEpochMilliseconds()},"pollen_types":[{"pollen_id":"hazel","name":"Hassel","has_forecasts":true}]}"""
 
 private val birch = PollenType(
     pollenId = "birch",
@@ -91,7 +98,8 @@ class DefaultPollenRepositoryTest {
             pollenLocalDataSource = DefaultPollenLocalDataSource(
                 diskCache = diskCache,
                 coroutineDispatcher = StandardTestDispatcher(scheduler = testScope.testScheduler)
-            )
+            ),
+            clock = FixedClock(now = now)
         )
 
     private fun unreachableRepository(): PollenRepository = repository { throw networkUnavailableException(host = "api.pollenrapporten.se") }
@@ -409,7 +417,7 @@ class DefaultPollenRepositoryTest {
     fun `pollen types are fetched and saved when none are saved`() =
         testScope.runTest {
             assertEquals(
-                expected = listOf(birch).asRight() to """[{"pollen_id":"birch","name":"Björk","has_forecasts":true}]""",
+                expected = listOf(birch).asRight() to """{"fetched_at_epoch_millis":${now.toEpochMilliseconds()},"pollen_types":[{"pollen_id":"birch","name":"Björk","has_forecasts":true}]}""",
                 actual = respondingWith(body = BIRCH_PAGE).getPollenTypes() to diskCache.entries[POLLEN_TYPES_CACHE_KEY]
             )
         }
@@ -418,11 +426,14 @@ class DefaultPollenRepositoryTest {
     fun `observed pollen types are the saved ones and nothing saved is none`() =
         testScope.runTest {
             val pollenRepository: PollenRepository = unreachableRepository()
-            val nothingSaved: Either<Failure, List<PollenType>> = pollenRepository.observePollenTypes().first()
+            val nothingSaved: Either<Failure, PollenTypes?> = pollenRepository.observePollenTypes().first()
             saveHazel()
 
-            assertEquals(
-                expected = emptyList<PollenType>().asRight<List<PollenType>>() to listOf(hazel).asRight(),
+            assertEquals<Pair<Either<Failure, PollenTypes?>, Either<Failure, PollenTypes?>>>(
+                expected = null.asRight() to PollenTypes(
+                    pollenTypes = listOf(hazel),
+                    fetchedAt = savedAt
+                ).asRight(),
                 actual = nothingSaved to pollenRepository.observePollenTypes().first()
             )
         }
@@ -432,18 +443,21 @@ class DefaultPollenRepositoryTest {
         testScope.runTest {
             saveHazel()
             val pollenRepository: PollenRepository = respondingWith(body = BIRCH_PAGE)
-            val seen = mutableListOf<Either<Failure, List<PollenType>>>()
+            val seen = mutableListOf<List<PollenType>?>()
             val observing: Job = launch(context = UnconfinedTestDispatcher(scheduler = testScheduler)) {
-                pollenRepository.observePollenTypes().collect { pollenTypes: Either<Failure, List<PollenType>> -> seen += pollenTypes }
+                pollenRepository.observePollenTypes().collect { pollenTypes: Either<Failure, PollenTypes?> -> seen += (pollenTypes as Either.Right).b?.pollenTypes }
             }
             advanceUntilIdle()
 
-            val refreshed: Either<Failure, List<PollenType>> = pollenRepository.refreshPollenTypes()
+            val refreshed: Either<Failure, PollenTypes> = pollenRepository.refreshPollenTypes()
             advanceUntilIdle()
             observing.cancel()
 
-            assertEquals<Pair<Either<Failure, List<PollenType>>, List<Either<Failure, List<PollenType>>>>>(
-                expected = listOf(birch).asRight() to listOf(listOf(hazel).asRight(), listOf(birch).asRight()),
+            assertEquals<Pair<Either<Failure, PollenTypes>, List<List<PollenType>?>>>(
+                expected = PollenTypes(
+                    pollenTypes = listOf(birch),
+                    fetchedAt = now
+                ).asRight() to listOf(listOf(hazel), listOf(birch)),
                 actual = refreshed to seen
             )
         }
@@ -462,7 +476,7 @@ class DefaultPollenRepositoryTest {
         }
 
     @Test
-    fun `unreadable saved pollen types are dropped and observed as none`() =
+    fun `unreadable saved pollen types are observed as none and left to be replaced`() =
         testScope.runTest {
             diskCache.write(
                 key = POLLEN_TYPES_CACHE_KEY,
@@ -470,9 +484,9 @@ class DefaultPollenRepositoryTest {
             )
 
             withRecordedLogs {
-                assertEquals(
-                    expected = emptyList<PollenType>().asRight<List<PollenType>>() to emptyMap(),
-                    actual = unreachableRepository().observePollenTypes().first() to diskCache.entries
+                assertEquals<Pair<Either<Failure, PollenTypes?>, String?>>(
+                    expected = null.asRight() to "not json",
+                    actual = unreachableRepository().observePollenTypes().first() to diskCache.entries[POLLEN_TYPES_CACHE_KEY]
                 )
             }
         }

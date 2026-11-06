@@ -18,9 +18,6 @@ internal fun RefreshedWeather.toPlaceForecast(
         longitude = longitude,
         forecasts = placeWeather.forecasts,
         analyses = placeWeather.analyses,
-        outdatedSince = if (isRefreshFailed) {
-            placeWeather.fetchedAt
-        } else {
-            null
-        }
+        fetchedAt = placeWeather.fetchedAt,
+        isRefreshFailed = isRefreshFailed
     )

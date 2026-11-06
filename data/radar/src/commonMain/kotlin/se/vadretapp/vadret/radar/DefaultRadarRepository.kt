@@ -9,8 +9,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
 import okio.BufferedSink
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.common.catch
@@ -20,12 +18,10 @@ import se.vadretapp.vadret.radar.extension.toRadar
 import se.vadretapp.vadret.radar.extension.toRadarCacheEntity
 import se.vadretapp.vadret.radar.extension.toRadarDate
 import se.vadretapp.vadret.radar.extension.toRadarImageName
-import se.vadretapp.vadret.radar.extension.toSavedRadar
 import se.vadretapp.vadret.radar.local.RadarCacheEntity
 import se.vadretapp.vadret.radar.local.RadarImageLocalDataSource
 import se.vadretapp.vadret.radar.local.RadarLocalDataSource
 import se.vadretapp.vadret.radar.model.Radar
-import se.vadretapp.vadret.radar.model.SavedRadar
 import se.vadretapp.vadret.radar.remote.RadarRemoteDataSource
 import kotlin.time.Clock
 
@@ -39,16 +35,16 @@ internal class DefaultRadarRepository(
     // An image asked for while its day is downloading is read from disk afterwards instead of downloaded twice.
     private val imageDownloadMutex: Mutex = Mutex()
 
-    override fun observeRadar(): Flow<Either<Failure, SavedRadar>> =
+    override fun observeRadar(date: LocalDate): Flow<Either<Failure, Radar?>> =
         radarLocalDataSource
             .observeRadar()
-            .map<RadarCacheEntity?, Either<Failure, SavedRadar>> { radarCacheEntity: RadarCacheEntity? ->
-                val savedToday: RadarCacheEntity? = if (radarCacheEntity?.date == today().toString()) {
-                    radarCacheEntity
+            .map<RadarCacheEntity?, Either<Failure, Radar?>> { radarCacheEntity: RadarCacheEntity? ->
+                val savedRadar: Radar? = if (radarCacheEntity?.date == date.toString()) {
+                    radarCacheEntity.toRadar()
                 } else {
                     null
                 }
-                savedToday.toSavedRadar().asRight()
+                savedRadar.asRight()
             }.catch { throwable: Throwable ->
                 if (throwable is Exception) {
                     emit(throwable.toFailure().asLeft())
@@ -57,8 +53,10 @@ internal class DefaultRadarRepository(
                 }
             }
 
-    override suspend fun refreshRadar(): Either<Failure, SavedRadar> = either {
-        fetchRadar(date = today()).toSavedRadar()
+    override suspend fun refreshRadar(date: LocalDate): Either<Failure, Radar> = either {
+        val fetchedRadar: RadarCacheEntity = fetchRadar(date = date)
+        radarLocalDataSource.setRadar(radarCacheEntity = fetchedRadar)
+        fetchedRadar.toRadar()
     }.catch { exception: Exception -> exception.toFailure() }
 
     override suspend fun getRadarContaining(
@@ -136,16 +134,11 @@ internal class DefaultRadarRepository(
         return image
     }
 
-    private suspend fun fetchRadar(date: LocalDate): RadarCacheEntity {
-        val fetchedRadar: RadarCacheEntity = radarRemoteDataSource
+    private suspend fun fetchRadar(date: LocalDate): RadarCacheEntity =
+        radarRemoteDataSource
             .getRadar(date = date)
             .toRadarCacheEntity(
                 fetchedAt = clock.now(),
                 date = date
             )
-        radarLocalDataSource.setRadar(radarCacheEntity = fetchedRadar)
-        return fetchedRadar
-    }
-
-    private fun today(): LocalDate = clock.now().toLocalDateTime(timeZone = TimeZone.UTC).date
 }

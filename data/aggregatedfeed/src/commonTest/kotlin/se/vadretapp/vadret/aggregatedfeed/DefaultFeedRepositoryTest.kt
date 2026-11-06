@@ -21,7 +21,7 @@ import se.vadretapp.vadret.aggregatedfeed.model.FeedSource
 import se.vadretapp.vadret.aggregatedfeed.model.GeoLine
 import se.vadretapp.vadret.aggregatedfeed.model.GeoPolygon
 import se.vadretapp.vadret.aggregatedfeed.model.GeoPosition
-import se.vadretapp.vadret.aggregatedfeed.model.SavedFeed
+import se.vadretapp.vadret.aggregatedfeed.model.WarningFeed
 import se.vadretapp.vadret.aggregatedfeed.model.WarningLevel
 import se.vadretapp.vadret.aggregatedfeed.remote.GeoJsonDto
 import se.vadretapp.vadret.aggregatedfeed.remote.GeoJsonGeometryDto
@@ -168,7 +168,7 @@ class DefaultFeedRepositoryTest {
         clock = clock
     )
 
-    private suspend fun fetchFeed(): Either<Failure, List<AggregatedFeed>> = feedRepository.refreshAggregatedFeed().map { savedFeed: SavedFeed -> savedFeed.aggregatedFeeds }
+    private suspend fun fetchFeed(): Either<Failure, List<AggregatedFeed>> = feedRepository.refreshAggregatedFeed().map { warningFeed: WarningFeed -> warningFeed.aggregatedFeeds }
 
     private fun Either<Failure, List<AggregatedFeed>>.identifiers(): List<String>? = (this as? Either.Right)?.b?.map { aggregatedFeed: AggregatedFeed -> aggregatedFeed.identifier }
 
@@ -474,7 +474,7 @@ class DefaultFeedRepositoryTest {
 
             assertEquals(
                 expected = fetchedFeed to fetchedFeed,
-                actual = feedRepository.getAggregatedFeed() to feedRepository.observeAggregatedFeed().first().map { savedFeed: SavedFeed -> savedFeed.aggregatedFeeds }
+                actual = feedRepository.getAggregatedFeed() to feedRepository.observeAggregatedFeed().first().map { warningFeed: WarningFeed? -> warningFeed?.aggregatedFeeds.orEmpty() }
             )
             assertEquals(expected = 1, actual = smhiWarningRemoteDataSource.requestCount)
         }
@@ -837,18 +837,15 @@ class DefaultFeedRepositoryTest {
 
             assertEquals(
                 expected = 2 to now + 1.minutes,
-                actual = smhiWarningRemoteDataSource.requestCount to (feedRepository.observeAggregatedFeed().first() as Either.Right).b.fetchedAt
+                actual = smhiWarningRemoteDataSource.requestCount to (feedRepository.observeAggregatedFeed().first() as Either.Right).b?.fetchedAt
             )
         }
 
     @Test
     fun `nothing saved is observed as a feed never fetched`() =
         testScope.runTest {
-            assertEquals<Either<Failure, SavedFeed>>(
-                expected = SavedFeed(
-                    aggregatedFeeds = emptyList(),
-                    fetchedAt = null
-                ).asRight(),
+            assertEquals<Either<Failure, WarningFeed?>>(
+                expected = null.asRight(),
                 actual = feedRepository.observeAggregatedFeed().first()
             )
         }

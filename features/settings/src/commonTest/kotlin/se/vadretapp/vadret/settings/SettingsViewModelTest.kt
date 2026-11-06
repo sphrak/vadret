@@ -16,6 +16,11 @@ import se.vadretapp.vadret.di.model.AppInfo
 import se.vadretapp.vadret.followedplace.ObserveLocationChoicesTask
 import se.vadretapp.vadret.language.model.AppLanguage
 import se.vadretapp.vadret.settings.model.RowSummary
+import se.vadretapp.vadret.settings.usecase.DefaultGetSettingsTask
+import se.vadretapp.vadret.settings.usecase.DefaultObserveDeveloperModeTask
+import se.vadretapp.vadret.settings.usecase.DefaultSetHourlyForecastTask
+import se.vadretapp.vadret.settings.usecase.DefaultSetLanguageTask
+import se.vadretapp.vadret.settings.usecase.DefaultSetThemeTask
 import se.vadretapp.vadret.theme.model.Theme
 import se.vadretapp.vadret.ui.resources.Res
 import se.vadretapp.vadret.ui.resources.followed_place_position

@@ -22,6 +22,7 @@ import se.vadretapp.vadret.nominatim.model.Locality
 import se.vadretapp.vadret.testing.FixedClock
 import se.vadretapp.vadret.ui.extension.messageResource
 import se.vadretapp.vadret.weatherforecast.model.PlaceNaming
+import se.vadretapp.vadret.weatherforecast.usecase.DefaultObservePlaceForecastTask
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test

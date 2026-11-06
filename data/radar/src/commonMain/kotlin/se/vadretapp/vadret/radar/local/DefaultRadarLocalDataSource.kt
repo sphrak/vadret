@@ -54,8 +54,7 @@ internal class DefaultRadarLocalDataSource(
         try {
             defaultJson.decodeFromString<RadarCacheEntity>(string = text)
         } catch (serializationException: SerializationException) {
-            logger.warn { "Dropping unreadable radar cache: ${serializationException.message}" }
-            diskCache.remove(key = CACHE_KEY)
+            logger.warn { "Unreadable radar saved data is left to be replaced: ${serializationException.message}" }
             null
         }
 }

@@ -45,6 +45,10 @@ import se.vadretapp.vadret.weatherforecast.model.ForecastView
 import se.vadretapp.vadret.weatherforecast.model.LatestWarning
 import se.vadretapp.vadret.weatherforecast.model.PlaceNaming
 import se.vadretapp.vadret.weatherforecast.model.SearchState
+import se.vadretapp.vadret.weatherforecast.usecase.DefaultGetLocationModeTask
+import se.vadretapp.vadret.weatherforecast.usecase.DefaultObserveForecastPreferencesTask
+import se.vadretapp.vadret.weatherforecast.usecase.DefaultObservePlaceForecastTask
+import se.vadretapp.vadret.weatherforecast.usecase.DefaultObserveWeatherForecastTask
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -74,7 +78,7 @@ class WeatherForecastViewModelTest {
     private val testDispatcher: TestDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
     private val locationRepository = FakeLocationRepository()
-    private val weatherForecastRepository = FakeWeatherForecastRepository()
+    private val weatherForecastRepository = FakeWeatherForecastRepository(now = { clock.now })
     private val placeRepository = FakePlaceRepository()
     private val favoriteRepository = FakeFavoriteRepository()
     private val clock = FixedClock(now = Instant.parse(input = "2026-10-24T12:00:00Z"))
@@ -261,7 +265,7 @@ class WeatherForecastViewModelTest {
             assertEquals(
                 expected = listOf(
                     null,
-                    FAKE_FETCHED_AT.toDayTimeText(
+                    clock.now.toDayTimeText(
                         now = clock.now,
                         timeZone = TimeZone.currentSystemDefault(),
                         languageTag = currentLanguageTag()

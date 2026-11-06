@@ -10,5 +10,6 @@ internal data class PlaceForecast(
     val longitude: Double,
     val forecasts: List<Forecast>,
     val analyses: List<Analysis>,
-    val outdatedSince: Instant?
+    val fetchedAt: Instant?,
+    val isRefreshFailed: Boolean
 )

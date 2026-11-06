@@ -16,10 +16,10 @@ import se.vadretapp.vadret.aggregatedfeed.model.GeoPolygon
 import se.vadretapp.vadret.aggregatedfeed.model.WarningLevel
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.followedplace.model.FollowedPlace
-import se.vadretapp.vadret.warning.GetWarningsTask
-import se.vadretapp.vadret.warning.ObserveFollowedPlaceWarningsTask
 import se.vadretapp.vadret.warning.model.FollowedPlaceWarnings
 import se.vadretapp.vadret.warning.model.PlaceWarning
+import se.vadretapp.vadret.warning.usecase.GetWarningsTask
+import se.vadretapp.vadret.warning.usecase.ObserveFollowedPlaceWarningsTask
 import kotlin.time.Instant
 
 internal fun aggregatedFeed(

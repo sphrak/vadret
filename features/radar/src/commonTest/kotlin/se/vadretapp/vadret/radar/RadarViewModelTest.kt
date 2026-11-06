@@ -43,6 +43,13 @@ import se.vadretapp.vadret.radar.precipitation.PrecipitationMotion
 import se.vadretapp.vadret.radar.precipitation.PrecipitationOverlay
 import se.vadretapp.vadret.radar.precipitation.PrecipitationRenderer
 import se.vadretapp.vadret.radar.precipitation.RadarEchoes
+import se.vadretapp.vadret.radar.usecase.DownloadRadarDayTask
+import se.vadretapp.vadret.radar.usecase.GetDeviceLocationTask
+import se.vadretapp.vadret.radar.usecase.GetPollenMapTask
+import se.vadretapp.vadret.radar.usecase.ObservePollenPreferencesTask
+import se.vadretapp.vadret.radar.usecase.ObserveRadarTask
+import se.vadretapp.vadret.radar.usecase.ObserveWindForecastTask
+import se.vadretapp.vadret.radar.usecase.SetPollenHibernationNoticeShownTask
 import se.vadretapp.vadret.radar.wind.WindField
 import se.vadretapp.vadret.radar.wind.WindFieldRenderer
 import se.vadretapp.vadret.radar.wind.WindFieldValues
@@ -147,15 +154,22 @@ private val RadarState.shownMotion: PrecipitationMotion?
     get() = (precipitationOverlay as? PrecipitationOverlay.Echoes)?.motion
 
 private class FakeObserveWindForecastTask(
-    var result: Either<Failure, WindForecast>
+    var result: Either<Failure, WindForecast>,
+    var refreshedResult: Either<Failure, WindForecast>? = null
 ) : ObserveWindForecastTask {
 
     var requestCount: Int = 0
+    val refreshGate: CompletableDeferred<Unit> = CompletableDeferred()
 
     override fun invoke(): Flow<Either<Failure, WindForecast>> =
         flow {
             requestCount++
             emit(value = result)
+            val refreshed: Either<Failure, WindForecast>? = refreshedResult
+            if (refreshed != null) {
+                refreshGate.await()
+                emit(value = refreshed)
+            }
         }
 }
 
@@ -260,6 +274,8 @@ private class FakeWindFieldRenderer : WindFieldRenderer {
         }
 }
 
+private val FETCHED_AT: Instant = Instant.parse(input = "2026-10-24T12:40:00Z")
+
 private val windForecast = WindForecast(
     referenceTime = Instant.parse(input = "2026-10-24T09:30:00Z"),
     grid = WindGrid(
@@ -274,7 +290,8 @@ private val windForecast = WindForecast(
             windSpeeds = listOf(hour.toFloat()),
             windFromDirections = listOf(270f)
         )
-    }
+    },
+    fetchedAt = FETCHED_AT
 )
 
 private val birch = PollenType(
@@ -319,7 +336,8 @@ private val radar = Radar(
             imageUrl = "https://smhi.se/$minute.png",
             validAt = Instant.parse(input = "2026-10-24T12:0$minute:00Z")
         )
-    }
+    },
+    fetchedAt = FETCHED_AT
 )
 
 private val newerRadar = Radar(
@@ -328,7 +346,8 @@ private val newerRadar = Radar(
             imageUrl = "https://smhi.se/$minute.png",
             validAt = Instant.parse(input = "2026-10-24T12:0$minute:00Z")
         )
-    }
+    },
+    fetchedAt = FETCHED_AT
 )
 
 private fun RadarState.shownImageUrl(): String? = precipitationFrames.getOrNull(index = precipitationIndex)?.imageUrl
@@ -681,7 +700,8 @@ class RadarViewModelTest {
                         imageUrl = "https://smhi.se/$minute.png",
                         validAt = Instant.parse(input = "2026-10-24T12:0$minute:00Z")
                     )
-                }
+                },
+                fetchedAt = FETCHED_AT
             ).asRight()
             val radarViewModel: RadarViewModel = viewModel()
             advanceUntilIdle()
@@ -1254,7 +1274,12 @@ class RadarViewModelTest {
                     getRadarTask.result = radar.asRight()
                     radarImageLoader.failingUrls = setOf("https://smhi.se/2.png")
                 },
-                { getRadarTask.result = Radar(images = emptyList()).asRight() }
+                {
+                    getRadarTask.result = Radar(
+                        images = emptyList(),
+                        fetchedAt = FETCHED_AT
+                    ).asRight()
+                }
             )
 
             val covered: List<Boolean> = failures.map { fail: () -> Unit ->
@@ -1301,6 +1326,25 @@ class RadarViewModelTest {
             assertEquals(
                 expected = "https://smhi.se/0.png" to 4,
                 actual = radarViewModel.state.value.shownImageUrl() to radarViewModel.state.value.precipitationFrames.size
+            )
+        }
+
+    @Test
+    fun `refreshed wind keeps the hour that was picked`() =
+        testScope.runTest {
+            getWindForecastTask.refreshedResult = windForecast.asRight()
+            val radarViewModel: RadarViewModel = viewModel()
+            radarViewModel.onEvent(event = RadarEvent.OnLayerSelected(layer = RadarLayer.WIND))
+            advanceUntilIdle()
+            radarViewModel.onEvent(event = RadarEvent.OnIndexChanged(index = 1))
+            advanceUntilIdle()
+
+            getWindForecastTask.refreshGate.complete(value = Unit)
+            advanceUntilIdle()
+
+            assertEquals(
+                expected = 1 to false,
+                actual = radarViewModel.state.value.windIndex to radarViewModel.state.value.isLoading
             )
         }
 
@@ -1358,7 +1402,12 @@ class RadarViewModelTest {
                     getRadarTask.result = radar.asRight()
                     radarImageLoader.failingUrls = setOf("https://smhi.se/2.png")
                 },
-                { getRadarTask.result = Radar(images = emptyList()).asRight() }
+                {
+                    getRadarTask.result = Radar(
+                        images = emptyList(),
+                        fetchedAt = FETCHED_AT
+                    ).asRight()
+                }
             )
 
             val isDockReady: List<Boolean> = failures.map { fail: () -> Unit ->

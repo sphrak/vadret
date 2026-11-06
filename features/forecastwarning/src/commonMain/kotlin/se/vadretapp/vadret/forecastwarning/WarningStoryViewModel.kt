@@ -17,7 +17,7 @@ import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.forecastwarning.extension.toWarningItem
 import se.vadretapp.vadret.forecastwarning.model.WarningItem
 import se.vadretapp.vadret.ui.format.currentLanguageTag
-import se.vadretapp.vadret.warning.GetWarningsTask
+import se.vadretapp.vadret.warning.usecase.GetWarningsTask
 import kotlin.concurrent.atomics.AtomicBoolean
 import kotlin.concurrent.atomics.AtomicReference
 import kotlin.time.Clock

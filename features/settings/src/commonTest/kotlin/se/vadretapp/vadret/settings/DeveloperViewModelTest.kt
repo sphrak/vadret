@@ -12,6 +12,9 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
+import se.vadretapp.vadret.settings.usecase.DefaultGetSettingsTask
+import se.vadretapp.vadret.settings.usecase.DefaultSetEndOfSeasonSimulatedTask
+import se.vadretapp.vadret.settings.usecase.DefaultSetExpandOnceTask
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test

@@ -20,8 +20,8 @@ import se.vadretapp.vadret.forecastwarning.model.WarningItem
 import se.vadretapp.vadret.ui.extension.launchReplacing
 import se.vadretapp.vadret.ui.extension.messageResource
 import se.vadretapp.vadret.ui.format.currentLanguageTag
-import se.vadretapp.vadret.warning.ObserveFollowedPlaceWarningsTask
 import se.vadretapp.vadret.warning.model.FollowedPlaceWarnings
+import se.vadretapp.vadret.warning.usecase.ObserveFollowedPlaceWarningsTask
 import kotlin.concurrent.atomics.AtomicBoolean
 import kotlin.concurrent.atomics.AtomicReference
 import kotlin.time.Clock

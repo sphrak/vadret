@@ -11,6 +11,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import se.vadretapp.vadret.library.model.Library
 import se.vadretapp.vadret.settings.model.LibraryGroup
+import se.vadretapp.vadret.settings.usecase.DefaultGetLibrariesTask
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test

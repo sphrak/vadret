@@ -39,9 +39,9 @@ import se.vadretapp.vadret.ui.extension.launchReplacing
 import se.vadretapp.vadret.ui.extension.messageResource
 import se.vadretapp.vadret.ui.format.currentLanguageTag
 import se.vadretapp.vadret.ui.format.toDayTimeText
-import se.vadretapp.vadret.warning.ObserveUnseenFollowedPlaceWarningsTask
-import se.vadretapp.vadret.warning.ObserveUnseenWarningsTask
 import se.vadretapp.vadret.warning.model.WarningPlace
+import se.vadretapp.vadret.warning.usecase.ObserveUnseenFollowedPlaceWarningsTask
+import se.vadretapp.vadret.warning.usecase.ObserveUnseenWarningsTask
 import se.vadretapp.vadret.weatherforecast.extension.isAt
 import se.vadretapp.vadret.weatherforecast.extension.localityFor
 import se.vadretapp.vadret.weatherforecast.extension.toLatestWarning
@@ -56,6 +56,10 @@ import se.vadretapp.vadret.weatherforecast.model.PlaceForecast
 import se.vadretapp.vadret.weatherforecast.model.PlaceNaming
 import se.vadretapp.vadret.weatherforecast.model.SearchState
 import se.vadretapp.vadret.weatherforecast.model.WeatherForecast
+import se.vadretapp.vadret.weatherforecast.usecase.GetLocationModeTask
+import se.vadretapp.vadret.weatherforecast.usecase.ObserveForecastPreferencesTask
+import se.vadretapp.vadret.weatherforecast.usecase.ObservePlaceForecastTask
+import se.vadretapp.vadret.weatherforecast.usecase.ObserveWeatherForecastTask
 import kotlin.concurrent.atomics.AtomicBoolean
 import kotlin.concurrent.atomics.AtomicReference
 import kotlin.time.Clock
@@ -431,9 +435,7 @@ class WeatherForecastViewModel internal constructor(
     }
 
     private fun displayForecast(placeForecast: PlaceForecast) {
-        if (placeForecast.outdatedSince == null) {
-            fetchedAt.store(newValue = clock.now())
-        }
+        fetchedAt.store(newValue = placeForecast.fetchedAt)
         val previousPlaceForecast: PlaceForecast? = this.placeForecast.exchange(newValue = placeForecast)
         val isSamePlace: Boolean = previousPlaceForecast?.placeName == placeForecast.placeName
         state.update { state: WeatherForecastState ->
@@ -529,11 +531,15 @@ class WeatherForecastViewModel internal constructor(
         )
 
     private fun PlaceForecast.outdatedTimeText(): String? =
-        outdatedSince?.toDayTimeText(
-            now = clock.now(),
-            timeZone = TimeZone.currentSystemDefault(),
-            languageTag = languageTag.load()
-        )
+        if (isRefreshFailed) {
+            fetchedAt?.toDayTimeText(
+                now = clock.now(),
+                timeZone = TimeZone.currentSystemDefault(),
+                languageTag = languageTag.load()
+            )
+        } else {
+            null
+        }
 
     private fun onSearchDismissed() {
         searchJob.exchange(newValue = null)?.cancel()

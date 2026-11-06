@@ -12,6 +12,9 @@ import kotlinx.coroutines.launch
 import se.vadretapp.vadret.changelog.model.Changelog
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.di.model.AppInfo
+import se.vadretapp.vadret.settings.usecase.GetChangelogTask
+import se.vadretapp.vadret.settings.usecase.ObserveDeveloperModeTask
+import se.vadretapp.vadret.settings.usecase.UnlockDeveloperModeTask
 import se.vadretapp.vadret.ui.resources.Res
 import se.vadretapp.vadret.ui.resources.developer_already_unlocked
 import se.vadretapp.vadret.ui.resources.developer_unlocked

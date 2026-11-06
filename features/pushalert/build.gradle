@@ -13,6 +13,7 @@ kotlin {
                 implementation project(':core:encryption')
                 implementation project(':core:geohash')
                 implementation project(':core:lifecycle')
+                implementation project(':core:refresh')
                 implementation project(':core:logging')
                 implementation project(':data:common')
                 implementation project(':data:favorite')

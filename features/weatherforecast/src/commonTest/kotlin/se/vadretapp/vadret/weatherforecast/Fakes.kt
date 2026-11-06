@@ -37,13 +37,15 @@ import se.vadretapp.vadret.place.PlaceRepository
 import se.vadretapp.vadret.place.model.Place
 import se.vadretapp.vadret.ui.resources.Res
 import se.vadretapp.vadret.ui.resources.wsymb2_overcast
-import se.vadretapp.vadret.warning.ObserveUnseenFollowedPlaceWarningsTask
-import se.vadretapp.vadret.warning.ObserveUnseenWarningsTask
 import se.vadretapp.vadret.warning.model.WarningPlace
+import se.vadretapp.vadret.warning.usecase.ObserveUnseenFollowedPlaceWarningsTask
+import se.vadretapp.vadret.warning.usecase.ObserveUnseenWarningsTask
 import se.vadretapp.vadret.weatherforecast.model.Analysis
 import se.vadretapp.vadret.weatherforecast.model.ComingDay
 import se.vadretapp.vadret.weatherforecast.model.Forecast
+import se.vadretapp.vadret.weatherforecast.model.Forecasts
 import se.vadretapp.vadret.weatherforecast.model.PlaceWeather
+import se.vadretapp.vadret.weatherforecast.model.WeatherPlaceKind
 import kotlin.concurrent.atomics.AtomicInt
 import kotlin.concurrent.atomics.fetchAndIncrement
 import kotlin.time.Instant
@@ -239,45 +241,71 @@ internal val FAKE_FETCHED_AT: Instant = Instant.parse(input = "2026-10-24T11:30:
 
 internal class FakeWeatherForecastRepository(
     var forecasts: Either<Failure, List<Forecast>> = listOf(noon).asRight(),
-    var analyses: Either<Failure, List<Analysis>> = emptyList<Analysis>().asRight()
+    var analyses: Either<Failure, List<Analysis>> = emptyList<Analysis>().asRight(),
+    private val now: () -> Instant = { FAKE_FETCHED_AT }
 ) : WeatherForecastRepository {
 
     val requestedCoordinates = mutableListOf<Pair<Double, Double>>()
+    val requestedWeatherPlaceKinds = mutableListOf<WeatherPlaceKind>()
     val forecastGates: MutableMap<Pair<Double, Double>, CompletableDeferred<Unit>> = mutableMapOf()
+    var analysisGate: CompletableDeferred<Unit>? = null
     val savedWeather: MutableStateFlow<Map<Pair<Double, Double>, PlaceWeather>> = MutableStateFlow(value = emptyMap())
 
     override fun observeWeather(
         latitude: Double,
         longitude: Double
-    ): Flow<Either<Failure, PlaceWeather>> =
-        savedWeather.map { saved: Map<Pair<Double, Double>, PlaceWeather> ->
-            (
-                saved[latitude to longitude] ?: PlaceWeather(
-                    forecasts = emptyList(),
-                    analyses = emptyList(),
-                    fetchedAt = null
-                )
-                ).asRight()
-        }
+    ): Flow<Either<Failure, PlaceWeather?>> =
+        savedWeather.map { saved: Map<Pair<Double, Double>, PlaceWeather> -> saved[latitude to longitude].asRight() }
 
-    override suspend fun refreshWeather(
+    override suspend fun refreshForecasts(
         latitude: Double,
-        longitude: Double
-    ): Either<Failure, PlaceWeather> {
+        longitude: Double,
+        weatherPlaceKind: WeatherPlaceKind
+    ): Either<Failure, Forecasts> {
         requestedCoordinates.add(latitude to longitude)
+        requestedWeatherPlaceKinds.add(weatherPlaceKind)
         forecastGates[latitude to longitude]?.await()
         return when (val refreshedForecasts: Either<Failure, List<Forecast>> = forecasts) {
             is Either.Left -> refreshedForecasts
             is Either.Right -> {
-                val placeWeather = PlaceWeather(
+                val fetchedAt: Instant = now()
+                if (weatherPlaceKind != WeatherPlaceKind.DROPPED_PIN) {
+                    savedWeather.update { saved: Map<Pair<Double, Double>, PlaceWeather> ->
+                        saved + (
+                            (latitude to longitude) to PlaceWeather(
+                                forecasts = refreshedForecasts.b,
+                                analyses = saved[latitude to longitude]?.analyses.orEmpty(),
+                                fetchedAt = fetchedAt
+                            )
+                            )
+                    }
+                }
+                Forecasts(
                     forecasts = refreshedForecasts.b,
-                    analyses = analyses.successOrNull.orEmpty(),
-                    fetchedAt = FAKE_FETCHED_AT
-                )
-                savedWeather.update { saved: Map<Pair<Double, Double>, PlaceWeather> -> saved + ((latitude to longitude) to placeWeather) }
-                placeWeather.asRight()
+                    fetchedAt = fetchedAt
+                ).asRight()
             }
         }
+    }
+
+    override suspend fun refreshAnalyses(
+        latitude: Double,
+        longitude: Double,
+        weatherPlaceKind: WeatherPlaceKind
+    ): Either<Failure, List<Analysis>> {
+        analysisGate?.await()
+        val refreshedAnalyses: Either<Failure, List<Analysis>> = analyses
+        if (refreshedAnalyses is Either.Right && weatherPlaceKind != WeatherPlaceKind.DROPPED_PIN) {
+            savedWeather.update { saved: Map<Pair<Double, Double>, PlaceWeather> ->
+                val savedPlace: PlaceWeather? = saved[latitude to longitude]
+                if (savedPlace == null) {
+                    saved
+                } else {
+                    saved + ((latitude to longitude) to savedPlace.copy(analyses = refreshedAnalyses.b))
+                }
+            }
+        }
+        return refreshedAnalyses
     }
 }
 

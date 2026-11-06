@@ -6,6 +6,8 @@ import kotlinx.coroutines.test.runTest
 import se.vadretapp.vadret.aggregatedfeed.model.AggregatedFeed
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
+import se.vadretapp.vadret.warning.usecase.DefaultGetWarningsTask
+import se.vadretapp.vadret.warning.usecase.GetWarningsTask
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

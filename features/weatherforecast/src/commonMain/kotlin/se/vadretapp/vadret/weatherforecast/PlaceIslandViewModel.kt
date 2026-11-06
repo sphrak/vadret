@@ -24,6 +24,7 @@ import se.vadretapp.vadret.weatherforecast.extension.withNameTaken
 import se.vadretapp.vadret.weatherforecast.extension.withoutName
 import se.vadretapp.vadret.weatherforecast.model.PlaceForecast
 import se.vadretapp.vadret.weatherforecast.model.PlaceNaming
+import se.vadretapp.vadret.weatherforecast.usecase.ObservePlaceForecastTask
 import kotlin.concurrent.atomics.AtomicReference
 import kotlin.time.Clock
 

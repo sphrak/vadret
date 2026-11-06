@@ -5,10 +5,11 @@ import io.github.sphrak.either.extension.asLeft
 import io.github.sphrak.either.extension.asRight
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.test.runTest
+import kotlinx.datetime.LocalDate
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.radar.model.Radar
-import se.vadretapp.vadret.radar.model.SavedRadar
+import se.vadretapp.vadret.radar.usecase.DefaultDownloadRadarDayTask
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -24,11 +25,11 @@ private class CountingRadarRepository(
 
     val downloadedImageUrls = mutableListOf<List<String>>()
 
-    override fun observeRadar(): Flow<Either<Failure, SavedRadar>> = error("Downloading a day never observes the radar")
+    override fun observeRadar(date: LocalDate): Flow<Either<Failure, Radar?>> = error("Downloading a day never observes the radar")
 
-    override suspend fun refreshRadar(): Either<Failure, SavedRadar> = error("Downloading a day never refreshes the radar")
+    override suspend fun refreshRadar(date: LocalDate): Either<Failure, Radar> = error("Downloading a day never refreshes the radar")
 
-    override suspend fun getRadarContaining(imageUrl: String): Either<Failure, Radar> = Radar(images = emptyList()).asRight()
+    override suspend fun getRadarContaining(imageUrl: String): Either<Failure, Radar> = error("Downloading a day never asks for a radar")
 
     override suspend fun getRadarImage(imageUrl: String): Either<Failure, ByteArray> = ByteArray(size = 0).asRight()
 

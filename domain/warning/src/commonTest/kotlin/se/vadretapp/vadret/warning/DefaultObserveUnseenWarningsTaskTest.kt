@@ -8,16 +8,22 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import se.vadretapp.vadret.aggregatedfeed.model.AggregatedFeed
 import se.vadretapp.vadret.aggregatedfeed.model.GeoPolygon
 import se.vadretapp.vadret.aggregatedfeed.model.SeenWarning
+import se.vadretapp.vadret.aggregatedfeed.model.WarningFeed
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
+import se.vadretapp.vadret.testing.FixedClock
 import se.vadretapp.vadret.warning.model.WarningPlace
+import se.vadretapp.vadret.warning.usecase.DefaultObserveUnseenWarningsTask
+import se.vadretapp.vadret.warning.usecase.ObserveUnseenWarningsTask
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
 
@@ -68,7 +74,11 @@ class DefaultObserveUnseenWarningsTaskTest {
         polygons = listOf(aroundFunasdalen)
     )
     private val feedRepository = FakeFeedRepository(result = listOf(newest, elsewhere, oldest).asRight())
-    private val observeUnseenWarningsTask: ObserveUnseenWarningsTask = DefaultObserveUnseenWarningsTask(feedRepository = feedRepository)
+    private val clock = FixedClock(now = NOW)
+    private val observeUnseenWarningsTask: ObserveUnseenWarningsTask = DefaultObserveUnseenWarningsTask(
+        feedRepository = feedRepository,
+        clock = clock
+    )
 
     private fun seen(
         warningIdentifier: String,
@@ -178,6 +188,61 @@ class DefaultObserveUnseenWarningsTaskTest {
                     warningPlace = funasdalen,
                     isRefresh = false
                 ).first()
+            )
+        }
+
+    private fun TestScope.refreshCountAfterObserving(
+        savedAgo: Duration,
+        isRefresh: Boolean
+    ): Int {
+        feedRepository.savedFeed.value = WarningFeed(
+            aggregatedFeeds = listOf(newest),
+            fetchedAt = NOW - savedAgo
+        )
+        val observing = launch {
+            observeUnseenWarningsTask(
+                warningPlace = funasdalen,
+                isRefresh = isRefresh
+            ).collect {}
+        }
+        advanceUntilIdle()
+        observing.cancel()
+        return feedRepository.refreshCount
+    }
+
+    @Test
+    fun `a feed fetched within five minutes is shown without asking again`() =
+        runTest {
+            assertEquals(
+                expected = 0,
+                actual = refreshCountAfterObserving(
+                    savedAgo = 4.minutes,
+                    isRefresh = false
+                )
+            )
+        }
+
+    @Test
+    fun `a feed fetched five minutes ago or more is asked for again`() =
+        runTest {
+            assertEquals(
+                expected = 1,
+                actual = refreshCountAfterObserving(
+                    savedAgo = 5.minutes,
+                    isRefresh = false
+                )
+            )
+        }
+
+    @Test
+    fun `a pull to refresh asks again however recent the feed is`() =
+        runTest {
+            assertEquals(
+                expected = 1,
+                actual = refreshCountAfterObserving(
+                    savedAgo = 1.minutes,
+                    isRefresh = true
+                )
             )
         }
 }

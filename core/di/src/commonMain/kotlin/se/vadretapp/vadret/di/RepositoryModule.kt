@@ -34,6 +34,7 @@ val repositoryModule: Module = module {
         PollenRepository(
             httpClient = inject(),
             diskCache = get(),
+            clock = get(),
             coroutineDispatcher = get()
         )
     }

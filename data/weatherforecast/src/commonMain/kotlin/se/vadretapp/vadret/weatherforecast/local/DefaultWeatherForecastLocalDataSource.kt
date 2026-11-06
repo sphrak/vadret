@@ -38,16 +38,58 @@ internal class DefaultWeatherForecastLocalDataSource(
             }.distinctUntilChanged()
             .flowOn(context = coroutineDispatcher)
 
-    override suspend fun setWeather(savedWeatherEntity: SavedWeatherEntity) {
+    override suspend fun setForecasts(
+        placeKey: String,
+        isChosenPlace: Boolean,
+        forecastEntities: List<ForecastEntity>,
+        fetchedAtEpochMillis: Long
+    ) {
+        update(
+            placeKey = placeKey,
+            isChosenPlace = isChosenPlace
+        ) { savedWeatherEntity: SavedWeatherEntity ->
+            savedWeatherEntity.copy(
+                fetchedAtEpochMillis = fetchedAtEpochMillis,
+                forecasts = forecastEntities
+            )
+        }
+    }
+
+    override suspend fun setAnalyses(
+        placeKey: String,
+        isChosenPlace: Boolean,
+        analysisEntities: List<AnalysisEntity>
+    ) {
+        update(
+            placeKey = placeKey,
+            isChosenPlace = isChosenPlace
+        ) { savedWeatherEntity: SavedWeatherEntity -> savedWeatherEntity.copy(analyses = analysisEntities) }
+    }
+
+    private suspend fun update(
+        placeKey: String,
+        isChosenPlace: Boolean,
+        change: (SavedWeatherEntity) -> SavedWeatherEntity
+    ) {
         writeMutex.withLock {
             withContext(context = coroutineDispatcher) {
-                val otherPlaces: List<SavedWeatherEntity> = decode(text = diskCache.read(key = WEATHER_CACHE_KEY))
-                    .filter { savedWeather: SavedWeatherEntity -> savedWeather.placeKey != savedWeatherEntity.placeKey }
+                val savedPlaces: List<SavedWeatherEntity> = decode(text = diskCache.read(key = WEATHER_CACHE_KEY))
+                val savedPlace: SavedWeatherEntity = savedPlaces.firstOrNull { savedWeatherEntity: SavedWeatherEntity -> savedWeatherEntity.placeKey == placeKey }
+                    ?: SavedWeatherEntity(
+                        placeKey = placeKey,
+                        isChosenPlace = isChosenPlace,
+                        fetchedAtEpochMillis = null,
+                        forecasts = emptyList(),
+                        analyses = emptyList()
+                    )
+                val otherPlaces: List<SavedWeatherEntity> = savedPlaces.filter { savedWeatherEntity: SavedWeatherEntity ->
+                    savedWeatherEntity.placeKey != placeKey && !(isChosenPlace && savedWeatherEntity.isChosenPlace)
+                }
                 diskCache.write(
                     key = WEATHER_CACHE_KEY,
                     value = defaultJson.encodeToString(
                         serializer = savedWeatherSerializer,
-                        value = (listOf(savedWeatherEntity) + otherPlaces).take(n = MAXIMUM_SAVED_PLACES)
+                        value = (listOf(change(savedPlace.copy(isChosenPlace = isChosenPlace))) + otherPlaces).take(n = MAXIMUM_SAVED_PLACES)
                     )
                 )
             }
@@ -64,8 +106,7 @@ internal class DefaultWeatherForecastLocalDataSource(
                 string = text
             )
         } catch (serializationException: SerializationException) {
-            logger.warn { "Dropping unreadable saved weather: ${serializationException.message}" }
-            diskCache.remove(key = WEATHER_CACHE_KEY)
+            logger.warn { "Unreadable saved weather is left to be replaced: ${serializationException.message}" }
             emptyList()
         }
     }

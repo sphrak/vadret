@@ -11,7 +11,9 @@ import se.vadretapp.vadret.pollen.local.DefaultPollenLocalDataSource
 import se.vadretapp.vadret.pollen.model.PollenForecast
 import se.vadretapp.vadret.pollen.model.PollenRegion
 import se.vadretapp.vadret.pollen.model.PollenType
+import se.vadretapp.vadret.pollen.model.PollenTypes
 import se.vadretapp.vadret.pollen.remote.DefaultPollenRemoteDataSource
+import kotlin.time.Clock
 
 interface PollenRepository {
 
@@ -19,9 +21,9 @@ interface PollenRepository {
 
     suspend fun getPollenTypes(): Either<Failure, List<PollenType>>
 
-    fun observePollenTypes(): Flow<Either<Failure, List<PollenType>>>
+    fun observePollenTypes(): Flow<Either<Failure, PollenTypes?>>
 
-    suspend fun refreshPollenTypes(): Either<Failure, List<PollenType>>
+    suspend fun refreshPollenTypes(): Either<Failure, PollenTypes>
 
     suspend fun getForecasts(
         startDate: LocalDate,
@@ -34,6 +36,7 @@ interface PollenRepository {
 fun PollenRepository(
     httpClient: Lazy<HttpClient>,
     diskCache: DiskCache,
+    clock: Clock,
     coroutineDispatcher: CoroutineDispatcher
 ): PollenRepository =
     DefaultPollenRepository(
@@ -41,5 +44,6 @@ fun PollenRepository(
         pollenLocalDataSource = DefaultPollenLocalDataSource(
             diskCache = diskCache,
             coroutineDispatcher = coroutineDispatcher
-        )
+        ),
+        clock = clock
     )

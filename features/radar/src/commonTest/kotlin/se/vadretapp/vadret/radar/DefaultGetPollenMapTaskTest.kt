@@ -14,8 +14,11 @@ import se.vadretapp.vadret.pollen.model.PollenForecast
 import se.vadretapp.vadret.pollen.model.PollenLevel
 import se.vadretapp.vadret.pollen.model.PollenRegion
 import se.vadretapp.vadret.pollen.model.PollenType
+import se.vadretapp.vadret.pollen.model.PollenTypes
 import se.vadretapp.vadret.radar.model.PollenMap
 import se.vadretapp.vadret.radar.model.PollenStation
+import se.vadretapp.vadret.radar.usecase.DefaultGetPollenMapTask
+import se.vadretapp.vadret.radar.usecase.GetPollenMapTask
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -98,9 +101,9 @@ private class FakePollenRepository(
 
     override suspend fun getPollenTypes(): Either<Failure, List<PollenType>> = pollenTypes
 
-    override fun observePollenTypes(): Flow<Either<Failure, List<PollenType>>> = error("The pollen map asks for the pollen types once")
+    override fun observePollenTypes(): Flow<Either<Failure, PollenTypes?>> = error("The pollen map asks for the pollen types once")
 
-    override suspend fun refreshPollenTypes(): Either<Failure, List<PollenType>> = error("The pollen map asks for the pollen types once")
+    override suspend fun refreshPollenTypes(): Either<Failure, PollenTypes> = error("The pollen map asks for the pollen types once")
 
     override suspend fun getForecasts(
         startDate: LocalDate,

@@ -52,6 +52,13 @@ import se.vadretapp.vadret.radar.pollen.PollenCloudRenderer
 import se.vadretapp.vadret.radar.precipitation.PrecipitationOverlay
 import se.vadretapp.vadret.radar.precipitation.PrecipitationRenderer
 import se.vadretapp.vadret.radar.precipitation.RadarEchoes
+import se.vadretapp.vadret.radar.usecase.DownloadRadarDayTask
+import se.vadretapp.vadret.radar.usecase.GetDeviceLocationTask
+import se.vadretapp.vadret.radar.usecase.GetPollenMapTask
+import se.vadretapp.vadret.radar.usecase.ObservePollenPreferencesTask
+import se.vadretapp.vadret.radar.usecase.ObserveRadarTask
+import se.vadretapp.vadret.radar.usecase.ObserveWindForecastTask
+import se.vadretapp.vadret.radar.usecase.SetPollenHibernationNoticeShownTask
 import se.vadretapp.vadret.radar.wind.WindField
 import se.vadretapp.vadret.radar.wind.WindFieldRenderer
 import se.vadretapp.vadret.radar.wind.WindPalette

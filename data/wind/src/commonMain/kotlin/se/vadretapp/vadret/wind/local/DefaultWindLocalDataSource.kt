@@ -50,8 +50,7 @@ internal class DefaultWindLocalDataSource(
         return try {
             windJson.decodeFromString<WindForecastEntity>(string = text)
         } catch (serializationException: SerializationException) {
-            logger.warn { "Dropping unreadable saved wind: ${serializationException.message}" }
-            diskCache.remove(key = WIND_CACHE_KEY)
+            logger.warn { "Unreadable saved wind is left to be replaced: ${serializationException.message}" }
             null
         }
     }

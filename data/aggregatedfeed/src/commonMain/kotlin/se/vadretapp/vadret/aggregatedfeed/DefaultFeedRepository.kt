@@ -13,16 +13,16 @@ import se.vadretapp.vadret.aggregatedfeed.extension.toAggregatedFeedEntities
 import se.vadretapp.vadret.aggregatedfeed.extension.toAggregatedFeedEntity
 import se.vadretapp.vadret.aggregatedfeed.extension.toAggregatedFeeds
 import se.vadretapp.vadret.aggregatedfeed.extension.toFailure
-import se.vadretapp.vadret.aggregatedfeed.extension.toSavedFeed
 import se.vadretapp.vadret.aggregatedfeed.extension.toSeenWarning
+import se.vadretapp.vadret.aggregatedfeed.extension.toWarningFeed
 import se.vadretapp.vadret.aggregatedfeed.local.AggregatedFeedCacheEntity
 import se.vadretapp.vadret.aggregatedfeed.local.AggregatedFeedEntity
 import se.vadretapp.vadret.aggregatedfeed.local.AggregatedFeedLocalDataSource
 import se.vadretapp.vadret.aggregatedfeed.local.SeenWarningEntity
 import se.vadretapp.vadret.aggregatedfeed.local.SeenWarningLocalDataSource
 import se.vadretapp.vadret.aggregatedfeed.model.AggregatedFeed
-import se.vadretapp.vadret.aggregatedfeed.model.SavedFeed
 import se.vadretapp.vadret.aggregatedfeed.model.SeenWarning
+import se.vadretapp.vadret.aggregatedfeed.model.WarningFeed
 import se.vadretapp.vadret.aggregatedfeed.remote.KrisinformationFeedDto
 import se.vadretapp.vadret.aggregatedfeed.remote.KrisinformationRemoteDataSource
 import se.vadretapp.vadret.aggregatedfeed.remote.SmhiWarningDto
@@ -50,11 +50,12 @@ internal class DefaultFeedRepository(
             (aggregatedFeedLocalDataSource.getAggregatedFeed() ?: fetchAggregatedFeed()).toAggregatedFeeds()
         }.catch { exception: Exception -> exception.toFailure() }
 
-    override fun observeAggregatedFeed(): Flow<Either<Failure, SavedFeed>> =
+    override fun observeAggregatedFeed(): Flow<Either<Failure, WarningFeed?>> =
         aggregatedFeedLocalDataSource
             .observeAggregatedFeed()
-            .map<AggregatedFeedCacheEntity?, Either<Failure, SavedFeed>> { aggregatedFeedCacheEntity: AggregatedFeedCacheEntity? ->
-                aggregatedFeedCacheEntity.toSavedFeed().asRight()
+            .map<AggregatedFeedCacheEntity?, Either<Failure, WarningFeed?>> { aggregatedFeedCacheEntity: AggregatedFeedCacheEntity? ->
+                val savedFeed: WarningFeed? = aggregatedFeedCacheEntity?.toWarningFeed()
+                savedFeed.asRight()
             }.catch { throwable: Throwable ->
                 if (throwable is Exception) {
                     emit(throwable.toFailure().asLeft())
@@ -63,8 +64,8 @@ internal class DefaultFeedRepository(
                 }
             }
 
-    override suspend fun refreshAggregatedFeed(): Either<Failure, SavedFeed> =
-        either { fetchAggregatedFeed().toSavedFeed() }
+    override suspend fun refreshAggregatedFeed(): Either<Failure, WarningFeed> =
+        either { fetchAggregatedFeed().toWarningFeed() }
             .catch { exception: Exception -> exception.toFailure() }
 
     override fun observeSeenWarnings(): Flow<Either<Failure, List<SeenWarning>>> =

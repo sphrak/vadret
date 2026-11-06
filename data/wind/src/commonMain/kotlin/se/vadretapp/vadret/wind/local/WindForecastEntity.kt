@@ -5,6 +5,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 internal data class WindForecastEntity(
+    @SerialName(value = "fetched_at_epoch_millis")
+    val fetchedAtEpochMillis: Long,
     @SerialName(value = "reference_time_epoch_millis")
     val referenceTimeEpochMillis: Long,
     @SerialName(value = "first_valid_at_epoch_millis")

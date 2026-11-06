@@ -9,6 +9,7 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
+                implementation project(':core:refresh')
                 implementation project(':data:aggregatedfeed')
                 implementation project(':data:common')
                 implementation project(':domain:followedplace')

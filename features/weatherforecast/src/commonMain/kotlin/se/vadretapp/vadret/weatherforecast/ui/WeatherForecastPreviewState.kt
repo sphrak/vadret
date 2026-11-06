@@ -95,7 +95,8 @@ private fun previewWeatherForecast(): WeatherForecast =
         longitude = PREVIEW_LONGITUDE,
         forecasts = previewHours(hourOffsets = FIRST_FORECAST_HOUR until FORECAST_HOURS),
         analyses = previewAnalyses(),
-        outdatedSince = null
+        fetchedAt = null,
+        isRefreshFailed = false
     ).toWeatherForecast(
         now = previewNow,
         timeZone = previewTimeZone,

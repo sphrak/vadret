@@ -17,6 +17,10 @@ import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.pollen.model.PollenType
 import se.vadretapp.vadret.pollenseason.ObservePollenInSeasonTask
 import se.vadretapp.vadret.settings.extension.toPollenGroupRows
+import se.vadretapp.vadret.settings.usecase.GetSettingsTask
+import se.vadretapp.vadret.settings.usecase.ObservePollenTypesTask
+import se.vadretapp.vadret.settings.usecase.SetPollenAllergenTask
+import se.vadretapp.vadret.settings.usecase.SetPollenEnabledTask
 import kotlin.concurrent.atomics.AtomicBoolean
 import kotlin.concurrent.atomics.AtomicInt
 import kotlin.concurrent.atomics.AtomicReference

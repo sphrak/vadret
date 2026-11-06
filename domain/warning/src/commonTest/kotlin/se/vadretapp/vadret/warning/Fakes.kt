@@ -14,8 +14,8 @@ import se.vadretapp.vadret.aggregatedfeed.model.FeedSource
 import se.vadretapp.vadret.aggregatedfeed.model.GeoLine
 import se.vadretapp.vadret.aggregatedfeed.model.GeoPolygon
 import se.vadretapp.vadret.aggregatedfeed.model.GeoPosition
-import se.vadretapp.vadret.aggregatedfeed.model.SavedFeed
 import se.vadretapp.vadret.aggregatedfeed.model.SeenWarning
+import se.vadretapp.vadret.aggregatedfeed.model.WarningFeed
 import se.vadretapp.vadret.aggregatedfeed.model.WarningLevel
 import se.vadretapp.vadret.common.Failure
 import kotlin.time.Instant
@@ -76,40 +76,36 @@ internal fun aggregatedFeed(
         )
     )
 
-private val FETCHED_AT: Instant = Instant.parse(input = "2026-10-24T11:30:00Z")
+internal val NOW: Instant = Instant.parse(input = "2026-10-24T12:00:00Z")
 
 internal class FakeFeedRepository(
     var result: Either<Failure, List<AggregatedFeed>> = listOf(aggregatedFeed(identifier = "smhi-1-1")).asRight()
 ) : FeedRepository {
 
     var refreshCount: Int = 0
-    val savedFeed: MutableStateFlow<SavedFeed> = MutableStateFlow(
-        value = SavedFeed(
-            aggregatedFeeds = emptyList(),
-            fetchedAt = null
-        )
-    )
+    val savedFeed: MutableStateFlow<WarningFeed?> = MutableStateFlow(value = null)
     val seenWarnings: MutableStateFlow<Either<Failure, List<SeenWarning>>> = MutableStateFlow(value = emptyList<SeenWarning>().asRight())
     val markedSeen = mutableListOf<String>()
 
     override suspend fun getAggregatedFeed(): Either<Failure, List<AggregatedFeed>> {
-        val saved: SavedFeed = savedFeed.value
-        if (saved.fetchedAt != null) {
+        val saved: WarningFeed? = savedFeed.value
+        if (saved != null) {
             return saved.aggregatedFeeds.asRight()
         }
-        return refreshAggregatedFeed().map { refreshed: SavedFeed -> refreshed.aggregatedFeeds }
+        return refreshAggregatedFeed().map { refreshed: WarningFeed -> refreshed.aggregatedFeeds }
     }
 
-    override fun observeAggregatedFeed(): Flow<Either<Failure, SavedFeed>> = savedFeed.map { saved: SavedFeed -> saved.asRight() }
+    override fun observeAggregatedFeed(): Flow<Either<Failure, WarningFeed?>> =
+        savedFeed.map { saved: WarningFeed? -> saved.asRight() }
 
-    override suspend fun refreshAggregatedFeed(): Either<Failure, SavedFeed> {
+    override suspend fun refreshAggregatedFeed(): Either<Failure, WarningFeed> {
         refreshCount++
         return when (val refreshed: Either<Failure, List<AggregatedFeed>> = result) {
             is Either.Left -> refreshed
             is Either.Right -> {
-                val saved = SavedFeed(
+                val saved = WarningFeed(
                     aggregatedFeeds = refreshed.b,
-                    fetchedAt = FETCHED_AT
+                    fetchedAt = NOW
                 )
                 savedFeed.value = saved
                 saved.asRight()

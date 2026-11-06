@@ -17,7 +17,7 @@ import se.vadretapp.vadret.ui.extension.messageResource
 import se.vadretapp.vadret.ui.format.currentLanguageTag
 import se.vadretapp.vadret.ui.resources.Res
 import se.vadretapp.vadret.ui.resources.no_alert_available
-import se.vadretapp.vadret.warning.GetWarningsTask
+import se.vadretapp.vadret.warning.usecase.GetWarningsTask
 import kotlin.concurrent.atomics.AtomicReference
 import kotlin.time.Clock
 

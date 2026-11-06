@@ -144,6 +144,7 @@ internal class DefaultWindRepository(
             throw WindNotAvailableException(message = "No wind forecast from ${validTimes.first()}")
         }
         return WindForecastEntity(
+            fetchedAtEpochMillis = clock.now().toEpochMilliseconds(),
             referenceTimeEpochMillis = referenceTime.toEpochMilliseconds(),
             firstValidAtEpochMillis = validTimes.first().toEpochMilliseconds(),
             columnCount = columnCount,

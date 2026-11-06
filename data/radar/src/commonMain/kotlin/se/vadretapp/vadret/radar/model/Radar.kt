@@ -1,3 +1,8 @@
 package se.vadretapp.vadret.radar.model
 
-data class Radar(val images: List<RadarImage>)
+import kotlin.time.Instant
+
+data class Radar(
+    val images: List<RadarImage>,
+    val fetchedAt: Instant
+)

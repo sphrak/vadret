@@ -10,6 +10,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.test.runTest
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
+import se.vadretapp.vadret.radar.usecase.DefaultObserveWindForecastTask
+import se.vadretapp.vadret.radar.usecase.ObserveWindForecastTask
 import se.vadretapp.vadret.testing.FixedClock
 import se.vadretapp.vadret.wind.WindRepository
 import se.vadretapp.vadret.wind.model.WindForecast
@@ -37,7 +39,8 @@ private fun windForecast(firstHour: Instant): WindForecast =
                 windSpeeds = listOf(4f),
                 windFromDirections = listOf(90f)
             )
-        }
+        },
+        fetchedAt = now
     )
 
 private class FakeWindRepository(
@@ -52,11 +55,13 @@ private class FakeWindRepository(
 
     override suspend fun refreshWindForecast(): Either<Failure, WindForecast> {
         refreshes++
-        val result: Either<Failure, WindForecast> = refreshed
-        if (result is Either.Right) {
-            savedWindForecast.value = result.b
+        return when (val result: Either<Failure, WindForecast> = refreshed) {
+            is Either.Left -> result
+            is Either.Right -> {
+                savedWindForecast.value = result.b
+                result
+            }
         }
-        return result
     }
 }
 

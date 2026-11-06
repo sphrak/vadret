@@ -10,6 +10,8 @@ import kotlinx.coroutines.test.runTest
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.developermode.DeveloperModeRepository
+import se.vadretapp.vadret.settings.usecase.DefaultObserveDeveloperModeTask
+import se.vadretapp.vadret.settings.usecase.ObserveDeveloperModeTask
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

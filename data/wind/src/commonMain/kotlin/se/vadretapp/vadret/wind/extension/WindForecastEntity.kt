@@ -16,7 +16,8 @@ internal fun WindForecastEntity.toWindForecast(): WindForecast =
             longitudes = longitudes,
             latitudes = latitudes
         ),
-        frames = frames.map { windFrameEntity: WindFrameEntity -> windFrameEntity.toWindFrame() }
+        frames = frames.map { windFrameEntity: WindFrameEntity -> windFrameEntity.toWindFrame() },
+        fetchedAt = Instant.fromEpochMilliseconds(epochMilliseconds = fetchedAtEpochMillis)
     )
 
 private fun WindFrameEntity.toWindFrame(): WindFrame =

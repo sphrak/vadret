@@ -7,8 +7,10 @@ import kotlinx.serialization.Serializable
 internal data class SavedWeatherEntity(
     @SerialName(value = "place_key")
     val placeKey: String,
+    @SerialName(value = "is_chosen_place")
+    val isChosenPlace: Boolean,
     @SerialName(value = "fetched_at_epoch_millis")
-    val fetchedAtEpochMillis: Long,
+    val fetchedAtEpochMillis: Long?,
     @SerialName(value = "forecasts")
     val forecasts: List<ForecastEntity>,
     @SerialName(value = "analyses")

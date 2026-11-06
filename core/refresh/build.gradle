@@ -1,0 +1,17 @@
+plugins {
+    id 'vadret.kmp.library'
+}
+
+kotlin {
+    android {
+        namespace = 'se.vadretapp.vadret.refresh'
+    }
+    sourceSets {
+        commonMain {
+            dependencies {
+                implementation libs.coroutines.core
+                implementation libs.either
+            }
+        }
+    }
+}

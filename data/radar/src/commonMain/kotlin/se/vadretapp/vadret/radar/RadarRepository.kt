@@ -4,19 +4,19 @@ import io.github.sphrak.either.Either
 import io.ktor.client.HttpClient
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
+import kotlinx.datetime.LocalDate
 import se.vadretapp.vadret.common.DiskCache
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.radar.local.DefaultRadarImageLocalDataSource
 import se.vadretapp.vadret.radar.local.DefaultRadarLocalDataSource
 import se.vadretapp.vadret.radar.model.Radar
-import se.vadretapp.vadret.radar.model.SavedRadar
 import se.vadretapp.vadret.radar.remote.DefaultRadarRemoteDataSource
 import kotlin.time.Clock
 
 interface RadarRepository {
 
-    fun observeRadar(): Flow<Either<Failure, SavedRadar>>
-    suspend fun refreshRadar(): Either<Failure, SavedRadar>
+    fun observeRadar(date: LocalDate): Flow<Either<Failure, Radar?>>
+    suspend fun refreshRadar(date: LocalDate): Either<Failure, Radar>
     suspend fun getRadarContaining(imageUrl: String): Either<Failure, Radar>
     suspend fun getRadarImage(imageUrl: String): Either<Failure, ByteArray>
     suspend fun getMissingRadarImageCount(imageUrls: List<String>): Either<Failure, Int>

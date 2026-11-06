@@ -274,14 +274,22 @@ class DefaultWindRepositoryTest {
         }
 
     @Test
-    fun `a refreshed wind is observed as the saved wind`() =
+    fun `a refreshed wind is observed as the saved wind with the time it was fetched`() =
         testScope.runTest {
             val nothingSaved: Either<Failure, WindForecast?> = windRepository.observeWindForecast().first()
             val refreshed: WindForecast = windRepository.refreshWindForecast().forecast()
 
-            assertEquals(
-                expected = null to refreshed,
-                actual = (nothingSaved as Either.Right).b to (windRepository.observeWindForecast().first() as Either.Right).b
+            assertEquals<Triple<Either<Failure, WindForecast?>, Either<Failure, WindForecast?>, Instant>>(
+                expected = Triple(
+                    first = null.asRight(),
+                    second = refreshed.asRight(),
+                    third = clock.now
+                ),
+                actual = Triple(
+                    first = nothingSaved,
+                    second = windRepository.observeWindForecast().first(),
+                    third = refreshed.fetchedAt
+                )
             )
         }
 
@@ -300,7 +308,7 @@ class DefaultWindRepositoryTest {
         }
 
     @Test
-    fun `unreadable saved wind is dropped and observed as nothing saved`() =
+    fun `unreadable saved wind is observed as nothing saved and left to be replaced`() =
         testScope.runTest {
             diskCache.write(
                 key = "wind.json",
@@ -308,9 +316,9 @@ class DefaultWindRepositoryTest {
             )
 
             withRecordedLogs {
-                assertEquals<Pair<Either<Failure, WindForecast?>, Map<String, String>>>(
-                    expected = null.asRight() to emptyMap(),
-                    actual = windRepository.observeWindForecast().first() to diskCache.entries
+                assertEquals<Pair<Either<Failure, WindForecast?>, String?>>(
+                    expected = null.asRight() to "not json",
+                    actual = windRepository.observeWindForecast().first() to diskCache.entries["wind.json"]
                 )
             }
         }
