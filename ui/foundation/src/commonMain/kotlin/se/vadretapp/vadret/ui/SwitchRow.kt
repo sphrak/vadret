@@ -23,11 +23,32 @@ fun SwitchRow(
     summary: String? = null,
     iconResource: DrawableResource? = null
 ) {
+    SwitchRow(
+        title = title,
+        isChecked = isChecked,
+        onCheckedChange = onCheckedChange,
+        leadingContent = rowLeadingContent(iconResource = iconResource),
+        modifier = modifier,
+        summary = summary
+    )
+}
+
+// For a row whose leading icon is not a drawable, such as SettingsRowIcon, or that only keeps an icon's room with
+// SettingsRowIconSpace.
+@Composable
+fun SwitchRow(
+    title: String,
+    isChecked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    leadingContent: (@Composable () -> Unit)?,
+    modifier: Modifier = Modifier,
+    summary: String? = null
+) {
     ListItem(
         checked = isChecked,
         onCheckedChange = onCheckedChange,
         modifier = modifier.settingsRowHeight(),
-        leadingContent = rowLeadingContent(iconResource = iconResource),
+        leadingContent = leadingContent,
         trailingContent = {
             Switch(
                 checked = isChecked,

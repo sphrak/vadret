@@ -62,19 +62,37 @@ internal class PushAlertsViewModel(
                     saveAndSync(pushAlertChoices = pushAlertChoices)
                 }
             }
-            viewModelScope.launch(context = coroutineDispatcher) { observeChoices() }
+            viewModelScope.launch(context = coroutineDispatcher) { load() }
             viewModelScope.launch(context = coroutineDispatcher) { observeSyncPending() }
-            viewModelScope.launch(context = coroutineDispatcher) { loadPollenTypes() }
         }
     }
 
-    private suspend fun observeChoices() {
+    // The pollen types are in place before the choices first show, so every section shows at once and none moves in
+    // under the others.
+    private suspend fun load() {
+        showPollenTypes(pollenTypes = getPollenTypesTask())
         observePushAlertChoicesTask().collect { result: Either<Failure, PushAlertChoices> ->
             result.onResult(
-                onError = { failure: Failure -> state.update { state: PushAlertsState -> state.copy(failure = failure) } },
-                onSuccess = { pushAlertChoices: PushAlertChoices -> state.update { state: PushAlertsState -> state.withChoices(pushAlertChoices = pushAlertChoices) } }
+                onError = { failure: Failure ->
+                    state.update { state: PushAlertsState ->
+                        state.copy(
+                            isLoading = false,
+                            failure = failure
+                        )
+                    }
+                },
+                onSuccess = { pushAlertChoices: PushAlertChoices ->
+                    state.update { state: PushAlertsState -> state.withChoices(pushAlertChoices = pushAlertChoices).copy(isLoading = false) }
+                }
             )
         }
+    }
+
+    private fun showPollenTypes(pollenTypes: Either<Failure, List<PollenType>>) {
+        pollenTypes.onResult(
+            onError = { _: Failure -> state.update { state: PushAlertsState -> state.copy(arePollenTypesUnavailable = true) } },
+            onSuccess = { loadedPollenTypes: List<PollenType> -> state.update { state: PushAlertsState -> state.copy(pollenTypes = loadedPollenTypes) } }
+        )
     }
 
     private suspend fun observeSyncPending() {
@@ -84,13 +102,6 @@ internal class PushAlertsViewModel(
                 onSuccess = { isSyncPending: Boolean -> state.update { state: PushAlertsState -> state.copy(isSyncPending = isSyncPending) } }
             )
         }
-    }
-
-    private suspend fun loadPollenTypes() {
-        getPollenTypesTask().onResult(
-            onError = { failure: Failure -> state.update { state: PushAlertsState -> state.copy(failure = failure) } },
-            onSuccess = { pollenTypes: List<PollenType> -> state.update { state: PushAlertsState -> state.copy(pollenTypes = pollenTypes) } }
-        )
     }
 
     private suspend fun handle(event: PushAlertsEvent) {
@@ -130,6 +141,7 @@ internal class PushAlertsViewModel(
                 state.copy(isAttestationRefusedDialogVisible = false)
             }
             PushAlertsEvent.OnFailureDismissed -> state.update { state: PushAlertsState -> state.copy(failure = null) }
+            PushAlertsEvent.OnSendFailedDialogDismissed -> state.update { state: PushAlertsState -> state.copy(isSendFailedDialogVisible = false) }
         }
     }
 
@@ -202,13 +214,21 @@ internal class PushAlertsViewModel(
         )
     }
 
+    // The person changed a choice, so a send that fails is told at once, while the notice that the choices are not sent
+    // stays until a later send works.
     private suspend fun sync() {
         val synced = syncPushAlertsTask()
-        val isAttestationRefused = synced is Either.Left && synced.a.errorCode == ErrorCode.ATTESTATION_REFUSED
-        val isUnsupportedArea = synced is Either.Left && synced.a.errorCode == ErrorCode.UNSUPPORTED_AREA
+        val failure: Failure? = if (synced is Either.Left) {
+            synced.a
+        } else {
+            null
+        }
+        val isAttestationRefused = failure?.errorCode == ErrorCode.ATTESTATION_REFUSED
+        val isUnsupportedArea = failure?.errorCode == ErrorCode.UNSUPPORTED_AREA
         state.update { state: PushAlertsState ->
             state.copy(
                 failure = null,
+                isSendFailedDialogVisible = failure != null && !isAttestationRefused && !isUnsupportedArea,
                 isOutsideSwedenDialogVisible = state.isOutsideSwedenDialogVisible || isUnsupportedArea,
                 isAttestationRefusedDialogVisible = state.isAttestationRefusedDialogVisible || isAttestationRefused
             )

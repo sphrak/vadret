@@ -8,6 +8,7 @@ import se.vadretapp.vadret.pushalert.model.PushAlertChoices
 import se.vadretapp.vadret.pushalert.model.WarningAlertLevel
 
 internal fun pushAlertsPreviewState(): PushAlertsState = PushAlertsState(
+    isLoading = false,
     choices = PushAlertChoices(
         warningLowestLevel = WarningAlertLevel.YELLOW,
         pollenChoices = listOf(

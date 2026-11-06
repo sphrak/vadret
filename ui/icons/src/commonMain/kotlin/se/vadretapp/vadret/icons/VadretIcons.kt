@@ -5,4 +5,6 @@ object VadretIcons {
     object Weather
 
     object Symbol
+
+    object Alert
 }

@@ -16,6 +16,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.jetbrains.compose.resources.stringResource
 import se.vadretapp.vadret.di.koinAll
 import se.vadretapp.vadret.di.koinViewModel
+import se.vadretapp.vadret.icons.Pollen
+import se.vadretapp.vadret.icons.VadretIcons
 import se.vadretapp.vadret.language.model.AppLanguage
 import se.vadretapp.vadret.settings.Settings
 import se.vadretapp.vadret.settings.SettingsEvent
@@ -26,6 +28,7 @@ import se.vadretapp.vadret.theme.model.Theme
 import se.vadretapp.vadret.ui.ChoiceDialog
 import se.vadretapp.vadret.ui.SettingsRow
 import se.vadretapp.vadret.ui.SettingsRowDivider
+import se.vadretapp.vadret.ui.SettingsRowIcon
 import se.vadretapp.vadret.ui.SettingsSection
 import se.vadretapp.vadret.ui.SwitchRow
 import se.vadretapp.vadret.ui.ThemePreviewParameterProvider
@@ -37,7 +40,6 @@ import se.vadretapp.vadret.ui.resources.ic_code
 import se.vadretapp.vadret.ui.resources.ic_dark_mode
 import se.vadretapp.vadret.ui.resources.ic_info
 import se.vadretapp.vadret.ui.resources.ic_language
-import se.vadretapp.vadret.ui.resources.ic_local_florist
 import se.vadretapp.vadret.ui.resources.ic_location_on
 import se.vadretapp.vadret.ui.resources.ic_schedule
 import se.vadretapp.vadret.ui.resources.pollen
@@ -161,8 +163,8 @@ private fun SettingsList(
         item(key = POLLEN_KEY, contentType = SettingsContentType.ROW) {
             SettingsRow(
                 title = stringResource(resource = Res.string.pollen),
-                iconResource = Res.drawable.ic_local_florist,
-                onClick = onPollenClick
+                onClick = onPollenClick,
+                leadingContent = { SettingsRowIcon(icon = VadretIcons.Alert.Pollen) }
             )
         }
         if (settings != null) {

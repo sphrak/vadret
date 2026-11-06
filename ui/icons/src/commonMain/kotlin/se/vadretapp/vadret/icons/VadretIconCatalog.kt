@@ -34,5 +34,12 @@ internal val vadretIconCatalog: List<VadretIconGraphic> = listOf(
     VadretIcons.Weather.HeavySnowfall,
     VadretIcons.Symbol.Drop,
     VadretIcons.Symbol.Moon,
-    VadretIcons.Symbol.SunDisc
+    VadretIcons.Symbol.SunDisc,
+    VadretIcons.Alert.Warning,
+    VadretIcons.Alert.Pollen,
+    VadretIcons.Alert.Warmer,
+    VadretIcons.Alert.Colder,
+    VadretIcons.Alert.HardWind,
+    VadretIcons.Alert.Storm,
+    VadretIcons.Alert.Hurricane
 )

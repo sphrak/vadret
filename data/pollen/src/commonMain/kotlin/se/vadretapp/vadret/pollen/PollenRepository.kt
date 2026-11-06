@@ -2,8 +2,11 @@ package se.vadretapp.vadret.pollen
 
 import io.github.sphrak.either.Either
 import io.ktor.client.HttpClient
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.datetime.LocalDate
+import se.vadretapp.vadret.common.DiskCache
 import se.vadretapp.vadret.common.Failure
+import se.vadretapp.vadret.pollen.local.DefaultPollenLocalDataSource
 import se.vadretapp.vadret.pollen.model.PollenForecast
 import se.vadretapp.vadret.pollen.model.PollenRegion
 import se.vadretapp.vadret.pollen.model.PollenType
@@ -23,7 +26,15 @@ interface PollenRepository {
     suspend fun getCurrentForecasts(): Either<Failure, List<PollenForecast>>
 }
 
-fun PollenRepository(httpClient: Lazy<HttpClient>): PollenRepository =
+fun PollenRepository(
+    httpClient: Lazy<HttpClient>,
+    diskCache: DiskCache,
+    coroutineDispatcher: CoroutineDispatcher
+): PollenRepository =
     DefaultPollenRepository(
-        pollenRemoteDataSource = DefaultPollenRemoteDataSource(httpClient = httpClient)
+        pollenRemoteDataSource = DefaultPollenRemoteDataSource(httpClient = httpClient),
+        pollenLocalDataSource = DefaultPollenLocalDataSource(
+            diskCache = diskCache,
+            coroutineDispatcher = coroutineDispatcher
+        )
     )

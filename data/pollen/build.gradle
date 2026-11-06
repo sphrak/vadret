@@ -13,6 +13,7 @@ kotlin {
                 implementation project(':core:logging')
                 implementation project(':data:common')
 
+                implementation libs.coroutines.core
                 implementation libs.either
                 implementation libs.kotlinx.datetime
                 implementation libs.kotlinx.serialization.json

@@ -21,6 +21,7 @@ kotlin {
                 implementation project(':data:pushalert')
                 implementation project(':data:theme')
                 implementation project(':domain:followedplace')
+                implementation project(':ui:icons')
 
                 implementation libs.either
                 implementation libs.koin.core

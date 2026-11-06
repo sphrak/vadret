@@ -1,6 +1,8 @@
 package se.vadretapp.vadret.pushalert
 
 import io.github.sphrak.either.extension.asLeft
+import io.github.sphrak.either.extension.asRight
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -401,17 +403,6 @@ class PushAlertsViewModelTest {
     }
 
     @Test
-    fun startingShowsTheSavedChoicesAndThePollenTypes() = runTest(context = testDispatcher) {
-        val viewModel = startedViewModel(choices = WARNINGS_FROM_YELLOW)
-        advanceUntilIdle()
-
-        assertEquals(
-            expected = WARNINGS_FROM_YELLOW to listOf(BIRCH, GRASS),
-            actual = viewModel.state.value.choices to viewModel.state.value.pollenTypes
-        )
-    }
-
-    @Test
     fun outsideSwedenNothingIsAskedOrSavedAndADialogSaysWhy() = runTest(context = testDispatcher) {
         val savePushAlertChoicesTask = FakeSavePushAlertChoicesTask()
         val viewModel = startedViewModel(
@@ -570,7 +561,7 @@ class PushAlertsViewModelTest {
     }
 
     @Test
-    fun aSyncThatFailsLeavesTheNoticeToSaySoInsteadOfAFailure() = runTest(context = testDispatcher) {
+    fun aChoiceThatCannotBeSentIsShownInADialogThatCanBeDismissed() = runTest(context = testDispatcher) {
         val viewModel = startedViewModel(
             choices = WARNINGS_FROM_YELLOW,
             syncPushAlertsTask = FakeSyncPushAlertsTask(result = Failure(errorCode = ErrorCode.HTTP_SERVICE_UNAVAILABLE).asLeft())
@@ -578,10 +569,80 @@ class PushAlertsViewModelTest {
 
         viewModel.onEvent(event = PushAlertsEvent.OnTemperatureTrendToggled(isEnabled = true))
         advanceUntilIdle()
+        val isShown = viewModel.state.value.isSendFailedDialogVisible
+        viewModel.onEvent(event = PushAlertsEvent.OnSendFailedDialogDismissed)
+        advanceUntilIdle()
 
         assertEquals(
-            expected = null to false,
-            actual = viewModel.state.value.failure to viewModel.state.value.isAttestationRefusedDialogVisible
+            expected = Triple(
+                first = true,
+                second = false,
+                third = null
+            ),
+            actual = Triple(
+                first = isShown,
+                second = viewModel.state.value.isSendFailedDialogVisible,
+                third = viewModel.state.value.failure
+            )
+        )
+    }
+
+    @Test
+    fun aChoiceThatIsSentShowsNoDialog() = runTest(context = testDispatcher) {
+        val viewModel = startedViewModel(choices = WARNINGS_FROM_YELLOW)
+
+        viewModel.onEvent(event = PushAlertsEvent.OnTemperatureTrendToggled(isEnabled = true))
+        advanceUntilIdle()
+
+        assertEquals(
+            expected = false,
+            actual = viewModel.state.value.isSendFailedDialogVisible
+        )
+    }
+
+    @Test
+    fun nothingShowsUntilThePollenTypesAreInPlaceSoEverySectionShowsAtOnce() = runTest(context = testDispatcher) {
+        val getPollenTypesTask = FakeGetPollenTypesTask(pollenTypes = CompletableDeferred())
+        val viewModel = startedViewModel(
+            choices = WARNINGS_FROM_YELLOW,
+            getPollenTypesTask = getPollenTypesTask
+        )
+        val isLoadingBefore = viewModel.state.value.isLoading
+        getPollenTypesTask.pollenTypes.complete(value = listOf(BIRCH, GRASS).asRight())
+        advanceUntilIdle()
+
+        assertEquals(
+            expected = Triple(
+                first = true,
+                second = false,
+                third = WARNINGS_FROM_YELLOW to listOf(BIRCH, GRASS)
+            ),
+            actual = Triple(
+                first = isLoadingBefore,
+                second = viewModel.state.value.isLoading,
+                third = viewModel.state.value.choices to viewModel.state.value.pollenTypes
+            )
+        )
+    }
+
+    @Test
+    fun pollenTypesThatCannotBeLoadedAreSaidToBeMissingWithoutADialog() = runTest(context = testDispatcher) {
+        val viewModel = startedViewModel(
+            choices = WARNINGS_FROM_YELLOW,
+            getPollenTypesTask = FakeGetPollenTypesTask(pollenTypes = CompletableDeferred(value = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft()))
+        )
+
+        assertEquals(
+            expected = Triple(
+                first = false,
+                second = true,
+                third = null
+            ),
+            actual = Triple(
+                first = viewModel.state.value.isLoading,
+                second = viewModel.state.value.arePollenTypesUnavailable,
+                third = viewModel.state.value.failure
+            )
         )
     }
 
@@ -596,11 +657,15 @@ class PushAlertsViewModelTest {
         advanceUntilIdle()
 
         assertEquals(
-            expected = Triple(null, true, false),
+            expected = Triple(
+                first = false,
+                second = true,
+                third = false
+            ),
             actual = Triple(
-                viewModel.state.value.failure,
-                viewModel.state.value.isOutsideSwedenDialogVisible,
-                viewModel.state.value.isAttestationRefusedDialogVisible
+                first = viewModel.state.value.isSendFailedDialogVisible,
+                second = viewModel.state.value.isOutsideSwedenDialogVisible,
+                third = viewModel.state.value.isAttestationRefusedDialogVisible
             )
         )
     }
@@ -614,12 +679,12 @@ class PushAlertsViewModelTest {
 
         viewModel.onEvent(event = PushAlertsEvent.OnTemperatureTrendToggled(isEnabled = true))
         advanceUntilIdle()
-        val isExplained = viewModel.state.value.isAttestationRefusedDialogVisible
+        val isExplained = viewModel.state.value.isAttestationRefusedDialogVisible to viewModel.state.value.isSendFailedDialogVisible
         viewModel.onEvent(event = PushAlertsEvent.OnAttestationRefusedDialogDismissed)
         advanceUntilIdle()
 
         assertEquals(
-            expected = true to false,
+            expected = (true to false) to false,
             actual = isExplained to viewModel.state.value.isAttestationRefusedDialogVisible
         )
     }
@@ -629,14 +694,15 @@ class PushAlertsViewModelTest {
         savePushAlertChoicesTask: FakeSavePushAlertChoicesTask = FakeSavePushAlertChoicesTask(),
         syncPushAlertsTask: FakeSyncPushAlertsTask = FakeSyncPushAlertsTask(),
         observePushAlertSyncPendingTask: FakeObservePushAlertSyncPendingTask = FakeObservePushAlertSyncPendingTask(),
-        isOutsideSwedenTask: FakeIsOutsideSwedenTask = FakeIsOutsideSwedenTask()
+        isOutsideSwedenTask: FakeIsOutsideSwedenTask = FakeIsOutsideSwedenTask(),
+        getPollenTypesTask: FakeGetPollenTypesTask = FakeGetPollenTypesTask(pollenTypes = CompletableDeferred(value = listOf(BIRCH, GRASS).asRight()))
     ): PushAlertsViewModel {
         val viewModel = PushAlertsViewModel(
             observePushAlertChoicesTask = FakeObservePushAlertChoicesTask(choices = choices),
             observePushAlertSyncPendingTask = observePushAlertSyncPendingTask,
             savePushAlertChoicesTask = savePushAlertChoicesTask,
             syncPushAlertsTask = syncPushAlertsTask,
-            getPollenTypesTask = FakeGetPollenTypesTask(pollenTypes = listOf(BIRCH, GRASS)),
+            getPollenTypesTask = getPollenTypesTask,
             isOutsideSwedenTask = isOutsideSwedenTask,
             coroutineDispatcher = testDispatcher
         )

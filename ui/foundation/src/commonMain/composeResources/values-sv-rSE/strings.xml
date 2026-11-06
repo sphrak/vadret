@@ -199,6 +199,7 @@
     <string name="pollen_level_high">Hög</string>
     <string name="pollen_level_high_to_very_high">Hög till mycket hög</string>
     <string name="pollen_level_very_high">Mycket hög</string>
+    <string name="push_alert_setting_not_saved">Något gick fel. Det gick inte att spara inställningen.</string>
     <string name="push_alerts_not_sent">Dina val är inte skickade än. Vädret försöker igen nästa gång appen startar.</string>
     <string name="push_alerts_only_in_sweden">Pushnotiser gäller bara Sverige</string>
     <string name="push_alerts_only_in_sweden_text">Vädret skickar bara pushnotiser för platser i Sverige, och den här platsen ligger utanför Sverige.</string>

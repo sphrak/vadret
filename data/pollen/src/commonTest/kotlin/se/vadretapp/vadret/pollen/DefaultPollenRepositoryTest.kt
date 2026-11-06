@@ -11,17 +11,21 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.Url
 import io.ktor.http.headersOf
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.logging.LogLevel
+import se.vadretapp.vadret.pollen.local.DefaultPollenLocalDataSource
 import se.vadretapp.vadret.pollen.model.DailyPollenLevel
 import se.vadretapp.vadret.pollen.model.PollenForecast
 import se.vadretapp.vadret.pollen.model.PollenLevel
 import se.vadretapp.vadret.pollen.model.PollenRegion
 import se.vadretapp.vadret.pollen.model.PollenType
 import se.vadretapp.vadret.pollen.remote.DefaultPollenRemoteDataSource
+import se.vadretapp.vadret.testing.FakeDiskCache
 import se.vadretapp.vadret.testing.LogLine
 import se.vadretapp.vadret.testing.mockHttpClient
 import se.vadretapp.vadret.testing.networkUnavailableException
@@ -32,6 +36,10 @@ import kotlin.test.assertEquals
 private val jsonHeaders = headersOf(HttpHeaders.ContentType, "application/json")
 
 private const val EMPTY_PAGE = """{"items":[]}"""
+
+private const val POLLEN_TYPES_CACHE_KEY = "pollen_types.json"
+
+private const val BIRCH_PAGE = """{"items":[{"id":"birch","name":"Björk","hasForecasts":true}]}"""
 
 private val repositoryCalls: List<suspend (PollenRepository) -> Either<Failure, Any>> = listOf(
     { pollenRepository: PollenRepository -> pollenRepository.getRegions() },
@@ -45,9 +53,25 @@ private val repositoryCalls: List<suspend (PollenRepository) -> Either<Failure, 
     { pollenRepository: PollenRepository -> pollenRepository.getCurrentForecasts() }
 )
 
+private const val SAVED_HAZEL = """[{"pollen_id":"hazel","name":"Hassel","has_forecasts":true}]"""
+
+private val birch = PollenType(
+    pollenId = "birch",
+    name = "Björk",
+    hasForecasts = true
+)
+
+private val hazel = PollenType(
+    pollenId = "hazel",
+    name = "Hassel",
+    hasForecasts = true
+)
+
 class DefaultPollenRepositoryTest {
 
+    private val testScope = TestScope(StandardTestDispatcher())
     private val requests = mutableListOf<HttpRequestData>()
+    private val diskCache = FakeDiskCache()
 
     private fun repository(handler: MockRequestHandler): PollenRepository =
         DefaultPollenRepository(
@@ -58,8 +82,21 @@ class DefaultPollenRepositoryTest {
                         handler(request)
                     }
                 }
+            ),
+            pollenLocalDataSource = DefaultPollenLocalDataSource(
+                diskCache = diskCache,
+                coroutineDispatcher = StandardTestDispatcher(scheduler = testScope.testScheduler)
             )
         )
+
+    private fun unreachableRepository(): PollenRepository = repository { throw networkUnavailableException(host = "api.pollenrapporten.se") }
+
+    private fun saveHazel() {
+        diskCache.write(
+            key = POLLEN_TYPES_CACHE_KEY,
+            value = SAVED_HAZEL
+        )
+    }
 
     private fun respondingWith(body: String): PollenRepository =
         repository {
@@ -73,7 +110,7 @@ class DefaultPollenRepositoryTest {
 
     @Test
     fun `each list is asked for at its endpoint with room for every item`() =
-        runTest {
+        testScope.runTest {
             val pollenRepository: PollenRepository = respondingWith(body = EMPTY_PAGE)
 
             repositoryCalls.forEach { repositoryCall: suspend (PollenRepository) -> Either<Failure, Any> -> repositoryCall(pollenRepository) }
@@ -101,7 +138,7 @@ class DefaultPollenRepositoryTest {
 
     @Test
     fun `regions keep their coordinates and regions without readable coordinates are skipped`() =
-        runTest {
+        testScope.runTest {
             withRecordedLogs { recordingLogSink ->
                 assertEquals(
                     expected = listOf(
@@ -131,7 +168,7 @@ class DefaultPollenRepositoryTest {
 
     @Test
     fun `pollen types keep their names and whether they have forecasts`() =
-        runTest {
+        testScope.runTest {
             assertEquals(
                 expected = listOf(
                     PollenType(
@@ -158,7 +195,7 @@ class DefaultPollenRepositoryTest {
 
     @Test
     fun `a forecast keeps its days and every pollen level`() =
-        runTest {
+        testScope.runTest {
             val levelSeries: String = PollenLevel.entries.joinToString(separator = ",") { pollenLevel: PollenLevel ->
                 """{"pollenId":"birch","level":${pollenLevel.ordinal},"time":"2026-05-0${pollenLevel.ordinal + 1}T00:00:00"}"""
             }
@@ -218,7 +255,7 @@ class DefaultPollenRepositoryTest {
 
     @Test
     fun `forecasts are asked for page by page until every record is read`() =
-        runTest {
+        testScope.runTest {
             val forecastIds: List<String> = pagedRepository(totalRecords = 159)
                 .getForecasts(
                     startDate = LocalDate.parse(input = "2026-05-01"),
@@ -235,7 +272,7 @@ class DefaultPollenRepositoryTest {
 
     @Test
     fun `forecasts stop after ten pages however many records are claimed`() =
-        runTest {
+        testScope.runTest {
             val forecastCount: Int = pagedRepository(totalRecords = 1_000_000)
                 .getForecasts(
                     startDate = LocalDate.parse(input = "2026-05-01"),
@@ -252,7 +289,7 @@ class DefaultPollenRepositoryTest {
 
     @Test
     fun `current forecasts keep the end of season flag`() =
-        runTest {
+        testScope.runTest {
             assertEquals(
                 expected = listOf(
                     PollenForecast(
@@ -273,7 +310,7 @@ class DefaultPollenRepositoryTest {
 
     @Test
     fun `forecast parts that cannot be read are skipped`() =
-        runTest {
+        testScope.runTest {
             withRecordedLogs { recordingLogSink ->
                 assertEquals(
                     expected = listOf(
@@ -328,7 +365,7 @@ class DefaultPollenRepositoryTest {
 
     @Test
     fun `http and network and response failures are told apart`() =
-        runTest {
+        testScope.runTest {
             val failingRepositories: Map<ErrorCode, PollenRepository> = mapOf(
                 ErrorCode.HTTP_INTERNAL_SERVER_ERROR to repository {
                     respond(
@@ -348,6 +385,67 @@ class DefaultPollenRepositoryTest {
                     actual = failingRepositories.mapValues { (_, pollenRepository: PollenRepository) ->
                         repositoryCalls.map { repositoryCall: suspend (PollenRepository) -> Either<Failure, Any> -> repositoryCall(pollenRepository) }
                     }
+                )
+            }
+        }
+
+    @Test
+    fun `pollen types are asked for even when some are saved and what is fetched is saved`() =
+        testScope.runTest {
+            saveHazel()
+
+            val pollenTypes: Either<Failure, List<PollenType>> = respondingWith(body = BIRCH_PAGE).getPollenTypes()
+
+            assertEquals(
+                expected = Triple(
+                    first = listOf(birch).asRight(),
+                    second = 1,
+                    third = """[{"pollen_id":"birch","name":"Björk","has_forecasts":true}]"""
+                ),
+                actual = Triple(
+                    first = pollenTypes,
+                    second = requests.size,
+                    third = diskCache.entries[POLLEN_TYPES_CACHE_KEY]
+                )
+            )
+        }
+
+    @Test
+    fun `saved pollen types are used when they cannot be fetched`() =
+        testScope.runTest {
+            saveHazel()
+
+            withRecordedLogs { recordingLogSink ->
+                assertEquals(
+                    expected = listOf(hazel).asRight() to listOf("se.vadretapp.vadret.pollen" to LogLevel.WARN),
+                    actual = unreachableRepository().getPollenTypes() to recordingLogSink.lines.map { line: LogLine -> line.tag to line.level }
+                )
+            }
+        }
+
+    @Test
+    fun `unreadable saved pollen types are dropped and the failure to fetch is told`() =
+        testScope.runTest {
+            diskCache.write(
+                key = POLLEN_TYPES_CACHE_KEY,
+                value = "not json"
+            )
+
+            withRecordedLogs {
+                assertEquals(
+                    expected = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft() to emptyMap(),
+                    actual = unreachableRepository().getPollenTypes() to diskCache.entries
+                )
+            }
+        }
+
+    @Test
+    fun `pollen types that are neither fetched nor saved are a failure`() =
+        testScope.runTest {
+            withRecordedLogs {
+                assertEquals(
+                    expected = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft() to emptyMap(),
+                    actual = unreachableRepository().getPollenTypes() to diskCache.entries
                 )
             }
         }

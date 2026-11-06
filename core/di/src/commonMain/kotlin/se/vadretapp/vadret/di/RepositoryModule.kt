@@ -30,7 +30,13 @@ val repositoryModule: Module = module {
     }
     single<LibraryRepository> { LibraryRepository() }
     single<NominatimRepository> { NominatimRepository(httpClient = inject()) }
-    single<PollenRepository> { PollenRepository(httpClient = inject()) }
+    single<PollenRepository> {
+        PollenRepository(
+            httpClient = inject(),
+            diskCache = get(),
+            coroutineDispatcher = get()
+        )
+    }
     single<PollenPreferenceRepository> { PollenPreferenceRepository(dataStore = get()) }
     single<RadarRepository> {
         RadarRepository(

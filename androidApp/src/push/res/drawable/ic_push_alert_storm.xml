@@ -3,22 +3,28 @@
     android:height="24dp"
     android:viewportWidth="100"
     android:viewportHeight="100">
-    <path
-        android:pathData="M20 38H60A9 9 0 1 0 51 29"
-        android:strokeColor="#FFFFFFFF"
-        android:strokeWidth="4.5"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round" />
-    <path
-        android:pathData="M14 50H78"
-        android:strokeColor="#FFFFFFFF"
-        android:strokeWidth="4.5"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round" />
-    <path
-        android:pathData="M20 62H66A9 9 0 1 1 57 71"
-        android:strokeColor="#FFFFFFFF"
-        android:strokeWidth="4.5"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round" />
+    <group
+        android:pivotX="50"
+        android:pivotY="50"
+        android:scaleX="1.2"
+        android:scaleY="1.2">
+        <path
+            android:pathData="M20 38H60A9 9 0 1 0 51 29"
+            android:strokeColor="#FFFFFFFF"
+            android:strokeWidth="4.5"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round" />
+        <path
+            android:pathData="M14 50H78"
+            android:strokeColor="#FFFFFFFF"
+            android:strokeWidth="4.5"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round" />
+        <path
+            android:pathData="M20 62H66A9 9 0 1 1 57 71"
+            android:strokeColor="#FFFFFFFF"
+            android:strokeWidth="4.5"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round" />
+    </group>
 </vector>

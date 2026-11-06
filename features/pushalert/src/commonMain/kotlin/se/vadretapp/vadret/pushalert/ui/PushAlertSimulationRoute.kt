@@ -14,10 +14,13 @@ import se.vadretapp.vadret.di.koinViewModel
 import se.vadretapp.vadret.pushalert.PushAlertSimulationEvent
 import se.vadretapp.vadret.pushalert.PushAlertSimulationState
 import se.vadretapp.vadret.pushalert.PushAlertSimulationViewModel
+import se.vadretapp.vadret.pushalert.extension.icon
 import se.vadretapp.vadret.pushalert.model.PushAlertMessage
+import se.vadretapp.vadret.pushalert.model.PushAlertType
 import se.vadretapp.vadret.theme.model.Theme
 import se.vadretapp.vadret.ui.InfoDialog
 import se.vadretapp.vadret.ui.SettingsRow
+import se.vadretapp.vadret.ui.SettingsRowIcon
 import se.vadretapp.vadret.ui.SettingsScaffold
 import se.vadretapp.vadret.ui.SettingsSectionHeader
 import se.vadretapp.vadret.ui.ThemePreviewParameterProvider
@@ -72,8 +75,9 @@ private fun PushAlertSimulationScreen(
         ) { pushAlertMessage: PushAlertMessage ->
             SettingsRow(
                 title = pushAlertMessage.title,
-                summary = pushAlertMessage.body,
-                onClick = { onEvent(PushAlertSimulationEvent.OnPushAlertClicked(pushAlertMessage = pushAlertMessage)) }
+                onClick = { onEvent(PushAlertSimulationEvent.OnPushAlertClicked(pushAlertMessage = pushAlertMessage)) },
+                leadingContent = pushAlertIcon(pushAlertType = pushAlertMessage.pushAlertType),
+                summary = pushAlertMessage.body
             )
         }
     }
@@ -85,6 +89,13 @@ private fun PushAlertSimulationScreen(
         )
     }
 }
+
+private fun pushAlertIcon(pushAlertType: PushAlertType?): (@Composable () -> Unit)? =
+    if (pushAlertType != null) {
+        { SettingsRowIcon(icon = pushAlertType.icon()) }
+    } else {
+        null
+    }
 
 @Preview(device = Devices.PHONE)
 @Composable

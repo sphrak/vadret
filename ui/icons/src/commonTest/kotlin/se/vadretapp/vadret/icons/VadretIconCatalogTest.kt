@@ -8,7 +8,7 @@ class VadretIconCatalogTest {
 
     @Test
     fun `every icon has its own name`() {
-        assertEquals(expected = 34, actual = vadretIconCatalog.size)
+        assertEquals(expected = 41, actual = vadretIconCatalog.size)
         assertEquals(
             expected = vadretIconCatalog.size,
             actual = vadretIconCatalog.map { icon: VadretIconGraphic -> icon.name }.toSet().size
@@ -40,6 +40,21 @@ class VadretIconCatalogTest {
         )
 
         assertTrue(actual = stillIcons.none { icon: VadretIconGraphic -> icon.hasMotion })
+    }
+
+    @Test
+    fun `the alert icons stand still so a notification shows them as they are`() {
+        val alertIcons: List<VadretIconGraphic> = listOf(
+            VadretIcons.Alert.Warning,
+            VadretIcons.Alert.Pollen,
+            VadretIcons.Alert.Warmer,
+            VadretIcons.Alert.Colder,
+            VadretIcons.Alert.HardWind,
+            VadretIcons.Alert.Storm,
+            VadretIcons.Alert.Hurricane
+        )
+
+        assertTrue(actual = alertIcons.none { icon: VadretIconGraphic -> icon.hasMotion })
     }
 
     @Test

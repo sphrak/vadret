@@ -13,6 +13,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.jetbrains.compose.resources.stringResource
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.di.koinViewModel
+import se.vadretapp.vadret.icons.HardWind
+import se.vadretapp.vadret.icons.VadretIcons
+import se.vadretapp.vadret.icons.Warmer
+import se.vadretapp.vadret.icons.Warning
 import se.vadretapp.vadret.pollen.model.PollenType
 import se.vadretapp.vadret.pushalert.PushAlertsEvent
 import se.vadretapp.vadret.pushalert.PushAlertsState
@@ -26,6 +30,8 @@ import se.vadretapp.vadret.ui.InfoDialog
 import se.vadretapp.vadret.ui.SettingsFootnote
 import se.vadretapp.vadret.ui.SettingsNote
 import se.vadretapp.vadret.ui.SettingsRow
+import se.vadretapp.vadret.ui.SettingsRowIcon
+import se.vadretapp.vadret.ui.SettingsRowIconSpace
 import se.vadretapp.vadret.ui.SettingsScaffold
 import se.vadretapp.vadret.ui.SettingsSectionHeader
 import se.vadretapp.vadret.ui.SwitchRow
@@ -43,6 +49,8 @@ import se.vadretapp.vadret.ui.resources.notifications_cover_places
 import se.vadretapp.vadret.ui.resources.notifications_cover_places_except_forecast
 import se.vadretapp.vadret.ui.resources.notifications_weather
 import se.vadretapp.vadret.ui.resources.pollen
+import se.vadretapp.vadret.ui.resources.pollen_types_not_available
+import se.vadretapp.vadret.ui.resources.push_alert_setting_not_saved
 import se.vadretapp.vadret.ui.resources.push_alerts_not_available
 import se.vadretapp.vadret.ui.resources.push_alerts_not_sent
 import se.vadretapp.vadret.ui.resources.push_alerts_only_in_sweden
@@ -63,6 +71,7 @@ private const val TEMPERATURE_KEY = "temperature"
 private const val STRONG_WIND_KEY = "strong-wind"
 private const val FORECAST_PLACES_KEY = "forecast-places"
 private const val POLLEN_HEADER_KEY = "pollen-header"
+private const val POLLEN_UNAVAILABLE_KEY = "pollen-unavailable"
 private const val POLLEN_LEVEL_KEY = "pollen-level"
 private const val PLACES_KEY = "places"
 
@@ -112,30 +121,10 @@ private fun PushAlertsScreen(
         onBack = onBack,
         modifier = modifier
     ) {
-        if (state.isSyncPending) {
-            item(key = SYNC_PENDING_KEY, contentType = PushAlertsContentType.NOTE) {
-                SettingsNote(text = stringResource(resource = Res.string.push_alerts_not_sent))
-            }
-        }
-        weatherAlerts(
-            state = state,
-            onEvent = onEvent
-        )
-        if (state.pollenTypes.isNotEmpty()) {
-            pollenAlerts(
+        if (!state.isLoading) {
+            pushAlerts(
                 state = state,
                 onEvent = onEvent
-            )
-        }
-        item(key = PLACES_KEY, contentType = PushAlertsContentType.TEXT) {
-            SettingsFootnote(
-                text = stringResource(
-                    resource = if (state.choices.forecastForAllPlaces) {
-                        Res.string.notifications_cover_places
-                    } else {
-                        Res.string.notifications_cover_places_except_forecast
-                    }
-                )
             )
         }
     }
@@ -146,11 +135,50 @@ private fun PushAlertsScreen(
             onDismiss = { onEvent(PushAlertsEvent.OnFailureDismissed) }
         )
     }
+    if (state.isSendFailedDialogVisible) {
+        InfoDialog(
+            title = stringResource(resource = Res.string.settings_notifications),
+            text = stringResource(resource = Res.string.push_alert_setting_not_saved),
+            onDismiss = { onEvent(PushAlertsEvent.OnSendFailedDialogDismissed) }
+        )
+    }
 
     PushAlertsDialogs(
         state = state,
         onEvent = onEvent
     )
+}
+
+private fun LazyListScope.pushAlerts(
+    state: PushAlertsState,
+    onEvent: (PushAlertsEvent) -> Unit
+) {
+    if (state.isSyncPending) {
+        item(key = SYNC_PENDING_KEY, contentType = PushAlertsContentType.NOTE) {
+            SettingsNote(text = stringResource(resource = Res.string.push_alerts_not_sent))
+        }
+    }
+    weatherAlerts(
+        state = state,
+        onEvent = onEvent
+    )
+    if (state.pollenTypes.isNotEmpty() || state.arePollenTypesUnavailable) {
+        pollenAlerts(
+            state = state,
+            onEvent = onEvent
+        )
+    }
+    item(key = PLACES_KEY, contentType = PushAlertsContentType.TEXT) {
+        SettingsFootnote(
+            text = stringResource(
+                resource = if (state.choices.forecastForAllPlaces) {
+                    Res.string.notifications_cover_places
+                } else {
+                    Res.string.notifications_cover_places_except_forecast
+                }
+            )
+        )
+    }
 }
 
 private fun LazyListScope.weatherAlerts(
@@ -166,7 +194,8 @@ private fun LazyListScope.weatherAlerts(
             title = stringResource(resource = Res.string.warning_alerts),
             summary = stringResource(resource = Res.string.warning_alerts_summary),
             isChecked = warningLowestLevel != null,
-            onCheckedChange = { isChecked: Boolean -> onEvent(PushAlertsEvent.OnWarningAlertsToggled(isEnabled = isChecked)) }
+            onCheckedChange = { isChecked: Boolean -> onEvent(PushAlertsEvent.OnWarningAlertsToggled(isEnabled = isChecked)) },
+            leadingContent = { SettingsRowIcon(icon = VadretIcons.Alert.Warning) }
         )
     }
     if (warningLowestLevel != null) {
@@ -174,7 +203,8 @@ private fun LazyListScope.weatherAlerts(
             SettingsRow(
                 title = stringResource(resource = Res.string.warning_level),
                 summary = stringResource(resource = warningLowestLevel.labelResource()),
-                onClick = { onEvent(PushAlertsEvent.OnWarningLevelRowClicked) }
+                onClick = { onEvent(PushAlertsEvent.OnWarningLevelRowClicked) },
+                leadingContent = { SettingsRowIconSpace() }
             )
         }
     }
@@ -182,7 +212,8 @@ private fun LazyListScope.weatherAlerts(
         SwitchRow(
             title = stringResource(resource = Res.string.temperature_alerts),
             isChecked = state.choices.temperatureTrend,
-            onCheckedChange = { isChecked: Boolean -> onEvent(PushAlertsEvent.OnTemperatureTrendToggled(isEnabled = isChecked)) }
+            onCheckedChange = { isChecked: Boolean -> onEvent(PushAlertsEvent.OnTemperatureTrendToggled(isEnabled = isChecked)) },
+            leadingContent = { SettingsRowIcon(icon = VadretIcons.Alert.Warmer) }
         )
     }
     item(key = STRONG_WIND_KEY, contentType = PushAlertsContentType.ROW) {
@@ -190,7 +221,8 @@ private fun LazyListScope.weatherAlerts(
             title = stringResource(resource = Res.string.strong_wind_alerts),
             summary = stringResource(resource = Res.string.strong_wind_alerts_summary),
             isChecked = state.choices.strongWind,
-            onCheckedChange = { isChecked: Boolean -> onEvent(PushAlertsEvent.OnStrongWindToggled(isEnabled = isChecked)) }
+            onCheckedChange = { isChecked: Boolean -> onEvent(PushAlertsEvent.OnStrongWindToggled(isEnabled = isChecked)) },
+            leadingContent = { SettingsRowIcon(icon = VadretIcons.Alert.HardWind) }
         )
     }
     if (state.choices.temperatureTrend || state.choices.strongWind) {
@@ -199,7 +231,8 @@ private fun LazyListScope.weatherAlerts(
                 title = stringResource(resource = Res.string.forecast_alerts_all_places),
                 summary = stringResource(resource = Res.string.forecast_alerts_all_places_summary),
                 isChecked = state.choices.forecastForAllPlaces,
-                onCheckedChange = { isChecked: Boolean -> onEvent(PushAlertsEvent.OnForecastForAllPlacesToggled(isEnabled = isChecked)) }
+                onCheckedChange = { isChecked: Boolean -> onEvent(PushAlertsEvent.OnForecastForAllPlacesToggled(isEnabled = isChecked)) },
+                leadingContent = { SettingsRowIconSpace() }
             )
         }
     }
@@ -211,6 +244,11 @@ private fun LazyListScope.pollenAlerts(
 ) {
     item(key = POLLEN_HEADER_KEY, contentType = PushAlertsContentType.HEADER) {
         SettingsSectionHeader(text = stringResource(resource = Res.string.pollen))
+    }
+    if (state.arePollenTypesUnavailable) {
+        item(key = POLLEN_UNAVAILABLE_KEY, contentType = PushAlertsContentType.TEXT) {
+            SettingsFootnote(text = stringResource(resource = Res.string.pollen_types_not_available))
+        }
     }
     items(
         items = state.pollenTypes,
@@ -227,7 +265,8 @@ private fun LazyListScope.pollenAlerts(
                         isEnabled = isChecked
                     )
                 )
-            }
+            },
+            leadingContent = { SettingsRowIconSpace() }
         )
     }
     if (state.chosenPollenTypeIds.isNotEmpty()) {
@@ -235,7 +274,8 @@ private fun LazyListScope.pollenAlerts(
             SettingsRow(
                 title = stringResource(resource = Res.string.lowest_pollen_level),
                 summary = stringResource(resource = state.pollenLevel.labelResource()),
-                onClick = { onEvent(PushAlertsEvent.OnPollenLevelRowClicked) }
+                onClick = { onEvent(PushAlertsEvent.OnPollenLevelRowClicked) },
+                leadingContent = { SettingsRowIconSpace() }
             )
         }
     }

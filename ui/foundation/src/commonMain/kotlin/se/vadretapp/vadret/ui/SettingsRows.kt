@@ -72,10 +72,31 @@ fun SettingsRow(
     iconResource: DrawableResource? = null,
     trailingContent: (@Composable RowScope.() -> Unit)? = null
 ) {
+    SettingsRow(
+        title = title,
+        onClick = onClick,
+        leadingContent = rowLeadingContent(iconResource = iconResource),
+        modifier = modifier,
+        summary = summary,
+        trailingContent = trailingContent
+    )
+}
+
+// For a row whose leading icon is not a drawable, such as SettingsRowIcon, or that only keeps an icon's room with
+// SettingsRowIconSpace.
+@Composable
+fun SettingsRow(
+    title: String,
+    onClick: () -> Unit,
+    leadingContent: (@Composable () -> Unit)?,
+    modifier: Modifier = Modifier,
+    summary: String? = null,
+    trailingContent: (@Composable RowScope.() -> Unit)? = null
+) {
     ListItem(
         onClick = onClick,
         modifier = modifier.settingsRowHeight(),
-        leadingContent = rowLeadingContent(iconResource = iconResource),
+        leadingContent = leadingContent,
         trailingContent = if (trailingContent != null) {
             {
                 Row(

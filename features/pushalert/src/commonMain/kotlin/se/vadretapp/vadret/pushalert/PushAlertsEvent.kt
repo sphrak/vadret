@@ -24,4 +24,5 @@ internal sealed interface PushAlertsEvent {
     data object OnOutsideSwedenDialogDismissed : PushAlertsEvent
     data object OnAttestationRefusedDialogDismissed : PushAlertsEvent
     data object OnFailureDismissed : PushAlertsEvent
+    data object OnSendFailedDialogDismissed : PushAlertsEvent
 }
