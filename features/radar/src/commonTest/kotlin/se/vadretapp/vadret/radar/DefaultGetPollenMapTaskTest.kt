@@ -3,6 +3,7 @@ package se.vadretapp.vadret.radar
 import io.github.sphrak.either.Either
 import io.github.sphrak.either.extension.asLeft
 import io.github.sphrak.either.extension.asRight
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
 import se.vadretapp.vadret.common.ErrorCode
@@ -96,6 +97,8 @@ private class FakePollenRepository(
     override suspend fun getRegions(): Either<Failure, List<PollenRegion>> = regions
 
     override suspend fun getPollenTypes(): Either<Failure, List<PollenType>> = pollenTypes
+
+    override fun observePollenTypes(): Flow<Either<Failure, List<PollenType>>> = error("The pollen map asks for the pollen types once")
 
     override suspend fun getForecasts(
         startDate: LocalDate,

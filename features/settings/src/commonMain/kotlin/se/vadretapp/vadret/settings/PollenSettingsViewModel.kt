@@ -28,7 +28,7 @@ class PollenSettingsViewModel internal constructor(
     private val getSettingsTask: GetSettingsTask,
     private val setPollenEnabledTask: SetPollenEnabledTask,
     private val setPollenAllergenTask: SetPollenAllergenTask,
-    private val getPollenTypesTask: GetPollenTypesTask,
+    private val observePollenTypesTask: ObservePollenTypesTask,
     private val observePollenInSeasonTask: ObservePollenInSeasonTask,
     private val coroutineDispatcher: CoroutineDispatcher
 ) : ViewModel() {
@@ -57,7 +57,7 @@ class PollenSettingsViewModel internal constructor(
         if (isStarted.compareAndSet(expectedValue = false, newValue = true)) {
             viewModelScope.launch(context = coroutineDispatcher) {
                 loadSettings()
-                loadPollenTypes()
+                observePollenTypes()
             }
             viewModelScope.launch(context = coroutineDispatcher) { loadSeason() }
         }
@@ -78,21 +78,29 @@ class PollenSettingsViewModel internal constructor(
         )
     }
 
-    private suspend fun loadPollenTypes() {
-        getPollenTypesTask().onResult(
-            onError = { _: Failure ->
-                state.update { state: PollenSettingsState -> state.copy(arePollenTypesUnavailable = true) }
-            },
-            onSuccess = { loadedPollenTypes: List<PollenType> ->
-                pollenTypes.store(newValue = loadedPollenTypes)
-                state.update { state: PollenSettingsState ->
-                    state.copy(
-                        pollenGroupRows = loadedPollenTypes.toPollenGroupRows(allergenPollenIds = allergenPollenIds.load()),
-                        arePollenTypesUnavailable = false
-                    )
+    private suspend fun observePollenTypes() {
+        observePollenTypesTask().collect { result: Either<Failure, List<PollenType>> ->
+            result.onResult(
+                onError = { _: Failure ->
+                    state.update { state: PollenSettingsState ->
+                        state.copy(
+                            isLoading = false,
+                            arePollenTypesUnavailable = true
+                        )
+                    }
+                },
+                onSuccess = { loadedPollenTypes: List<PollenType> ->
+                    pollenTypes.store(newValue = loadedPollenTypes)
+                    state.update { state: PollenSettingsState ->
+                        state.copy(
+                            isLoading = false,
+                            pollenGroupRows = loadedPollenTypes.toPollenGroupRows(allergenPollenIds = allergenPollenIds.load()),
+                            arePollenTypesUnavailable = false
+                        )
+                    }
                 }
-            }
-        )
+            )
+        }
     }
 
     // Only a season known to be over is told, so a forecast that cannot be read says nothing about it.

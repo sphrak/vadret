@@ -3,6 +3,7 @@ package se.vadretapp.vadret.pollenseason
 import io.github.sphrak.either.Either
 import io.github.sphrak.either.extension.asLeft
 import io.github.sphrak.either.extension.asRight
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.single
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
@@ -24,6 +25,8 @@ private class FakeCurrentForecastsPollenRepository(
     override suspend fun getRegions(): Either<Failure, List<PollenRegion>> = error("Only the current forecasts tell the season")
 
     override suspend fun getPollenTypes(): Either<Failure, List<PollenType>> = error("Only the current forecasts tell the season")
+
+    override fun observePollenTypes(): Flow<Either<Failure, List<PollenType>>> = error("Only the current forecasts tell the season")
 
     override suspend fun getForecasts(
         startDate: LocalDate,

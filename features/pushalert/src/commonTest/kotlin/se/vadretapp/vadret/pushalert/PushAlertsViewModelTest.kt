@@ -18,6 +18,7 @@ import se.vadretapp.vadret.pollen.model.PollenType
 import se.vadretapp.vadret.pushalert.model.PollenAlertLevel
 import se.vadretapp.vadret.pushalert.model.PollenChoice
 import se.vadretapp.vadret.pushalert.model.PushAlertChoices
+import se.vadretapp.vadret.pushalert.model.PushAlertPlace
 import se.vadretapp.vadret.pushalert.model.WarningAlertLevel
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -197,7 +198,7 @@ class PushAlertsViewModelTest {
     }
 
     @Test
-    fun temperatureAndWindForAllPlacesIsSavedAndSyncedAtOnceBothOnAndOff() = runTest(context = testDispatcher) {
+    fun markingASavedPlaceIsSavedAndSyncedAtOnceBothOnAndOff() = runTest(context = testDispatcher) {
         val savePushAlertChoicesTask = FakeSavePushAlertChoicesTask()
         val syncPushAlertsTask = FakeSyncPushAlertsTask()
         val viewModel = startedViewModel(
@@ -206,57 +207,88 @@ class PushAlertsViewModelTest {
             syncPushAlertsTask = syncPushAlertsTask
         )
 
-        viewModel.onEvent(event = PushAlertsEvent.OnForecastForAllPlacesToggled(isEnabled = true))
-        advanceUntilIdle()
-        val shown = viewModel.state.value.choices.forecastForAllPlaces
-        viewModel.onEvent(event = PushAlertsEvent.OnForecastForAllPlacesToggled(isEnabled = false))
-        advanceUntilIdle()
+        listOf(true, false).forEach { isEnabled: Boolean ->
+            viewModel.onEvent(
+                event = PushAlertsEvent.OnPlaceToggled(
+                    pushAlertPlace = UPPSALA,
+                    isEnabled = isEnabled
+                )
+            )
+            advanceUntilIdle()
+        }
 
         assertEquals(
             expected = listOf(
-                STRONG_WIND_ONLY.copy(forecastForAllPlaces = true),
+                STRONG_WIND_ONLY.copy(notifiedFavoriteIds = setOf(UPPSALA.favoriteId)),
                 STRONG_WIND_ONLY
-            ),
-            actual = savePushAlertChoicesTask.saved
+            ) to 2,
+            actual = savePushAlertChoicesTask.saved to syncPushAlertsTask.syncs
         )
+    }
+
+    @Test
+    fun theChosenPlaceCanBeTurnedOffWhileAnotherPlaceIsMarked() = runTest(context = testDispatcher) {
+        val savePushAlertChoicesTask = FakeSavePushAlertChoicesTask()
+        val markedUppsala = STRONG_WIND_ONLY.copy(notifiedFavoriteIds = setOf(UPPSALA.favoriteId))
+        val viewModel = startedViewModel(
+            choices = markedUppsala,
+            savePushAlertChoicesTask = savePushAlertChoicesTask
+        )
+
+        viewModel.onEvent(
+            event = PushAlertsEvent.OnPlaceToggled(
+                pushAlertPlace = PushAlertPlace.ChosenPlace(name = null),
+                isEnabled = false
+            )
+        )
+        advanceUntilIdle()
+
+        assertEquals(
+            expected = listOf(markedUppsala.copy(isChosenPlaceNotified = false)) to false,
+            actual = savePushAlertChoicesTask.saved to viewModel.state.value.isLastPlaceDialogVisible
+        )
+    }
+
+    @Test
+    fun theLastMarkedPlaceStaysAndADialogSaysWhy() = runTest(context = testDispatcher) {
+        val savePushAlertChoicesTask = FakeSavePushAlertChoicesTask()
+        val viewModel = startedViewModel(
+            choices = STRONG_WIND_ONLY,
+            savePushAlertChoicesTask = savePushAlertChoicesTask
+        )
+
+        viewModel.onEvent(
+            event = PushAlertsEvent.OnPlaceToggled(
+                pushAlertPlace = PushAlertPlace.ChosenPlace(name = null),
+                isEnabled = false
+            )
+        )
+        advanceUntilIdle()
+        val shown = viewModel.state.value.isLastPlaceDialogVisible
+        viewModel.onEvent(event = PushAlertsEvent.OnLastPlaceDialogDismissed)
+        advanceUntilIdle()
+
         assertEquals(
             expected = Triple(
                 first = true,
                 second = false,
-                third = 2
+                third = Pair(emptyList<PushAlertChoices>(), STRONG_WIND_ONLY)
             ),
             actual = Triple(
                 first = shown,
-                second = viewModel.state.value.choices.forecastForAllPlaces,
-                third = syncPushAlertsTask.syncs
+                second = viewModel.state.value.isLastPlaceDialogVisible,
+                third = Pair(savePushAlertChoicesTask.saved.toList(), viewModel.state.value.choices)
             )
         )
     }
 
     @Test
-    fun outsideSwedenTemperatureAndWindForAllPlacesIsSavedWithoutAskingWhereThePhoneIs() = runTest(context = testDispatcher) {
-        val savePushAlertChoicesTask = FakeSavePushAlertChoicesTask()
-        val isOutsideSwedenTask = FakeIsOutsideSwedenTask(isOutsideSweden = true)
-        val viewModel = startedViewModel(
-            choices = STRONG_WIND_ONLY,
-            savePushAlertChoicesTask = savePushAlertChoicesTask,
-            isOutsideSwedenTask = isOutsideSwedenTask
-        )
-
-        viewModel.onEvent(event = PushAlertsEvent.OnForecastForAllPlacesToggled(isEnabled = true))
-        advanceUntilIdle()
+    fun thePlacesShowWithTheChoices() = runTest(context = testDispatcher) {
+        val viewModel = startedViewModel(choices = STRONG_WIND_ONLY)
 
         assertEquals(
-            expected = Triple(
-                first = listOf(STRONG_WIND_ONLY.copy(forecastForAllPlaces = true)),
-                second = 0,
-                third = false
-            ),
-            actual = Triple(
-                first = savePushAlertChoicesTask.saved,
-                second = isOutsideSwedenTask.checks,
-                third = viewModel.state.value.isOutsideSwedenDialogVisible
-            )
+            expected = PLACES,
+            actual = viewModel.state.value.places
         )
     }
 
@@ -602,13 +634,13 @@ class PushAlertsViewModelTest {
 
     @Test
     fun nothingShowsUntilThePollenTypesAreInPlaceSoEverySectionShowsAtOnce() = runTest(context = testDispatcher) {
-        val getPollenTypesTask = FakeGetPollenTypesTask(pollenTypes = CompletableDeferred())
+        val observePollenTypesTask = FakeObservePollenTypesTask(pollenTypes = CompletableDeferred())
         val viewModel = startedViewModel(
             choices = WARNINGS_FROM_YELLOW,
-            getPollenTypesTask = getPollenTypesTask
+            observePollenTypesTask = observePollenTypesTask
         )
         val isLoadingBefore = viewModel.state.value.isLoading
-        getPollenTypesTask.pollenTypes.complete(value = listOf(BIRCH, GRASS).asRight())
+        observePollenTypesTask.pollenTypes.complete(value = listOf(BIRCH, GRASS).asRight())
         advanceUntilIdle()
 
         assertEquals(
@@ -629,7 +661,7 @@ class PushAlertsViewModelTest {
     fun pollenTypesThatCannotBeLoadedAreSaidToBeMissingWithoutADialog() = runTest(context = testDispatcher) {
         val viewModel = startedViewModel(
             choices = WARNINGS_FROM_YELLOW,
-            getPollenTypesTask = FakeGetPollenTypesTask(pollenTypes = CompletableDeferred(value = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft()))
+            observePollenTypesTask = FakeObservePollenTypesTask(pollenTypes = CompletableDeferred(value = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft()))
         )
 
         assertEquals(
@@ -695,14 +727,16 @@ class PushAlertsViewModelTest {
         syncPushAlertsTask: FakeSyncPushAlertsTask = FakeSyncPushAlertsTask(),
         observePushAlertSyncPendingTask: FakeObservePushAlertSyncPendingTask = FakeObservePushAlertSyncPendingTask(),
         isOutsideSwedenTask: FakeIsOutsideSwedenTask = FakeIsOutsideSwedenTask(),
-        getPollenTypesTask: FakeGetPollenTypesTask = FakeGetPollenTypesTask(pollenTypes = CompletableDeferred(value = listOf(BIRCH, GRASS).asRight()))
+        observePollenTypesTask: FakeObservePollenTypesTask = FakeObservePollenTypesTask(pollenTypes = CompletableDeferred(value = listOf(BIRCH, GRASS).asRight())),
+        observePushAlertPlacesTask: FakeObservePushAlertPlacesTask = FakeObservePushAlertPlacesTask(places = PLACES)
     ): PushAlertsViewModel {
         val viewModel = PushAlertsViewModel(
             observePushAlertChoicesTask = FakeObservePushAlertChoicesTask(choices = choices),
+            observePushAlertPlacesTask = observePushAlertPlacesTask,
             observePushAlertSyncPendingTask = observePushAlertSyncPendingTask,
             savePushAlertChoicesTask = savePushAlertChoicesTask,
             syncPushAlertsTask = syncPushAlertsTask,
-            getPollenTypesTask = getPollenTypesTask,
+            observePollenTypesTask = observePollenTypesTask,
             isOutsideSwedenTask = isOutsideSwedenTask,
             coroutineDispatcher = testDispatcher
         )
@@ -727,6 +761,15 @@ private val WARNINGS_FROM_YELLOW = PushAlertChoices(
     pollenChoices = emptyList(),
     temperatureTrend = false,
     strongWind = false,
-    forecastForAllPlaces = false
+    isChosenPlaceNotified = true,
+    notifiedFavoriteIds = emptySet()
+)
+private val UPPSALA = PushAlertPlace.SavedPlace(
+    favoriteId = "favorite-uppsala",
+    name = "Uppsala"
+)
+private val PLACES: List<PushAlertPlace> = listOf(
+    PushAlertPlace.ChosenPlace(name = null),
+    UPPSALA
 )
 private val STRONG_WIND_ONLY = PushAlertChoices.NOTHING_CHOSEN.copy(strongWind = true)

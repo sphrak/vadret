@@ -5,6 +5,7 @@ import kotlinx.collections.immutable.persistentListOf
 import se.vadretapp.vadret.settings.model.PollenGroupRows
 
 internal data class PollenSettingsState(
+    val isLoading: Boolean = true,
     val isPollenEnabled: Boolean? = null,
     val isOffSeason: Boolean = false,
     val pollenGroupRows: ImmutableList<PollenGroupRows> = persistentListOf(),

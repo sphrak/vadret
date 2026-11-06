@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -85,49 +86,61 @@ private fun PollenSettingsScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val isPollenEnabled: Boolean? = state.isPollenEnabled
     SettingsScaffold(
         title = stringResource(resource = Res.string.pollen),
         onBack = onBack,
         modifier = modifier
     ) {
-        if (isPollenEnabled != null) {
-            item(key = ON_MAP_KEY, contentType = PollenContentType.ROW) {
-                SwitchRow(
-                    title = stringResource(resource = Res.string.pollen_on_map),
-                    summary = stringResource(resource = Res.string.pollen_on_map_summary),
-                    isChecked = isPollenEnabled,
-                    onCheckedChange = { isChecked: Boolean -> onEvent(PollenSettingsEvent.OnPollenToggled(isPollenEnabled = isChecked)) }
-                )
+        if (!state.isLoading) {
+            pollenSettings(
+                state = state,
+                onEvent = onEvent
+            )
+        }
+    }
+}
+
+private fun LazyListScope.pollenSettings(
+    state: PollenSettingsState,
+    onEvent: (PollenSettingsEvent) -> Unit
+) {
+    val isPollenEnabled: Boolean? = state.isPollenEnabled
+    if (isPollenEnabled != null) {
+        item(key = ON_MAP_KEY, contentType = PollenContentType.ROW) {
+            SwitchRow(
+                title = stringResource(resource = Res.string.pollen_on_map),
+                summary = stringResource(resource = Res.string.pollen_on_map_summary),
+                isChecked = isPollenEnabled,
+                onCheckedChange = { isChecked: Boolean -> onEvent(PollenSettingsEvent.OnPollenToggled(isPollenEnabled = isChecked)) }
+            )
+        }
+    }
+    if (state.isOffSeason) {
+        item(key = OFF_SEASON_KEY, contentType = PollenContentType.NOTE) {
+            SettingsNote(text = stringResource(resource = Res.string.pollen_off_season))
+        }
+    }
+    if (isPollenEnabled == true) {
+        item(key = DIVIDER_KEY, contentType = PollenContentType.DIVIDER) {
+            SettingsRowDivider()
+        }
+        item(key = MARKED_FIRST_KEY, contentType = PollenContentType.TEXT) {
+            SettingsFootnote(text = stringResource(resource = Res.string.pollen_marked_first))
+        }
+        if (state.arePollenTypesUnavailable) {
+            item(key = UNAVAILABLE_KEY, contentType = PollenContentType.TEXT) {
+                SettingsFootnote(text = stringResource(resource = Res.string.pollen_types_not_available))
             }
         }
-        if (state.isOffSeason) {
-            item(key = OFF_SEASON_KEY, contentType = PollenContentType.NOTE) {
-                SettingsNote(text = stringResource(resource = Res.string.pollen_off_season))
-            }
-        }
-        if (isPollenEnabled == true) {
-            item(key = DIVIDER_KEY, contentType = PollenContentType.DIVIDER) {
-                SettingsRowDivider()
-            }
-            item(key = MARKED_FIRST_KEY, contentType = PollenContentType.TEXT) {
-                SettingsFootnote(text = stringResource(resource = Res.string.pollen_marked_first))
-            }
-            if (state.arePollenTypesUnavailable) {
-                item(key = UNAVAILABLE_KEY, contentType = PollenContentType.TEXT) {
-                    SettingsFootnote(text = stringResource(resource = Res.string.pollen_types_not_available))
-                }
-            }
-            items(
-                items = state.pollenGroupRows,
-                key = { pollenGroupRows: PollenGroupRows -> pollenGroupRows.pollenGroup.name },
-                contentType = { PollenContentType.GROUP }
-            ) { pollenGroupRows: PollenGroupRows ->
-                PollenGroupChips(
-                    pollenGroupRows = pollenGroupRows,
-                    onEvent = onEvent
-                )
-            }
+        items(
+            items = state.pollenGroupRows,
+            key = { pollenGroupRows: PollenGroupRows -> pollenGroupRows.pollenGroup.name },
+            contentType = { PollenContentType.GROUP }
+        ) { pollenGroupRows: PollenGroupRows ->
+            PollenGroupChips(
+                pollenGroupRows = pollenGroupRows,
+                onEvent = onEvent
+            )
         }
     }
 }

@@ -1,12 +1,13 @@
 package se.vadretapp.vadret.pushalert.usecase
 
 import io.github.sphrak.either.Either
+import kotlinx.coroutines.flow.Flow
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.pollen.PollenRepository
 import se.vadretapp.vadret.pollen.model.PollenType
 
-internal class DefaultGetPollenTypesTask(
+internal class DefaultObservePollenTypesTask(
     private val pollenRepository: PollenRepository
-) : GetPollenTypesTask {
-    override suspend fun invoke(): Either<Failure, List<PollenType>> = pollenRepository.getPollenTypes()
+) : ObservePollenTypesTask {
+    override fun invoke(): Flow<Either<Failure, List<PollenType>>> = pollenRepository.observePollenTypes()
 }

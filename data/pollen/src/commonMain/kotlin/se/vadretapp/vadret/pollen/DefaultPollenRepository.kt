@@ -1,6 +1,12 @@
 package se.vadretapp.vadret.pollen
 
 import io.github.sphrak.either.Either
+import io.github.sphrak.either.extension.asLeft
+import io.github.sphrak.either.extension.asRight
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.datetime.LocalDate
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.common.catch
@@ -41,6 +47,26 @@ internal class DefaultPollenRepository(
         either {
             getPollenTypeEntities().map { pollenTypeEntity: PollenTypeEntity -> pollenTypeEntity.toPollenType() }
         }.catch { exception: Exception -> exception.toFailure() }
+
+    override fun observePollenTypes(): Flow<Either<Failure, List<PollenType>>> =
+        flow {
+            val savedPollenTypes: List<PollenTypeEntity>? = pollenLocalDataSource.getPollenTypes()
+            if (savedPollenTypes != null) {
+                emit(value = savedPollenTypes)
+            }
+            val latestPollenTypes: List<PollenTypeEntity> = getPollenTypeEntities()
+            if (latestPollenTypes != savedPollenTypes) {
+                emit(value = latestPollenTypes)
+            }
+        }.map<List<PollenTypeEntity>, Either<Failure, List<PollenType>>> { pollenTypeEntities: List<PollenTypeEntity> ->
+            pollenTypeEntities.map { pollenTypeEntity: PollenTypeEntity -> pollenTypeEntity.toPollenType() }.asRight()
+        }.catch { throwable: Throwable ->
+            if (throwable is Exception) {
+                emit(value = throwable.toFailure().asLeft())
+            } else {
+                throw throwable
+            }
+        }
 
     override suspend fun getForecasts(
         startDate: LocalDate,

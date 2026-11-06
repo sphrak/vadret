@@ -257,7 +257,8 @@ private val EVERYTHING_CHOSEN = PushAlertChoices(
     ),
     temperatureTrend = true,
     strongWind = true,
-    forecastForAllPlaces = false
+    isChosenPlaceNotified = true,
+    notifiedFavoriteIds = emptySet()
 )
 
 private val ALERT_TYPES = listOf("warning", "pollen", "warmer", "colder", "hard_wind", "storm", "hurricane", "earthquake")

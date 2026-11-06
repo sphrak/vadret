@@ -115,6 +115,7 @@ internal fun placesPreviewState(): PlacesState =
 
 internal fun pollenSettingsPreviewState(): PollenSettingsState =
     PollenSettingsState(
+        isLoading = false,
         isPollenEnabled = true,
         isOffSeason = true,
         pollenGroupRows = persistentListOf(

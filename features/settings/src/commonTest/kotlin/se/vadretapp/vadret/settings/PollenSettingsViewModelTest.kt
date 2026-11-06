@@ -54,7 +54,7 @@ class PollenSettingsViewModelTest {
             ),
             setPollenEnabledTask = DefaultSetPollenEnabledTask(pollenPreferenceRepository = pollenPreferenceRepository),
             setPollenAllergenTask = DefaultSetPollenAllergenTask(pollenPreferenceRepository = pollenPreferenceRepository),
-            getPollenTypesTask = DefaultGetPollenTypesTask(pollenRepository = pollenRepository),
+            observePollenTypesTask = DefaultObservePollenTypesTask(pollenRepository = pollenRepository),
             observePollenInSeasonTask = observePollenInSeasonTask,
             coroutineDispatcher = testDispatcher
         )
@@ -195,6 +195,37 @@ class PollenSettingsViewModelTest {
             }
 
             assertEquals(expected = listOf(false, true, false), actual = offSeason)
+        }
+
+    @Test
+    fun `nothing shows until the settings and the pollen types are both there`() =
+        testScope.runTest {
+            val pollenSettingsViewModel: PollenSettingsViewModel = viewModel()
+            val isLoadingBefore: Boolean = pollenSettingsViewModel.state.value.isLoading
+            advanceUntilIdle()
+
+            assertEquals(
+                expected = true to false,
+                actual = isLoadingBefore to pollenSettingsViewModel.state.value.isLoading
+            )
+        }
+
+    @Test
+    fun `fetched pollen types replace the saved ones that showed first`() =
+        testScope.runTest {
+            pollenRepository.pollenTypes = listOf(hazelType).asRight()
+            pollenRepository.fetchedPollenTypes = listOf(hazelType, birchType).asRight()
+
+            val pollenSettingsViewModel: PollenSettingsViewModel = viewModel()
+            advanceUntilIdle()
+
+            assertEquals(
+                expected = listOf(hazelType.pollenId, birchType.pollenId).sorted(),
+                actual = pollenSettingsViewModel.state.value.pollenGroupRows
+                    .flatMap { pollenGroupRows: PollenGroupRows -> pollenGroupRows.pollenAllergenRows }
+                    .map { pollenAllergenRow: PollenAllergenRow -> pollenAllergenRow.pollenId }
+                    .sorted()
+            )
         }
 
     @Test

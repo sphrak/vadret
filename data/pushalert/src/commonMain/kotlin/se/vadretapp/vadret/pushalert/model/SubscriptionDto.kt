@@ -14,7 +14,5 @@ internal data class SubscriptionDto(
     @SerialName(value = "temperature_trend")
     val temperatureTrend: Boolean? = null,
     @SerialName(value = "strong_wind")
-    val strongWind: Boolean? = null,
-    @SerialName(value = "forecast_geohashes")
-    val forecastGeohashes: List<String>? = null
+    val strongWind: Boolean? = null
 )

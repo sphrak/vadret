@@ -10,7 +10,8 @@ import se.vadretapp.vadret.favorite.model.Favorite
 import se.vadretapp.vadret.geohash.model.Geohash
 import se.vadretapp.vadret.location.model.StoredLocation
 import se.vadretapp.vadret.pushalert.extension.toGeohashOrNull
-import se.vadretapp.vadret.pushalert.model.PushAlertGeohashes
+import se.vadretapp.vadret.pushalert.model.PushAlertChoices
+import se.vadretapp.vadret.pushalert.model.WarningAlertLevel
 import se.vadretapp.vadret.pushalert.usecase.DefaultGetPushAlertGeohashesTask
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -26,49 +27,77 @@ private val swedishFavorites: List<Favorite> = listOf(
     VISBY_FAVORITE
 )
 
+private val WARNINGS_FROM_YELLOW: PushAlertChoices = PushAlertChoices.NOTHING_CHOSEN.copy(warningLowestLevel = WarningAlertLevel.YELLOW)
+
 class DefaultGetPushAlertGeohashesTaskTest {
 
     private suspend fun pushAlertGeohashes(
         locationRepository: FakeLocationRepository,
         favorites: List<Favorite>,
-        currentGeohash: Geohash = whereThePhoneIs,
-        forecastForAllPlaces: Boolean = false
-    ): Either<Failure, PushAlertGeohashes> =
+        pushAlertChoices: PushAlertChoices,
+        currentGeohash: Geohash = whereThePhoneIs
+    ): Either<Failure, List<Geohash>> =
         DefaultGetPushAlertGeohashesTask(
             favoriteRepository = FakeFavoriteRepository(favorites = favorites),
             locationRepository = locationRepository
         )(
             currentGeohash = currentGeohash,
-            forecastForAllPlaces = forecastForAllPlaces
+            pushAlertChoices = pushAlertChoices
         )
 
     private fun List<Favorite>.toGeohashes(): List<Geohash> = mapNotNull { favorite: Favorite -> favorite.toGeohashOrNull() }
 
+    private fun List<Favorite>.favoriteIds(): Set<String> = map { favorite: Favorite -> favorite.favoriteId }.toSet()
+
     @Test
-    fun `where the phone is comes first and four saved places follow while temperature and wind follow the first saved place`() =
+    fun `where the phone is comes first and the marked saved places follow up to five places`() =
         runTest {
-            assertEquals<Either<Failure, PushAlertGeohashes>>(
-                expected = PushAlertGeohashes(
-                    geohashes = listOf(whereThePhoneIs) + swedishFavorites.take(n = 4).toGeohashes(),
-                    forecastGeohashes = listOf(SOLNA_FAVORITE).toGeohashes()
-                ).asRight(),
+            assertEquals<Either<Failure, List<Geohash>>>(
+                expected = (listOf(whereThePhoneIs) + swedishFavorites.take(n = 4).toGeohashes()).asRight(),
                 actual = pushAlertGeohashes(
                     locationRepository = FakeLocationRepository(isAutomatic = true),
-                    favorites = swedishFavorites
+                    favorites = swedishFavorites,
+                    pushAlertChoices = WARNINGS_FROM_YELLOW.copy(notifiedFavoriteIds = swedishFavorites.favoriteIds())
                 )
             )
         }
 
     @Test
-    fun `a chosen saved place counts once even when it was saved last and is the place for temperature and wind`() =
+    fun `saved places that are not marked are left out`() =
+        runTest {
+            assertEquals<Either<Failure, List<Geohash>>>(
+                expected = (listOf(whereThePhoneIs) + listOf(UPPSALA_FAVORITE).toGeohashes()).asRight(),
+                actual = pushAlertGeohashes(
+                    locationRepository = FakeLocationRepository(isAutomatic = true),
+                    favorites = swedishFavorites,
+                    pushAlertChoices = WARNINGS_FROM_YELLOW.copy(notifiedFavoriteIds = setOf(UPPSALA_FAVORITE.favoriteId))
+                )
+            )
+        }
+
+    @Test
+    fun `the chosen place is left out when it is not marked`() =
+        runTest {
+            assertEquals<Either<Failure, List<Geohash>>>(
+                expected = listOf(SOLNA_FAVORITE).toGeohashes().asRight(),
+                actual = pushAlertGeohashes(
+                    locationRepository = FakeLocationRepository(isAutomatic = true),
+                    favorites = swedishFavorites,
+                    pushAlertChoices = WARNINGS_FROM_YELLOW.copy(
+                        isChosenPlaceNotified = false,
+                        notifiedFavoriteIds = setOf(SOLNA_FAVORITE.favoriteId)
+                    )
+                )
+            )
+        }
+
+    @Test
+    fun `a chosen saved place counts once even when it was saved last`() =
         runTest {
             val chosenGeohash: List<Geohash> = listOf(VISBY_FAVORITE).toGeohashes()
 
-            assertEquals<Either<Failure, PushAlertGeohashes>>(
-                expected = PushAlertGeohashes(
-                    geohashes = chosenGeohash + swedishFavorites.take(n = 4).toGeohashes(),
-                    forecastGeohashes = chosenGeohash
-                ).asRight(),
+            assertEquals<Either<Failure, List<Geohash>>>(
+                expected = (chosenGeohash + swedishFavorites.take(n = 4).toGeohashes()).asRight(),
                 actual = pushAlertGeohashes(
                     locationRepository = FakeLocationRepository(
                         isAutomatic = false,
@@ -81,77 +110,37 @@ class DefaultGetPushAlertGeohashesTaskTest {
                         )
                     ),
                     favorites = swedishFavorites,
+                    pushAlertChoices = WARNINGS_FROM_YELLOW.copy(notifiedFavoriteIds = swedishFavorites.favoriteIds()),
                     currentGeohash = chosenGeohash.single()
                 )
             )
         }
 
     @Test
-    fun `saved places outside Sweden get no push and are skipped for temperature and wind`() =
+    fun `marked saved places outside Sweden get no push`() =
         runTest {
-            assertEquals<Either<Failure, PushAlertGeohashes>>(
-                expected = PushAlertGeohashes(
-                    geohashes = listOf(whereThePhoneIs) + listOf(SOLNA_FAVORITE).toGeohashes(),
-                    forecastGeohashes = listOf(SOLNA_FAVORITE).toGeohashes()
-                ).asRight(),
+            val favorites: List<Favorite> = listOf(BERLIN_FAVORITE, SOLNA_FAVORITE)
+
+            assertEquals<Either<Failure, List<Geohash>>>(
+                expected = (listOf(whereThePhoneIs) + listOf(SOLNA_FAVORITE).toGeohashes()).asRight(),
                 actual = pushAlertGeohashes(
                     locationRepository = FakeLocationRepository(isAutomatic = true),
-                    favorites = listOf(BERLIN_FAVORITE, SOLNA_FAVORITE)
+                    favorites = favorites,
+                    pushAlertChoices = WARNINGS_FROM_YELLOW.copy(notifiedFavoriteIds = favorites.favoriteIds())
                 )
             )
         }
 
     @Test
-    fun `without saved places in Sweden temperature and wind follow where the phone is`() =
+    fun `no marked place sends no place`() =
         runTest {
-            assertEquals<List<Either<Failure, PushAlertGeohashes>>>(
-                expected = List(size = 2) {
-                    PushAlertGeohashes(
-                        geohashes = listOf(whereThePhoneIs),
-                        forecastGeohashes = listOf(whereThePhoneIs)
-                    ).asRight()
-                },
-                actual = listOf(emptyList(), listOf(BERLIN_FAVORITE)).map { favorites: List<Favorite> ->
-                    pushAlertGeohashes(
-                        locationRepository = FakeLocationRepository(isAutomatic = true),
-                        favorites = favorites
-                    )
-                }
-            )
-        }
-
-    @Test
-    fun `temperature and wind for all places follow every place that is sent`() =
-        runTest {
-            val geohashes: List<Geohash> = listOf(whereThePhoneIs) + swedishFavorites.take(n = 4).toGeohashes()
-
-            assertEquals<Either<Failure, PushAlertGeohashes>>(
-                expected = PushAlertGeohashes(
-                    geohashes = geohashes,
-                    forecastGeohashes = geohashes
-                ).asRight(),
+            assertEquals<Either<Failure, List<Geohash>>>(
+                expected = emptyList<Geohash>().asRight(),
                 actual = pushAlertGeohashes(
                     locationRepository = FakeLocationRepository(isAutomatic = true),
                     favorites = swedishFavorites,
-                    forecastForAllPlaces = true
+                    pushAlertChoices = WARNINGS_FROM_YELLOW.copy(isChosenPlaceNotified = false)
                 )
-            )
-        }
-
-    @Test
-    fun `the first saved place is sent even when more places are saved than can be followed`() =
-        runTest {
-            val sent = pushAlertGeohashes(
-                locationRepository = FakeLocationRepository(isAutomatic = true),
-                favorites = swedishFavorites + swedishFavorites.reversed()
-            )
-
-            assertEquals(
-                expected = listOf(SOLNA_FAVORITE).toGeohashes() to true,
-                actual = when (sent) {
-                    is Either.Left -> null to false
-                    is Either.Right -> sent.b.forecastGeohashes to sent.b.geohashes.containsAll(elements = sent.b.forecastGeohashes)
-                }
             )
         }
 
@@ -160,11 +149,12 @@ class DefaultGetPushAlertGeohashesTaskTest {
         runTest {
             val failure = Failure(errorCode = ErrorCode.STORAGE_FAILED)
 
-            assertEquals<Either<Failure, PushAlertGeohashes>>(
+            assertEquals<Either<Failure, List<Geohash>>>(
                 expected = failure.asLeft(),
                 actual = pushAlertGeohashes(
                     locationRepository = FakeLocationRepository(failure = failure),
-                    favorites = swedishFavorites
+                    favorites = swedishFavorites,
+                    pushAlertChoices = WARNINGS_FROM_YELLOW
                 )
             )
         }

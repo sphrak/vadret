@@ -44,14 +44,22 @@ class PushAlertChoicesTest {
     }
 
     @Test
-    fun temperatureAndWindForAllPlacesTurnsNoAlertOnOrOff() {
+    fun thePlacesThatAreNotifiedTurnNoAlertOnOrOff() {
         assertEquals(
             expected = listOf(true, true, false),
             actual = listOf(
-                EVERYTHING.copy(forecastForAllPlaces = true).isWithin(other = EVERYTHING),
-                EVERYTHING.isWithin(other = EVERYTHING.copy(forecastForAllPlaces = true)),
-                PushAlertChoices.NOTHING_CHOSEN.copy(forecastForAllPlaces = true).isAnythingChosen()
+                EVERYTHING.copy(notifiedFavoriteIds = setOf("solna")).isWithin(other = EVERYTHING),
+                EVERYTHING.isWithin(other = EVERYTHING.copy(isChosenPlaceNotified = false)),
+                PushAlertChoices.NOTHING_CHOSEN.copy(notifiedFavoriteIds = setOf("solna")).isAnythingChosen()
             )
+        )
+    }
+
+    @Test
+    fun nothingChosenNotifiesOnlyTheChosenPlace() {
+        assertEquals(
+            expected = true to emptySet(),
+            actual = PushAlertChoices.NOTHING_CHOSEN.isChosenPlaceNotified to PushAlertChoices.NOTHING_CHOSEN.notifiedFavoriteIds
         )
     }
 
@@ -97,5 +105,6 @@ private val EVERYTHING = PushAlertChoices(
     pollenChoices = listOf(BIRCH_FROM_MODERATE, GRASS_FROM_LOW),
     temperatureTrend = true,
     strongWind = true,
-    forecastForAllPlaces = false
+    isChosenPlaceNotified = true,
+    notifiedFavoriteIds = emptySet()
 )

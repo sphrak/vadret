@@ -8,44 +8,39 @@ import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.favorite.FavoriteRepository
 import se.vadretapp.vadret.favorite.model.Favorite
 import se.vadretapp.vadret.followedplace.MAXIMUM_FOLLOWED_PLACES
-import se.vadretapp.vadret.followedplace.extension.followedFavorites
 import se.vadretapp.vadret.geohash.model.Geohash
 import se.vadretapp.vadret.location.LocationRepository
 import se.vadretapp.vadret.location.model.LocationPreference
+import se.vadretapp.vadret.pushalert.extension.notifiableFavorites
 import se.vadretapp.vadret.pushalert.extension.toGeohashOrNull
-import se.vadretapp.vadret.pushalert.model.PushAlertGeohashes
+import se.vadretapp.vadret.pushalert.model.PushAlertChoices
 
 internal class DefaultGetPushAlertGeohashesTask(
     private val favoriteRepository: FavoriteRepository,
     private val locationRepository: LocationRepository
 ) : GetPushAlertGeohashesTask {
 
-    // The same saved places as for the warnings are followed, after where the phone is and only in Sweden.
     override suspend fun invoke(
         currentGeohash: Geohash,
-        forecastForAllPlaces: Boolean
-    ): Either<Failure, PushAlertGeohashes> =
+        pushAlertChoices: PushAlertChoices
+    ): Either<Failure, List<Geohash>> =
         locationRepository
             .observeLocationPreference()
             .first()
             .flatMap { locationPreference: LocationPreference ->
                 favoriteRepository.observeFavorites().first().map { favorites: List<Favorite> ->
-                    val savedGeohashes: List<Geohash> = locationPreference.followedFavorites(favorites = favorites).geohashesInSweden()
-                    val geohashes: List<Geohash> = (listOf(currentGeohash) + savedGeohashes)
+                    val chosenGeohashes: List<Geohash> = if (pushAlertChoices.isChosenPlaceNotified) {
+                        listOf(currentGeohash)
+                    } else {
+                        emptyList()
+                    }
+                    val savedGeohashes: List<Geohash> = locationPreference
+                        .notifiableFavorites(favorites = favorites)
+                        .filter { favorite: Favorite -> favorite.favoriteId in pushAlertChoices.notifiedFavoriteIds }
+                        .mapNotNull { favorite: Favorite -> favorite.toGeohashOrNull() }
+                    (chosenGeohashes + savedGeohashes)
                         .distinct()
                         .take(n = MAXIMUM_FOLLOWED_PLACES)
-                    PushAlertGeohashes(
-                        geohashes = geohashes,
-                        forecastGeohashes = if (forecastForAllPlaces) {
-                            geohashes
-                        } else {
-                            listOf(savedGeohashes.firstOrNull() ?: currentGeohash)
-                        }
-                    )
                 }
             }
 }
-
-private fun List<Favorite>.geohashesInSweden(): List<Geohash> =
-    mapNotNull { favorite: Favorite -> favorite.toGeohashOrNull() }
-        .filter { geohash: Geohash -> geohash.isInSwedishWaters() }

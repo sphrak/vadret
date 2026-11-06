@@ -192,6 +192,7 @@
     <string name="lowest_pollen_level">Lägsta pollennivå</string>
     <string name="notifications_are_off">Notiser är avstängda</string>
     <string name="notifications_are_off_text">Tillåt notiser för Vädret i systeminställningarna för att få pushnotiser.</string>
+    <string name="notifications_need_a_place">Notiserna behöver minst en plats.</string>
     <string name="pollen_level_low">Låg</string>
     <string name="pollen_level_low_to_moderate">Låg till måttlig</string>
     <string name="pollen_level_moderate">Måttlig</string>
@@ -254,10 +255,6 @@
     <string name="warning_alerts_summary">Från SMHI</string>
     <string name="warning_level">Nivå</string>
     <string name="strong_wind_alerts_summary">Kvällen före och samma dag</string>
-    <string name="notifications_cover_places">Notiserna gäller alla dina platser.</string>
-    <string name="notifications_cover_places_except_forecast">Varningar och pollen gäller alla dina platser.</string>
-    <string name="forecast_alerts_all_places">Temperatur och vind för alla platser</string>
-    <string name="forecast_alerts_all_places_summary">Annars bara din första sparade plats</string>
     <string name="places_not_followed">Får inga varningar, högst 5 platser bevakas</string>
     <string name="allow_expand_once">En öppen dag i taget</string>
     <string name="expand_once_is_enabled">När du öppnar en dag stängs den som redan är öppen</string>

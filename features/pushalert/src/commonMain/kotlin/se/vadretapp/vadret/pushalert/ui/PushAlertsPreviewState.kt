@@ -5,6 +5,7 @@ import se.vadretapp.vadret.pushalert.PushAlertsState
 import se.vadretapp.vadret.pushalert.model.PollenAlertLevel
 import se.vadretapp.vadret.pushalert.model.PollenChoice
 import se.vadretapp.vadret.pushalert.model.PushAlertChoices
+import se.vadretapp.vadret.pushalert.model.PushAlertPlace
 import se.vadretapp.vadret.pushalert.model.WarningAlertLevel
 
 internal fun pushAlertsPreviewState(): PushAlertsState = PushAlertsState(
@@ -19,7 +20,8 @@ internal fun pushAlertsPreviewState(): PushAlertsState = PushAlertsState(
         ),
         temperatureTrend = true,
         strongWind = false,
-        forecastForAllPlaces = false
+        isChosenPlaceNotified = true,
+        notifiedFavoriteIds = setOf(PREVIEW_UPPSALA_ID)
     ),
     chosenPollenTypeIds = setOf(PREVIEW_BIRCH_ID),
     pollenLevel = PollenAlertLevel.MODERATE_TO_HIGH,
@@ -35,8 +37,21 @@ internal fun pushAlertsPreviewState(): PushAlertsState = PushAlertsState(
             hasForecasts = true
         )
     ),
+    places = listOf(
+        PushAlertPlace.ChosenPlace(name = null),
+        PushAlertPlace.SavedPlace(
+            favoriteId = PREVIEW_UPPSALA_ID,
+            name = "Uppsala"
+        ),
+        PushAlertPlace.SavedPlace(
+            favoriteId = PREVIEW_KIRUNA_ID,
+            name = "Kiruna"
+        )
+    ),
     isSyncPending = true
 )
 
 private const val PREVIEW_BIRCH_ID = "2a2a2a2a-2a2a-4a2a-aa2a-2a313a323236"
 private const val PREVIEW_GRASS_ID = "2a2a2a2a-2a2a-4a2a-aa2a-2a313a323237"
+private const val PREVIEW_UPPSALA_ID = "preview-uppsala"
+private const val PREVIEW_KIRUNA_ID = "preview-kiruna"

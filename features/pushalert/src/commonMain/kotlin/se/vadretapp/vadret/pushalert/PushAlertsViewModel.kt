@@ -4,22 +4,30 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.sphrak.either.Either
 import io.github.sphrak.either.extension.onResult
+import io.github.sphrak.either.flatMap
+import io.github.sphrak.either.map
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.pollen.model.PollenType
+import se.vadretapp.vadret.pushalert.extension.isNotified
+import se.vadretapp.vadret.pushalert.extension.withNotified
 import se.vadretapp.vadret.pushalert.model.PollenAlertLevel
 import se.vadretapp.vadret.pushalert.model.PollenChoice
 import se.vadretapp.vadret.pushalert.model.PushAlertChoices
+import se.vadretapp.vadret.pushalert.model.PushAlertPlace
 import se.vadretapp.vadret.pushalert.model.WarningAlertLevel
-import se.vadretapp.vadret.pushalert.usecase.GetPollenTypesTask
 import se.vadretapp.vadret.pushalert.usecase.IsOutsideSwedenTask
+import se.vadretapp.vadret.pushalert.usecase.ObservePollenTypesTask
 import se.vadretapp.vadret.pushalert.usecase.ObservePushAlertChoicesTask
+import se.vadretapp.vadret.pushalert.usecase.ObservePushAlertPlacesTask
 import se.vadretapp.vadret.pushalert.usecase.ObservePushAlertSyncPendingTask
 import se.vadretapp.vadret.pushalert.usecase.SavePushAlertChoicesTask
 import se.vadretapp.vadret.pushalert.usecase.SyncPushAlertsTask
@@ -27,10 +35,11 @@ import kotlin.concurrent.atomics.AtomicBoolean
 
 internal class PushAlertsViewModel(
     private val observePushAlertChoicesTask: ObservePushAlertChoicesTask,
+    private val observePushAlertPlacesTask: ObservePushAlertPlacesTask,
     private val observePushAlertSyncPendingTask: ObservePushAlertSyncPendingTask,
     private val savePushAlertChoicesTask: SavePushAlertChoicesTask,
     private val syncPushAlertsTask: SyncPushAlertsTask,
-    private val getPollenTypesTask: GetPollenTypesTask,
+    private val observePollenTypesTask: ObservePollenTypesTask,
     private val isOutsideSwedenTask: IsOutsideSwedenTask,
     private val coroutineDispatcher: CoroutineDispatcher
 ) : ViewModel() {
@@ -67,12 +76,27 @@ internal class PushAlertsViewModel(
         }
     }
 
-    // The pollen types are in place before the choices first show, so every section shows at once and none moves in
-    // under the others.
     private suspend fun load() {
-        showPollenTypes(pollenTypes = getPollenTypesTask())
-        observePushAlertChoicesTask().collect { result: Either<Failure, PushAlertChoices> ->
-            result.onResult(
+        combine(
+            flow = observePollenTypesTask(),
+            flow2 = observePushAlertChoicesTask(),
+            flow3 = observePushAlertPlacesTask()
+        ) { pollenTypes: Either<Failure, List<PollenType>>, pushAlertChoices: Either<Failure, PushAlertChoices>, pushAlertPlaces: Either<Failure, List<PushAlertPlace>> ->
+            showPollenTypes(pollenTypes = pollenTypes)
+            showChoices(
+                pushAlertChoices = pushAlertChoices,
+                pushAlertPlaces = pushAlertPlaces
+            )
+        }.collect()
+    }
+
+    private fun showChoices(
+        pushAlertChoices: Either<Failure, PushAlertChoices>,
+        pushAlertPlaces: Either<Failure, List<PushAlertPlace>>
+    ) {
+        pushAlertChoices
+            .flatMap { choices: PushAlertChoices -> pushAlertPlaces.map { places: List<PushAlertPlace> -> choices to places } }
+            .onResult(
                 onError = { failure: Failure ->
                     state.update { state: PushAlertsState ->
                         state.copy(
@@ -81,17 +105,28 @@ internal class PushAlertsViewModel(
                         )
                     }
                 },
-                onSuccess = { pushAlertChoices: PushAlertChoices ->
-                    state.update { state: PushAlertsState -> state.withChoices(pushAlertChoices = pushAlertChoices).copy(isLoading = false) }
+                onSuccess = { loaded: Pair<PushAlertChoices, List<PushAlertPlace>> ->
+                    state.update { state: PushAlertsState ->
+                        state.withChoices(pushAlertChoices = loaded.first).copy(
+                            places = loaded.second,
+                            isLoading = false
+                        )
+                    }
                 }
             )
-        }
     }
 
     private fun showPollenTypes(pollenTypes: Either<Failure, List<PollenType>>) {
         pollenTypes.onResult(
             onError = { _: Failure -> state.update { state: PushAlertsState -> state.copy(arePollenTypesUnavailable = true) } },
-            onSuccess = { loadedPollenTypes: List<PollenType> -> state.update { state: PushAlertsState -> state.copy(pollenTypes = loadedPollenTypes) } }
+            onSuccess = { loadedPollenTypes: List<PollenType> ->
+                state.update { state: PushAlertsState ->
+                    state.copy(
+                        pollenTypes = loadedPollenTypes,
+                        arePollenTypesUnavailable = false
+                    )
+                }
+            }
         )
     }
 
@@ -124,7 +159,11 @@ internal class PushAlertsViewModel(
             }
             is PushAlertsEvent.OnTemperatureTrendToggled -> choose(pushAlertChoices = state.value.choices.copy(temperatureTrend = event.isEnabled))
             is PushAlertsEvent.OnStrongWindToggled -> choose(pushAlertChoices = state.value.choices.copy(strongWind = event.isEnabled))
-            is PushAlertsEvent.OnForecastForAllPlacesToggled -> choose(pushAlertChoices = state.value.choices.copy(forecastForAllPlaces = event.isEnabled))
+            is PushAlertsEvent.OnPlaceToggled -> onPlaceToggled(
+                pushAlertPlace = event.pushAlertPlace,
+                isEnabled = event.isEnabled
+            )
+            PushAlertsEvent.OnLastPlaceDialogDismissed -> state.update { state: PushAlertsState -> state.copy(isLastPlaceDialogVisible = false) }
             is PushAlertsEvent.OnPollenTypeToggled -> onPollenTypeToggled(
                 pollenTypeId = event.pollenTypeId,
                 isEnabled = event.isEnabled
@@ -160,6 +199,22 @@ internal class PushAlertsViewModel(
             otherPollenChoices
         }
         choose(pushAlertChoices = currentState.choices.copy(pollenChoices = pollenChoices))
+    }
+
+    private suspend fun onPlaceToggled(
+        pushAlertPlace: PushAlertPlace,
+        isEnabled: Boolean
+    ) {
+        val currentState = state.value
+        val pushAlertChoices = currentState.choices.withNotified(
+            pushAlertPlace = pushAlertPlace,
+            isNotified = isEnabled
+        )
+        if (currentState.places.none { place: PushAlertPlace -> pushAlertChoices.isNotified(pushAlertPlace = place) }) {
+            state.update { state: PushAlertsState -> state.copy(isLastPlaceDialogVisible = true) }
+        } else {
+            choose(pushAlertChoices = pushAlertChoices)
+        }
     }
 
     private suspend fun onPollenLevelSelected(pollenAlertLevel: PollenAlertLevel) {

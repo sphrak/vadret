@@ -7,9 +7,9 @@ import org.koin.dsl.module
 import se.vadretapp.vadret.settings.AboutViewModel
 import se.vadretapp.vadret.settings.DefaultGetChangelogTask
 import se.vadretapp.vadret.settings.DefaultGetLibrariesTask
-import se.vadretapp.vadret.settings.DefaultGetPollenTypesTask
 import se.vadretapp.vadret.settings.DefaultGetSettingsTask
 import se.vadretapp.vadret.settings.DefaultObserveDeveloperModeTask
+import se.vadretapp.vadret.settings.DefaultObservePollenTypesTask
 import se.vadretapp.vadret.settings.DefaultSetEndOfSeasonSimulatedTask
 import se.vadretapp.vadret.settings.DefaultSetExpandOnceTask
 import se.vadretapp.vadret.settings.DefaultSetHourlyForecastTask
@@ -21,10 +21,10 @@ import se.vadretapp.vadret.settings.DefaultUnlockDeveloperModeTask
 import se.vadretapp.vadret.settings.DeveloperViewModel
 import se.vadretapp.vadret.settings.GetChangelogTask
 import se.vadretapp.vadret.settings.GetLibrariesTask
-import se.vadretapp.vadret.settings.GetPollenTypesTask
 import se.vadretapp.vadret.settings.GetSettingsTask
 import se.vadretapp.vadret.settings.LicensesViewModel
 import se.vadretapp.vadret.settings.ObserveDeveloperModeTask
+import se.vadretapp.vadret.settings.ObservePollenTypesTask
 import se.vadretapp.vadret.settings.PlacesViewModel
 import se.vadretapp.vadret.settings.PollenSettingsViewModel
 import se.vadretapp.vadret.settings.SetEndOfSeasonSimulatedTask
@@ -40,7 +40,7 @@ import se.vadretapp.vadret.settings.UnlockDeveloperModeTask
 val settingsModule: Module = module {
     factoryOf(::DefaultGetChangelogTask) { bind<GetChangelogTask>() }
     factoryOf(::DefaultGetLibrariesTask) { bind<GetLibrariesTask>() }
-    factoryOf(::DefaultGetPollenTypesTask) { bind<GetPollenTypesTask>() }
+    factoryOf(::DefaultObservePollenTypesTask) { bind<ObservePollenTypesTask>() }
     factoryOf(::DefaultGetSettingsTask) { bind<GetSettingsTask>() }
     factoryOf(::DefaultObserveDeveloperModeTask) { bind<ObserveDeveloperModeTask>() }
     factoryOf(::DefaultSetEndOfSeasonSimulatedTask) { bind<SetEndOfSeasonSimulatedTask>() }

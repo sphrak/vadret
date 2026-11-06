@@ -4,6 +4,7 @@ import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.pollen.model.PollenType
 import se.vadretapp.vadret.pushalert.model.PollenAlertLevel
 import se.vadretapp.vadret.pushalert.model.PushAlertChoices
+import se.vadretapp.vadret.pushalert.model.PushAlertPlace
 
 internal data class PushAlertsState(
     val isLoading: Boolean = true,
@@ -12,9 +13,11 @@ internal data class PushAlertsState(
     val pollenLevel: PollenAlertLevel = PollenAlertLevel.MODERATE_TO_HIGH,
     val pollenTypes: List<PollenType> = emptyList(),
     val arePollenTypesUnavailable: Boolean = false,
+    val places: List<PushAlertPlace> = emptyList(),
     val pendingChoices: PushAlertChoices? = null,
     val isWarningLevelDialogVisible: Boolean = false,
     val isPollenLevelDialogVisible: Boolean = false,
+    val isLastPlaceDialogVisible: Boolean = false,
     val isNotificationPermissionDialogVisible: Boolean = false,
     val isOutsideSwedenDialogVisible: Boolean = false,
     val isAttestationRefusedDialogVisible: Boolean = false,

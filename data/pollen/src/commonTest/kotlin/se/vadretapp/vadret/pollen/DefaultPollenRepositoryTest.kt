@@ -11,6 +11,7 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.Url
 import io.ktor.http.headersOf
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -446,6 +447,58 @@ class DefaultPollenRepositoryTest {
                 assertEquals(
                     expected = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft() to emptyMap(),
                     actual = unreachableRepository().getPollenTypes() to diskCache.entries
+                )
+            }
+        }
+
+    @Test
+    fun `observed pollen types show the saved ones at once and then the fetched ones`() =
+        testScope.runTest {
+            saveHazel()
+
+            assertEquals(
+                expected = listOf(
+                    listOf(hazel).asRight(),
+                    listOf(birch).asRight()
+                ),
+                actual = respondingWith(body = BIRCH_PAGE).observePollenTypes().toList()
+            )
+        }
+
+    @Test
+    fun `observed pollen types that are fetched the same as saved show once`() =
+        testScope.runTest {
+            saveHazel()
+
+            assertEquals(
+                expected = listOf(listOf(hazel).asRight()),
+                actual = respondingWith(body = """{"items":[{"id":"hazel","name":"Hassel","hasForecasts":true}]}""").observePollenTypes().toList()
+            )
+        }
+
+    @Test
+    fun `observed pollen types keep the saved ones when they cannot be fetched`() =
+        testScope.runTest {
+            saveHazel()
+
+            withRecordedLogs {
+                assertEquals(
+                    expected = listOf(listOf(hazel).asRight()),
+                    actual = unreachableRepository().observePollenTypes().toList()
+                )
+            }
+        }
+
+    @Test
+    fun `observed pollen types without saved ones wait for the fetched ones or the failure`() =
+        testScope.runTest {
+            val fetched: List<Either<Failure, List<PollenType>>> = respondingWith(body = BIRCH_PAGE).observePollenTypes().toList()
+            diskCache.remove(key = POLLEN_TYPES_CACHE_KEY)
+
+            withRecordedLogs {
+                assertEquals(
+                    expected = listOf(listOf(birch).asRight()) to listOf(Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft()),
+                    actual = fetched to unreachableRepository().observePollenTypes().toList()
                 )
             }
         }

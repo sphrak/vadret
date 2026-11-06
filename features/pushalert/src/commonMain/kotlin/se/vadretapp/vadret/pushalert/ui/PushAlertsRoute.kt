@@ -21,8 +21,10 @@ import se.vadretapp.vadret.pollen.model.PollenType
 import se.vadretapp.vadret.pushalert.PushAlertsEvent
 import se.vadretapp.vadret.pushalert.PushAlertsState
 import se.vadretapp.vadret.pushalert.PushAlertsViewModel
+import se.vadretapp.vadret.pushalert.extension.isNotified
 import se.vadretapp.vadret.pushalert.extension.labelResource
 import se.vadretapp.vadret.pushalert.model.PollenAlertLevel
+import se.vadretapp.vadret.pushalert.model.PushAlertPlace
 import se.vadretapp.vadret.pushalert.model.WarningAlertLevel
 import se.vadretapp.vadret.theme.model.Theme
 import se.vadretapp.vadret.ui.ChoiceDialog
@@ -40,13 +42,11 @@ import se.vadretapp.vadret.ui.VadretTheme
 import se.vadretapp.vadret.ui.extension.messageResource
 import se.vadretapp.vadret.ui.resources.Res
 import se.vadretapp.vadret.ui.resources.attestation_refused
-import se.vadretapp.vadret.ui.resources.forecast_alerts_all_places
-import se.vadretapp.vadret.ui.resources.forecast_alerts_all_places_summary
+import se.vadretapp.vadret.ui.resources.followed_place_position
 import se.vadretapp.vadret.ui.resources.lowest_pollen_level
 import se.vadretapp.vadret.ui.resources.notifications_are_off
 import se.vadretapp.vadret.ui.resources.notifications_are_off_text
-import se.vadretapp.vadret.ui.resources.notifications_cover_places
-import se.vadretapp.vadret.ui.resources.notifications_cover_places_except_forecast
+import se.vadretapp.vadret.ui.resources.notifications_need_a_place
 import se.vadretapp.vadret.ui.resources.notifications_weather
 import se.vadretapp.vadret.ui.resources.pollen
 import se.vadretapp.vadret.ui.resources.pollen_types_not_available
@@ -56,24 +56,28 @@ import se.vadretapp.vadret.ui.resources.push_alerts_not_sent
 import se.vadretapp.vadret.ui.resources.push_alerts_only_in_sweden
 import se.vadretapp.vadret.ui.resources.push_alerts_only_in_sweden_text
 import se.vadretapp.vadret.ui.resources.settings_notifications
+import se.vadretapp.vadret.ui.resources.settings_places
 import se.vadretapp.vadret.ui.resources.strong_wind_alerts
 import se.vadretapp.vadret.ui.resources.strong_wind_alerts_summary
 import se.vadretapp.vadret.ui.resources.temperature_alerts
 import se.vadretapp.vadret.ui.resources.warning_alerts
 import se.vadretapp.vadret.ui.resources.warning_alerts_summary
 import se.vadretapp.vadret.ui.resources.warning_level
+import se.vadretapp.vadret.ui.resources.warnings
 
 private const val SYNC_PENDING_KEY = "sync-pending"
 private const val WEATHER_HEADER_KEY = "weather-header"
+private const val WARNINGS_HEADER_KEY = "warnings-header"
 private const val WARNINGS_KEY = "warnings"
 private const val WARNING_LEVEL_KEY = "warning-level"
 private const val TEMPERATURE_KEY = "temperature"
 private const val STRONG_WIND_KEY = "strong-wind"
-private const val FORECAST_PLACES_KEY = "forecast-places"
 private const val POLLEN_HEADER_KEY = "pollen-header"
 private const val POLLEN_UNAVAILABLE_KEY = "pollen-unavailable"
 private const val POLLEN_LEVEL_KEY = "pollen-level"
-private const val PLACES_KEY = "places"
+private const val PLACES_HEADER_KEY = "places-header"
+private const val CHOSEN_PLACE_KEY = "chosen-place"
+private const val SAVED_PLACE_KEY_PREFIX = "place-"
 
 private enum class PushAlertsContentType {
     NOTE,
@@ -162,51 +166,28 @@ private fun LazyListScope.pushAlerts(
         state = state,
         onEvent = onEvent
     )
+    warningAlerts(
+        state = state,
+        onEvent = onEvent
+    )
     if (state.pollenTypes.isNotEmpty() || state.arePollenTypesUnavailable) {
         pollenAlerts(
             state = state,
             onEvent = onEvent
         )
     }
-    item(key = PLACES_KEY, contentType = PushAlertsContentType.TEXT) {
-        SettingsFootnote(
-            text = stringResource(
-                resource = if (state.choices.forecastForAllPlaces) {
-                    Res.string.notifications_cover_places
-                } else {
-                    Res.string.notifications_cover_places_except_forecast
-                }
-            )
-        )
-    }
+    pushAlertPlaces(
+        state = state,
+        onEvent = onEvent
+    )
 }
 
 private fun LazyListScope.weatherAlerts(
     state: PushAlertsState,
     onEvent: (PushAlertsEvent) -> Unit
 ) {
-    val warningLowestLevel: WarningAlertLevel? = state.choices.warningLowestLevel
     item(key = WEATHER_HEADER_KEY, contentType = PushAlertsContentType.HEADER) {
         SettingsSectionHeader(text = stringResource(resource = Res.string.notifications_weather))
-    }
-    item(key = WARNINGS_KEY, contentType = PushAlertsContentType.ROW) {
-        SwitchRow(
-            title = stringResource(resource = Res.string.warning_alerts),
-            summary = stringResource(resource = Res.string.warning_alerts_summary),
-            isChecked = warningLowestLevel != null,
-            onCheckedChange = { isChecked: Boolean -> onEvent(PushAlertsEvent.OnWarningAlertsToggled(isEnabled = isChecked)) },
-            leadingContent = { SettingsRowIcon(icon = VadretIcons.Alert.Warning) }
-        )
-    }
-    if (warningLowestLevel != null) {
-        item(key = WARNING_LEVEL_KEY, contentType = PushAlertsContentType.ROW) {
-            SettingsRow(
-                title = stringResource(resource = Res.string.warning_level),
-                summary = stringResource(resource = warningLowestLevel.labelResource()),
-                onClick = { onEvent(PushAlertsEvent.OnWarningLevelRowClicked) },
-                leadingContent = { SettingsRowIconSpace() }
-            )
-        }
     }
     item(key = TEMPERATURE_KEY, contentType = PushAlertsContentType.ROW) {
         SwitchRow(
@@ -225,13 +206,31 @@ private fun LazyListScope.weatherAlerts(
             leadingContent = { SettingsRowIcon(icon = VadretIcons.Alert.HardWind) }
         )
     }
-    if (state.choices.temperatureTrend || state.choices.strongWind) {
-        item(key = FORECAST_PLACES_KEY, contentType = PushAlertsContentType.ROW) {
-            SwitchRow(
-                title = stringResource(resource = Res.string.forecast_alerts_all_places),
-                summary = stringResource(resource = Res.string.forecast_alerts_all_places_summary),
-                isChecked = state.choices.forecastForAllPlaces,
-                onCheckedChange = { isChecked: Boolean -> onEvent(PushAlertsEvent.OnForecastForAllPlacesToggled(isEnabled = isChecked)) },
+}
+
+private fun LazyListScope.warningAlerts(
+    state: PushAlertsState,
+    onEvent: (PushAlertsEvent) -> Unit
+) {
+    val warningLowestLevel: WarningAlertLevel? = state.choices.warningLowestLevel
+    item(key = WARNINGS_HEADER_KEY, contentType = PushAlertsContentType.HEADER) {
+        SettingsSectionHeader(text = stringResource(resource = Res.string.warnings))
+    }
+    item(key = WARNINGS_KEY, contentType = PushAlertsContentType.ROW) {
+        SwitchRow(
+            title = stringResource(resource = Res.string.warning_alerts),
+            summary = stringResource(resource = Res.string.warning_alerts_summary),
+            isChecked = warningLowestLevel != null,
+            onCheckedChange = { isChecked: Boolean -> onEvent(PushAlertsEvent.OnWarningAlertsToggled(isEnabled = isChecked)) },
+            leadingContent = { SettingsRowIcon(icon = VadretIcons.Alert.Warning) }
+        )
+    }
+    if (warningLowestLevel != null) {
+        item(key = WARNING_LEVEL_KEY, contentType = PushAlertsContentType.ROW) {
+            SettingsRow(
+                title = stringResource(resource = Res.string.warning_level),
+                summary = stringResource(resource = warningLowestLevel.labelResource()),
+                onClick = { onEvent(PushAlertsEvent.OnWarningLevelRowClicked) },
                 leadingContent = { SettingsRowIconSpace() }
             )
         }
@@ -281,6 +280,47 @@ private fun LazyListScope.pollenAlerts(
     }
 }
 
+private fun LazyListScope.pushAlertPlaces(
+    state: PushAlertsState,
+    onEvent: (PushAlertsEvent) -> Unit
+) {
+    item(key = PLACES_HEADER_KEY, contentType = PushAlertsContentType.HEADER) {
+        SettingsSectionHeader(text = stringResource(resource = Res.string.settings_places))
+    }
+    items(
+        items = state.places,
+        key = { pushAlertPlace: PushAlertPlace -> pushAlertPlace.key() },
+        contentType = { PushAlertsContentType.ROW }
+    ) { pushAlertPlace: PushAlertPlace ->
+        SwitchRow(
+            title = pushAlertPlace.title(),
+            isChecked = state.choices.isNotified(pushAlertPlace = pushAlertPlace),
+            onCheckedChange = { isChecked: Boolean ->
+                onEvent(
+                    PushAlertsEvent.OnPlaceToggled(
+                        pushAlertPlace = pushAlertPlace,
+                        isEnabled = isChecked
+                    )
+                )
+            },
+            leadingContent = { SettingsRowIconSpace() }
+        )
+    }
+}
+
+private fun PushAlertPlace.key(): String =
+    when (this) {
+        is PushAlertPlace.ChosenPlace -> CHOSEN_PLACE_KEY
+        is PushAlertPlace.SavedPlace -> "$SAVED_PLACE_KEY_PREFIX$favoriteId"
+    }
+
+@Composable
+private fun PushAlertPlace.title(): String =
+    when (this) {
+        is PushAlertPlace.ChosenPlace -> name ?: stringResource(resource = Res.string.followed_place_position)
+        is PushAlertPlace.SavedPlace -> name
+    }
+
 @Composable
 private fun PushAlertsDialogs(
     state: PushAlertsState,
@@ -307,6 +347,14 @@ private fun PushAlertsDialogs(
             choiceLabel = { pollenAlertLevel: PollenAlertLevel -> stringResource(resource = pollenAlertLevel.labelResource()) },
             onChoiceSelected = { pollenAlertLevel: PollenAlertLevel -> onEvent(PushAlertsEvent.OnPollenLevelSelected(pollenAlertLevel = pollenAlertLevel)) },
             onDismiss = { onEvent(PushAlertsEvent.OnPollenLevelDialogDismissed) },
+            modifier = modifier
+        )
+    }
+    if (state.isLastPlaceDialogVisible) {
+        InfoDialog(
+            title = stringResource(resource = Res.string.settings_notifications),
+            text = stringResource(resource = Res.string.notifications_need_a_place),
+            onDismiss = { onEvent(PushAlertsEvent.OnLastPlaceDialogDismissed) },
             modifier = modifier
         )
     }

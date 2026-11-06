@@ -19,7 +19,6 @@ import se.vadretapp.vadret.pushalert.model.DeviceRegistration
 import se.vadretapp.vadret.pushalert.model.DeviceToken
 import se.vadretapp.vadret.pushalert.model.InstallationToken
 import se.vadretapp.vadret.pushalert.model.PushAlertChoices
-import se.vadretapp.vadret.pushalert.model.PushAlertGeohashes
 import se.vadretapp.vadret.pushalert.model.PushAlertSubscription
 import kotlin.io.encoding.Base64
 import kotlin.time.Clock
@@ -110,19 +109,23 @@ internal class DefaultSyncPushAlertsTask(
     ): Either<Failure, Unit> =
         getPushAlertGeohashesTask(
             currentGeohash = currentGeohash,
-            forecastForAllPlaces = pushAlertChoices.forecastForAllPlaces
-        ).flatMap { pushAlertGeohashes: PushAlertGeohashes ->
-            pushAlertRepository.replaceSubscription(
-                installationToken = installationToken,
-                pushAlertSubscription = PushAlertSubscription(
-                    geohashes = pushAlertGeohashes.geohashes,
-                    warningLowestLevel = pushAlertChoices.warningLowestLevel,
-                    pollenChoices = pushAlertChoices.pollenChoices,
-                    temperatureTrend = pushAlertChoices.temperatureTrend,
-                    strongWind = pushAlertChoices.strongWind,
-                    forecastGeohashes = pushAlertGeohashes.forecastGeohashes
-                )
-            ).flatMap { pushAlertRepository.saveSyncedCurrentGeohash(geohash = currentGeohash) }
+            pushAlertChoices = pushAlertChoices
+        ).flatMap { geohashes: List<Geohash> ->
+            if (geohashes.isEmpty()) {
+                logger.info { "No place is chosen for push alerts, so the server forgets this phone" }
+                forget()
+            } else {
+                pushAlertRepository.replaceSubscription(
+                    installationToken = installationToken,
+                    pushAlertSubscription = PushAlertSubscription(
+                        geohashes = geohashes,
+                        warningLowestLevel = pushAlertChoices.warningLowestLevel,
+                        pollenChoices = pushAlertChoices.pollenChoices,
+                        temperatureTrend = pushAlertChoices.temperatureTrend,
+                        strongWind = pushAlertChoices.strongWind
+                    )
+                ).flatMap { pushAlertRepository.saveSyncedCurrentGeohash(geohash = currentGeohash) }
+            }
         }
 
     private suspend fun installation(): Either<Failure, InstallationToken> =

@@ -1,6 +1,7 @@
 package se.vadretapp.vadret.pushalert
 
 import se.vadretapp.vadret.pushalert.model.PollenAlertLevel
+import se.vadretapp.vadret.pushalert.model.PushAlertPlace
 import se.vadretapp.vadret.pushalert.model.WarningAlertLevel
 
 internal sealed interface PushAlertsEvent {
@@ -11,11 +12,15 @@ internal sealed interface PushAlertsEvent {
     data class OnWarningLevelSelected(val warningAlertLevel: WarningAlertLevel) : PushAlertsEvent
     data class OnTemperatureTrendToggled(val isEnabled: Boolean) : PushAlertsEvent
     data class OnStrongWindToggled(val isEnabled: Boolean) : PushAlertsEvent
-    data class OnForecastForAllPlacesToggled(val isEnabled: Boolean) : PushAlertsEvent
     data class OnPollenTypeToggled(
         val pollenTypeId: String,
         val isEnabled: Boolean
     ) : PushAlertsEvent
+    data class OnPlaceToggled(
+        val pushAlertPlace: PushAlertPlace,
+        val isEnabled: Boolean
+    ) : PushAlertsEvent
+    data object OnLastPlaceDialogDismissed : PushAlertsEvent
     data object OnPollenLevelRowClicked : PushAlertsEvent
     data object OnPollenLevelDialogDismissed : PushAlertsEvent
     data class OnPollenLevelSelected(val pollenAlertLevel: PollenAlertLevel) : PushAlertsEvent

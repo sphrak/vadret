@@ -9,6 +9,7 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
+import se.vadretapp.vadret.favorite.model.Favorite
 import se.vadretapp.vadret.geohash.model.Geohash
 import se.vadretapp.vadret.location.model.Location
 import se.vadretapp.vadret.pushalert.model.DeviceRegistration
@@ -210,19 +211,18 @@ class DefaultSyncPushAlertsTaskTest {
     }
 
     @Test
-    fun savedPlacesInSwedenAreFollowedAfterWhereThePhoneIs() = runTest {
-        val pushAlertRepository = FakePushAlertRepository(choices = WARNINGS_FROM_YELLOW)
+    fun markedSavedPlacesInSwedenAreFollowedAfterWhereThePhoneIs() = runTest {
+        val favorites = listOf(
+            GOTEBORG_FAVORITE,
+            UPPSALA_FAVORITE,
+            BERLIN_FAVORITE,
+            MALMO_FAVORITE
+        )
+        val pushAlertRepository = FakePushAlertRepository(choices = WARNINGS_FROM_YELLOW.notifying(favorites = favorites))
 
         syncPushAlertsTask(
             pushAlertRepository = pushAlertRepository,
-            favoriteRepository = FakeFavoriteRepository(
-                favorites = listOf(
-                    GOTEBORG_FAVORITE,
-                    UPPSALA_FAVORITE,
-                    BERLIN_FAVORITE,
-                    MALMO_FAVORITE
-                )
-            )
+            favoriteRepository = FakeFavoriteRepository(favorites = favorites)
         )()
 
         assertEquals(
@@ -232,43 +232,50 @@ class DefaultSyncPushAlertsTaskTest {
     }
 
     @Test
-    fun temperatureAndWindFollowTheFirstSavedPlaceUnlessAllPlacesAreChosen() = runTest {
-        val favorites = listOf(
-            GOTEBORG_FAVORITE,
-            UPPSALA_FAVORITE,
-            BERLIN_FAVORITE,
-            MALMO_FAVORITE
+    fun everyAlertFollowsOnlyTheMarkedPlaces() = runTest {
+        val pushAlertRepository = FakePushAlertRepository(
+            choices = STRONG_WIND_ONLY.copy(
+                isChosenPlaceNotified = false,
+                notifiedFavoriteIds = setOf(UPPSALA_FAVORITE.favoriteId)
+            )
         )
-        val onePlace = FakePushAlertRepository(choices = STRONG_WIND_ONLY)
-        val allPlaces = FakePushAlertRepository(choices = STRONG_WIND_ONLY.copy(forecastForAllPlaces = true))
 
-        listOf(onePlace, allPlaces).forEach { pushAlertRepository: FakePushAlertRepository ->
-            syncPushAlertsTask(
-                pushAlertRepository = pushAlertRepository,
-                favoriteRepository = FakeFavoriteRepository(favorites = favorites)
-            )()
-        }
+        syncPushAlertsTask(
+            pushAlertRepository = pushAlertRepository,
+            favoriteRepository = FakeFavoriteRepository(
+                favorites = listOf(
+                    GOTEBORG_FAVORITE,
+                    UPPSALA_FAVORITE,
+                    MALMO_FAVORITE
+                )
+            )
+        )()
 
         assertEquals(
-            expected = listOf(
-                listOf("u6282"),
-                listOf("u6sce", "u6282", "u6ss9", "u3chr")
-            ),
-            actual = listOf(onePlace, allPlaces).map { pushAlertRepository: FakePushAlertRepository ->
-                pushAlertRepository.forecastGeohashes.last()?.map { geohash: Geohash -> geohash.value }
-            }
+            expected = "subscribe installation-1 u6ss9 null false true",
+            actual = pushAlertRepository.calls.last()
         )
     }
 
     @Test
-    fun withoutSavedPlacesTemperatureAndWindFollowWhereThePhoneIs() = runTest {
-        val pushAlertRepository = FakePushAlertRepository(choices = STRONG_WIND_ONLY)
+    fun noMarkedPlaceMakesTheServerForgetThePhone() = runTest {
+        val pushAlertRepository = FakePushAlertRepository(
+            choices = WARNINGS_FROM_YELLOW.copy(isChosenPlaceNotified = false),
+            installationToken = InstallationToken(value = "installation-1")
+        )
 
-        syncPushAlertsTask(pushAlertRepository = pushAlertRepository)()
+        val synced = syncPushAlertsTask(
+            pushAlertRepository = pushAlertRepository,
+            favoriteRepository = FakeFavoriteRepository(favorites = listOf(MALMO_FAVORITE))
+        )()
 
         assertEquals(
-            expected = listOf(Geohash(value = "u6sce")),
-            actual = pushAlertRepository.forecastGeohashes.last()
+            expected = Unit.asRight() to "forget installation-1",
+            actual = synced to pushAlertRepository.calls.last()
+        )
+        assertEquals(
+            expected = false,
+            actual = pushAlertRepository.calls.any { call -> call.startsWith(prefix = "subscribe") }
         )
     }
 
@@ -280,7 +287,7 @@ class DefaultSyncPushAlertsTaskTest {
             MALMO_CENTRAL_FAVORITE,
             LIMHAMN_FAVORITE
         )
-        val pushAlertRepository = FakePushAlertRepository(choices = WARNINGS_FROM_YELLOW)
+        val pushAlertRepository = FakePushAlertRepository(choices = WARNINGS_FROM_YELLOW.notifying(favorites = sharingPlaces))
 
         syncPushAlertsTask(
             pushAlertRepository = pushAlertRepository,
@@ -303,7 +310,7 @@ class DefaultSyncPushAlertsTaskTest {
             KIRUNA_FAVORITE,
             VISBY_FAVORITE
         )
-        val pushAlertRepository = FakePushAlertRepository(choices = WARNINGS_FROM_YELLOW)
+        val pushAlertRepository = FakePushAlertRepository(choices = WARNINGS_FROM_YELLOW.notifying(favorites = manyPlaces))
 
         syncPushAlertsTask(
             pushAlertRepository = pushAlertRepository,
@@ -318,13 +325,12 @@ class DefaultSyncPushAlertsTaskTest {
 
     @Test
     fun aSavedPlaceRemovedElsewhereInTheAppIsLeftOutOfTheNextSync() = runTest {
-        val favoriteRepository = FakeFavoriteRepository(
-            favorites = listOf(
-                MALMO_FAVORITE,
-                GOTEBORG_FAVORITE
-            )
+        val favorites = listOf(
+            MALMO_FAVORITE,
+            GOTEBORG_FAVORITE
         )
-        val pushAlertRepository = FakePushAlertRepository(choices = WARNINGS_FROM_YELLOW)
+        val favoriteRepository = FakeFavoriteRepository(favorites = favorites)
+        val pushAlertRepository = FakePushAlertRepository(choices = WARNINGS_FROM_YELLOW.notifying(favorites = favorites))
         val syncPushAlertsTask = syncPushAlertsTask(
             pushAlertRepository = pushAlertRepository,
             favoriteRepository = favoriteRepository
@@ -830,12 +836,16 @@ private val WARNINGS_FROM_YELLOW = PushAlertChoices(
     pollenChoices = emptyList(),
     temperatureTrend = false,
     strongWind = false,
-    forecastForAllPlaces = false
+    isChosenPlaceNotified = true,
+    notifiedFavoriteIds = emptySet()
 )
 
 private val STRONG_WIND_ONLY = PushAlertChoices.NOTHING_CHOSEN.copy(strongWind = true)
 
-private val PLACES_ONLY = PushAlertChoices.NOTHING_CHOSEN
+private val PLACES_ONLY = PushAlertChoices.NOTHING_CHOSEN.copy(notifiedFavoriteIds = setOf(MALMO_FAVORITE.favoriteId))
+
+private fun PushAlertChoices.notifying(favorites: List<Favorite>): PushAlertChoices =
+    copy(notifiedFavoriteIds = favorites.map { favorite: Favorite -> favorite.favoriteId }.toSet())
 
 private val UNAUTHORIZED = Failure(errorCode = ErrorCode.HTTP_UNAUTHORIZED)
 
