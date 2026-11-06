@@ -1,17 +1,25 @@
 package se.vadretapp.vadret.testing
 
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 import se.vadretapp.vadret.common.DiskCache
-import kotlin.concurrent.atomics.AtomicReference
-import kotlin.concurrent.atomics.update
 
 class FakeDiskCache : DiskCache {
 
-    private val storedEntries: AtomicReference<Map<String, String>> = AtomicReference(value = emptyMap())
+    private val storedEntries: MutableStateFlow<Map<String, String>> = MutableStateFlow(value = emptyMap())
 
     val entries: Map<String, String>
-        get() = storedEntries.load()
+        get() = storedEntries.value
 
-    override fun read(key: String): String? = storedEntries.load()[key]
+    override fun read(key: String): String? = storedEntries.value[key]
+
+    override fun observe(key: String): Flow<String?> =
+        storedEntries
+            .map { stored: Map<String, String> -> stored[key] }
+            .distinctUntilChanged()
 
     override fun write(
         key: String,

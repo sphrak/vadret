@@ -1,5 +1,9 @@
 package se.vadretapp.vadret.common
 
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.runTest
 import okio.FileSystem
 import okio.IOException
 import okio.Path
@@ -88,4 +92,33 @@ class DefaultDiskCacheTest {
 
         assertNull(actual = diskCache.read(key = "radar.json"))
     }
+
+    @Test
+    fun `an observed entry shows what is saved and every write and removal after it`() =
+        runTest {
+            diskCache.write(
+                key = "pollen_types.json",
+                value = "first"
+            )
+            val seen = mutableListOf<String?>()
+            val observing: Job = launch(context = UnconfinedTestDispatcher(scheduler = testScheduler)) {
+                diskCache.observe(key = "pollen_types.json").collect { text: String? -> seen += text }
+            }
+
+            diskCache.write(
+                key = "pollen_types.json",
+                value = "second"
+            )
+            diskCache.write(
+                key = "radar.json",
+                value = "other"
+            )
+            diskCache.remove(key = "pollen_types.json")
+            observing.cancel()
+
+            assertEquals(
+                expected = listOf("first", "second", null),
+                actual = seen
+            )
+        }
 }

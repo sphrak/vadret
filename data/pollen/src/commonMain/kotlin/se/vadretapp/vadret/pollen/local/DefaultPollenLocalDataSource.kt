@@ -1,6 +1,9 @@
 package se.vadretapp.vadret.pollen.local
 
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerializationException
 import se.vadretapp.vadret.common.DiskCache
@@ -26,6 +29,17 @@ internal class DefaultPollenLocalDataSource(
                 null
             }
         }
+
+    override fun observePollenTypes(): Flow<List<PollenTypeEntity>?> =
+        diskCache
+            .observe(key = POLLEN_TYPES_CACHE_KEY)
+            .map { text: String? ->
+                if (text != null) {
+                    decode(text = text)
+                } else {
+                    null
+                }
+            }.flowOn(context = coroutineDispatcher)
 
     override suspend fun setPollenTypes(pollenTypeEntities: List<PollenTypeEntity>) {
         withContext(context = coroutineDispatcher) {

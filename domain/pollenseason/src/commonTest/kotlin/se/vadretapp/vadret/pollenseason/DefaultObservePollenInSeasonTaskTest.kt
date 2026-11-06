@@ -28,6 +28,8 @@ private class FakeCurrentForecastsPollenRepository(
 
     override fun observePollenTypes(): Flow<Either<Failure, List<PollenType>>> = error("Only the current forecasts tell the season")
 
+    override suspend fun refreshPollenTypes(): Either<Failure, List<PollenType>> = error("Only the current forecasts tell the season")
+
     override suspend fun getForecasts(
         startDate: LocalDate,
         endDate: LocalDate

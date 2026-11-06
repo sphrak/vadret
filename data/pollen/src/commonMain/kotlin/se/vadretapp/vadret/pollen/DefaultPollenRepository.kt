@@ -5,14 +5,11 @@ import io.github.sphrak.either.extension.asLeft
 import io.github.sphrak.either.extension.asRight
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.LocalDate
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.common.catch
 import se.vadretapp.vadret.common.either
-import se.vadretapp.vadret.logging.Logger
-import se.vadretapp.vadret.logging.LoggerFactory
 import se.vadretapp.vadret.pollen.extension.toFailure
 import se.vadretapp.vadret.pollen.extension.toPollenForecast
 import se.vadretapp.vadret.pollen.extension.toPollenRegion
@@ -27,9 +24,6 @@ import se.vadretapp.vadret.pollen.remote.PollenForecastDto
 import se.vadretapp.vadret.pollen.remote.PollenRegionDto
 import se.vadretapp.vadret.pollen.remote.PollenRemoteDataSource
 import se.vadretapp.vadret.pollen.remote.PollenTypeDto
-import kotlin.coroutines.cancellation.CancellationException
-
-private val logger: Logger = LoggerFactory.getLogger(tag = "se.vadretapp.vadret.pollen")
 
 internal class DefaultPollenRepository(
     private val pollenRemoteDataSource: PollenRemoteDataSource,
@@ -45,28 +39,26 @@ internal class DefaultPollenRepository(
 
     override suspend fun getPollenTypes(): Either<Failure, List<PollenType>> =
         either {
-            getPollenTypeEntities().map { pollenTypeEntity: PollenTypeEntity -> pollenTypeEntity.toPollenType() }
+            (pollenLocalDataSource.getPollenTypes() ?: fetchPollenTypes()).map { pollenTypeEntity: PollenTypeEntity -> pollenTypeEntity.toPollenType() }
         }.catch { exception: Exception -> exception.toFailure() }
 
     override fun observePollenTypes(): Flow<Either<Failure, List<PollenType>>> =
-        flow {
-            val savedPollenTypes: List<PollenTypeEntity>? = pollenLocalDataSource.getPollenTypes()
-            if (savedPollenTypes != null) {
-                emit(value = savedPollenTypes)
+        pollenLocalDataSource
+            .observePollenTypes()
+            .map<List<PollenTypeEntity>?, Either<Failure, List<PollenType>>> { pollenTypeEntities: List<PollenTypeEntity>? ->
+                pollenTypeEntities.orEmpty().map { pollenTypeEntity: PollenTypeEntity -> pollenTypeEntity.toPollenType() }.asRight()
+            }.catch { throwable: Throwable ->
+                if (throwable is Exception) {
+                    emit(value = throwable.toFailure().asLeft())
+                } else {
+                    throw throwable
+                }
             }
-            val latestPollenTypes: List<PollenTypeEntity> = getPollenTypeEntities()
-            if (latestPollenTypes != savedPollenTypes) {
-                emit(value = latestPollenTypes)
-            }
-        }.map<List<PollenTypeEntity>, Either<Failure, List<PollenType>>> { pollenTypeEntities: List<PollenTypeEntity> ->
-            pollenTypeEntities.map { pollenTypeEntity: PollenTypeEntity -> pollenTypeEntity.toPollenType() }.asRight()
-        }.catch { throwable: Throwable ->
-            if (throwable is Exception) {
-                emit(value = throwable.toFailure().asLeft())
-            } else {
-                throw throwable
-            }
-        }
+
+    override suspend fun refreshPollenTypes(): Either<Failure, List<PollenType>> =
+        either {
+            fetchPollenTypes().map { pollenTypeEntity: PollenTypeEntity -> pollenTypeEntity.toPollenType() }
+        }.catch { exception: Exception -> exception.toFailure() }
 
     override suspend fun getForecasts(
         startDate: LocalDate,
@@ -88,18 +80,10 @@ internal class DefaultPollenRepository(
         }.catch { exception: Exception -> exception.toFailure() }
 
     // The pollen types are asked for every time and saved, so the last saved list is used when asking fails.
-    private suspend fun getPollenTypeEntities(): List<PollenTypeEntity> {
-        val fetchedPollenTypes: List<PollenTypeEntity> = try {
-            pollenRemoteDataSource
-                .getPollenTypes()
-                .map { pollenTypeDto: PollenTypeDto -> pollenTypeDto.toPollenTypeEntity() }
-        } catch (cancellationException: CancellationException) {
-            throw cancellationException
-        } catch (exception: Exception) {
-            val savedPollenTypes: List<PollenTypeEntity> = pollenLocalDataSource.getPollenTypes() ?: throw exception
-            logger.warn { "Using saved pollen types: ${exception::class.simpleName}: ${exception.message}" }
-            return savedPollenTypes
-        }
+    private suspend fun fetchPollenTypes(): List<PollenTypeEntity> {
+        val fetchedPollenTypes: List<PollenTypeEntity> = pollenRemoteDataSource
+            .getPollenTypes()
+            .map { pollenTypeDto: PollenTypeDto -> pollenTypeDto.toPollenTypeEntity() }
         pollenLocalDataSource.setPollenTypes(pollenTypeEntities = fetchedPollenTypes)
         return fetchedPollenTypes
     }

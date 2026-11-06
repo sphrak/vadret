@@ -100,6 +100,8 @@ private class FakePollenRepository(
 
     override fun observePollenTypes(): Flow<Either<Failure, List<PollenType>>> = error("The pollen map asks for the pollen types once")
 
+    override suspend fun refreshPollenTypes(): Either<Failure, List<PollenType>> = error("The pollen map asks for the pollen types once")
+
     override suspend fun getForecasts(
         startDate: LocalDate,
         endDate: LocalDate

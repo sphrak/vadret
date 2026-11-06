@@ -21,6 +21,8 @@ interface PollenRepository {
 
     fun observePollenTypes(): Flow<Either<Failure, List<PollenType>>>
 
+    suspend fun refreshPollenTypes(): Either<Failure, List<PollenType>>
+
     suspend fun getForecasts(
         startDate: LocalDate,
         endDate: LocalDate

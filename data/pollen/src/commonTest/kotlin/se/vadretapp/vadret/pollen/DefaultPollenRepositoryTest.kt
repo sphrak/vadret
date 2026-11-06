@@ -11,9 +11,13 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.Url
 import io.ktor.http.headersOf
-import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
 import se.vadretapp.vadret.common.ErrorCode
@@ -391,41 +395,74 @@ class DefaultPollenRepositoryTest {
         }
 
     @Test
-    fun `pollen types are asked for even when some are saved and what is fetched is saved`() =
+    fun `saved pollen types are got without asking`() =
         testScope.runTest {
             saveHazel()
 
-            val pollenTypes: Either<Failure, List<PollenType>> = respondingWith(body = BIRCH_PAGE).getPollenTypes()
-
             assertEquals(
-                expected = Triple(
-                    first = listOf(birch).asRight(),
-                    second = 1,
-                    third = """[{"pollen_id":"birch","name":"Björk","has_forecasts":true}]"""
-                ),
-                actual = Triple(
-                    first = pollenTypes,
-                    second = requests.size,
-                    third = diskCache.entries[POLLEN_TYPES_CACHE_KEY]
-                )
+                expected = listOf(hazel).asRight() to 0,
+                actual = respondingWith(body = BIRCH_PAGE).getPollenTypes() to requests.size
             )
         }
 
     @Test
-    fun `saved pollen types are used when they cannot be fetched`() =
+    fun `pollen types are fetched and saved when none are saved`() =
+        testScope.runTest {
+            assertEquals(
+                expected = listOf(birch).asRight() to """[{"pollen_id":"birch","name":"Björk","has_forecasts":true}]""",
+                actual = respondingWith(body = BIRCH_PAGE).getPollenTypes() to diskCache.entries[POLLEN_TYPES_CACHE_KEY]
+            )
+        }
+
+    @Test
+    fun `observed pollen types are the saved ones and nothing saved is none`() =
+        testScope.runTest {
+            val pollenRepository: PollenRepository = unreachableRepository()
+            val nothingSaved: Either<Failure, List<PollenType>> = pollenRepository.observePollenTypes().first()
+            saveHazel()
+
+            assertEquals(
+                expected = emptyList<PollenType>().asRight<List<PollenType>>() to listOf(hazel).asRight(),
+                actual = nothingSaved to pollenRepository.observePollenTypes().first()
+            )
+        }
+
+    @Test
+    fun `a refresh saves what is fetched and the observed pollen types show it`() =
+        testScope.runTest {
+            saveHazel()
+            val pollenRepository: PollenRepository = respondingWith(body = BIRCH_PAGE)
+            val seen = mutableListOf<Either<Failure, List<PollenType>>>()
+            val observing: Job = launch(context = UnconfinedTestDispatcher(scheduler = testScheduler)) {
+                pollenRepository.observePollenTypes().collect { pollenTypes: Either<Failure, List<PollenType>> -> seen += pollenTypes }
+            }
+            advanceUntilIdle()
+
+            val refreshed: Either<Failure, List<PollenType>> = pollenRepository.refreshPollenTypes()
+            advanceUntilIdle()
+            observing.cancel()
+
+            assertEquals<Pair<Either<Failure, List<PollenType>>, List<Either<Failure, List<PollenType>>>>>(
+                expected = listOf(birch).asRight() to listOf(listOf(hazel).asRight(), listOf(birch).asRight()),
+                actual = refreshed to seen
+            )
+        }
+
+    @Test
+    fun `a refresh that fails keeps the saved pollen types`() =
         testScope.runTest {
             saveHazel()
 
-            withRecordedLogs { recordingLogSink ->
+            withRecordedLogs {
                 assertEquals(
-                    expected = listOf(hazel).asRight() to listOf("se.vadretapp.vadret.pollen" to LogLevel.WARN),
-                    actual = unreachableRepository().getPollenTypes() to recordingLogSink.lines.map { line: LogLine -> line.tag to line.level }
+                    expected = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft() to SAVED_HAZEL,
+                    actual = unreachableRepository().refreshPollenTypes() to diskCache.entries[POLLEN_TYPES_CACHE_KEY]
                 )
             }
         }
 
     @Test
-    fun `unreadable saved pollen types are dropped and the failure to fetch is told`() =
+    fun `unreadable saved pollen types are dropped and observed as none`() =
         testScope.runTest {
             diskCache.write(
                 key = POLLEN_TYPES_CACHE_KEY,
@@ -434,71 +471,19 @@ class DefaultPollenRepositoryTest {
 
             withRecordedLogs {
                 assertEquals(
-                    expected = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft() to emptyMap(),
-                    actual = unreachableRepository().getPollenTypes() to diskCache.entries
+                    expected = emptyList<PollenType>().asRight<List<PollenType>>() to emptyMap(),
+                    actual = unreachableRepository().observePollenTypes().first() to diskCache.entries
                 )
             }
         }
 
     @Test
-    fun `pollen types that are neither fetched nor saved are a failure`() =
+    fun `pollen types that are neither saved nor fetched are a failure`() =
         testScope.runTest {
             withRecordedLogs {
                 assertEquals(
                     expected = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft() to emptyMap(),
                     actual = unreachableRepository().getPollenTypes() to diskCache.entries
-                )
-            }
-        }
-
-    @Test
-    fun `observed pollen types show the saved ones at once and then the fetched ones`() =
-        testScope.runTest {
-            saveHazel()
-
-            assertEquals(
-                expected = listOf(
-                    listOf(hazel).asRight(),
-                    listOf(birch).asRight()
-                ),
-                actual = respondingWith(body = BIRCH_PAGE).observePollenTypes().toList()
-            )
-        }
-
-    @Test
-    fun `observed pollen types that are fetched the same as saved show once`() =
-        testScope.runTest {
-            saveHazel()
-
-            assertEquals(
-                expected = listOf(listOf(hazel).asRight()),
-                actual = respondingWith(body = """{"items":[{"id":"hazel","name":"Hassel","hasForecasts":true}]}""").observePollenTypes().toList()
-            )
-        }
-
-    @Test
-    fun `observed pollen types keep the saved ones when they cannot be fetched`() =
-        testScope.runTest {
-            saveHazel()
-
-            withRecordedLogs {
-                assertEquals(
-                    expected = listOf(listOf(hazel).asRight()),
-                    actual = unreachableRepository().observePollenTypes().toList()
-                )
-            }
-        }
-
-    @Test
-    fun `observed pollen types without saved ones wait for the fetched ones or the failure`() =
-        testScope.runTest {
-            val fetched: List<Either<Failure, List<PollenType>>> = respondingWith(body = BIRCH_PAGE).observePollenTypes().toList()
-            diskCache.remove(key = POLLEN_TYPES_CACHE_KEY)
-
-            withRecordedLogs {
-                assertEquals(
-                    expected = listOf(listOf(birch).asRight()) to listOf(Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft()),
-                    actual = fetched to unreachableRepository().observePollenTypes().toList()
                 )
             }
         }

@@ -7,7 +7,6 @@ import io.github.sphrak.either.map
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.emptyFlow
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
@@ -212,12 +211,20 @@ internal val birchType = PollenType(
 )
 
 internal class FakePollenRepository(
-    var pollenTypes: Either<Failure, List<PollenType>> = listOf(hazelType, grassType, alternariaType, birchType).asRight(),
-    var fetchedPollenTypes: Either<Failure, List<PollenType>>? = null
+    var pollenTypes: Either<Failure, List<PollenType>> = listOf(hazelType, grassType, alternariaType, birchType).asRight()
 ) : PollenRepository {
+    val savedPollenTypes: MutableStateFlow<List<PollenType>> = MutableStateFlow(value = emptyList())
+
     override suspend fun getRegions(): Either<Failure, List<PollenRegion>> = error("Settings never ask for regions")
     override suspend fun getPollenTypes(): Either<Failure, List<PollenType>> = error("Settings observe the pollen types")
-    override fun observePollenTypes(): Flow<Either<Failure, List<PollenType>>> = flowOf(pollenTypes, fetchedPollenTypes).filterNotNull()
+    override fun observePollenTypes(): Flow<Either<Failure, List<PollenType>>> = savedPollenTypes.map { saved: List<PollenType> -> saved.asRight() }
+    override suspend fun refreshPollenTypes(): Either<Failure, List<PollenType>> {
+        val refreshed: Either<Failure, List<PollenType>> = pollenTypes
+        if (refreshed is Either.Right) {
+            savedPollenTypes.value = refreshed.b
+        }
+        return refreshed
+    }
     override suspend fun getForecasts(
         startDate: LocalDate,
         endDate: LocalDate

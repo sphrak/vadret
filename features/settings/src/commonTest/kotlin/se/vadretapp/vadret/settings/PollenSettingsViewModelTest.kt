@@ -213,8 +213,8 @@ class PollenSettingsViewModelTest {
     @Test
     fun `fetched pollen types replace the saved ones that showed first`() =
         testScope.runTest {
-            pollenRepository.pollenTypes = listOf(hazelType).asRight()
-            pollenRepository.fetchedPollenTypes = listOf(hazelType, birchType).asRight()
+            pollenRepository.savedPollenTypes.value = listOf(hazelType)
+            pollenRepository.pollenTypes = listOf(hazelType, birchType).asRight()
 
             val pollenSettingsViewModel: PollenSettingsViewModel = viewModel()
             advanceUntilIdle()
