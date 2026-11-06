@@ -122,3 +122,6 @@ xcuserdata/
 DerivedData/
 GoogleService-Info.plist
 google-services.json
+
+# HTML files in the root
+/*.html
