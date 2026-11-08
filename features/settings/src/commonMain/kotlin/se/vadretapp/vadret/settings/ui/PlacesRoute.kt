@@ -42,6 +42,7 @@ import se.vadretapp.vadret.ui.SettingsSectionHeader
 import se.vadretapp.vadret.ui.SwitchRow
 import se.vadretapp.vadret.ui.ThemePreviewParameterProvider
 import se.vadretapp.vadret.ui.VadretTheme
+import se.vadretapp.vadret.ui.model.NavigationIcon
 import se.vadretapp.vadret.ui.resources.Res
 import se.vadretapp.vadret.ui.resources.ic_check
 import se.vadretapp.vadret.ui.resources.ic_delete
@@ -76,6 +77,7 @@ private enum class PlacesContentType {
 fun PlacesRoute(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    navigationIcon: NavigationIcon = NavigationIcon.BACK,
     viewModel: PlacesViewModel = koinViewModel()
 ) {
     val state: PlacesState by viewModel.state.collectAsStateWithLifecycle()
@@ -90,6 +92,7 @@ fun PlacesRoute(
         state = state,
         onEvent = viewModel::onEvent,
         onBack = onBack,
+        navigationIcon = navigationIcon,
         modifier = modifier
     )
 }
@@ -99,11 +102,13 @@ private fun PlacesScreen(
     state: PlacesState,
     onEvent: (PlacesEvent) -> Unit,
     onBack: () -> Unit,
+    navigationIcon: NavigationIcon,
     modifier: Modifier = Modifier
 ) {
     SettingsScaffold(
         title = stringResource(resource = Res.string.settings_places),
         onBack = onBack,
+        navigationIcon = navigationIcon,
         modifier = modifier
     ) {
         item(key = FOLLOW_POSITION_KEY, contentType = PlacesContentType.ROW) {
@@ -248,6 +253,7 @@ private fun PlacesScreenPreview(
             state = placesPreviewState(),
             onEvent = {},
             onBack = {},
+            navigationIcon = NavigationIcon.BACK,
             modifier = Modifier.background(color = VadretTheme.colorScheme.background)
         )
     }

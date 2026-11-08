@@ -1,5 +1,6 @@
 package se.vadretapp.vadret.place
 
+import androidx.sqlite.SQLiteException
 import io.github.sphrak.either.Either
 import io.github.sphrak.either.extension.asLeft
 import io.github.sphrak.either.extension.asRight
@@ -20,34 +21,36 @@ private class FakePlaceLocalDataSource(
     private val onSearch: (String, Int) -> List<PlaceEntity>
 ) : PlaceLocalDataSource {
     override suspend fun search(
-        prefix: String,
+        query: String,
         limit: Int
-    ): List<PlaceEntity> = onSearch(prefix, limit)
+    ): List<PlaceEntity> = onSearch(query, limit)
 }
 
 class DefaultPlaceRepositoryTest {
 
     @Test
-    fun `found places are returned with the prefix and limit asked for`() =
+    fun `found places are returned with the query and limit asked for`() =
         runTest {
             val asked = mutableListOf<Pair<String, Int>>()
             val placeRepository: PlaceRepository = DefaultPlaceRepository(
-                placeLocalDataSource = FakePlaceLocalDataSource { prefix: String, limit: Int ->
-                    asked.add(prefix to limit)
+                placeLocalDataSource = FakePlaceLocalDataSource { query: String, limit: Int ->
+                    asked.add(query to limit)
                     listOf(
                         PlaceEntity(
                             locality = "Abisko",
                             municipality = "Kiruna",
                             county = "Norrbotten",
                             latitude = 68.349,
-                            longitude = 18.83
+                            longitude = 18.83,
+                            population = 499,
+                            foldedLocality = "abisko"
                         )
                     )
                 }
             )
 
             val result: Either<Failure, List<Place>> = placeRepository.search(
-                prefix = "Abi",
+                query = "Abi",
                 limit = 3
             )
 
@@ -72,8 +75,7 @@ class DefaultPlaceRepositoryTest {
             val exceptions: List<Exception> = listOf(
                 IOException("missing"),
                 NumberFormatException("north"),
-                IllegalArgumentException("no column"),
-                IllegalStateException("closed")
+                IllegalArgumentException("no column")
             )
 
             withRecordedLogs { recordingLogSink ->
@@ -81,7 +83,7 @@ class DefaultPlaceRepositoryTest {
                     DefaultPlaceRepository(
                         placeLocalDataSource = FakePlaceLocalDataSource { _, _ -> throw exception }
                     ).search(
-                        prefix = "A",
+                        query = "A",
                         limit = 1
                     )
                 }
@@ -98,13 +100,42 @@ class DefaultPlaceRepositoryTest {
         }
 
     @Test
+    fun `a database that fails is a storage failure`() =
+        runTest {
+            val exceptions: List<Exception> = listOf(
+                SQLiteException("locked"),
+                IllegalStateException("closed")
+            )
+
+            withRecordedLogs { recordingLogSink ->
+                val results: List<Either<Failure, List<Place>>> = exceptions.map { exception: Exception ->
+                    DefaultPlaceRepository(
+                        placeLocalDataSource = FakePlaceLocalDataSource { _, _ -> throw exception }
+                    ).search(
+                        query = "A",
+                        limit = 1
+                    )
+                }
+
+                assertEquals(
+                    expected = List(size = exceptions.size) { Failure(errorCode = ErrorCode.STORAGE_FAILED).asLeft() },
+                    actual = results
+                )
+                assertEquals(
+                    expected = List(size = exceptions.size) { LogLevel.WARN },
+                    actual = recordingLogSink.lines.map { line: LogLine -> line.level }
+                )
+            }
+        }
+
+    @Test
     fun `anything else is unknown`() =
         runTest {
             withRecordedLogs { recordingLogSink ->
                 val result: Either<Failure, List<Place>> = DefaultPlaceRepository(
                     placeLocalDataSource = FakePlaceLocalDataSource { _, _ -> throw UnsupportedOperationException("bug") }
                 ).search(
-                    prefix = "A",
+                    query = "A",
                     limit = 1
                 )
 

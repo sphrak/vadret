@@ -329,14 +329,14 @@ internal class FakePlaceRepository(
     val searches = mutableListOf<Pair<String, Int>>()
 
     override suspend fun search(
-        prefix: String,
+        query: String,
         limit: Int
     ): Either<Failure, List<Place>> {
-        searches.add(prefix to limit)
+        searches.add(query to limit)
         return items
             .filter { place: Place ->
                 place.locality.startsWith(
-                    prefix = prefix,
+                    prefix = query,
                     ignoreCase = true
                 )
             }.asRight()

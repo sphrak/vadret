@@ -318,6 +318,7 @@ class WeatherForecastViewModelTest {
                 expected = LatestWarning(
                     warningLevel = WarningLevel.YELLOW,
                     slipperinessRisk = null,
+                    icon = null,
                     source = FeedSource.SMHI,
                     isPublicAlert = false,
                     headline = "Vind",

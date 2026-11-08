@@ -20,6 +20,7 @@ import se.vadretapp.vadret.di.model.AppDirectories
 import se.vadretapp.vadret.di.model.AppInfo
 import se.vadretapp.vadret.favorite.FavoriteRepository
 import se.vadretapp.vadret.location.LocationRepository
+import se.vadretapp.vadret.place.PlaceRepository
 import se.vadretapp.vadret.setting.SettingRepository
 
 private const val TIMEOUT_SECONDS = 10.0
@@ -42,6 +43,14 @@ fun iosPlatformModule(appInfo: AppInfo): Module =
                 databaseDirectory = get<AppDirectories>().filesDirectoryPath,
                 idGenerator = get(),
                 clock = get(),
+                coroutineDispatcher = get()
+            )
+        }
+        // The places are rewritten from the app whenever they are missing, so they may live among the caches.
+        single<PlaceRepository> {
+            PlaceRepository(
+                databaseDirectory = get<AppDirectories>().cacheDirectoryPath,
+                readPlaces = { readBundledPlaces() },
                 coroutineDispatcher = get()
             )
         }

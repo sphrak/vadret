@@ -413,10 +413,10 @@ internal class FakePlaceRepository(
     var failure: Failure? = null
 
     override suspend fun search(
-        prefix: String,
+        query: String,
         limit: Int
     ): Either<Failure, List<Place>> {
-        searches.add(prefix)
+        searches.add(query)
         val currentFailure: Failure? = failure
         if (currentFailure != null) {
             return currentFailure.asLeft()
@@ -424,7 +424,7 @@ internal class FakePlaceRepository(
         return places
             .filter { place: Place ->
                 place.locality.startsWith(
-                    prefix = prefix,
+                    prefix = query,
                     ignoreCase = true
                 )
             }.asRight()

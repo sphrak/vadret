@@ -592,7 +592,7 @@ class WeatherForecastViewModel internal constructor(
             context = coroutineDispatcher
         ) {
             delay(duration = searchDebounce)
-            searchPlacesTask(prefix = query).onResult(
+            searchPlacesTask(query = query).onResult(
                 onError = { failure: Failure -> displayError(failure = failure) },
                 onSuccess = { suggestions: List<Place> ->
                     displaySuggestions(
@@ -622,7 +622,7 @@ class WeatherForecastViewModel internal constructor(
     private fun onSearchSubmitted(query: String) {
         searchJob.exchange(newValue = null)?.cancel()
         viewModelScope.launch(context = coroutineDispatcher) {
-            searchPlacesTask(prefix = query).onResult(
+            searchPlacesTask(query = query).onResult(
                 onError = { failure: Failure -> displayError(failure = failure) },
                 onSuccess = { places: List<Place> ->
                     val place: Place? = places.firstOrNull()

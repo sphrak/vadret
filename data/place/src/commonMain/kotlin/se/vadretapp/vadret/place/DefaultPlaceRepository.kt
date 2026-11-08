@@ -15,13 +15,13 @@ internal class DefaultPlaceRepository(
 ) : PlaceRepository {
 
     override suspend fun search(
-        prefix: String,
+        query: String,
         limit: Int
     ): Either<Failure, List<Place>> =
         either {
             placeLocalDataSource
                 .search(
-                    prefix = prefix,
+                    query = query,
                     limit = limit
                 ).map { placeEntity: PlaceEntity -> placeEntity.toPlace() }
         }.catch { exception: Exception -> exception.toFailure() }

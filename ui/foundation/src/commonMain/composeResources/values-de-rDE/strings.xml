@@ -145,8 +145,6 @@
     <string name="open_forecast">Vorhersage öffnen</string>
     <string name="warning_affects_places">Betrifft %1$s</string>
     <string name="followed_place_position">Dein Standort</string>
-    <string name="warnings_for_places">Warnungen für %1$s</string>
-    <string name="change_followed_places">Ändern</string>
     <string name="not_saved">Nicht gespeichert</string>
     <string name="saved">Gespeichert</string>
     <string name="save">Speichern</string>

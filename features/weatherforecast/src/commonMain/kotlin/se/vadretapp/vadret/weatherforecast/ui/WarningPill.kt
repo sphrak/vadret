@@ -27,6 +27,8 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import se.vadretapp.vadret.aggregatedfeed.model.FeedSource
 import se.vadretapp.vadret.aggregatedfeed.model.WarningLevel
+import se.vadretapp.vadret.icons.VadretIcon
+import se.vadretapp.vadret.icons.VadretIconGraphic
 import se.vadretapp.vadret.setting.model.Theme
 import se.vadretapp.vadret.ui.ThemePreviewParameterProvider
 import se.vadretapp.vadret.ui.VadretTheme
@@ -71,11 +73,21 @@ internal fun WarningPill(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(all = pillPadding)
         ) {
-            Icon(
-                painter = painterResource(resource = latestWarning.source.iconResource(warningLevel = latestWarning.warningLevel)),
-                contentDescription = null,
-                modifier = Modifier.size(size = pillIconSize)
-            )
+            val icon: VadretIconGraphic? = latestWarning.icon
+            if (icon != null) {
+                VadretIcon(
+                    icon = icon,
+                    contentDescription = null,
+                    tint = colors.content,
+                    modifier = Modifier.size(size = pillIconSize)
+                )
+            } else {
+                Icon(
+                    painter = painterResource(resource = latestWarning.source.iconResource(warningLevel = latestWarning.warningLevel)),
+                    contentDescription = null,
+                    modifier = Modifier.size(size = pillIconSize)
+                )
+            }
             Text(
                 text = pillText(latestWarning = latestWarning),
                 style = VadretTheme.textStyles.listItem,
@@ -122,6 +134,7 @@ private fun WarningPillPreview(
             latestWarning = LatestWarning(
                 warningLevel = WarningLevel.YELLOW,
                 slipperinessRisk = null,
+                icon = null,
                 source = FeedSource.SMHI,
                 isPublicAlert = false,
                 headline = "Kuling 14-17 m/s",

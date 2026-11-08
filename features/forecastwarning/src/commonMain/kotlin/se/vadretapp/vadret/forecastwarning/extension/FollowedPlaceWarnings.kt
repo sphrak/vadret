@@ -36,8 +36,6 @@ internal fun FollowedPlaceWarnings.toWarningItems(
             )
         }.toImmutableList()
 
-internal fun FollowedPlaceWarnings.followedPlaceNames(): String? = followedPlaces.placeNames()
-
 private fun List<FollowedPlace>.placeNames(): String? =
     mapNotNull { followedPlace: FollowedPlace -> followedPlace.name }
         .joinToString(separator = PLACE_NAME_SEPARATOR)

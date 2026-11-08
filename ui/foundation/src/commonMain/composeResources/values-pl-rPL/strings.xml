@@ -99,8 +99,6 @@
     <string name="open_forecast">Otwórz prognozę</string>
     <string name="warning_affects_places">Dotyczy: %1$s</string>
     <string name="followed_place_position">Twoja pozycja</string>
-    <string name="warnings_for_places">Ostrzeżenia dla: %1$s</string>
-    <string name="change_followed_places">Zmień</string>
     <string name="not_saved">Niezapisane</string>
     <string name="saved">Zapisane</string>
     <string name="save">Zapisz</string>

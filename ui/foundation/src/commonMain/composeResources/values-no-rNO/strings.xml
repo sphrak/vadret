@@ -108,8 +108,6 @@
     <string name="open_forecast">Åpne værvarsel</string>
     <string name="warning_affects_places">Gjelder %1$s</string>
     <string name="followed_place_position">Din posisjon</string>
-    <string name="warnings_for_places">Farevarsler for %1$s</string>
-    <string name="change_followed_places">Endre</string>
     <string name="not_saved">Ikke lagret</string>
     <string name="saved">Lagret</string>
     <string name="save">Lagre</string>

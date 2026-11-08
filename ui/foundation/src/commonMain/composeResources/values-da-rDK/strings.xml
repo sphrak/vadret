@@ -110,8 +110,6 @@
     <string name="open_forecast">Åbn vejrudsigt</string>
     <string name="warning_affects_places">Gælder %1$s</string>
     <string name="followed_place_position">Din position</string>
-    <string name="warnings_for_places">Advarsler for %1$s</string>
-    <string name="change_followed_places">Skift</string>
     <string name="not_saved">Ikke gemt</string>
     <string name="saved">Gemt</string>
     <string name="save">Gem</string>

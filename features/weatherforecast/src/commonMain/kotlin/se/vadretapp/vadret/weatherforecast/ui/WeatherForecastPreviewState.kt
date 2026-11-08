@@ -70,6 +70,7 @@ internal fun weatherForecastPreviewState(): WeatherForecastState {
         latestWarning = LatestWarning(
             warningLevel = WarningLevel.YELLOW,
             slipperinessRisk = null,
+            icon = null,
             source = FeedSource.SMHI,
             isPublicAlert = false,
             headline = "Kuling 14-17 m/s",

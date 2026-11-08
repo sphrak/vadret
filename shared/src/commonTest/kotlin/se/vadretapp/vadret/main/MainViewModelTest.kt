@@ -146,7 +146,7 @@ class MainViewModelTest {
         }
 
     @Test
-    fun `the clock is null until started and then follows every change, falling back to 24 hours`() =
+    fun `the clock is null until started and then follows every change and falls back to 24 hours`() =
         testScope.runTest {
             val seen = mutableListOf<HourFormat?>()
             val job = launch { mainViewModel.hourFormat.collect { hourFormat: HourFormat? -> seen.add(hourFormat) } }
@@ -185,7 +185,7 @@ class MainViewModelTest {
         }
 
     @Test
-    fun `the theme, language and clock are observed once however often it is started`() =
+    fun `the theme and language and clock are observed once however often it is started`() =
         testScope.runTest {
             mainViewModel.onEvent(event = MainEvent.OnStart)
             mainViewModel.onEvent(event = MainEvent.OnStart)

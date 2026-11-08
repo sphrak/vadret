@@ -28,6 +28,9 @@ internal data object WarningKey : NavKey
 internal data class WarningDetailKey(val warningIdentifier: String) : NavKey
 
 @Serializable
+internal data object WarningPlacesKey : NavKey
+
+@Serializable
 internal data class WarningStoryKey(val warningIdentifiers: List<String>) : NavKey
 
 @Serializable

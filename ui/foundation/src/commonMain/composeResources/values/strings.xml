@@ -288,8 +288,6 @@
     <string name="followed_place_position">Your position</string>
     <string name="followed_places_limit">At most 5 places</string>
     <string name="followed_places_limit_text">You can have up to 5 places, and your position counts as one while Follow my position is on. Remove a place first.</string>
-    <string name="warnings_for_places">Warnings for %1$s</string>
-    <string name="change_followed_places">Change</string>
     <string name="not_saved">Not saved</string>
     <string name="saved">Saved</string>
     <string name="save">Save</string>

@@ -9,23 +9,16 @@ import se.vadretapp.vadret.di.resources.Res
 import se.vadretapp.vadret.forecastpreference.ForecastPreferenceRepository
 import se.vadretapp.vadret.library.LibraryRepository
 import se.vadretapp.vadret.nominatim.NominatimRepository
-import se.vadretapp.vadret.place.PlaceRepository
 import se.vadretapp.vadret.pollen.PollenRepository
 import se.vadretapp.vadret.pollenpreference.PollenPreferenceRepository
 import se.vadretapp.vadret.radar.RadarRepository
 import se.vadretapp.vadret.weatherforecast.WeatherForecastRepository
 import se.vadretapp.vadret.wind.WindRepository
 
-private const val PLACES_FILE = "files/sweden.csv"
+private const val PLACES_FILE = "files/places.tsv"
 private const val RADAR_IMAGE_DIRECTORY = "radar_images"
 
 val repositoryModule: Module = module {
-    single<PlaceRepository> {
-        PlaceRepository(
-            readPlaces = { Res.readBytes(path = PLACES_FILE).decodeToString() },
-            coroutineDispatcher = get()
-        )
-    }
     single<LibraryRepository> { LibraryRepository() }
     single<NominatimRepository> { NominatimRepository(httpClient = inject()) }
     single<PollenRepository> {
@@ -65,3 +58,5 @@ val repositoryModule: Module = module {
         )
     }
 }
+
+internal suspend fun readBundledPlaces(): String = Res.readBytes(path = PLACES_FILE).decodeToString()

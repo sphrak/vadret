@@ -234,7 +234,7 @@ class SettingsViewModelTest {
         }
 
     @Test
-    fun `choosing a clock closes the dialog, stores the choice and shows it`() =
+    fun `choosing a clock closes the dialog and stores the choice and shows it`() =
         testScope.runTest {
             val settingsViewModel: SettingsViewModel = viewModel()
             advanceUntilIdle()

@@ -1,10 +1,16 @@
 plugins {
     id 'vadret.kmp.library'
+    id 'com.google.devtools.ksp'
 }
 
 kotlin {
     android {
         namespace = 'se.vadretapp.vadret.data.place'
+    }
+    [iosArm64(), iosSimulatorArm64()].each { target ->
+        target.binaries.configureEach { binary ->
+            binary.linkerOpts('-lsqlite3')
+        }
     }
     sourceSets {
         commonMain {
@@ -15,6 +21,12 @@ kotlin {
                 implementation libs.coroutines.core
                 implementation libs.either
                 implementation libs.kotlinx.io.core
+                implementation libs.room.runtime
+            }
+        }
+        iosMain {
+            dependencies {
+                implementation libs.sqlite.framework
             }
         }
         commonTest {
@@ -22,5 +34,23 @@ kotlin {
                 implementation project(':core:testing')
             }
         }
+        androidHostTest {
+            dependencies {
+                implementation libs.sqlite.bundled.jvm
+            }
+        }
     }
+}
+
+dependencies {
+    kspAndroid libs.room.compiler
+    kspIosArm64 libs.room.compiler
+    kspIosSimulatorArm64 libs.room.compiler
+}
+
+// The bundled places come from the GeoNames gazetteer of Sweden, so this downloads it again and rewrites them.
+tasks.register('updatePlaces', Exec) {
+    group = 'vadret'
+    description = 'Downloads the GeoNames places of Sweden and rewrites the bundled places of the place search'
+    commandLine 'python3', '-I', file('scripts/update_places.py').absolutePath
 }

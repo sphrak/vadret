@@ -13,12 +13,12 @@ internal class DefaultSearchPlacesTask(
 ) : SearchPlacesTask {
 
     // An empty search finds nothing, so it never reaches the places.
-    override suspend fun invoke(prefix: String): Either<Failure, List<Place>> =
-        if (prefix.isBlank()) {
+    override suspend fun invoke(query: String): Either<Failure, List<Place>> =
+        if (query.isBlank()) {
             emptyList<Place>().asRight()
         } else {
             placeRepository.search(
-                prefix = prefix,
+                query = query,
                 limit = SUGGESTION_LIMIT
             )
         }

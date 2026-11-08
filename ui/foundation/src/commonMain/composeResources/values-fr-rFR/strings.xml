@@ -102,8 +102,6 @@
     <string name="open_forecast">Ouvrir la prévision</string>
     <string name="warning_affects_places">Concerne %1$s</string>
     <string name="followed_place_position">Votre position</string>
-    <string name="warnings_for_places">Alertes pour %1$s</string>
-    <string name="change_followed_places">Modifier</string>
     <string name="not_saved">Non enregistré</string>
     <string name="saved">Enregistré</string>
     <string name="save">Enregistrer</string>

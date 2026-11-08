@@ -19,6 +19,7 @@ import se.vadretapp.vadret.favorite.FavoriteRepository
 import se.vadretapp.vadret.location.LocationRepository
 import se.vadretapp.vadret.logging.Logger
 import se.vadretapp.vadret.logging.LoggerFactory
+import se.vadretapp.vadret.place.PlaceRepository
 import se.vadretapp.vadret.setting.SettingRepository
 import java.io.File
 import java.util.concurrent.TimeUnit
@@ -55,6 +56,12 @@ fun androidPlatformModule(
                 context = context,
                 idGenerator = get(),
                 clock = get()
+            )
+        }
+        single<PlaceRepository> {
+            PlaceRepository(
+                context = context,
+                readPlaces = { readBundledPlaces() }
             )
         }
         single<LocationRepository> {

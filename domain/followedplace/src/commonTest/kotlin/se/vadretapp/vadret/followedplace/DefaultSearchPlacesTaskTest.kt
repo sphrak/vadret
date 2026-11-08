@@ -20,7 +20,7 @@ class DefaultSearchPlacesTaskTest {
         runTest {
             assertEquals<Either<Failure, List<Place>>>(
                 expected = listOf(kiruna).asRight(),
-                actual = searchPlacesTask(prefix = "Kir")
+                actual = searchPlacesTask(query = "Kir")
             )
             assertEquals(expected = listOf("Kir" to SUGGESTION_LIMIT), actual = placeRepository.searches)
         }
@@ -30,7 +30,7 @@ class DefaultSearchPlacesTaskTest {
         runTest {
             assertEquals<Either<Failure, List<Place>>>(
                 expected = emptyList<Place>().asRight(),
-                actual = searchPlacesTask(prefix = " ")
+                actual = searchPlacesTask(query = " ")
             )
             assertEquals(expected = emptyList(), actual = placeRepository.searches)
         }

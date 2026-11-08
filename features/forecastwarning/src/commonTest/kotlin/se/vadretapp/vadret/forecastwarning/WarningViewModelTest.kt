@@ -174,20 +174,6 @@ class WarningViewModelTest {
         }
 
     @Test
-    fun `the followed places are named above their warnings`() =
-        testScope.runTest {
-            observeFollowedPlaceWarningsTask.results.value = FollowedPlaceWarnings(
-                followedPlaces = listOf(gothenburg, cabin),
-                placeWarnings = emptyList()
-            ).asRight()
-
-            warningViewModel.onEvent(event = WarningEvent.OnStart)
-            advanceUntilIdle()
-
-            assertEquals(expected = "Göteborg, Stugan", actual = warningViewModel.state.value.followedPlaceNames)
-        }
-
-    @Test
     fun `a refresh skips the cache`() =
         testScope.runTest {
             warningViewModel.onEvent(event = WarningEvent.OnStart)

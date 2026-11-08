@@ -39,7 +39,7 @@ internal fun TabNavigation.open(key: NavKey) {
 }
 
 // A screen opened from another tab is shown right on top of its own tab, whatever that tab showed before.
-internal fun TabNavigation.openOnTab(
+private fun TabNavigation.openOnTab(
     tabKey: NavKey,
     key: NavKey
 ) {

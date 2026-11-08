@@ -5,11 +5,13 @@ import kotlinx.collections.immutable.ImmutableList
 import se.vadretapp.vadret.aggregatedfeed.model.FeedSource
 import se.vadretapp.vadret.aggregatedfeed.model.SlipperinessRisk
 import se.vadretapp.vadret.aggregatedfeed.model.WarningLevel
+import se.vadretapp.vadret.icons.VadretIconGraphic
 
 @Immutable
 data class LatestWarning(
     val warningLevel: WarningLevel?,
     val slipperinessRisk: SlipperinessRisk?,
+    val icon: VadretIconGraphic?,
     val source: FeedSource,
     val isPublicAlert: Boolean,
     val headline: String,

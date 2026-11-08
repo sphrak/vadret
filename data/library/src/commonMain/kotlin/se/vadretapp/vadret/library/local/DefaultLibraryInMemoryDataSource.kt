@@ -77,6 +77,15 @@ internal class DefaultLibraryInMemoryDataSource : LibraryInMemoryDataSource {
             license = GPL_V2
         ),
         Library(
+            author = "GeoNames",
+            title = "GeoNames",
+            description = "A geographical database of place names, used to search for places in Sweden.",
+            projectUrl = "https://www.geonames.org/",
+            sourceUrl = "https://download.geonames.org/export/dump/",
+            licenseUrl = "https://creativecommons.org/licenses/by/4.0/",
+            license = CREATIVE_COMMONS_4
+        ),
+        Library(
             author = "MapLibre",
             title = "MapLibre Native",
             description = "An open source library for showing interactive vector maps, used for the radar map.",

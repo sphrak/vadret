@@ -13,7 +13,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.datetime.TimeZone
 import se.vadretapp.vadret.common.Failure
-import se.vadretapp.vadret.forecastwarning.extension.followedPlaceNames
 import se.vadretapp.vadret.forecastwarning.extension.toWarningItems
 import se.vadretapp.vadret.forecastwarning.model.WarningItem
 import se.vadretapp.vadret.setting.model.HourFormat
@@ -108,10 +107,7 @@ class WarningViewModel internal constructor(
                     onError = { failure: Failure -> displayError(failure = failure) },
                     onSuccess = { followedPlaceWarnings: FollowedPlaceWarnings ->
                         warnings.store(newValue = followedPlaceWarnings)
-                        displayWarnings(
-                            warningItems = followedPlaceWarnings.toItems(),
-                            followedPlaceNames = followedPlaceWarnings.followedPlaceNames()
-                        )
+                        displayWarnings(warningItems = followedPlaceWarnings.toItems())
                     }
                 )
             }
@@ -128,14 +124,10 @@ class WarningViewModel internal constructor(
         )
     }
 
-    private fun displayWarnings(
-        warningItems: ImmutableList<WarningItem>,
-        followedPlaceNames: String?
-    ) {
+    private fun displayWarnings(warningItems: ImmutableList<WarningItem>) {
         state.update { state: WarningState ->
             state.copy(
                 warnings = warningItems,
-                followedPlaceNames = followedPlaceNames,
                 isLoading = false,
                 isRefreshing = false,
                 isEmpty = warningItems.isEmpty()

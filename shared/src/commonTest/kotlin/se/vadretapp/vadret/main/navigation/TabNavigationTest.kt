@@ -47,18 +47,19 @@ class TabNavigationTest {
     }
 
     @Test
-    fun `the places opened from the warnings show on the settings tab right above the settings`() {
+    fun `the places opened from the warnings cover the warnings and closing them shows the warnings again`() {
         tabNavigation.selectTab(tabKey = SettingsKey)
         tabNavigation.open(key = SettingsAboutKey)
         tabNavigation.selectTab(tabKey = WarningKey)
 
-        tabNavigation.openOnTab(
-            tabKey = SettingsKey,
-            key = SettingsPlacesKey
-        )
+        tabNavigation.open(key = WarningPlacesKey)
+        val opened: List<NavKey> = tabBackStack(tabKey = WarningKey)
+        tabNavigation.close(key = WarningPlacesKey)
 
-        assertEquals(expected = SettingsKey, actual = tabNavigation.currentTabKey)
-        assertEquals(expected = listOf(SettingsKey, SettingsPlacesKey), actual = tabBackStack(tabKey = SettingsKey))
+        assertEquals(expected = WarningKey, actual = tabNavigation.currentTabKey)
+        assertEquals(expected = listOf(WarningKey, WarningPlacesKey), actual = opened)
+        assertEquals(expected = listOf(WarningKey), actual = tabBackStack(tabKey = WarningKey))
+        assertEquals(expected = listOf(SettingsKey, SettingsAboutKey), actual = tabBackStack(tabKey = SettingsKey))
     }
 
     @Test

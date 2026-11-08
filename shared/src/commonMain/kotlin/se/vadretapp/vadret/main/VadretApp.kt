@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
@@ -55,6 +56,7 @@ import se.vadretapp.vadret.main.navigation.TopLevelDestination
 import se.vadretapp.vadret.main.navigation.VadretNavigationBar
 import se.vadretapp.vadret.main.navigation.WarningDetailKey
 import se.vadretapp.vadret.main.navigation.WarningKey
+import se.vadretapp.vadret.main.navigation.WarningPlacesKey
 import se.vadretapp.vadret.main.navigation.WarningStoryKey
 import se.vadretapp.vadret.main.navigation.WeatherKey
 import se.vadretapp.vadret.main.navigation.close
@@ -63,7 +65,6 @@ import se.vadretapp.vadret.main.navigation.currentTabKey
 import se.vadretapp.vadret.main.navigation.goBack
 import se.vadretapp.vadret.main.navigation.navigationBarPadding
 import se.vadretapp.vadret.main.navigation.open
-import se.vadretapp.vadret.main.navigation.openOnTab
 import se.vadretapp.vadret.main.navigation.openPlaceForecast
 import se.vadretapp.vadret.main.navigation.openWeatherTab
 import se.vadretapp.vadret.main.navigation.selectTab
@@ -78,6 +79,7 @@ import se.vadretapp.vadret.settings.ui.SettingsRoute
 import se.vadretapp.vadret.ui.DeveloperSettingsSection
 import se.vadretapp.vadret.ui.SettingsSection
 import se.vadretapp.vadret.ui.VadretTheme
+import se.vadretapp.vadret.ui.model.NavigationIcon
 import se.vadretapp.vadret.weatherforecast.ui.PlaceForecastRoute
 import se.vadretapp.vadret.weatherforecast.ui.PlaceIslandRoute
 import se.vadretapp.vadret.weatherforecast.ui.WeatherForecastRoute
@@ -96,6 +98,10 @@ private val navigationConfiguration: SavedStateConfiguration = SavedStateConfigu
             subclass(
                 subclass = WarningDetailKey::class,
                 serializer = WarningDetailKey.serializer()
+            )
+            subclass(
+                subclass = WarningPlacesKey::class,
+                serializer = WarningPlacesKey.serializer()
             )
             subclass(
                 subclass = WarningStoryKey::class,
@@ -214,12 +220,15 @@ internal fun VadretApp(
                     onWarningClick = { warningIdentifier: String ->
                         tabNavigation.open(key = WarningDetailKey(warningIdentifier = warningIdentifier))
                     },
-                    onFollowedPlacesClick = {
-                        tabNavigation.openOnTab(
-                            tabKey = SettingsKey,
-                            key = SettingsPlacesKey
-                        )
-                    }
+                    onFollowedPlacesClick = { tabNavigation.open(key = WarningPlacesKey) }
+                )
+            }
+        }
+        entry<WarningPlacesKey>(metadata = storyTransitions) {
+            SheetPage {
+                PlacesRoute(
+                    onBack = { tabNavigation.close(key = WarningPlacesKey) },
+                    navigationIcon = NavigationIcon.CLOSE
                 )
             }
         }
@@ -374,6 +383,22 @@ private fun TabPage(
             .consumeWindowInsets(paddingValues = paddingValues)
             .clipToBounds()
             .background(color = VadretTheme.colorScheme.background)
+    ) {
+        content()
+    }
+}
+
+// A sheet covers the tab bar too, so it only keeps clear of the system navigation.
+@Composable
+private fun SheetPage(
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(color = VadretTheme.colorScheme.background)
+            .navigationBarsPadding()
     ) {
         content()
     }

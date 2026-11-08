@@ -112,8 +112,6 @@
     <string name="open_forecast">Avaa ennuste</string>
     <string name="warning_affects_places">Koskee: %1$s</string>
     <string name="followed_place_position">Sijaintisi</string>
-    <string name="warnings_for_places">Varoitukset: %1$s</string>
-    <string name="change_followed_places">Muuta</string>
     <string name="not_saved">Ei tallennettu</string>
     <string name="saved">Tallennettu</string>
     <string name="save">Tallenna</string>

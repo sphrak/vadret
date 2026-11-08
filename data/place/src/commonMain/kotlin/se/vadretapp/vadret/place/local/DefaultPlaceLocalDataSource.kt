@@ -1,84 +1,73 @@
 package se.vadretapp.vadret.place.local
 
-import kotlinx.coroutines.CoroutineDispatcher
+import androidx.room3.withWriteTransaction
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
+import kotlin.concurrent.atomics.AtomicBoolean
 
-private const val LOCALITY_COLUMN = "locality"
-private const val MUNICIPALITY_COLUMN = "municipality"
-private const val COUNTY_COLUMN = "county"
-private const val LATITUDE_COLUMN = "latitude"
-private const val LONGITUDE_COLUMN = "longitude"
-private const val COLUMN_SEPARATOR = ','
-private const val HEADER_ROWS = 1
+private const val LIKE_ESCAPE = "\\"
+private val LIKE_WILDCARDS: List<String> = listOf("%", "_")
 
 internal class DefaultPlaceLocalDataSource(
-    private val readPlaces: suspend () -> String,
-    private val coroutineDispatcher: CoroutineDispatcher
+    private val placeDatabase: PlaceDatabase,
+    private val readPlaces: suspend () -> String
 ) : PlaceLocalDataSource {
 
-    private val mutex: Mutex = Mutex()
-    private var places: List<PlaceEntity>? = null
+    private val placeDao: PlaceDao = placeDatabase.placeDao()
+    private val seedMutex: Mutex = Mutex()
+    private val isSeeded: AtomicBoolean = AtomicBoolean(value = false)
 
     override suspend fun search(
-        prefix: String,
+        query: String,
         limit: Int
-    ): List<PlaceEntity> =
-        withContext(context = coroutineDispatcher) {
-            getPlaces()
-                .asSequence()
-                .filter { placeEntity: PlaceEntity ->
-                    placeEntity.locality.startsWith(
-                        prefix = prefix,
-                        ignoreCase = true
-                    )
-                }
-                .take(n = limit)
-                .toList()
-        }
-
-    private suspend fun getPlaces(): List<PlaceEntity> =
-        mutex.withLock {
-            val cachedPlaces: List<PlaceEntity>? = places
-            if (cachedPlaces != null) {
-                cachedPlaces
-            } else {
-                val readPlaces: List<PlaceEntity> = parsePlaces(text = readPlaces())
-                places = readPlaces
-                readPlaces
-            }
-        }
-
-    private fun parsePlaces(text: String): List<PlaceEntity> {
-        val rows: List<List<String>> = text
-            .lineSequence()
-            .filter { line: String -> line.isNotBlank() }
-            .map { line: String -> line.split(COLUMN_SEPARATOR).map { column: String -> column.trim() } }
-            .toList()
-        val columnIndexes: Map<String, Int> = rows
-            .first()
-            .withIndex()
-            .associate { column: IndexedValue<String> -> column.value.lowercase() to column.index }
-        return rows
-            .drop(n = HEADER_ROWS)
-            .map { row: List<String> ->
-                require(value = row.size == columnIndexes.size) { "Expected ${columnIndexes.size} columns in $row" }
-                row.toPlaceEntity(columnIndexes = columnIndexes)
-            }
+    ): List<PlaceEntity> {
+        seed()
+        val foldedQuery: String = query.trim().folded()
+        val likeQuery: String = foldedQuery.escapedForLike()
+        return placeDao.search(
+            foldedQuery = foldedQuery,
+            prefixPattern = "$likeQuery%",
+            wordPattern = "% $likeQuery%",
+            limit = limit
+        )
     }
 
-    private fun List<String>.toPlaceEntity(columnIndexes: Map<String, Int>): PlaceEntity =
-        PlaceEntity(
-            locality = column(name = LOCALITY_COLUMN, columnIndexes = columnIndexes),
-            municipality = column(name = MUNICIPALITY_COLUMN, columnIndexes = columnIndexes),
-            county = column(name = COUNTY_COLUMN, columnIndexes = columnIndexes),
-            latitude = column(name = LATITUDE_COLUMN, columnIndexes = columnIndexes).toDouble(),
-            longitude = column(name = LONGITUDE_COLUMN, columnIndexes = columnIndexes).toDouble()
-        )
+    // The bundled places are written once for each version of them, so an app update with new places replaces the
+    // old ones while later searches never read them again.
+    private suspend fun seed() {
+        if (isSeeded.load()) {
+            return
+        }
+        seedMutex.withLock {
+            if (!isSeeded.load()) {
+                val places: String = readPlaces()
+                val seedVersion: String = places.seedVersion()
+                if (placeDao.countSeeds(seedVersion = seedVersion) == 0) {
+                    replacePlaces(
+                        seedVersion = seedVersion,
+                        placeEntities = places.placeEntities()
+                    )
+                }
+                isSeeded.store(newValue = true)
+            }
+        }
+    }
 
-    private fun List<String>.column(
-        name: String,
-        columnIndexes: Map<String, Int>
-    ): String = get(index = requireNotNull(value = columnIndexes[name]) { "Missing column $name" })
+    private suspend fun replacePlaces(
+        seedVersion: String,
+        placeEntities: List<PlaceEntity>
+    ) {
+        placeDatabase.withWriteTransaction {
+            placeDao.deletePlaces()
+            placeDao.deleteSeeds()
+            placeDao.insertPlaces(placeEntities = placeEntities)
+            placeDao.insertSeed(placeSeedEntity = PlaceSeedEntity(seedVersion = seedVersion))
+        }
+    }
 }
+
+// What someone types is searched for as it is, so the wildcards of LIKE lose their meaning.
+private fun String.escapedForLike(): String =
+    (listOf(LIKE_ESCAPE) + LIKE_WILDCARDS).fold(initial = this) { escaped: String, special: String ->
+        escaped.replace(oldValue = special, newValue = "$LIKE_ESCAPE$special")
+    }
