@@ -79,7 +79,7 @@ internal fun ComingHourStrip(
     Box(modifier = modifier.fillMaxWidth()) {
         LazyRow(
             state = rememberLazyListState(initialFirstVisibleItemIndex = firstShownHourIndex),
-            contentPadding = PaddingValues(horizontal = 16.dp),
+            contentPadding = PaddingValues(16.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
             itemsIndexed(
