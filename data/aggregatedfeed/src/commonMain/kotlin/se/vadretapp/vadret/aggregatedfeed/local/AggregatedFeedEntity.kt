@@ -34,5 +34,7 @@ internal data class AggregatedFeedEntity(
     @SerialName(value = "regions")
     val regions: List<FeedRegionEntity>,
     @SerialName(value = "slipperiness")
-    val slipperiness: SlipperinessEntity? = null
+    val slipperiness: SlipperinessEntity? = null,
+    @SerialName(value = "aurora")
+    val aurora: AuroraEntity? = null
 )

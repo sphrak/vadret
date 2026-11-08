@@ -2,14 +2,16 @@ package se.vadretapp.vadret.pushalert
 
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.minus
 import kotlinx.datetime.toLocalDateTime
 import se.vadretapp.vadret.aggregatedfeed.model.WarningReference
 import se.vadretapp.vadret.geohash.model.Geohash
 import se.vadretapp.vadret.pushalert.model.PushAlertKind
 import se.vadretapp.vadret.pushalert.model.PushAlertMessage
 import se.vadretapp.vadret.pushalert.model.PushAlertType
-import kotlin.time.Duration.Companion.hours
 import kotlin.time.Instant
 
 // One alert of each type, worded like the server words them, so every icon and channel can be checked on a phone.
@@ -87,17 +89,37 @@ internal fun simulatedPushAlertMessages(now: Instant): ImmutableList<PushAlertMe
         cell = SIMULATED_SLIPPERINESS_CELL,
         warningReference = WarningReference.Slipperiness(
             geohash = Geohash(value = SIMULATED_SLIPPERINESS_CELL),
-            slipperinessDay = now.slipperinessDay()
+            slipperinessDay = now.swedishDayStartingAtNoon()
+        )
+    ),
+    PushAlertMessage(
+        title = "Chans för norrsken i kväll",
+        body = "Som störst runt kl. 22, ungefär kl. 20-01.",
+        kind = PushAlertKind.AURORA,
+        pushAlertType = PushAlertType.AURORA,
+        notificationId = "simulated-aurora",
+        cell = SIMULATED_AURORA_CELL,
+        warningReference = WarningReference.Aurora(
+            geohash = Geohash(value = SIMULATED_AURORA_CELL),
+            auroraNight = now.swedishDayStartingAtNoon()
         )
     )
 )
 
-private fun Instant.slipperinessDay(): String =
-    minus(duration = SLIPPERINESS_DAY_OFFSET_HOURS.hours)
-        .toLocalDateTime(timeZone = TimeZone.of(zoneId = SWEDISH_TIME_ZONE))
-        .date
-        .toString()
+private fun Instant.swedishDayStartingAtNoon(): String {
+    val swedishTime: LocalDateTime = toLocalDateTime(timeZone = TimeZone.of(zoneId = SWEDISH_TIME_ZONE))
+    return if (swedishTime.hour < NOON_HOUR) {
+        swedishTime.date.minus(
+            value = PREVIOUS_DAY,
+            unit = DateTimeUnit.DAY
+        )
+    } else {
+        swedishTime.date
+    }.toString()
+}
 
 private const val SIMULATED_SLIPPERINESS_CELL = "u6sce"
-private const val SLIPPERINESS_DAY_OFFSET_HOURS = 12
+private const val SIMULATED_AURORA_CELL = "u6sce"
+private const val NOON_HOUR = 12
+private const val PREVIOUS_DAY = 1
 private const val SWEDISH_TIME_ZONE = "Europe/Stockholm"

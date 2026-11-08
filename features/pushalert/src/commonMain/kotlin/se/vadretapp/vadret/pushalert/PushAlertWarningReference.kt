@@ -11,6 +11,10 @@ fun pushAlertWarningReferenceOrNull(pushAlertData: Map<String, String>): Warning
             cell = pushAlertData[CELL_FIELD],
             slipperinessDay = pushAlertData[DAY_FIELD]
         )
+        AURORA_KIND -> auroraOrNull(
+            cell = pushAlertData[CELL_FIELD],
+            auroraNight = pushAlertData[DAY_FIELD]
+        )
         else -> null
     }
 
@@ -33,9 +37,24 @@ private fun slipperinessOrNull(
     )
 }
 
+private fun auroraOrNull(
+    cell: String?,
+    auroraNight: String?
+): WarningReference? {
+    if (cell == null || auroraNight == null) {
+        return null
+    }
+    val geohash: Geohash = geohashOrNull(value = cell) ?: return null
+    return WarningReference.Aurora(
+        geohash = geohash,
+        auroraNight = auroraNight
+    )
+}
+
 private const val KIND_FIELD = "kind"
 private const val WARNING_AREA_ID_FIELD = "warning_area_id"
 private const val CELL_FIELD = "cell"
 private const val DAY_FIELD = "day"
 private const val WARNING_KIND = "warning"
 private const val SLIPPERINESS_KIND = "slipperiness"
+private const val AURORA_KIND = "aurora"

@@ -191,6 +191,37 @@ class DefaultAddPlaceNameTaskTest {
     }
 
     @Test
+    fun anAuroraAlertIsNamedAfterTheSavedPlaceInItsSmallerCellOnly() = runTest {
+        val auroraInLimhamn = WIND_IN_MALMO.copy(
+            title = "Chans för norrsken i kväll",
+            kind = PushAlertKind.AURORA,
+            pushAlertType = PushAlertType.AURORA,
+            cell = "u3chn"
+        )
+
+        assertEquals(
+            expected = listOf(
+                auroraInLimhamn.copy(title = "Chans för norrsken i kväll - Limhamn"),
+                auroraInLimhamn
+            ),
+            actual = listOf(
+                FakeFavoriteRepository(
+                    favorites = listOf(
+                        MALMO_FAVORITE,
+                        LIMHAMN_FAVORITE
+                    )
+                ),
+                FakeFavoriteRepository(favorites = listOf(MALMO_FAVORITE))
+            ).map { favoriteRepository: FakeFavoriteRepository ->
+                addPlaceName(
+                    pushAlertMessage = auroraInLimhamn,
+                    favoriteRepository = favoriteRepository
+                )
+            }
+        )
+    }
+
+    @Test
     fun savedPlacesThatCannotBeReadLeaveTheAlertAsItIs() = runTest {
         assertEquals(
             expected = WIND_IN_MALMO,

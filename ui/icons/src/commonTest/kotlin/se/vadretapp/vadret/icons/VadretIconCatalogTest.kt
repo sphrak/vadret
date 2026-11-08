@@ -9,7 +9,7 @@ class VadretIconCatalogTest {
 
     @Test
     fun `every icon has its own name`() {
-        assertEquals(expected = 42, actual = vadretIconCatalog.size)
+        assertEquals(expected = 43, actual = vadretIconCatalog.size)
         assertEquals(
             expected = vadretIconCatalog.size,
             actual = vadretIconCatalog.map { icon: VadretIconGraphic -> icon.name }.toSet().size
@@ -53,7 +53,8 @@ class VadretIconCatalogTest {
             VadretIcons.Alert.HardWind,
             VadretIcons.Alert.Storm,
             VadretIcons.Alert.Hurricane,
-            VadretIcons.Alert.Slipperiness
+            VadretIcons.Alert.Slipperiness,
+            VadretIcons.Alert.Aurora
         )
 
         assertTrue(actual = alertIcons.none { icon: VadretIconGraphic -> icon.hasMotion })

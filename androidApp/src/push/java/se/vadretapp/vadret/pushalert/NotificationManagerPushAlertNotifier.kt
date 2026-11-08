@@ -108,6 +108,11 @@ internal class NotificationManagerPushAlertNotifier(
             pushAlertKind = PushAlertKind.SLIPPERINESS,
             nameResource = R.string.push_alert_channel_slipperiness,
             importance = NotificationManagerCompat.IMPORTANCE_DEFAULT
+        ),
+        notificationChannel(
+            pushAlertKind = PushAlertKind.AURORA,
+            nameResource = R.string.push_alert_channel_aurora,
+            importance = NotificationManagerCompat.IMPORTANCE_DEFAULT
         )
     )
 
@@ -149,6 +154,7 @@ internal fun PushAlertType.largeIconResource(): Int =
         PushAlertType.STORM -> R.drawable.ic_push_alert_storm
         PushAlertType.HURRICANE -> R.drawable.ic_push_alert_hurricane
         PushAlertType.SLIPPERINESS -> R.drawable.ic_push_alert_slipperiness
+        PushAlertType.AURORA -> R.drawable.ic_push_alert_aurora
     }
 
 internal fun PushAlertType.largeIconColorResource(): Int =
@@ -161,6 +167,7 @@ internal fun PushAlertType.largeIconColorResource(): Int =
         PushAlertType.STORM,
         PushAlertType.HURRICANE -> R.color.push_alert_wind
         PushAlertType.SLIPPERINESS -> R.color.push_alert_slipperiness
+        PushAlertType.AURORA -> R.color.push_alert_aurora
     }
 
 private fun PushAlertKind.channelId(): String =
@@ -170,6 +177,7 @@ private fun PushAlertKind.channelId(): String =
         PushAlertKind.TEMPERATURE -> TEMPERATURE_CHANNEL_ID
         PushAlertKind.WIND -> WIND_CHANNEL_ID
         PushAlertKind.SLIPPERINESS -> SLIPPERINESS_CHANNEL_ID
+        PushAlertKind.AURORA -> AURORA_CHANNEL_ID
     }
 
 private val logger: Logger = LoggerFactory.getLogger(tag = "se.vadretapp.vadret.pushalert")
@@ -179,3 +187,4 @@ private const val POLLEN_CHANNEL_ID = "pollen"
 private const val TEMPERATURE_CHANNEL_ID = "temperature"
 private const val WIND_CHANNEL_ID = "wind"
 private const val SLIPPERINESS_CHANNEL_ID = "slipperiness"
+private const val AURORA_CHANNEL_ID = "aurora"

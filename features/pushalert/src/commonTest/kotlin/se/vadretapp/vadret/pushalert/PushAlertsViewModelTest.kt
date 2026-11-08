@@ -196,6 +196,43 @@ class PushAlertsViewModelTest {
     }
 
     @Test
+    fun withAlertsAlreadyOnAuroraIsSavedAndSyncedAtOnceBothOnAndOff() = runTest(context = testDispatcher) {
+        val savePushAlertChoicesTask = FakeSavePushAlertChoicesTask()
+        val syncPushAlertsTask = FakeSyncPushAlertsTask()
+        val viewModel = startedViewModel(
+            choices = WARNINGS_FROM_YELLOW,
+            savePushAlertChoicesTask = savePushAlertChoicesTask,
+            syncPushAlertsTask = syncPushAlertsTask
+        )
+
+        viewModel.onEvent(event = PushAlertsEvent.OnAuroraToggled(isEnabled = true))
+        advanceUntilIdle()
+        val shown = viewModel.state.value.choices.aurora
+        viewModel.onEvent(event = PushAlertsEvent.OnAuroraToggled(isEnabled = false))
+        advanceUntilIdle()
+
+        assertEquals(
+            expected = listOf(
+                WARNINGS_FROM_YELLOW.copy(aurora = true),
+                WARNINGS_FROM_YELLOW
+            ),
+            actual = savePushAlertChoicesTask.saved
+        )
+        assertEquals(
+            expected = Triple(
+                first = true,
+                second = false,
+                third = 2
+            ),
+            actual = Triple(
+                first = shown,
+                second = viewModel.state.value.choices.aurora,
+                third = syncPushAlertsTask.syncs
+            )
+        )
+    }
+
+    @Test
     fun markingASavedPlaceIsSavedAndSyncedAtOnceBothOnAndOff() = runTest(context = testDispatcher) {
         val savePushAlertChoicesTask = FakeSavePushAlertChoicesTask()
         val syncPushAlertsTask = FakeSyncPushAlertsTask()
@@ -714,6 +751,7 @@ private val WARNINGS_FROM_YELLOW = PushAlertChoices(
     temperatureTrend = false,
     strongWind = false,
     slipperiness = false,
+    aurora = false,
     isChosenPlaceNotified = true,
     notifiedFavoriteIds = emptySet()
 )

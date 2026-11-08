@@ -15,6 +15,7 @@ import se.vadretapp.vadret.aggregatedfeed.model.FeedDetail
 import se.vadretapp.vadret.aggregatedfeed.model.FeedDetailKind
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
+import se.vadretapp.vadret.forecastwarning.model.AuroraHourItem
 import se.vadretapp.vadret.forecastwarning.model.WarningDetail
 import se.vadretapp.vadret.forecastwarning.model.WarningItem
 import se.vadretapp.vadret.testing.FixedClock
@@ -33,8 +34,10 @@ class WarningStoryViewModelTest {
     private val testScope = TestScope(context = testDispatcher)
     private val getWarningsTask = FakeGetWarningsTask()
     private val markWarningSeenTask = FakeMarkWarningSeenTask()
+    private val getAuroraHoursTask = FakeGetAuroraHoursTask()
     private val warningStoryViewModel = WarningStoryViewModel(
         getWarningsTask = getWarningsTask,
+        getAuroraHoursTask = getAuroraHoursTask,
         markWarningSeenTask = markWarningSeenTask,
         clock = FixedClock(now = Instant.parse(input = "2026-10-24T08:30:00Z")),
         coroutineDispatcher = testDispatcher
@@ -168,6 +171,7 @@ class WarningStoryViewModelTest {
 
             val failingViewModel = WarningStoryViewModel(
                 getWarningsTask = FakeGetWarningsTask(result = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft()),
+                getAuroraHoursTask = getAuroraHoursTask,
                 markWarningSeenTask = markWarningSeenTask,
                 clock = FixedClock(now = Instant.parse(input = "2026-10-24T08:30:00Z")),
                 coroutineDispatcher = testDispatcher
@@ -177,5 +181,40 @@ class WarningStoryViewModelTest {
 
             assertEquals(expected = true, actual = failingViewModel.state.value.isFinished)
             assertEquals(expected = false, actual = failingViewModel.state.value.isLoading)
+        }
+
+    @Test
+    fun `an aurora story shows its hours as its one detail once they are got`() =
+        testScope.runTest {
+            getWarningsTask.result = listOf(
+                aggregatedFeed(identifier = "smhi-1-1"),
+                auroraFeed(identifier = "vadret-aurora-u6sce-2026-10-24-POSSIBLE")
+            ).asRight()
+            start(warningIdentifiers = listOf("smhi-1-1", "vadret-aurora-u6sce-2026-10-24-POSSIBLE"))
+            advanceUntilIdle()
+
+            assertEquals(
+                expected = listOf(emptyList(), listOf(40, 55)),
+                actual = warningStoryViewModel.state.value.warnings.map { warningItem: WarningItem ->
+                    warningItem.details
+                        .filterIsInstance<WarningDetail.Hourly>()
+                        .flatMap { hourly: WarningDetail.Hourly -> hourly.auroraHourItems.map { auroraHourItem: AuroraHourItem -> auroraHourItem.score } }
+                }
+            )
+            assertEquals(expected = 1, actual = warningStoryViewModel.state.value.warnings.last().details.size)
+        }
+
+    @Test
+    fun `an aurora story whose hours cannot be got keeps its other details`() =
+        testScope.runTest {
+            getWarningsTask.result = listOf(auroraFeed(identifier = "vadret-aurora-u6sce-2026-10-24-POSSIBLE")).asRight()
+            getAuroraHoursTask.result = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft()
+            start(warningIdentifiers = listOf("vadret-aurora-u6sce-2026-10-24-POSSIBLE"))
+            advanceUntilIdle()
+
+            assertEquals(
+                expected = listOf("vadret-aurora-u6sce-2026-10-24-POSSIBLE") to false,
+                actual = storyWarningIdentifiers() to warningStoryViewModel.state.value.warnings.single().details.any { warningDetail: WarningDetail -> warningDetail is WarningDetail.Hourly }
+            )
         }
 }

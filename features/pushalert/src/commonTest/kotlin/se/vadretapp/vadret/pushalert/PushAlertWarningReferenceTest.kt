@@ -8,13 +8,17 @@ import kotlin.test.assertEquals
 class PushAlertWarningReferenceTest {
 
     @Test
-    fun aWarningOrSlipperinessAlertRefersToItsStory() {
+    fun aWarningSlipperinessOrAuroraAlertRefersToItsStory() {
         assertEquals(
             expected = listOf(
                 WarningReference.SmhiWarningArea(warningAreaId = 12),
                 WarningReference.Slipperiness(
                     geohash = Geohash(value = "u6sce"),
                     slipperinessDay = "2026-11-08"
+                ),
+                WarningReference.Aurora(
+                    geohash = Geohash(value = "u6sce"),
+                    auroraNight = "2026-11-08"
                 )
             ),
             actual = listOf(
@@ -26,6 +30,12 @@ class PushAlertWarningReferenceTest {
                     "kind" to "slipperiness",
                     "cell" to "u6sce",
                     "day" to "2026-11-08"
+                ),
+                mapOf(
+                    "kind" to "aurora",
+                    "cell" to "u6sce",
+                    "day" to "2026-11-08",
+                    "aurora_level" to "POSSIBLE"
                 )
             ).map { pushAlertData: Map<String, String> -> pushAlertWarningReferenceOrNull(pushAlertData = pushAlertData) }
         )
@@ -34,7 +44,7 @@ class PushAlertWarningReferenceTest {
     @Test
     fun anAlertWithoutAWholeReferenceOrOfAnotherKindRefersToNoStory() {
         assertEquals(
-            expected = List(size = 6) { null },
+            expected = List(size = 8) { null },
             actual = listOf(
                 mapOf("kind" to "warning"),
                 mapOf(
@@ -49,6 +59,15 @@ class PushAlertWarningReferenceTest {
                 mapOf(
                     "kind" to "slipperiness",
                     "cell" to "u6sce"
+                ),
+                mapOf(
+                    "kind" to "aurora",
+                    "cell" to "u6sc",
+                    "day" to "2026-11-08"
+                ),
+                mapOf(
+                    "kind" to "aurora",
+                    "day" to "2026-11-08"
                 ),
                 mapOf(
                     "kind" to "wind",

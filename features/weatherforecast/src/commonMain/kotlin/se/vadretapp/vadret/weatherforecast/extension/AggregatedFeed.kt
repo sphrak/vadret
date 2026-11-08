@@ -3,6 +3,7 @@ package se.vadretapp.vadret.weatherforecast.extension
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.datetime.TimeZone
 import se.vadretapp.vadret.aggregatedfeed.model.AggregatedFeed
+import se.vadretapp.vadret.icons.Aurora
 import se.vadretapp.vadret.icons.Slipperiness
 import se.vadretapp.vadret.icons.VadretIcons
 import se.vadretapp.vadret.setting.model.HourFormat
@@ -20,10 +21,11 @@ internal fun List<AggregatedFeed>.toLatestWarning(
     return LatestWarning(
         warningLevel = latest.warningLevel,
         slipperinessRisk = latest.slipperiness?.risk,
-        icon = if (latest.slipperiness == null) {
-            null
-        } else {
-            VadretIcons.Alert.Slipperiness
+        auroraChance = latest.aurora?.chance,
+        icon = when {
+            latest.slipperiness != null -> VadretIcons.Alert.Slipperiness
+            latest.aurora != null -> VadretIcons.Alert.Aurora
+            else -> null
         },
         source = latest.source,
         isPublicAlert = latest.isPublicAlert,

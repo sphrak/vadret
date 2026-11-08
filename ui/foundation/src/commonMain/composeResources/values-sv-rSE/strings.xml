@@ -278,6 +278,15 @@
     <string name="slipperiness_estimate_explanation">Vadret API räknar fram risken ur SMHI:s prognos. Det är ingen varning från SMHI.</string>
     <string name="slipperiness_alerts">Halka</string>
     <string name="slipperiness_alerts_summary">När det kan bli halt det kommande dygnet</string>
+    <string name="aurora_possible">Chans för norrsken</string>
+    <string name="aurora_high">Stor chans för norrsken</string>
+    <string name="aurora_score">Upp till %1$d % chans</string>
+    <string name="aurora_peak_label">Som störst</string>
+    <string name="aurora_hours_label">Timme för timme</string>
+    <string name="aurora_hour_score">%1$d %</string>
+    <string name="aurora_estimate_explanation">Vadret API räknar fram chansen ur NOAA:s rymdväderprognos, SMHI:s molnprognos och hur mörkt det är. Det är ingen prognos från SMHI.</string>
+    <string name="aurora_alerts">Norrsken</string>
+    <string name="aurora_alerts_summary">När norrsken kan synas det kommande dygnet</string>
     <string name="pollen_alerts">Pollenhalter</string>
     <string name="pollen_alerts_summary">För pollen du valt under Pollen</string>
     <string name="pollen_alerts_need_allergens">Slå på pollen och välj vilka pollen du är allergisk mot under Pollen först.</string>

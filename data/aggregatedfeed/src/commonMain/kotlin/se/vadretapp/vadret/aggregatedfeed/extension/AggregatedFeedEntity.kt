@@ -1,6 +1,7 @@
 package se.vadretapp.vadret.aggregatedfeed.extension
 
 import se.vadretapp.vadret.aggregatedfeed.local.AggregatedFeedEntity
+import se.vadretapp.vadret.aggregatedfeed.local.AuroraEntity
 import se.vadretapp.vadret.aggregatedfeed.local.FeedDetailEntity
 import se.vadretapp.vadret.aggregatedfeed.local.FeedRegionEntity
 import se.vadretapp.vadret.aggregatedfeed.local.GeoLineEntity
@@ -8,6 +9,8 @@ import se.vadretapp.vadret.aggregatedfeed.local.GeoPolygonEntity
 import se.vadretapp.vadret.aggregatedfeed.local.GeoPositionEntity
 import se.vadretapp.vadret.aggregatedfeed.local.SlipperinessEntity
 import se.vadretapp.vadret.aggregatedfeed.model.AggregatedFeed
+import se.vadretapp.vadret.aggregatedfeed.model.Aurora
+import se.vadretapp.vadret.aggregatedfeed.model.AuroraChance
 import se.vadretapp.vadret.aggregatedfeed.model.FeedArea
 import se.vadretapp.vadret.aggregatedfeed.model.FeedDetail
 import se.vadretapp.vadret.aggregatedfeed.model.FeedDetailKind
@@ -21,6 +24,8 @@ import se.vadretapp.vadret.aggregatedfeed.model.Slipperiness
 import se.vadretapp.vadret.aggregatedfeed.model.SlipperinessCause
 import se.vadretapp.vadret.aggregatedfeed.model.SlipperinessRisk
 import se.vadretapp.vadret.aggregatedfeed.model.WarningLevel
+import se.vadretapp.vadret.geohash.model.Geohash
+import se.vadretapp.vadret.geohash.model.geohashOrNull
 import se.vadretapp.vadret.logging.Logger
 import se.vadretapp.vadret.logging.LoggerFactory
 import kotlin.time.Instant
@@ -37,6 +42,12 @@ internal fun AggregatedFeedEntity.toAggregatedFeed(): AggregatedFeed? {
     val cachedSlipperiness: Slipperiness? = slipperinessEntity?.toSlipperinessOrNull()
     if (slipperinessEntity != null && cachedSlipperiness == null) {
         logger.warn { "Skipping cached item $identifier with unknown slipperiness risk ${slipperinessEntity.risk}" }
+        return null
+    }
+    val auroraEntity: AuroraEntity? = aurora
+    val cachedAurora: Aurora? = auroraEntity?.toAuroraOrNull()
+    if (auroraEntity != null && cachedAurora == null) {
+        logger.warn { "Skipping cached item $identifier with unknown aurora chance ${auroraEntity.chance} or cell ${auroraEntity.geohash}" }
         return null
     }
     return AggregatedFeed(
@@ -56,7 +67,20 @@ internal fun AggregatedFeedEntity.toAggregatedFeed(): AggregatedFeed? {
             lines = lines.map { geoLineEntity: GeoLineEntity -> GeoLine(positions = geoLineEntity.positions.toGeoPositions()) },
             regions = regions.map { feedRegionEntity: FeedRegionEntity -> feedRegionEntity.toFeedRegion() }
         ),
-        slipperiness = cachedSlipperiness
+        slipperiness = cachedSlipperiness,
+        aurora = cachedAurora
+    )
+}
+
+private fun AuroraEntity.toAuroraOrNull(): Aurora? {
+    val auroraChance: AuroraChance = AuroraChance.entries.firstOrNull { auroraChance: AuroraChance -> auroraChance.name == chance } ?: return null
+    val auroraGeohash: Geohash = geohashOrNull(value = geohash) ?: return null
+    return Aurora(
+        chance = auroraChance,
+        score = score,
+        peakAt = peakAtEpochMillis.toInstantOrNull(),
+        geohash = auroraGeohash,
+        auroraNight = auroraNight
     )
 }
 

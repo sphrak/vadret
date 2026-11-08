@@ -155,6 +155,7 @@ internal class PushAlertsViewModel(
             is PushAlertsEvent.OnTemperatureTrendToggled -> choose(pushAlertChoices = state.value.choices.copy(temperatureTrend = event.isEnabled))
             is PushAlertsEvent.OnStrongWindToggled -> choose(pushAlertChoices = state.value.choices.copy(strongWind = event.isEnabled))
             is PushAlertsEvent.OnSlipperinessToggled -> choose(pushAlertChoices = state.value.choices.copy(slipperiness = event.isEnabled))
+            is PushAlertsEvent.OnAuroraToggled -> choose(pushAlertChoices = state.value.choices.copy(aurora = event.isEnabled))
             is PushAlertsEvent.OnPlaceToggled -> onPlaceToggled(
                 pushAlertPlace = event.pushAlertPlace,
                 isEnabled = event.isEnabled

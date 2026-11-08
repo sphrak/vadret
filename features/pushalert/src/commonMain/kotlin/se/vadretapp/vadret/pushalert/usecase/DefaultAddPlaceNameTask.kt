@@ -48,7 +48,8 @@ private fun PushAlertKind.isAboutOneCell(): Boolean =
         PushAlertKind.POLLEN -> false
         PushAlertKind.TEMPERATURE,
         PushAlertKind.WIND,
-        PushAlertKind.SLIPPERINESS -> true
+        PushAlertKind.SLIPPERINESS,
+        PushAlertKind.AURORA -> true
     }
 
 private const val PLACE_NAME_SEPARATOR = " - "

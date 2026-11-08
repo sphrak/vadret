@@ -24,6 +24,7 @@ internal fun PushAlertSubscription?.toSubscriptionDto(): SubscriptionDto =
             temperatureTrend = temperatureTrend,
             strongWind = strongWind,
             slipperiness = slipperiness,
+            aurora = aurora,
             hourFormat = hourFormat.toHourFormatDto(),
             language = language.toLanguageDto()
         )

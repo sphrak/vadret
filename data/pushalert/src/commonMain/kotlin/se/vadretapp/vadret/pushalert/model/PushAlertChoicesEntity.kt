@@ -17,6 +17,8 @@ internal data class PushAlertChoicesEntity(
     val strongWind: Boolean = false,
     @SerialName(value = "slipperiness")
     val slipperiness: Boolean = false,
+    @SerialName(value = "aurora")
+    val aurora: Boolean = false,
     @SerialName(value = "is_chosen_place_notified")
     val isChosenPlaceNotified: Boolean = true,
     @SerialName(value = "notified_favorite_ids")

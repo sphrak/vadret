@@ -128,7 +128,8 @@ internal fun WarningRow(
         val tag: String? = warningTag(
             warningLevel = warning.warningLevel,
             isPublicAlert = warning.isPublicAlert,
-            slipperinessRisk = warning.slipperinessRisk
+            slipperinessRisk = warning.slipperinessRisk,
+            auroraChance = warning.auroraChance
         )
         if (tag != null) {
             WarningTagText(

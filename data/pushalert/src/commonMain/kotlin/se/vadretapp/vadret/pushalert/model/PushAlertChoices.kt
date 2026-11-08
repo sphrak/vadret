@@ -6,6 +6,7 @@ data class PushAlertChoices(
     val temperatureTrend: Boolean,
     val strongWind: Boolean,
     val slipperiness: Boolean,
+    val aurora: Boolean,
     val isChosenPlaceNotified: Boolean,
     val notifiedFavoriteIds: Set<String>
 ) {
@@ -14,14 +15,16 @@ data class PushAlertChoices(
             pollenLowestLevel != null ||
             temperatureTrend ||
             strongWind ||
-            slipperiness
+            slipperiness ||
+            aurora
 
     fun isWithin(other: PushAlertChoices): Boolean =
         (warningLowestLevel == null || warningLowestLevel == other.warningLowestLevel) &&
             (pollenLowestLevel == null || pollenLowestLevel == other.pollenLowestLevel) &&
             (!temperatureTrend || other.temperatureTrend) &&
             (!strongWind || other.strongWind) &&
-            (!slipperiness || other.slipperiness)
+            (!slipperiness || other.slipperiness) &&
+            (!aurora || other.aurora)
 
     companion object {
         val NOTHING_CHOSEN: PushAlertChoices = PushAlertChoices(
@@ -30,6 +33,7 @@ data class PushAlertChoices(
             temperatureTrend = false,
             strongWind = false,
             slipperiness = false,
+            aurora = false,
             isChosenPlaceNotified = true,
             notifiedFavoriteIds = emptySet()
         )

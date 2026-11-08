@@ -99,7 +99,8 @@ private fun smhiWarning(
             lines = emptyList(),
             regions = emptyList()
         ),
-        slipperiness = null
+        slipperiness = null,
+        aurora = null
     )
 
 private val previewFeeds: List<AggregatedFeed> = listOf(
@@ -179,7 +180,8 @@ private val previewFeeds: List<AggregatedFeed> = listOf(
                 )
             )
         ),
-        slipperiness = null
+        slipperiness = null,
+        aurora = null
     ),
     AggregatedFeed(
         identifier = "krisinformation-vma-ostersund",
@@ -209,7 +211,8 @@ private val previewFeeds: List<AggregatedFeed> = listOf(
                 )
             )
         ),
-        slipperiness = null
+        slipperiness = null,
+        aurora = null
     ),
     AggregatedFeed(
         identifier = "vadret-slipperiness-u6sce-2026-10-24-HIGH",
@@ -241,7 +244,8 @@ private val previewFeeds: List<AggregatedFeed> = listOf(
                 SlipperinessCause.REFREEZE,
                 SlipperinessCause.FROST
             )
-        )
+        ),
+        aurora = null
     )
 )
 

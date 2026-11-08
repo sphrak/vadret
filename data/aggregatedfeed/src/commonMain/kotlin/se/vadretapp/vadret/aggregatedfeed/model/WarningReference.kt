@@ -19,8 +19,17 @@ sealed interface WarningReference {
         override fun isReferenceTo(warningIdentifier: String): Boolean =
             warningIdentifier.startsWith(prefix = "$SLIPPERINESS_IDENTIFIER_PREFIX${geohash.value}$IDENTIFIER_SEPARATOR$slipperinessDay$IDENTIFIER_SEPARATOR")
     }
+
+    data class Aurora(
+        val geohash: Geohash,
+        val auroraNight: String
+    ) : WarningReference {
+        override fun isReferenceTo(warningIdentifier: String): Boolean =
+            warningIdentifier.startsWith(prefix = "$AURORA_IDENTIFIER_PREFIX${geohash.value}$IDENTIFIER_SEPARATOR$auroraNight$IDENTIFIER_SEPARATOR")
+    }
 }
 
 private const val IDENTIFIER_SEPARATOR = "-"
 private const val SMHI_IDENTIFIER_PREFIX = "smhi-"
 private const val SLIPPERINESS_IDENTIFIER_PREFIX = "vadret-slipperiness-"
+private const val AURORA_IDENTIFIER_PREFIX = "vadret-aurora-"

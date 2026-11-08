@@ -130,6 +130,7 @@ fun PlaceSearchBar(
                 contentType = { SUGGESTION_CONTENT_TYPE }
             ) { place: Place ->
                 PlaceSuggestionRow(
+                    modifier = Modifier.animateItem(),
                     place = place,
                     onClick = {
                         onSuggestionClick(place)

@@ -120,6 +120,24 @@ class DefaultSyncPushAlertsTaskTest {
     }
 
     @Test
+    fun theSubscriptionSaysWhetherAuroraIsFollowed() = runTest {
+        val subscribed = listOf(
+            WARNINGS_FROM_YELLOW,
+            WARNINGS_FROM_YELLOW.copy(aurora = true),
+            PushAlertChoices.NOTHING_CHOSEN.copy(aurora = true)
+        ).map { pushAlertChoices: PushAlertChoices ->
+            val pushAlertRepository = FakePushAlertRepository(choices = pushAlertChoices)
+            syncPushAlertsTask(pushAlertRepository = pushAlertRepository)()
+            pushAlertRepository.subscriptions.last()?.aurora
+        }
+
+        assertEquals(
+            expected = listOf(false, true, true),
+            actual = subscribed
+        )
+    }
+
+    @Test
     fun theSubscriptionSaysWhetherSlipperinessIsFollowed() = runTest {
         val subscribed = listOf(
             WARNINGS_FROM_YELLOW,
@@ -974,6 +992,7 @@ private val WARNINGS_FROM_YELLOW = PushAlertChoices(
     temperatureTrend = false,
     strongWind = false,
     slipperiness = false,
+    aurora = false,
     isChosenPlaceNotified = true,
     notifiedFavoriteIds = emptySet()
 )

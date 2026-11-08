@@ -9,19 +9,21 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
+                implementation project(':core:geohash')
                 implementation project(':core:logging')
                 implementation project(':core:refresh')
                 implementation project(':data:aggregatedfeed')
+                implementation project(':data:aurora')
                 implementation project(':data:common')
                 implementation project(':domain:followedplace')
                 implementation libs.coroutines.core
                 implementation libs.either
                 implementation libs.koin.core
+                implementation libs.kotlinx.datetime
             }
         }
         commonTest {
             dependencies {
-                implementation project(':core:geohash')
                 implementation project(':core:testing')
             }
         }

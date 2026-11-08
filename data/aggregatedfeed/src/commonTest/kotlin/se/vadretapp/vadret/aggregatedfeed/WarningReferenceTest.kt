@@ -41,4 +41,23 @@ class WarningReferenceTest {
             ).map { warningIdentifier: String -> warningReference.isReferenceTo(warningIdentifier = warningIdentifier) }
         )
     }
+
+    @Test
+    fun `aurora refers to its cell and night at every level and to nothing else`() {
+        val warningReference = WarningReference.Aurora(
+            geohash = Geohash(value = "u6sce"),
+            auroraNight = "2026-11-08"
+        )
+
+        assertEquals(
+            expected = listOf(true, true, false, false, false),
+            actual = listOf(
+                "vadret-aurora-u6sce-2026-11-08-POSSIBLE",
+                "vadret-aurora-u6sce-2026-11-08-HIGH",
+                "vadret-aurora-u6sce-2026-11-09-HIGH",
+                "vadret-slipperiness-u6sce-2026-11-08-HIGH",
+                "vadret-aurora-u6scf-2026-11-08-HIGH"
+            ).map { warningIdentifier: String -> warningReference.isReferenceTo(warningIdentifier = warningIdentifier) }
+        )
+    }
 }

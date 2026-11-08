@@ -11,6 +11,7 @@ kotlin {
             dependencies {
                 implementation project(':core:logging')
                 implementation project(':data:aggregatedfeed')
+                implementation project(':data:aurora')
                 implementation project(':data:common')
                 implementation project(':data:setting')
                 implementation project(':domain:followedplace')
@@ -31,6 +32,7 @@ kotlin {
         }
         commonTest {
             dependencies {
+                implementation project(':core:geohash')
                 implementation project(':core:testing')
             }
         }

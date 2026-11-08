@@ -1,10 +1,12 @@
 package se.vadretapp.vadret.forecastwarning.extension
 
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.StringResource
 import se.vadretapp.vadret.aggregatedfeed.model.AggregatedFeed
+import se.vadretapp.vadret.aggregatedfeed.model.Aurora
 import se.vadretapp.vadret.aggregatedfeed.model.FeedDetail
 import se.vadretapp.vadret.aggregatedfeed.model.FeedDetailKind
 import se.vadretapp.vadret.aggregatedfeed.model.FeedRegion
@@ -13,6 +15,7 @@ import se.vadretapp.vadret.aggregatedfeed.model.Slipperiness
 import se.vadretapp.vadret.aggregatedfeed.model.SlipperinessCause
 import se.vadretapp.vadret.forecastwarning.model.WarningDetail
 import se.vadretapp.vadret.forecastwarning.model.WarningItem
+import se.vadretapp.vadret.icons.Aurora
 import se.vadretapp.vadret.icons.Slipperiness
 import se.vadretapp.vadret.icons.VadretIcons
 import se.vadretapp.vadret.setting.model.HourFormat
@@ -23,6 +26,9 @@ import se.vadretapp.vadret.ui.extension.nameResource
 import se.vadretapp.vadret.ui.extension.toElapsedTime
 import se.vadretapp.vadret.ui.format.toDayTimeText
 import se.vadretapp.vadret.ui.resources.Res
+import se.vadretapp.vadret.ui.resources.aurora_estimate_explanation
+import se.vadretapp.vadret.ui.resources.aurora_peak_label
+import se.vadretapp.vadret.ui.resources.aurora_score
 import se.vadretapp.vadret.ui.resources.slipperiness_estimate_explanation
 import se.vadretapp.vadret.ui.resources.slipperiness_estimate_label
 import se.vadretapp.vadret.ui.resources.warning_detail_advice
@@ -62,18 +68,29 @@ internal fun AggregatedFeed.toWarningItem(
     val spacedAreaName: String? = (areaName ?: regionNames())?.withSpacedCommas()
     val publisher: String = senderName ?: source.displayName()
     val estimatedSlipperiness: Slipperiness? = slipperiness
+    val estimatedAurora: Aurora? = aurora
     return WarningItem(
         identifier = identifier,
         headline = headline,
-        headlineResource = estimatedSlipperiness?.headlineResource(),
-        icon = if (estimatedSlipperiness == null) {
-            null
+        headlineResource = when {
+            estimatedSlipperiness != null -> estimatedSlipperiness.headlineResource()
+            estimatedAurora != null -> Res.string.aurora_score
+            else -> null
+        },
+        headlineArguments = if (estimatedAurora == null) {
+            persistentListOf()
         } else {
-            VadretIcons.Alert.Slipperiness
+            persistentListOf(estimatedAurora.score.toString())
+        },
+        icon = when {
+            estimatedSlipperiness != null -> VadretIcons.Alert.Slipperiness
+            estimatedAurora != null -> VadretIcons.Alert.Aurora
+            else -> null
         },
         areaName = spacedAreaName,
         warningLevel = warningLevel,
         slipperinessRisk = estimatedSlipperiness?.risk,
+        auroraChance = estimatedAurora?.chance,
         source = source,
         isPublicAlert = isPublicAlert,
         publisher = publisher,
@@ -95,12 +112,18 @@ internal fun AggregatedFeed.toWarningItem(
             languageTag = languageTag,
             hourFormat = hourFormat
         ),
-        details = if (estimatedSlipperiness == null) {
-            details
-                .filterNot { feedDetail: FeedDetail -> feedDetail.repeatsArea(spacedAreaName = spacedAreaName) }
-                .map { feedDetail: FeedDetail -> feedDetail.toWarningDetail() }
-        } else {
-            estimatedSlipperiness.toWarningDetails()
+        details = when {
+            estimatedSlipperiness != null -> estimatedSlipperiness.toWarningDetails()
+            estimatedAurora != null -> estimatedAurora.toWarningDetails(
+                now = now,
+                timeZone = timeZone,
+                languageTag = languageTag,
+                hourFormat = hourFormat
+            )
+            else ->
+                details
+                    .filterNot { feedDetail: FeedDetail -> feedDetail.repeatsArea(spacedAreaName = spacedAreaName) }
+                    .map { feedDetail: FeedDetail -> feedDetail.toWarningDetail() }
         }.toImmutableList(),
         mapArea = area.toWarningMapArea(),
         followedPlaceNames = followedPlaceNames
@@ -119,6 +142,35 @@ private fun Slipperiness.toWarningDetails(): List<WarningDetail> =
         labelResource = Res.string.slipperiness_estimate_label,
         textResource = Res.string.slipperiness_estimate_explanation
     )
+
+private fun Aurora.toWarningDetails(
+    now: Instant,
+    timeZone: TimeZone,
+    languageTag: String,
+    hourFormat: HourFormat
+): List<WarningDetail> {
+    val peakAtText: String? = peakAt.toDayTimeTextOrNull(
+        now = now,
+        timeZone = timeZone,
+        languageTag = languageTag,
+        hourFormat = hourFormat
+    )
+    val estimate = WarningDetail.Explained(
+        labelResource = Res.string.slipperiness_estimate_label,
+        textResource = Res.string.aurora_estimate_explanation
+    )
+    return if (peakAtText == null) {
+        listOf(estimate)
+    } else {
+        listOf(
+            WarningDetail.Labelled(
+                labelResource = Res.string.aurora_peak_label,
+                text = peakAtText
+            ),
+            estimate
+        )
+    }
+}
 
 private fun AggregatedFeed.regionNames(): String? =
     area.regions

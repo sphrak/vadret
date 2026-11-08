@@ -78,7 +78,8 @@ internal fun aggregatedFeed(
             lines = lines,
             regions = regions
         ),
-        slipperiness = null
+        slipperiness = null,
+        aurora = null
     )
 
 internal val NOW: Instant = Instant.parse(input = "2026-10-24T12:00:00Z")

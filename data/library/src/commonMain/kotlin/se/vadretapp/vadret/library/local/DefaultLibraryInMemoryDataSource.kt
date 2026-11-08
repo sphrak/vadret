@@ -61,10 +61,10 @@ internal class DefaultLibraryInMemoryDataSource : LibraryInMemoryDataSource {
         Library(
             author = "SMHI Open Data Meteorological Forecasts",
             title = "SMHI Open Data API",
-            description = "SMHI Open Data Meteorological Forecasts, PMP, contains forecast data for the following 10 days. It is based on a number of forecast models statistical adjustments and manual edits.",
-            projectUrl = "https://opendata.smhi.se/apidocs/metfcst/index.html#about",
+            description = "SMHI's open data: the forecast, the weather analysis, radar images and weather warnings. The Vadret API turns the forecast into a slipperiness risk and a chance of northern lights.",
+            projectUrl = "https://opendata.smhi.se/",
             sourceUrl = null,
-            licenseUrl = "http://www.smhi.se/klimatdata/oppna-data/information-om-oppna-data/villkor-for-anvandning-1.30622",
+            licenseUrl = "https://www.smhi.se/data/om-smhis-data/villkor-for-anvandning",
             license = CREATIVE_COMMONS_4
         ),
         Library(
@@ -82,6 +82,15 @@ internal class DefaultLibraryInMemoryDataSource : LibraryInMemoryDataSource {
             description = "A geographical database of place names, used to search for places in Sweden.",
             projectUrl = "https://www.geonames.org/",
             sourceUrl = "https://download.geonames.org/export/dump/",
+            licenseUrl = "https://creativecommons.org/licenses/by/4.0/",
+            license = CREATIVE_COMMONS_4
+        ),
+        Library(
+            author = "Kiruna Atmospheric and Geophysical Observatory, Swedish Institute of Space Physics",
+            title = "Kiruna magnetometer",
+            description = "Magnetometer data from Kiruna, turned into a K index and a chance of northern lights by the Vadret API.",
+            projectUrl = "https://www2.irf.se/mag",
+            sourceUrl = "https://www2.irf.se/maggraphs/rt1hour_secondary.txt",
             licenseUrl = "https://creativecommons.org/licenses/by/4.0/",
             license = CREATIVE_COMMONS_4
         ),

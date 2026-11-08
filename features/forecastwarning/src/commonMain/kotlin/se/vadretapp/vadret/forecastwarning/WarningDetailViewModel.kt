@@ -12,8 +12,13 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.TimeZone
 import se.vadretapp.vadret.aggregatedfeed.model.AggregatedFeed
+import se.vadretapp.vadret.aggregatedfeed.model.Aurora
+import se.vadretapp.vadret.aurora.model.AuroraHour
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.forecastwarning.extension.toWarningItem
+import se.vadretapp.vadret.forecastwarning.extension.withAuroraHours
+import se.vadretapp.vadret.logging.Logger
+import se.vadretapp.vadret.logging.LoggerFactory
 import se.vadretapp.vadret.setting.model.HourFormat
 import se.vadretapp.vadret.ui.extension.launchReplacing
 import se.vadretapp.vadret.ui.extension.messageResource
@@ -21,6 +26,7 @@ import se.vadretapp.vadret.ui.format.TextLocale
 import se.vadretapp.vadret.ui.format.currentLanguageTag
 import se.vadretapp.vadret.ui.resources.Res
 import se.vadretapp.vadret.ui.resources.no_alert_available
+import se.vadretapp.vadret.warning.usecase.GetAuroraHoursTask
 import se.vadretapp.vadret.warning.usecase.GetWarningsTask
 import kotlin.concurrent.atomics.AtomicReference
 import kotlin.time.Clock
@@ -28,6 +34,7 @@ import kotlin.time.Clock
 @Immutable
 class WarningDetailViewModel internal constructor(
     private val getWarningsTask: GetWarningsTask,
+    private val getAuroraHoursTask: GetAuroraHoursTask,
     private val clock: Clock,
     private val coroutineDispatcher: CoroutineDispatcher
 ) : ViewModel() {
@@ -43,6 +50,7 @@ class WarningDetailViewModel internal constructor(
     )
     private val textLocaleJob: AtomicReference<Job?> = AtomicReference(value = null)
     private val warning: AtomicReference<AggregatedFeed?> = AtomicReference(value = null)
+    private val auroraHours: AtomicReference<List<AuroraHour>> = AtomicReference(value = emptyList())
     private val startedWarningIdentifier: AtomicReference<String?> = AtomicReference(value = null)
 
     internal fun onEvent(event: WarningDetailEvent) {
@@ -67,9 +75,23 @@ class WarningDetailViewModel internal constructor(
                         val aggregatedFeed: AggregatedFeed? = aggregatedFeeds.firstOrNull { aggregatedFeed: AggregatedFeed -> aggregatedFeed.identifier == warningIdentifier }
                         warning.store(newValue = aggregatedFeed)
                         displayWarning()
+                        loadAuroraHours(aurora = aggregatedFeed?.aurora)
                     }
                 )
         }
+    }
+
+    private suspend fun loadAuroraHours(aurora: Aurora?) {
+        if (aurora == null) {
+            return
+        }
+        getAuroraHoursTask(aurora = aurora).onResult(
+            onError = { failure: Failure -> logger.debug { "The aurora story is shown without its hours: ${failure.errorCode}" } },
+            onSuccess = { loadedAuroraHours: List<AuroraHour> ->
+                auroraHours.store(newValue = loadedAuroraHours)
+                displayWarning()
+            }
+        )
     }
 
     private fun onLocaleChanged(
@@ -99,12 +121,18 @@ class WarningDetailViewModel internal constructor(
         val shownTextLocale: TextLocale = textLocale.load()
         state.update { state: WarningDetailState ->
             state.copy(
-                warning = aggregatedFeed?.toWarningItem(
-                    now = clock.now(),
-                    timeZone = TimeZone.currentSystemDefault(),
-                    languageTag = shownTextLocale.languageTag,
-                    hourFormat = shownTextLocale.hourFormat
-                ),
+                warning = aggregatedFeed
+                    ?.toWarningItem(
+                        now = clock.now(),
+                        timeZone = TimeZone.currentSystemDefault(),
+                        languageTag = shownTextLocale.languageTag,
+                        hourFormat = shownTextLocale.hourFormat
+                    )?.withAuroraHours(
+                        auroraHours = auroraHours.load(),
+                        timeZone = TimeZone.currentSystemDefault(),
+                        languageTag = shownTextLocale.languageTag,
+                        hourFormat = shownTextLocale.hourFormat
+                    ),
                 isLoading = false,
                 messageResource = if (aggregatedFeed == null) {
                     Res.string.no_alert_available
@@ -124,3 +152,5 @@ class WarningDetailViewModel internal constructor(
         }
     }
 }
+
+private val logger: Logger = LoggerFactory.getLogger(tag = "se.vadretapp.vadret.forecastwarning")

@@ -339,6 +339,15 @@
     <string name="slipperiness_estimate_explanation">Vadret API works out the risk from SMHI\'s forecast. It is not a warning from SMHI.</string>
     <string name="slipperiness_alerts">Slipperiness</string>
     <string name="slipperiness_alerts_summary">When the coming 24 hours may be slippery</string>
+    <string name="aurora_possible">Chance of northern lights</string>
+    <string name="aurora_high">Good chance of northern lights</string>
+    <string name="aurora_score">Up to %1$d% chance</string>
+    <string name="aurora_peak_label">At its best</string>
+    <string name="aurora_hours_label">Hour by hour</string>
+    <string name="aurora_hour_score">%1$d%</string>
+    <string name="aurora_estimate_explanation">Vadret API works out the chance from NOAA\'s space weather forecast, SMHI\'s cloud forecast and how dark the sky is. It is not a forecast from SMHI.</string>
+    <string name="aurora_alerts">Northern lights</string>
+    <string name="aurora_alerts_summary">When the northern lights may show in the coming 24 hours</string>
     <string name="pollen_alerts">Pollen levels</string>
     <string name="pollen_alerts_summary">For the pollen picked under Pollen</string>
     <string name="pollen_alerts_need_allergens">Turn on pollen and pick the pollen you are allergic to under Pollen first.</string>

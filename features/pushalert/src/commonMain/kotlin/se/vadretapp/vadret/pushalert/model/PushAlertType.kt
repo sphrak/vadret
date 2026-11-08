@@ -8,5 +8,6 @@ enum class PushAlertType {
     HARD_WIND,
     STORM,
     HURRICANE,
-    SLIPPERINESS
+    SLIPPERINESS,
+    AURORA
 }

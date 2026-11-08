@@ -3,6 +3,7 @@ package se.vadretapp.vadret.forecastwarning.model
 import androidx.compose.runtime.Immutable
 import kotlinx.collections.immutable.ImmutableList
 import org.jetbrains.compose.resources.StringResource
+import se.vadretapp.vadret.aggregatedfeed.model.AuroraChance
 import se.vadretapp.vadret.aggregatedfeed.model.FeedSource
 import se.vadretapp.vadret.aggregatedfeed.model.SlipperinessRisk
 import se.vadretapp.vadret.aggregatedfeed.model.WarningLevel
@@ -14,10 +15,12 @@ internal data class WarningItem(
     val identifier: String,
     val headline: String,
     val headlineResource: StringResource?,
+    val headlineArguments: ImmutableList<String>,
     val icon: VadretIconGraphic?,
     val areaName: String?,
     val warningLevel: WarningLevel?,
     val slipperinessRisk: SlipperinessRisk?,
+    val auroraChance: AuroraChance?,
     val source: FeedSource,
     val isPublicAlert: Boolean,
     val publisher: String,

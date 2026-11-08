@@ -17,6 +17,8 @@ internal data class SubscriptionDto(
     val strongWind: Boolean? = null,
     @SerialName(value = "slipperiness")
     val slipperiness: Boolean? = null,
+    @SerialName(value = "aurora")
+    val aurora: Boolean? = null,
     @SerialName(value = "hour_format")
     val hourFormat: HourFormatDto? = null,
     @SerialName(value = "language")

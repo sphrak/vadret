@@ -143,6 +143,15 @@
     <string name="slipperiness_estimate_explanation">Vadret API regner ut risikoen fra SMHIs prognose. Det er ikke et farevarsel fra SMHI.</string>
     <string name="slipperiness_alerts">Glatt føre</string>
     <string name="slipperiness_alerts_summary">Når det kan bli glatt det neste døgnet</string>
+    <string name="aurora_possible">Sjanse for nordlys</string>
+    <string name="aurora_high">Stor sjanse for nordlys</string>
+    <string name="aurora_score">Opptil %1$d % sjanse</string>
+    <string name="aurora_peak_label">Best</string>
+    <string name="aurora_hours_label">Time for time</string>
+    <string name="aurora_hour_score">%1$d %</string>
+    <string name="aurora_estimate_explanation">Vadret API regner ut sjansen fra NOAAs romværvarsel, SMHIs skyvarsel og hvor mørkt det er. Det er ikke et varsel fra SMHI.</string>
+    <string name="aurora_alerts">Nordlys</string>
+    <string name="aurora_alerts_summary">Når nordlys kan vises det kommende døgnet</string>
     <string name="pollen_alerts">Pollennivåer</string>
     <string name="pollen_alerts_summary">For pollen du har valgt under Pollen</string>
     <string name="pollen_alerts_need_allergens">Slå på pollen og velg hvilke pollen du er allergisk mot under Pollen først.</string>

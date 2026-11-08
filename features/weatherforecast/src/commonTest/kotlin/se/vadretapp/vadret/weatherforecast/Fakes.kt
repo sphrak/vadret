@@ -364,7 +364,8 @@ internal fun warning(
             lines = emptyList(),
             regions = emptyList()
         ),
-        slipperiness = null
+        slipperiness = null,
+        aurora = null
     )
 
 // Answers for one place and for the followed places alike, and records which was asked: no place means the followed places.

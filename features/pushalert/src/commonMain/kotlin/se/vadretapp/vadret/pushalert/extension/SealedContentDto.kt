@@ -29,6 +29,7 @@ private fun String.toPushAlertKindOrNull(): PushAlertKind? =
         TEMPERATURE_KIND -> PushAlertKind.TEMPERATURE
         WIND_KIND -> PushAlertKind.WIND
         SLIPPERINESS_KIND -> PushAlertKind.SLIPPERINESS
+        AURORA_KIND -> PushAlertKind.AURORA
         else -> null
     }
 
@@ -42,6 +43,7 @@ private fun String.toPushAlertTypeOrNull(): PushAlertType? =
         STORM_TYPE -> PushAlertType.STORM
         HURRICANE_TYPE -> PushAlertType.HURRICANE
         SLIPPERINESS_TYPE -> PushAlertType.SLIPPERINESS
+        AURORA_TYPE -> PushAlertType.AURORA
         else -> null
     }
 
@@ -54,6 +56,7 @@ private const val POLLEN_KIND = "pollen"
 private const val TEMPERATURE_KIND = "temperature"
 private const val WIND_KIND = "wind"
 private const val SLIPPERINESS_KIND = "slipperiness"
+private const val AURORA_KIND = "aurora"
 private const val WARNING_TYPE = "warning"
 private const val POLLEN_TYPE = "pollen"
 private const val WARMER_TYPE = "warmer"
@@ -62,3 +65,4 @@ private const val HARD_WIND_TYPE = "hard_wind"
 private const val STORM_TYPE = "storm"
 private const val HURRICANE_TYPE = "hurricane"
 private const val SLIPPERINESS_TYPE = "slipperiness"
+private const val AURORA_TYPE = "aurora"

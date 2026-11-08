@@ -47,7 +47,8 @@ class PushAlertSimulationViewModelTest {
                 PushAlertType.HARD_WIND to PushAlertKind.WIND,
                 PushAlertType.STORM to PushAlertKind.WIND,
                 PushAlertType.HURRICANE to PushAlertKind.WIND,
-                PushAlertType.SLIPPERINESS to PushAlertKind.SLIPPERINESS
+                PushAlertType.SLIPPERINESS to PushAlertKind.SLIPPERINESS,
+                PushAlertType.AURORA to PushAlertKind.AURORA
             ),
             actual = viewModel.state.value.pushAlertMessages.map { pushAlertMessage: PushAlertMessage -> pushAlertMessage.pushAlertType to pushAlertMessage.kind }
         )
@@ -77,7 +78,47 @@ class PushAlertSimulationViewModelTest {
                 )
             },
             actual = listOf(evening, morning).map { now: Instant ->
-                simulatedPushAlertMessages(now = now).last().warningReference
+                simulatedPushAlertMessages(now = now).simulatedWarningReference(pushAlertKind = PushAlertKind.SLIPPERINESS)
+            }
+        )
+    }
+
+    @Test
+    fun theSimulatedAuroraRefersToTheNightAheadOrJustPassed() {
+        val evening = Instant.parse(input = "2026-11-08T18:00:00Z")
+        val morning = Instant.parse(input = "2026-11-09T05:00:00Z")
+
+        assertEquals(
+            expected = List(size = 2) {
+                WarningReference.Aurora(
+                    geohash = Geohash(value = "u6sce"),
+                    auroraNight = "2026-11-08"
+                )
+            },
+            actual = listOf(evening, morning).map { now: Instant ->
+                simulatedPushAlertMessages(now = now).simulatedWarningReference(pushAlertKind = PushAlertKind.AURORA)
+            }
+        )
+    }
+
+    @Test
+    fun theNightChangesAtSwedishNoonEvenOnTheDayTheClocksGoBack() {
+        val beforeNoon = Instant.parse(input = "2026-10-25T10:30:00Z")
+        val afterNoon = Instant.parse(input = "2026-10-25T11:30:00Z")
+
+        assertEquals(
+            expected = listOf(
+                WarningReference.Aurora(
+                    geohash = Geohash(value = "u6sce"),
+                    auroraNight = "2026-10-24"
+                ),
+                WarningReference.Aurora(
+                    geohash = Geohash(value = "u6sce"),
+                    auroraNight = "2026-10-25"
+                )
+            ),
+            actual = listOf(beforeNoon, afterNoon).map { now: Instant ->
+                simulatedPushAlertMessages(now = now).simulatedWarningReference(pushAlertKind = PushAlertKind.AURORA)
             }
         )
     }
@@ -132,3 +173,6 @@ class PushAlertSimulationViewModelTest {
 }
 
 private val SIMULATED_AT: Instant = Instant.parse(input = "2026-11-08T18:00:00Z")
+
+private fun List<PushAlertMessage>.simulatedWarningReference(pushAlertKind: PushAlertKind): WarningReference? =
+    single { pushAlertMessage: PushAlertMessage -> pushAlertMessage.kind == pushAlertKind }.warningReference

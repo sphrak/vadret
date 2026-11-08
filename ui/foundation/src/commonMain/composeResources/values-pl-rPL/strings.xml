@@ -135,6 +135,15 @@
     <string name="slipperiness_estimate_explanation">Vadret API wylicza ryzyko na podstawie prognozy SMHI. To nie jest ostrzeżenie SMHI.</string>
     <string name="slipperiness_alerts">Śliskość</string>
     <string name="slipperiness_alerts_summary">Gdy w ciągu najbliższej doby może być ślisko</string>
+    <string name="aurora_possible">Możliwa zorza polarna</string>
+    <string name="aurora_high">Duża szansa na zorzę polarną</string>
+    <string name="aurora_score">Do %1$d% szans</string>
+    <string name="aurora_peak_label">Najlepiej</string>
+    <string name="aurora_hours_label">Godzina po godzinie</string>
+    <string name="aurora_hour_score">%1$d%</string>
+    <string name="aurora_estimate_explanation">Vadret API oblicza szansę na podstawie prognozy pogody kosmicznej NOAA, prognozy zachmurzenia SMHI i tego, jak jest ciemno. To nie jest prognoza SMHI.</string>
+    <string name="aurora_alerts">Zorza polarna</string>
+    <string name="aurora_alerts_summary">Gdy w ciągu najbliższej doby może być widać zorzę polarną</string>
     <string name="pollen_alerts">Stężenie pyłków</string>
     <string name="pollen_alerts_summary">Dla pyłków wybranych w sekcji Pyłki</string>
     <string name="pollen_alerts_need_allergens">Najpierw włącz pyłki i wybierz w sekcji Pyłki te, na które masz alergię.</string>

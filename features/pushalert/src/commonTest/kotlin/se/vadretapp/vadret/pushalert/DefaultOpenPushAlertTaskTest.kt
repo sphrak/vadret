@@ -80,13 +80,14 @@ class DefaultOpenPushAlertTaskTest {
     @Test
     fun aKindThatIsTurnedOffHereIsDroppedEvenWhenTheServerStillSendsIt() = runTest {
         assertEquals(
-            expected = List(size = 5) { Failure(errorCode = ErrorCode.PUSH_ALERT_NOT_CHOSEN).asLeft() },
+            expected = List(size = 6) { Failure(errorCode = ErrorCode.PUSH_ALERT_NOT_CHOSEN).asLeft() },
             actual = listOf(
                 openPushAlert(pushAlertChoices = EVERYTHING_CHOSEN.copy(warningLowestLevel = null))(sealed = Base64.encode(source = SEALED_WARNING)),
                 openPushAlert(pushAlertChoices = EVERYTHING_CHOSEN.copy(pollenLowestLevel = null))(sealed = Base64.encode(source = SEALED_POLLEN)),
                 openPushAlert(pushAlertChoices = EVERYTHING_CHOSEN.copy(temperatureTrend = false))(sealed = Base64.encode(source = SEALED_TEMPERATURE)),
                 openPushAlert(pushAlertChoices = EVERYTHING_CHOSEN.copy(strongWind = false))(sealed = Base64.encode(source = SEALED_WIND)),
-                openPushAlert(pushAlertChoices = EVERYTHING_CHOSEN.copy(slipperiness = false))(sealed = Base64.encode(source = SEALED_SLIPPERINESS))
+                openPushAlert(pushAlertChoices = EVERYTHING_CHOSEN.copy(slipperiness = false))(sealed = Base64.encode(source = SEALED_SLIPPERINESS)),
+                openPushAlert(pushAlertChoices = EVERYTHING_CHOSEN.copy(aurora = false))(sealed = Base64.encode(source = SEALED_AURORA))
             )
         )
     }
@@ -139,6 +140,7 @@ class DefaultOpenPushAlertTaskTest {
                 PushAlertType.STORM,
                 PushAlertType.HURRICANE,
                 PushAlertType.SLIPPERINESS,
+                PushAlertType.AURORA,
                 null
             ).map { pushAlertType -> pushAlertType.asRight() },
             actual = ALERT_TYPES.map { alertType ->
@@ -175,6 +177,30 @@ class DefaultOpenPushAlertTaskTest {
                 )
             ).asRight(),
             actual = openPushAlert(sealed = Base64.encode(source = SEALED_SLIPPERINESS))
+        )
+    }
+
+    @Test
+    fun anAuroraAlertRefersToItsStoryAndIsNamedAfterTheSavedPlaceInItsCell() = runTest {
+        val openPushAlert = openPushAlert(
+            pushAlertChoices = PushAlertChoices.NOTHING_CHOSEN.copy(aurora = true),
+            favoriteRepository = FakeFavoriteRepository(favorites = listOf(MALMO_FAVORITE))
+        )
+
+        assertEquals(
+            expected = PushAlertMessage(
+                title = "Chans för norrsken i kväll - Malmö",
+                body = "Som störst runt kl. 22, ungefär kl. 20-01.",
+                kind = PushAlertKind.AURORA,
+                pushAlertType = PushAlertType.AURORA,
+                notificationId = "n-9",
+                cell = "u3chr",
+                warningReference = WarningReference.Aurora(
+                    geohash = Geohash(value = "u3chr"),
+                    auroraNight = "2026-11-08"
+                )
+            ).asRight(),
+            actual = openPushAlert(sealed = Base64.encode(source = SEALED_AURORA))
         )
     }
 
@@ -273,6 +299,10 @@ private val SEALED_WARNING_WITH_AREA = byteArrayOf(
     34,
     35
 )
+private val SEALED_AURORA = byteArrayOf(
+    36,
+    37
+)
 
 private val FAKE_SEALED_MESSAGE_KEY = FakeSealedMessageKey(
     openedBySealed = mapOf(
@@ -285,6 +315,7 @@ private val FAKE_SEALED_MESSAGE_KEY = FakeSealedMessageKey(
         SEALED_WARNING_WITH_CELL.toList() to """{"title":"Gul varning: Skåne län","body":"Kuling","data":{"kind":"warning","cell":"u3ch"}}""".encodeToByteArray(),
         SEALED_POLLEN_WITH_CELL.toList() to """{"title":"Björkpollen i Malmö","body":"Höga halter","data":{"kind":"pollen","cell":"u3ch"}}""".encodeToByteArray(),
         SEALED_SLIPPERINESS.toList() to """{"title":"Möjlig halka i natt","body":"Rimfrost, ungefär kl. 23-06.","data":{"kind":"slipperiness","alert_type":"slipperiness","notification_id":"n-7","cell":"u3chr","day":"2026-11-08","slipperiness_level":"POSSIBLE"}}""".encodeToByteArray(),
+        SEALED_AURORA.toList() to """{"title":"Chans för norrsken i kväll","body":"Som störst runt kl. 22, ungefär kl. 20-01.","data":{"kind":"aurora","alert_type":"aurora","notification_id":"n-9","cell":"u3chr","day":"2026-11-08","aurora_level":"POSSIBLE"}}""".encodeToByteArray(),
         SEALED_WARNING_WITH_AREA.toList() to """{"title":"Gul varning: Skåne län","body":"Kuling","data":{"kind":"warning","alert_type":"warning","notification_id":"n-8","warning_area_id":"12"}}""".encodeToByteArray(),
         SEALED_WITHOUT_BODY.toList() to """{"title":"Gul varning","data":{"kind":"warning"}}""".encodeToByteArray(),
         SEALED_NONSENSE.toList() to "not json".encodeToByteArray(),
@@ -301,11 +332,12 @@ private val EVERYTHING_CHOSEN = PushAlertChoices(
     temperatureTrend = true,
     strongWind = true,
     slipperiness = true,
+    aurora = true,
     isChosenPlaceNotified = true,
     notifiedFavoriteIds = emptySet()
 )
 
-private val ALERT_TYPES = listOf("warning", "pollen", "warmer", "colder", "hard_wind", "storm", "hurricane", "slipperiness", "earthquake")
+private val ALERT_TYPES = listOf("warning", "pollen", "warmer", "colder", "hard_wind", "storm", "hurricane", "slipperiness", "aurora", "earthquake")
 
 private val WIND_MESSAGE = PushAlertMessage(
     title = "Hård vind i morgon",

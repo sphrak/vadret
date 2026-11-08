@@ -7,6 +7,8 @@ import kotlinx.serialization.Serializable
 internal data class ForecastWarningAreaDto(
     @SerialName(value = "id")
     val id: String,
+    @SerialName(value = "geohash")
+    val geohash: String? = null,
     @SerialName(value = "published")
     val published: String? = null,
     @SerialName(value = "approximate_start")
@@ -17,6 +19,10 @@ internal data class ForecastWarningAreaDto(
     val level: String? = null,
     @SerialName(value = "causes")
     val causes: List<ForecastWarningCauseDto>? = null,
+    @SerialName(value = "score")
+    val score: Int? = null,
+    @SerialName(value = "peak")
+    val peak: String? = null,
     @SerialName(value = "area")
     val area: GeoJsonDto? = null
 )

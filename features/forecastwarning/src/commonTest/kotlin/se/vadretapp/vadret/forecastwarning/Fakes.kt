@@ -7,6 +7,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import se.vadretapp.vadret.aggregatedfeed.model.AggregatedFeed
+import se.vadretapp.vadret.aggregatedfeed.model.Aurora
+import se.vadretapp.vadret.aggregatedfeed.model.AuroraChance
 import se.vadretapp.vadret.aggregatedfeed.model.FeedArea
 import se.vadretapp.vadret.aggregatedfeed.model.FeedDetail
 import se.vadretapp.vadret.aggregatedfeed.model.FeedRegion
@@ -14,10 +16,13 @@ import se.vadretapp.vadret.aggregatedfeed.model.FeedSource
 import se.vadretapp.vadret.aggregatedfeed.model.GeoLine
 import se.vadretapp.vadret.aggregatedfeed.model.GeoPolygon
 import se.vadretapp.vadret.aggregatedfeed.model.WarningLevel
+import se.vadretapp.vadret.aurora.model.AuroraHour
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.followedplace.model.FollowedPlace
+import se.vadretapp.vadret.geohash.model.Geohash
 import se.vadretapp.vadret.warning.model.FollowedPlaceWarnings
 import se.vadretapp.vadret.warning.model.PlaceWarning
+import se.vadretapp.vadret.warning.usecase.GetAuroraHoursTask
 import se.vadretapp.vadret.warning.usecase.GetWarningsTask
 import se.vadretapp.vadret.warning.usecase.ObserveFollowedPlaceWarningsTask
 import kotlin.time.Instant
@@ -54,8 +59,47 @@ internal fun aggregatedFeed(
             lines = lines,
             regions = regions
         ),
-        slipperiness = null
+        slipperiness = null,
+        aurora = null
     )
+
+internal fun auroraFeed(identifier: String): AggregatedFeed =
+    aggregatedFeed(
+        identifier = identifier,
+        headline = "",
+        source = FeedSource.VADRET_API,
+        areaName = null,
+        warningLevel = null
+    ).copy(
+        aurora = Aurora(
+            chance = AuroraChance.POSSIBLE,
+            score = 55,
+            peakAt = Instant.parse(input = "2026-10-24T20:00:00Z"),
+            geohash = Geohash(value = "u6sce"),
+            auroraNight = "2026-10-24"
+        )
+    )
+
+internal class FakeGetAuroraHoursTask(
+    var result: Either<Failure, List<AuroraHour>> = listOf(
+        AuroraHour(
+            time = Instant.parse(input = "2026-10-24T19:00:00Z"),
+            score = 40
+        ),
+        AuroraHour(
+            time = Instant.parse(input = "2026-10-24T20:00:00Z"),
+            score = 55
+        )
+    ).asRight()
+) : GetAuroraHoursTask {
+
+    val auroras = mutableListOf<Aurora>()
+
+    override suspend fun invoke(aurora: Aurora): Either<Failure, List<AuroraHour>> {
+        auroras += aurora
+        return result
+    }
+}
 
 internal class FakeGetWarningsTask(
     var result: Either<Failure, List<AggregatedFeed>> = listOf(

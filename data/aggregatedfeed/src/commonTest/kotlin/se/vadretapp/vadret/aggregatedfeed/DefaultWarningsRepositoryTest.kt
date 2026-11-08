@@ -12,6 +12,8 @@ import kotlinx.io.IOException
 import kotlinx.serialization.json.Json
 import se.vadretapp.vadret.aggregatedfeed.local.DefaultAggregatedFeedLocalDataSource
 import se.vadretapp.vadret.aggregatedfeed.model.AggregatedFeed
+import se.vadretapp.vadret.aggregatedfeed.model.Aurora
+import se.vadretapp.vadret.aggregatedfeed.model.AuroraChance
 import se.vadretapp.vadret.aggregatedfeed.model.FeedArea
 import se.vadretapp.vadret.aggregatedfeed.model.FeedDetail
 import se.vadretapp.vadret.aggregatedfeed.model.FeedDetailKind
@@ -246,7 +248,8 @@ class DefaultWarningsRepositoryTest {
                                 )
                             )
                         ),
-                        slipperiness = null
+                        slipperiness = null,
+                        aurora = null
                     ),
                     AggregatedFeed(
                         identifier = "smhi-7-2",
@@ -261,7 +264,8 @@ class DefaultWarningsRepositoryTest {
                         startsAt = null,
                         endsAt = null,
                         area = noArea.copy(regions = smhiRegions(1, 14)),
-                        slipperiness = null
+                        slipperiness = null,
+                        aurora = null
                     ),
                     AggregatedFeed(
                         identifier = "smhi-7-1",
@@ -276,7 +280,8 @@ class DefaultWarningsRepositoryTest {
                         startsAt = Instant.parse(input = "2026-10-24T12:00:00Z"),
                         endsAt = Instant.parse(input = "2026-10-25T06:00:00Z"),
                         area = noArea.copy(regions = smhiRegions(14)),
-                        slipperiness = null
+                        slipperiness = null,
+                        aurora = null
                     )
                 ).asRight(),
                 actual = fetchFeed()
@@ -713,7 +718,8 @@ class DefaultWarningsRepositoryTest {
                                 )
                             )
                         ),
-                        slipperiness = null
+                        slipperiness = null,
+                        aurora = null
                     ),
                     AggregatedFeed(
                         identifier = "krisinformation-b",
@@ -728,7 +734,8 @@ class DefaultWarningsRepositoryTest {
                         startsAt = null,
                         endsAt = null,
                         area = noArea,
-                        slipperiness = null
+                        slipperiness = null,
+                        aurora = null
                     )
                 ).asRight(),
                 actual = fetchFeed()
@@ -964,7 +971,8 @@ class DefaultWarningsRepositoryTest {
                                 SlipperinessCause.FROST,
                                 SlipperinessCause.SNOW
                             )
-                        )
+                        ),
+                        aurora = null
                     )
                 ).asRight(),
                 actual = fetchFeed(forecastWarningRequest = forecastWarningRequest)
@@ -1088,6 +1096,90 @@ class DefaultWarningsRepositoryTest {
         }
 
     @Test
+    fun `vadret api aurora becomes an item per area with its chance score peak and cell`() =
+        testScope.runTest {
+            forecastWarningRemoteDataSource.forecastWarnings = { auroraWarnings(auroraWarningArea()) }
+
+            assertEquals(
+                expected = listOf(
+                    AggregatedFeed(
+                        identifier = "vadret-aurora-u6sce-2026-10-24-HIGH",
+                        headline = "",
+                        areaName = null,
+                        warningLevel = null,
+                        details = emptyList(),
+                        source = FeedSource.VADRET_API,
+                        isPublicAlert = false,
+                        senderName = null,
+                        publishedAt = Instant.parse(input = "2026-10-24T13:30:00Z"),
+                        startsAt = Instant.parse(input = "2026-10-24T19:00:00Z"),
+                        endsAt = Instant.parse(input = "2026-10-24T23:00:00Z"),
+                        area = FeedArea(
+                            polygons = emptyList(),
+                            lines = emptyList(),
+                            regions = emptyList()
+                        ),
+                        slipperiness = null,
+                        aurora = Aurora(
+                            chance = AuroraChance.HIGH,
+                            score = 72,
+                            peakAt = Instant.parse(input = "2026-10-24T21:00:00Z"),
+                            geohash = Geohash(value = "u6sce"),
+                            auroraNight = "2026-10-24"
+                        )
+                    )
+                ).asRight(),
+                actual = fetchFeed(forecastWarningRequest = forecastWarningRequest)
+            )
+        }
+
+    @Test
+    fun `an aurora area without a cell score night or known chance is logged and left out`() =
+        testScope.runTest {
+            forecastWarningRemoteDataSource.forecastWarnings = {
+                auroraWarnings(
+                    auroraWarningArea().copy(geohash = null),
+                    auroraWarningArea().copy(score = null),
+                    auroraWarningArea().copy(id = "u6sce-"),
+                    auroraWarningArea().copy(level = "CERTAIN"),
+                    auroraWarningArea().copy(
+                        id = "u3chr-2026-10-24",
+                        geohash = "u3chr"
+                    )
+                )
+            }
+
+            withRecordedLogs { recordingLogSink ->
+                assertEquals(
+                    expected = listOf("vadret-aurora-u3chr-2026-10-24-HIGH"),
+                    actual = fetchFeed(forecastWarningRequest = forecastWarningRequest).identifiers()
+                )
+                assertEquals(
+                    expected = listOf(
+                        "Skipping Vadret API aurora area u6sce-2026-10-24, published 2026-10-24T13:30:00Z, level HIGH, cell null, score 72",
+                        "Skipping Vadret API aurora area u6sce-2026-10-24, published 2026-10-24T13:30:00Z, level HIGH, cell u6sce, score null",
+                        "Skipping Vadret API aurora area u6sce-, published 2026-10-24T13:30:00Z, level HIGH, cell u6sce, score 72",
+                        "Skipping Vadret API aurora area u6sce-2026-10-24, published 2026-10-24T13:30:00Z, level CERTAIN, cell u6sce, score 72"
+                    ),
+                    actual = recordingLogSink.lines.map { line: LogLine -> line.message }
+                )
+            }
+        }
+
+    @Test
+    fun `a saved vadret api item reads back with its aurora`() =
+        testScope.runTest {
+            forecastWarningRemoteDataSource.forecastWarnings = { auroraWarnings(auroraWarningArea()) }
+
+            val fetched: Either<Failure, List<AggregatedFeed>> = fetchFeed(forecastWarningRequest = forecastWarningRequest)
+
+            assertEquals(
+                expected = fetched,
+                actual = warningsRepository.getAggregatedFeed(forecastWarningRequest = null)
+            )
+        }
+
+    @Test
     fun `a saved vadret api item reads back with its slipperiness`() =
         testScope.runTest {
             forecastWarningRemoteDataSource.forecastWarnings = { slipperinessWarnings(slipperinessWarningArea()) }
@@ -1118,6 +1210,30 @@ private fun slipperinessWarnings(vararg forecastWarningAreaDtos: ForecastWarning
                 warningAreas = forecastWarningAreaDtos.toList()
             )
         )
+    )
+
+private fun auroraWarnings(vararg forecastWarningAreaDtos: ForecastWarningAreaDto): ForecastWarningsDto =
+    ForecastWarningsDto(
+        warnings = listOf(
+            ForecastWarningDto(
+                id = "aurora",
+                event = "AURORA",
+                warningAreas = forecastWarningAreaDtos.toList()
+            )
+        )
+    )
+
+private fun auroraWarningArea(): ForecastWarningAreaDto =
+    ForecastWarningAreaDto(
+        id = "u6sce-2026-10-24",
+        geohash = "u6sce",
+        published = "2026-10-24T13:30:00Z",
+        approximateStart = "2026-10-24T19:00:00Z",
+        approximateEnd = "2026-10-24T23:00:00Z",
+        level = "HIGH",
+        causes = emptyList(),
+        score = 72,
+        peak = "2026-10-24T21:00:00Z"
     )
 
 private fun slipperinessWarningArea(

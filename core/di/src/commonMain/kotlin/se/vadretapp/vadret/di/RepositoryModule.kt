@@ -3,6 +3,7 @@ package se.vadretapp.vadret.di
 import okio.Path.Companion.toPath
 import org.koin.core.module.Module
 import org.koin.dsl.module
+import se.vadretapp.vadret.aurora.AuroraRepository
 import se.vadretapp.vadret.developermode.DeveloperModeRepository
 import se.vadretapp.vadret.di.model.AppDirectories
 import se.vadretapp.vadret.di.resources.Res
@@ -19,6 +20,7 @@ private const val PLACES_FILE = "files/places.tsv"
 private const val RADAR_IMAGE_DIRECTORY = "radar_images"
 
 val repositoryModule: Module = module {
+    single<AuroraRepository> { AuroraRepository(httpClient = inject()) }
     single<LibraryRepository> { LibraryRepository() }
     single<NominatimRepository> { NominatimRepository(httpClient = inject()) }
     single<PollenRepository> {

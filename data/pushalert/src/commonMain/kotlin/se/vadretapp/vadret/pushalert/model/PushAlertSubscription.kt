@@ -11,6 +11,7 @@ data class PushAlertSubscription(
     val temperatureTrend: Boolean,
     val strongWind: Boolean,
     val slipperiness: Boolean,
+    val aurora: Boolean,
     val hourFormat: HourFormat,
     val language: Language
 )

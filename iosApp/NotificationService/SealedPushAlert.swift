@@ -112,6 +112,6 @@ private let placeNamesFileName = "push_alert_place_names.json"
 private let sealedField = "sealed"
 private let kindField = "kind"
 private let cellField = "cell"
-private let kindsAboutOneCell: Set<String> = ["temperature", "wind", "slipperiness"]
+private let kindsAboutOneCell: Set<String> = ["temperature", "wind", "slipperiness", "aurora"]
 private let placeNameCellLength = 4
 private let placeNameSeparator = " - "

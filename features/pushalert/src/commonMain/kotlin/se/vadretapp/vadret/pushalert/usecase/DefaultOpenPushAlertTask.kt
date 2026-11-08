@@ -74,6 +74,7 @@ private fun PushAlertChoices.isChosen(pushAlertKind: PushAlertKind): Boolean =
         PushAlertKind.TEMPERATURE -> temperatureTrend
         PushAlertKind.WIND -> strongWind
         PushAlertKind.SLIPPERINESS -> slipperiness
+        PushAlertKind.AURORA -> aurora
     }
 
 private val logger: Logger = LoggerFactory.getLogger(tag = "se.vadretapp.vadret.pushalert")

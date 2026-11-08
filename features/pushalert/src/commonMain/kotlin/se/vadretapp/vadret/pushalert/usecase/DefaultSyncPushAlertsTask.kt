@@ -140,6 +140,7 @@ internal class DefaultSyncPushAlertsTask(
                                     temperatureTrend = pushAlertChoices.temperatureTrend,
                                     strongWind = pushAlertChoices.strongWind,
                                     slipperiness = pushAlertChoices.slipperiness,
+                                    aurora = pushAlertChoices.aurora,
                                     hourFormat = hourFormat,
                                     language = language
                                 )

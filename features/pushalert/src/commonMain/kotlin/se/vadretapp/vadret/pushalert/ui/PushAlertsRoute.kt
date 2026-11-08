@@ -13,6 +13,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.jetbrains.compose.resources.stringResource
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.di.koinViewModel
+import se.vadretapp.vadret.icons.Aurora
 import se.vadretapp.vadret.icons.HardWind
 import se.vadretapp.vadret.icons.Pollen
 import se.vadretapp.vadret.icons.Slipperiness
@@ -42,6 +43,8 @@ import se.vadretapp.vadret.ui.VadretTheme
 import se.vadretapp.vadret.ui.extension.messageResource
 import se.vadretapp.vadret.ui.resources.Res
 import se.vadretapp.vadret.ui.resources.attestation_refused
+import se.vadretapp.vadret.ui.resources.aurora_alerts
+import se.vadretapp.vadret.ui.resources.aurora_alerts_summary
 import se.vadretapp.vadret.ui.resources.followed_place_position
 import se.vadretapp.vadret.ui.resources.lowest_pollen_level
 import se.vadretapp.vadret.ui.resources.notifications_are_off
@@ -76,6 +79,7 @@ private const val WARNING_LEVEL_KEY = "warning-level"
 private const val TEMPERATURE_KEY = "temperature"
 private const val STRONG_WIND_KEY = "strong-wind"
 private const val SLIPPERINESS_KEY = "slipperiness"
+private const val AURORA_KEY = "aurora"
 private const val POLLEN_HEADER_KEY = "pollen-header"
 private const val POLLEN_KEY = "pollen"
 private const val POLLEN_LEVEL_KEY = "pollen-level"
@@ -213,6 +217,15 @@ private fun LazyListScope.weatherAlerts(
             isChecked = state.choices.slipperiness,
             onCheckedChange = { isChecked: Boolean -> onEvent(PushAlertsEvent.OnSlipperinessToggled(isEnabled = isChecked)) },
             leadingContent = { SettingsRowIcon(icon = VadretIcons.Alert.Slipperiness) }
+        )
+    }
+    item(key = AURORA_KEY, contentType = PushAlertsContentType.ROW) {
+        SwitchRow(
+            title = stringResource(resource = Res.string.aurora_alerts),
+            summary = stringResource(resource = Res.string.aurora_alerts_summary),
+            isChecked = state.choices.aurora,
+            onCheckedChange = { isChecked: Boolean -> onEvent(PushAlertsEvent.OnAuroraToggled(isEnabled = isChecked)) },
+            leadingContent = { SettingsRowIcon(icon = VadretIcons.Alert.Aurora) }
         )
     }
 }

@@ -1,6 +1,9 @@
 package se.vadretapp.vadret.forecastwarning.extension
 
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.datetime.TimeZone
+import se.vadretapp.vadret.aggregatedfeed.model.Aurora
+import se.vadretapp.vadret.aggregatedfeed.model.AuroraChance
 import se.vadretapp.vadret.aggregatedfeed.model.FeedDetail
 import se.vadretapp.vadret.aggregatedfeed.model.FeedDetailKind
 import se.vadretapp.vadret.aggregatedfeed.model.FeedRegion
@@ -12,16 +15,24 @@ import se.vadretapp.vadret.aggregatedfeed.model.GeoPosition
 import se.vadretapp.vadret.aggregatedfeed.model.Slipperiness
 import se.vadretapp.vadret.aggregatedfeed.model.SlipperinessCause
 import se.vadretapp.vadret.aggregatedfeed.model.SlipperinessRisk
+import se.vadretapp.vadret.aurora.model.AuroraHour
 import se.vadretapp.vadret.forecastwarning.aggregatedFeed
+import se.vadretapp.vadret.forecastwarning.model.AuroraHourItem
 import se.vadretapp.vadret.forecastwarning.model.MapBounds
 import se.vadretapp.vadret.forecastwarning.model.WarningDetail
 import se.vadretapp.vadret.forecastwarning.model.WarningItem
 import se.vadretapp.vadret.forecastwarning.model.WarningMapArea
+import se.vadretapp.vadret.geohash.model.Geohash
+import se.vadretapp.vadret.icons.Aurora
 import se.vadretapp.vadret.icons.Slipperiness
 import se.vadretapp.vadret.icons.VadretIcons
 import se.vadretapp.vadret.setting.model.HourFormat
 import se.vadretapp.vadret.ui.model.ElapsedTime
 import se.vadretapp.vadret.ui.resources.Res
+import se.vadretapp.vadret.ui.resources.aurora_estimate_explanation
+import se.vadretapp.vadret.ui.resources.aurora_hours_label
+import se.vadretapp.vadret.ui.resources.aurora_peak_label
+import se.vadretapp.vadret.ui.resources.aurora_score
 import se.vadretapp.vadret.ui.resources.hours_ago
 import se.vadretapp.vadret.ui.resources.slipperiness_cause_frost
 import se.vadretapp.vadret.ui.resources.slipperiness_cause_frost_explanation
@@ -198,6 +209,91 @@ class AggregatedFeedTest {
     }
 
     @Test
+    fun `a vadret api aurora is headed by its score and tells when it is at its best and what it is`() {
+        val warningItem: WarningItem = aggregatedFeed(
+            identifier = "vadret-aurora-u6sce-2026-10-26-HIGH",
+            headline = "",
+            source = FeedSource.VADRET_API,
+            areaName = null,
+            warningLevel = null
+        ).copy(aurora = AURORA).toWarningItem(
+            now = now,
+            timeZone = stockholm,
+            languageTag = ENGLISH,
+            hourFormat = HourFormat.TWENTY_FOUR_HOUR
+        )
+
+        assertEquals(expected = Res.string.aurora_score, actual = warningItem.headlineResource)
+        assertEquals(expected = listOf("72"), actual = warningItem.headlineArguments)
+        assertEquals(expected = VadretIcons.Alert.Aurora, actual = warningItem.icon)
+        assertEquals(expected = AuroraChance.HIGH, actual = warningItem.auroraChance)
+        assertEquals(expected = null, actual = warningItem.slipperinessRisk)
+        assertEquals(
+            expected = listOf<WarningDetail>(
+                WarningDetail.Labelled(
+                    labelResource = Res.string.aurora_peak_label,
+                    text = "22:00"
+                ),
+                WarningDetail.Explained(
+                    labelResource = Res.string.slipperiness_estimate_label,
+                    textResource = Res.string.aurora_estimate_explanation
+                )
+            ),
+            actual = warningItem.details
+        )
+    }
+
+    @Test
+    fun `a vadret api aurora without a peak only explains itself and its hours come first once they are got`() {
+        val warningItem: WarningItem = aggregatedFeed(
+            identifier = "vadret-aurora-u6sce-2026-10-26-HIGH",
+            source = FeedSource.VADRET_API
+        ).copy(aurora = AURORA.copy(peakAt = null)).toWarningItem(
+            now = now,
+            timeZone = stockholm,
+            languageTag = ENGLISH,
+            hourFormat = HourFormat.TWENTY_FOUR_HOUR
+        ).withAuroraHours(
+            auroraHours = listOf(
+                AuroraHour(
+                    time = Instant.parse(input = "2026-10-26T20:00:00Z"),
+                    score = 55
+                ),
+                AuroraHour(
+                    time = Instant.parse(input = "2026-10-26T21:00:00Z"),
+                    score = 72
+                )
+            ),
+            timeZone = stockholm,
+            languageTag = ENGLISH,
+            hourFormat = HourFormat.TWENTY_FOUR_HOUR
+        )
+
+        assertEquals(
+            expected = listOf<WarningDetail>(
+                WarningDetail.Hourly(
+                    labelResource = Res.string.aurora_hours_label,
+                    auroraHourItems = persistentListOf(
+                        AuroraHourItem(
+                            hourText = "21",
+                            score = 55
+                        ),
+                        AuroraHourItem(
+                            hourText = "22",
+                            score = 72
+                        )
+                    )
+                ),
+                WarningDetail.Explained(
+                    labelResource = Res.string.slipperiness_estimate_label,
+                    textResource = Res.string.aurora_estimate_explanation
+                )
+            ),
+            actual = warningItem.details
+        )
+    }
+
+    @Test
     fun `a vadret api estimate without a known cause is headed by its risk`() {
         val warningItem: WarningItem = aggregatedFeed(
             identifier = "vadret-slipperiness-u6sce-2026-10-26-HIGH",
@@ -224,6 +320,8 @@ class AggregatedFeedTest {
         assertEquals(expected = null, actual = warningItem.headlineResource)
         assertEquals(expected = null, actual = warningItem.icon)
         assertEquals(expected = null, actual = warningItem.slipperinessRisk)
+        assertEquals(expected = null, actual = warningItem.auroraChance)
+        assertEquals(expected = emptyList<String>(), actual = warningItem.headlineArguments)
     }
 
     @Test
@@ -489,3 +587,11 @@ class AggregatedFeedTest {
         )
     }
 }
+
+private val AURORA = Aurora(
+    chance = AuroraChance.HIGH,
+    score = 72,
+    peakAt = Instant.parse(input = "2026-10-26T21:00:00Z"),
+    geohash = Geohash(value = "u6sce"),
+    auroraNight = "2026-10-26"
+)

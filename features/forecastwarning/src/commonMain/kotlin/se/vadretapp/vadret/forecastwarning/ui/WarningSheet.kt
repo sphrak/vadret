@@ -1,15 +1,22 @@
 package se.vadretapp.vadret.forecastwarning.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
@@ -18,8 +25,10 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import kotlinx.collections.immutable.ImmutableList
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
+import se.vadretapp.vadret.forecastwarning.model.AuroraHourItem
 import se.vadretapp.vadret.forecastwarning.model.WarningDetail
 import se.vadretapp.vadret.forecastwarning.model.WarningItem
 import se.vadretapp.vadret.icons.VadretIcon
@@ -28,6 +37,7 @@ import se.vadretapp.vadret.ui.VadretTheme
 import se.vadretapp.vadret.ui.WarningColors
 import se.vadretapp.vadret.ui.elapsedTimeText
 import se.vadretapp.vadret.ui.resources.Res
+import se.vadretapp.vadret.ui.resources.aurora_hour_score
 import se.vadretapp.vadret.ui.resources.source_and_time
 import se.vadretapp.vadret.ui.resources.warning_from
 import se.vadretapp.vadret.ui.resources.warning_period
@@ -48,6 +58,11 @@ private val factLabelSpacing = 3.dp
 private val dividerWidth = 1.dp
 private val iconSpacing = 16.dp
 private val levelIconSize = 48.dp
+private val hourSpacing = 12.dp
+private val hourBarWidth = 16.dp
+private val hourBarMaxHeight = 48.dp
+private val hourBarShape = RoundedCornerShape(size = 2.dp)
+private const val MAXIMUM_SCORE = 100f
 private const val DIVIDER_ALPHA = 0.2f
 private const val OPAQUE = 1f
 private const val EXPANDED = 0f
@@ -119,7 +134,8 @@ private fun WarningLevelText(
                 source = warning.source,
                 warningLevel = warning.warningLevel,
                 isPublicAlert = warning.isPublicAlert,
-                slipperinessRisk = warning.slipperinessRisk
+                slipperinessRisk = warning.slipperinessRisk,
+                auroraChance = warning.auroraChance
             ),
             style = VadretTheme.textStyles.value,
             color = colors.content
@@ -158,12 +174,119 @@ internal fun WarningFacts(
             )
         }
         warning.details.forEach { warningDetail: WarningDetail ->
-            WarningFact(
-                label = warningDetail.label(),
-                text = warningDetail.text(),
+            WarningDetailFact(
+                warningDetail = warningDetail,
                 maxLines = detailMaxLines
             )
         }
+    }
+}
+
+@Composable
+private fun WarningDetailFact(
+    warningDetail: WarningDetail,
+    maxLines: Int,
+    modifier: Modifier = Modifier
+) {
+    when (warningDetail) {
+        is WarningDetail.Labelled -> WarningFact(
+            label = stringResource(resource = warningDetail.labelResource),
+            text = warningDetail.text,
+            maxLines = maxLines,
+            modifier = modifier
+        )
+        is WarningDetail.Titled -> WarningFact(
+            label = warningDetail.title,
+            text = warningDetail.text,
+            maxLines = maxLines,
+            modifier = modifier
+        )
+        is WarningDetail.Paragraph -> WarningFact(
+            label = null,
+            text = warningDetail.text,
+            maxLines = maxLines,
+            modifier = modifier
+        )
+        is WarningDetail.Explained -> WarningFact(
+            label = stringResource(resource = warningDetail.labelResource),
+            text = stringResource(resource = warningDetail.textResource),
+            maxLines = maxLines,
+            modifier = modifier
+        )
+        is WarningDetail.Hourly -> HourlyFact(
+            label = stringResource(resource = warningDetail.labelResource),
+            auroraHourItems = warningDetail.auroraHourItems,
+            modifier = modifier
+        )
+    }
+}
+
+@Composable
+private fun HourlyFact(
+    label: String,
+    auroraHourItems: ImmutableList<AuroraHourItem>,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(space = factLabelSpacing),
+        modifier = modifier.padding(bottom = factSpacing)
+    ) {
+        Text(
+            text = label,
+            style = VadretTheme.textStyles.listItem.copy(fontWeight = FontWeight.Bold),
+            color = VadretTheme.colorScheme.onSurface
+        )
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(space = hourSpacing),
+            modifier = Modifier.horizontalScroll(state = rememberScrollState())
+        ) {
+            auroraHourItems.forEach { auroraHourItem: AuroraHourItem ->
+                AuroraHour(auroraHourItem = auroraHourItem)
+            }
+        }
+    }
+}
+
+@Composable
+private fun AuroraHour(
+    auroraHourItem: AuroraHourItem,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(space = factLabelSpacing),
+        modifier = modifier
+    ) {
+        Text(
+            text = stringResource(
+                resource = Res.string.aurora_hour_score,
+                auroraHourItem.score
+            ),
+            style = VadretTheme.textStyles.listItem,
+            color = VadretTheme.colorScheme.onSurface
+        )
+        Box(
+            contentAlignment = Alignment.BottomCenter,
+            modifier = Modifier.size(
+                width = hourBarWidth,
+                height = hourBarMaxHeight
+            )
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(fraction = auroraHourItem.score / MAXIMUM_SCORE)
+                    .background(
+                        color = VadretTheme.colorScheme.primary,
+                        shape = hourBarShape
+                    )
+            )
+        }
+        Text(
+            text = auroraHourItem.hourText,
+            style = VadretTheme.textStyles.listItem,
+            color = VadretTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
@@ -246,28 +369,13 @@ internal fun periodText(warning: WarningItem): String? {
 internal fun WarningItem.headlineText(): String {
     val resource: StringResource? = headlineResource
     return if (resource != null) {
-        stringResource(resource = resource)
+        stringResource(
+            resource = resource,
+            *headlineArguments.toTypedArray()
+        )
     } else {
         headline
     }
 }
-
-@Composable
-private fun WarningDetail.label(): String? =
-    when (this) {
-        is WarningDetail.Labelled -> stringResource(resource = labelResource)
-        is WarningDetail.Titled -> title
-        is WarningDetail.Paragraph -> null
-        is WarningDetail.Explained -> stringResource(resource = labelResource)
-    }
-
-@Composable
-private fun WarningDetail.text(): String =
-    when (this) {
-        is WarningDetail.Labelled -> text
-        is WarningDetail.Titled -> text
-        is WarningDetail.Paragraph -> text
-        is WarningDetail.Explained -> stringResource(resource = textResource)
-    }
 
 private fun String.capitalized(): String = replaceFirstChar { character: Char -> character.titlecase() }

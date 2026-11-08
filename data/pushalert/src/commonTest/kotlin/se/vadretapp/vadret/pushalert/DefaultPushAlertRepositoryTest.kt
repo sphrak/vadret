@@ -283,6 +283,7 @@ class DefaultPushAlertRepositoryTest {
                 temperatureTrend = true,
                 strongWind = true,
                 slipperiness = true,
+                aurora = true,
                 hourFormat = HourFormat.TWENTY_FOUR_HOUR,
                 language = Language.SWEDISH
             )
@@ -294,7 +295,7 @@ class DefaultPushAlertRepositoryTest {
 
         assertEquals(
             expected = listOf(
-                """PUT /api/v1/subscription Bearer $INSTALLATION_TOKEN {"geohashes":["u6sce","u3chr"],"warning_lowest_level":"YELLOW","pollen":[{"pollen_type_id":"$BIRCH","lowest_level":5}],"temperature_trend":true,"strong_wind":true,"slipperiness":true,"hour_format":"24h","language":"sv"}""",
+                """PUT /api/v1/subscription Bearer $INSTALLATION_TOKEN {"geohashes":["u6sce","u3chr"],"warning_lowest_level":"YELLOW","pollen":[{"pollen_type_id":"$BIRCH","lowest_level":5}],"temperature_trend":true,"strong_wind":true,"slipperiness":true,"aurora":true,"hour_format":"24h","language":"sv"}""",
                 "PUT /api/v1/subscription Bearer $INSTALLATION_TOKEN {}"
             ),
             actual = requests
@@ -312,13 +313,14 @@ class DefaultPushAlertRepositoryTest {
                 temperatureTrend = false,
                 strongWind = false,
                 slipperiness = false,
+                aurora = false,
                 hourFormat = HourFormat.TWELVE_HOUR,
                 language = Language.POLISH
             )
         )
 
         assertEquals(
-            expected = listOf("""PUT /api/v1/subscription Bearer $INSTALLATION_TOKEN {"geohashes":["u6sce"],"pollen":[],"temperature_trend":false,"strong_wind":false,"slipperiness":false,"hour_format":"12h","language":"pl"}"""),
+            expected = listOf("""PUT /api/v1/subscription Bearer $INSTALLATION_TOKEN {"geohashes":["u6sce"],"pollen":[],"temperature_trend":false,"strong_wind":false,"slipperiness":false,"aurora":false,"hour_format":"12h","language":"pl"}"""),
             actual = requests
         )
     }
@@ -337,6 +339,7 @@ class DefaultPushAlertRepositoryTest {
                     temperatureTrend = false,
                     strongWind = true,
                     slipperiness = false,
+                    aurora = false,
                     hourFormat = HourFormat.TWENTY_FOUR_HOUR,
                     language = language
                 )
@@ -484,6 +487,22 @@ class DefaultPushAlertRepositoryTest {
         assertEquals(
             expected = CHOICES.asRight(),
             actual = repository(pushAlertLocalDataSource = FakePushAlertLocalDataSource(initialState = storedBeforeForecastPlaces)).choices()
+        )
+    }
+
+    @Test
+    fun auroraIsStoredWithTheOtherChoicesAndReadBack() = runTest {
+        val pushAlertLocalDataSource = FakePushAlertLocalDataSource()
+        val pushAlertRepository = repository(pushAlertLocalDataSource = pushAlertLocalDataSource)
+
+        pushAlertRepository.saveChoices(pushAlertChoices = CHOICES.copy(aurora = true))
+
+        assertEquals(
+            expected = """{"choices":{"warning_lowest_level":"ORANGE","pollen_lowest_level":4,"temperature_trend":true,"strong_wind":true,"aurora":true}}""" to CHOICES.copy(aurora = true).asRight(),
+            actual = Json.encodeToString(
+                serializer = PushAlertStateEntity.serializer(),
+                value = pushAlertLocalDataSource.state.value
+            ) to pushAlertRepository.choices()
         )
     }
 
@@ -747,6 +766,7 @@ private val CHOICES = PushAlertChoices(
     temperatureTrend = true,
     strongWind = true,
     slipperiness = false,
+    aurora = false,
     isChosenPlaceNotified = true,
     notifiedFavoriteIds = emptySet()
 )

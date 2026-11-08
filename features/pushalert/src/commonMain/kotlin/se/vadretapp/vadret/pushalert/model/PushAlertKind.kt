@@ -5,5 +5,6 @@ enum class PushAlertKind {
     POLLEN,
     TEMPERATURE,
     WIND,
-    SLIPPERINESS
+    SLIPPERINESS,
+    AURORA
 }
