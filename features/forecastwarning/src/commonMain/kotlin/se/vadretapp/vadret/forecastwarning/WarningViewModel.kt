@@ -11,7 +11,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 import kotlinx.datetime.TimeZone
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.forecastwarning.extension.followedPlaceNames
@@ -20,6 +19,7 @@ import se.vadretapp.vadret.forecastwarning.model.WarningItem
 import se.vadretapp.vadret.setting.model.HourFormat
 import se.vadretapp.vadret.ui.extension.launchReplacing
 import se.vadretapp.vadret.ui.extension.messageResource
+import se.vadretapp.vadret.ui.format.TextLocale
 import se.vadretapp.vadret.ui.format.currentLanguageTag
 import se.vadretapp.vadret.warning.model.FollowedPlaceWarnings
 import se.vadretapp.vadret.warning.usecase.ObserveFollowedPlaceWarningsTask
@@ -38,8 +38,13 @@ class WarningViewModel internal constructor(
         field = MutableStateFlow(value = WarningState())
 
     private val isStarted: AtomicBoolean = AtomicBoolean(value = false)
-    private val languageTag: AtomicReference<String> = AtomicReference(value = currentLanguageTag())
-    private val hourFormat: AtomicReference<HourFormat> = AtomicReference(value = HourFormat.TWENTY_FOUR_HOUR)
+    private val textLocale: AtomicReference<TextLocale> = AtomicReference(
+        value = TextLocale(
+            languageTag = currentLanguageTag(),
+            hourFormat = HourFormat.TWENTY_FOUR_HOUR
+        )
+    )
+    private val textLocaleJob: AtomicReference<Job?> = AtomicReference(value = null)
     private val warnings: AtomicReference<FollowedPlaceWarnings?> = AtomicReference(value = null)
     private val loadJob: AtomicReference<Job?> = AtomicReference(value = null)
 
@@ -74,13 +79,19 @@ class WarningViewModel internal constructor(
         languageTag: String,
         hourFormat: HourFormat
     ) {
-        val isLanguageSame: Boolean = this.languageTag.exchange(newValue = languageTag) == languageTag
-        val isHourFormatSame: Boolean = this.hourFormat.exchange(newValue = hourFormat) == hourFormat
-        if (isLanguageSame && isHourFormatSame) {
+        val shownTextLocale = TextLocale(
+            languageTag = languageTag,
+            hourFormat = hourFormat
+        )
+        if (textLocale.exchange(newValue = shownTextLocale) == shownTextLocale) {
             return
         }
-        viewModelScope.launch(context = coroutineDispatcher) {
-            val loadedWarnings: FollowedPlaceWarnings = warnings.load() ?: return@launch
+        // The language and clock change together and the newest change is the one shown, however the redrawing interleaves.
+        viewModelScope.launchReplacing(
+            currentJob = textLocaleJob,
+            context = coroutineDispatcher
+        ) {
+            val loadedWarnings: FollowedPlaceWarnings = warnings.load() ?: return@launchReplacing
             state.update { state: WarningState ->
                 state.copy(warnings = loadedWarnings.toItems())
             }
@@ -107,13 +118,15 @@ class WarningViewModel internal constructor(
         }
     }
 
-    private fun FollowedPlaceWarnings.toItems(): ImmutableList<WarningItem> =
-        toWarningItems(
+    private fun FollowedPlaceWarnings.toItems(): ImmutableList<WarningItem> {
+        val shownTextLocale: TextLocale = textLocale.load()
+        return toWarningItems(
             now = clock.now(),
             timeZone = TimeZone.currentSystemDefault(),
-            languageTag = languageTag.load(),
-            hourFormat = hourFormat.load()
+            languageTag = shownTextLocale.languageTag,
+            hourFormat = shownTextLocale.hourFormat
         )
+    }
 
     private fun displayWarnings(
         warningItems: ImmutableList<WarningItem>,

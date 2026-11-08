@@ -24,8 +24,8 @@ import se.vadretapp.vadret.pushalert.model.WarningAlertLevel
 import se.vadretapp.vadret.pushalert.usecase.DefaultGetCurrentGeohashTask
 import se.vadretapp.vadret.pushalert.usecase.DefaultGetPushAlertGeohashesTask
 import se.vadretapp.vadret.pushalert.usecase.DefaultSyncPushAlertsTask
-import se.vadretapp.vadret.setting.model.AppLanguage
 import se.vadretapp.vadret.setting.model.HourFormat
+import se.vadretapp.vadret.setting.model.Language
 import kotlin.io.encoding.Base64
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -195,46 +195,52 @@ class DefaultSyncPushAlertsTaskTest {
     @Test
     fun theSubscriptionSaysTheClockAndTheLanguageTheAppShows() = runTest {
         val subscribed = listOf(
-            HourFormat.TWENTY_FOUR_HOUR to AppLanguage.SYSTEM,
-            HourFormat.TWELVE_HOUR to AppLanguage.POLISH
-        ).map { (hourFormat: HourFormat, language: AppLanguage) ->
+            HourFormat.TWENTY_FOUR_HOUR to Language.SWEDISH,
+            HourFormat.TWELVE_HOUR to Language.POLISH
+        ).map { (hourFormat: HourFormat, language: Language) ->
             val pushAlertRepository = FakePushAlertRepository(choices = WARNINGS_FROM_YELLOW)
             syncPushAlertsTask(
                 pushAlertRepository = pushAlertRepository,
-                settingRepository = FakeSettingRepository(
-                    language = language.asRight(),
-                    hourFormat = hourFormat.asRight()
-                )
+                getHourFormatTask = FakeGetHourFormatTask(result = hourFormat.asRight()),
+                getShownLanguageTask = FakeGetShownLanguageTask(result = language.asRight())
             )()
             val subscription: PushAlertSubscription? = pushAlertRepository.subscriptions.last()
             subscription?.hourFormat to subscription?.language
         }
 
         assertEquals(
-            expected = listOf<Pair<HourFormat?, AppLanguage?>>(
-                HourFormat.TWENTY_FOUR_HOUR to AppLanguage.SWEDISH,
-                HourFormat.TWELVE_HOUR to AppLanguage.POLISH
+            expected = listOf<Pair<HourFormat?, Language?>>(
+                HourFormat.TWENTY_FOUR_HOUR to Language.SWEDISH,
+                HourFormat.TWELVE_HOUR to Language.POLISH
             ),
             actual = subscribed
         )
     }
 
     @Test
-    fun aClockThatCannotBeReadSubscribesNothingAndIsTriedAgainLater() = runTest {
-        val pushAlertRepository = FakePushAlertRepository(choices = WARNINGS_FROM_YELLOW)
+    fun aClockOrLanguageThatCannotBeReadSubscribesNothingAndIsTriedAgainLater() = runTest {
+        val pushAlertRepositories = listOf(FakePushAlertRepository(choices = WARNINGS_FROM_YELLOW), FakePushAlertRepository(choices = WARNINGS_FROM_YELLOW))
 
-        val synced = syncPushAlertsTask(
-            pushAlertRepository = pushAlertRepository,
-            settingRepository = FakeSettingRepository(hourFormat = STORAGE_FAILED.asLeft())
-        )()
+        val synced = listOf(
+            syncPushAlertsTask(
+                pushAlertRepository = pushAlertRepositories[0],
+                getHourFormatTask = FakeGetHourFormatTask(result = STORAGE_FAILED.asLeft())
+            )(),
+            syncPushAlertsTask(
+                pushAlertRepository = pushAlertRepositories[1],
+                getShownLanguageTask = FakeGetShownLanguageTask(result = STORAGE_FAILED.asLeft())
+            )()
+        )
 
         assertEquals(
-            expected = STORAGE_FAILED.asLeft(),
+            expected = List(size = 2) { STORAGE_FAILED.asLeft() },
             actual = synced
         )
         assertEquals(
-            expected = false to true,
-            actual = pushAlertRepository.calls.any { call -> call.startsWith(prefix = "subscribe") } to pushAlertRepository.isSyncPending.value
+            expected = List(size = 2) { false to true },
+            actual = pushAlertRepositories.map { pushAlertRepository: FakePushAlertRepository ->
+                pushAlertRepository.calls.any { call -> call.startsWith(prefix = "subscribe") } to pushAlertRepository.isSyncPending.value
+            }
         )
     }
 
@@ -940,11 +946,13 @@ private fun syncPushAlertsTask(
     locationRepository: FakeLocationRepository = FakeLocationRepository(),
     favoriteRepository: FakeFavoriteRepository = FakeFavoriteRepository(),
     pollenPreferenceRepository: FakePollenPreferenceRepository = FakePollenPreferenceRepository(),
-    settingRepository: FakeSettingRepository = FakeSettingRepository()
+    getHourFormatTask: FakeGetHourFormatTask = FakeGetHourFormatTask(),
+    getShownLanguageTask: FakeGetShownLanguageTask = FakeGetShownLanguageTask()
 ): DefaultSyncPushAlertsTask = DefaultSyncPushAlertsTask(
     pushAlertRepository = pushAlertRepository,
     pollenPreferenceRepository = pollenPreferenceRepository,
-    settingRepository = settingRepository,
+    getHourFormatTask = getHourFormatTask,
+    getShownLanguageTask = getShownLanguageTask,
     deviceTokenSource = deviceTokenSource,
     notificationPermissionSource = notificationPermissionSource,
     sealedMessageKey = sealedMessageKey,

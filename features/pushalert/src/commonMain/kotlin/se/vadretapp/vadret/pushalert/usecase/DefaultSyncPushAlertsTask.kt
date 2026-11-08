@@ -26,16 +26,18 @@ import se.vadretapp.vadret.pushalert.model.PollenAlertLevel
 import se.vadretapp.vadret.pushalert.model.PollenChoice
 import se.vadretapp.vadret.pushalert.model.PushAlertChoices
 import se.vadretapp.vadret.pushalert.model.PushAlertSubscription
-import se.vadretapp.vadret.setting.SettingRepository
-import se.vadretapp.vadret.setting.model.AppLanguage
 import se.vadretapp.vadret.setting.model.HourFormat
+import se.vadretapp.vadret.setting.model.Language
+import se.vadretapp.vadret.setting.usecase.GetHourFormatTask
+import se.vadretapp.vadret.setting.usecase.GetShownLanguageTask
 import kotlin.io.encoding.Base64
 import kotlin.time.Clock
 
 internal class DefaultSyncPushAlertsTask(
     private val pushAlertRepository: PushAlertRepository,
     private val pollenPreferenceRepository: PollenPreferenceRepository,
-    private val settingRepository: SettingRepository,
+    private val getHourFormatTask: GetHourFormatTask,
+    private val getShownLanguageTask: GetShownLanguageTask,
     private val deviceTokenSource: DeviceTokenSource,
     private val notificationPermissionSource: NotificationPermissionSource,
     private val sealedMessageKey: SealedMessageKey,
@@ -127,8 +129,8 @@ internal class DefaultSyncPushAlertsTask(
                 forget()
             } else {
                 pollenChoices(pollenLowestLevel = pushAlertChoices.pollenLowestLevel).flatMap { pollenChoices: List<PollenChoice> ->
-                    settingRepository.getHourFormat().flatMap { hourFormat: HourFormat ->
-                        settingRepository.getShownLanguage().flatMap { language: AppLanguage ->
+                    getHourFormatTask().flatMap { hourFormat: HourFormat ->
+                        getShownLanguageTask().flatMap { language: Language ->
                             pushAlertRepository.replaceSubscription(
                                 installationToken = installationToken,
                                 pushAlertSubscription = PushAlertSubscription(

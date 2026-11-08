@@ -21,6 +21,7 @@ import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.setting.model.AppLanguage
 import se.vadretapp.vadret.setting.model.HourFormat
 import se.vadretapp.vadret.setting.model.Theme
+import se.vadretapp.vadret.setting.usecase.ObserveHourFormatTask
 import se.vadretapp.vadret.testing.LogLine
 import se.vadretapp.vadret.testing.withRecordedLogs
 import se.vadretapp.vadret.warning.usecase.GetReferencedWarningIdentifiersTask
@@ -171,28 +172,31 @@ class MainViewModelTest {
             advanceUntilIdle()
 
             assertEquals(
-                expected = listOf(0, 0),
+                expected = listOf(0, 0, 0),
                 actual = listOf(
                     observeThemeTask.themes.subscriptionCount.value,
-                    observeLanguageTask.languages.subscriptionCount.value
+                    observeLanguageTask.languages.subscriptionCount.value,
+                    observeHourFormatTask.hourFormats.subscriptionCount.value
                 )
             )
             assertNull(actual = mainViewModel.theme.value)
             assertNull(actual = mainViewModel.language.value)
+            assertNull(actual = mainViewModel.hourFormat.value)
         }
 
     @Test
-    fun `the theme and language are observed once however often it is started`() =
+    fun `the theme, language and clock are observed once however often it is started`() =
         testScope.runTest {
             mainViewModel.onEvent(event = MainEvent.OnStart)
             mainViewModel.onEvent(event = MainEvent.OnStart)
             advanceUntilIdle()
 
             assertEquals(
-                expected = listOf(1, 1),
+                expected = listOf(1, 1, 1),
                 actual = listOf(
                     observeThemeTask.themes.subscriptionCount.value,
-                    observeLanguageTask.languages.subscriptionCount.value
+                    observeLanguageTask.languages.subscriptionCount.value,
+                    observeHourFormatTask.hourFormats.subscriptionCount.value
                 )
             )
         }

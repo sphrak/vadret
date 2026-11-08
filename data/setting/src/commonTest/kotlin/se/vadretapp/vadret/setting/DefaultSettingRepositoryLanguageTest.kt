@@ -26,31 +26,31 @@ import kotlin.test.assertEquals
 
 class DefaultSettingRepositoryLanguageTest {
 
-    private fun TestScope.languageRepository(): Pair<SettingRepository, Unit> =
+    private fun TestScope.settingRepository(): SettingRepository =
         DefaultSettingRepository(
             settingLocalDataSource = DefaultSettingLocalDataSource(dataStore = testPreferencesDataStore(scope = backgroundScope)),
             systemSettingLocalDataSource = FakeSystemSettingLocalDataSource()
-        ) to Unit
+        )
 
     @Test
     fun `nothing stored follows the system language`() =
         runTest {
-            val (languageRepository: SettingRepository, _) = languageRepository()
+            val settingRepository: SettingRepository = settingRepository()
 
             assertEquals(
                 expected = AppLanguage.SYSTEM.asRight(),
-                actual = languageRepository.getLanguage()
+                actual = settingRepository.getLanguage()
             )
         }
 
     @Test
     fun `every language reads back as it was set`() =
         runTest {
-            val (languageRepository: SettingRepository, _) = languageRepository()
+            val settingRepository: SettingRepository = settingRepository()
 
             val languages: List<Either<Failure, AppLanguage>> = AppLanguage.entries.map { language: AppLanguage ->
-                languageRepository.setLanguage(language = language)
-                languageRepository.getLanguage()
+                settingRepository.setLanguage(language = language)
+                settingRepository.getLanguage()
             }
 
             assertEquals(
@@ -64,14 +64,14 @@ class DefaultSettingRepositoryLanguageTest {
         runTest {
             val dataStore = testPreferencesDataStore(scope = backgroundScope)
             dataStore.edit { preferences -> preferences[stringPreferencesKey(name = "language")] = "Klingon" }
-            val languageRepository: SettingRepository = DefaultSettingRepository(
+            val settingRepository: SettingRepository = DefaultSettingRepository(
                 settingLocalDataSource = DefaultSettingLocalDataSource(dataStore = dataStore),
                 systemSettingLocalDataSource = FakeSystemSettingLocalDataSource()
             )
 
             assertEquals(
                 expected = AppLanguage.SYSTEM.asRight(),
-                actual = languageRepository.getLanguage()
+                actual = settingRepository.getLanguage()
             )
         }
 
@@ -79,18 +79,18 @@ class DefaultSettingRepositoryLanguageTest {
     @Test
     fun `observing emits the stored language and then each change`() =
         runTest {
-            val (languageRepository: SettingRepository, _) = languageRepository()
+            val settingRepository: SettingRepository = settingRepository()
             val emitted = mutableListOf<Either<Failure, AppLanguage>>()
             val job = launch {
-                languageRepository.observeLanguage().take(count = 3).toList(destination = emitted)
+                settingRepository.observeLanguage().take(count = 3).toList(destination = emitted)
             }
             advanceUntilIdle()
 
-            languageRepository.setLanguage(language = AppLanguage.SWEDISH)
+            settingRepository.setLanguage(language = AppLanguage.SWEDISH)
             advanceUntilIdle()
-            languageRepository.setLanguage(language = AppLanguage.SWEDISH)
+            settingRepository.setLanguage(language = AppLanguage.SWEDISH)
             advanceUntilIdle()
-            languageRepository.setLanguage(language = AppLanguage.POLISH)
+            settingRepository.setLanguage(language = AppLanguage.POLISH)
             advanceUntilIdle()
             job.join()
 
@@ -105,45 +105,18 @@ class DefaultSettingRepositoryLanguageTest {
         }
 
     @Test
-    fun `the shown language is the chosen one, else the phone's if the app has it, else English`() =
-        runTest {
-            val systemSettingLocalDataSource = FakeSystemSettingLocalDataSource()
-            val settingRepository: SettingRepository = DefaultSettingRepository(
-                settingLocalDataSource = DefaultSettingLocalDataSource(dataStore = testPreferencesDataStore(scope = backgroundScope)),
-                systemSettingLocalDataSource = systemSettingLocalDataSource
-            )
-            val shownBySystemTag: List<Either<Failure, AppLanguage>> = listOf("sv-SE", "de-AT", "nb-NO", "nn", "es-ES").map { systemLanguageTag: String ->
-                systemSettingLocalDataSource.systemLanguageTag = systemLanguageTag
-                settingRepository.getShownLanguage()
-            }
-            settingRepository.setLanguage(language = AppLanguage.POLISH)
-
-            assertEquals(
-                expected = listOf(
-                    AppLanguage.SWEDISH.asRight(),
-                    AppLanguage.GERMAN.asRight(),
-                    AppLanguage.NORWEGIAN.asRight(),
-                    AppLanguage.NORWEGIAN.asRight(),
-                    AppLanguage.ENGLISH.asRight(),
-                    AppLanguage.POLISH.asRight()
-                ),
-                actual = shownBySystemTag + settingRepository.getShownLanguage()
-            )
-        }
-
-    @Test
     fun `storage that cannot be read or written is a storage failure`() =
         runTest {
-            val languageRepository: SettingRepository = DefaultSettingRepository(
+            val settingRepository: SettingRepository = DefaultSettingRepository(
                 settingLocalDataSource = FailingSettingLocalDataSource(exception = IOException("disk full", null)),
                 systemSettingLocalDataSource = FakeSystemSettingLocalDataSource()
             )
 
             withRecordedLogs { recordingLogSink ->
                 val results: List<Either<Failure, Any>> = listOf(
-                    languageRepository.getLanguage(),
-                    languageRepository.setLanguage(language = AppLanguage.SWEDISH),
-                    languageRepository.observeLanguage().toList().single()
+                    settingRepository.getLanguage(),
+                    settingRepository.setLanguage(language = AppLanguage.SWEDISH),
+                    settingRepository.observeLanguage().toList().single()
                 )
 
                 assertEquals(
@@ -160,7 +133,7 @@ class DefaultSettingRepositoryLanguageTest {
     @Test
     fun `anything else is unknown and logged as an error`() =
         runTest {
-            val languageRepository: SettingRepository = DefaultSettingRepository(
+            val settingRepository: SettingRepository = DefaultSettingRepository(
                 settingLocalDataSource = FailingSettingLocalDataSource(exception = IllegalStateException("bug")),
                 systemSettingLocalDataSource = FakeSystemSettingLocalDataSource()
             )
@@ -168,7 +141,7 @@ class DefaultSettingRepositoryLanguageTest {
             withRecordedLogs { recordingLogSink ->
                 assertEquals(
                     expected = Failure.unknown().asLeft(),
-                    actual = languageRepository.getLanguage()
+                    actual = settingRepository.getLanguage()
                 )
                 assertEquals(expected = LogLevel.ERROR, actual = recordingLogSink.lines.single().level)
             }

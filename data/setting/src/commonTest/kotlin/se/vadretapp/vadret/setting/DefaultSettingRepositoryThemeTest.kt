@@ -26,31 +26,31 @@ import kotlin.test.assertEquals
 
 class DefaultSettingRepositoryThemeTest {
 
-    private fun TestScope.themeRepository(): Pair<SettingRepository, Unit> =
+    private fun TestScope.settingRepository(): SettingRepository =
         DefaultSettingRepository(
             settingLocalDataSource = DefaultSettingLocalDataSource(dataStore = testPreferencesDataStore(scope = backgroundScope)),
             systemSettingLocalDataSource = FakeSystemSettingLocalDataSource()
-        ) to Unit
+        )
 
     @Test
     fun `nothing stored follows the system`() =
         runTest {
-            val (themeRepository: SettingRepository, _) = themeRepository()
+            val settingRepository: SettingRepository = settingRepository()
 
             assertEquals(
                 expected = Theme.SYSTEM.asRight(),
-                actual = themeRepository.getTheme()
+                actual = settingRepository.getTheme()
             )
         }
 
     @Test
     fun `every theme reads back as it was set`() =
         runTest {
-            val (themeRepository: SettingRepository, _) = themeRepository()
+            val settingRepository: SettingRepository = settingRepository()
 
             val themes: List<Either<Failure, Theme>> = Theme.entries.map { theme: Theme ->
-                themeRepository.setTheme(theme = theme)
-                themeRepository.getTheme()
+                settingRepository.setTheme(theme = theme)
+                settingRepository.getTheme()
             }
 
             assertEquals(
@@ -64,14 +64,14 @@ class DefaultSettingRepositoryThemeTest {
         runTest {
             val dataStore = testPreferencesDataStore(scope = backgroundScope)
             dataStore.edit { preferences -> preferences[stringPreferencesKey(name = "theme")] = "Light (No background)" }
-            val themeRepository: SettingRepository = DefaultSettingRepository(
+            val settingRepository: SettingRepository = DefaultSettingRepository(
                 settingLocalDataSource = DefaultSettingLocalDataSource(dataStore = dataStore),
                 systemSettingLocalDataSource = FakeSystemSettingLocalDataSource()
             )
 
             assertEquals(
                 expected = Theme.SYSTEM.asRight(),
-                actual = themeRepository.getTheme()
+                actual = settingRepository.getTheme()
             )
         }
 
@@ -79,18 +79,18 @@ class DefaultSettingRepositoryThemeTest {
     @Test
     fun `observing emits the stored theme and then each change`() =
         runTest {
-            val (themeRepository: SettingRepository, _) = themeRepository()
+            val settingRepository: SettingRepository = settingRepository()
             val emitted = mutableListOf<Either<Failure, Theme>>()
             val job = launch {
-                themeRepository.observeTheme().take(count = 3).toList(destination = emitted)
+                settingRepository.observeTheme().take(count = 3).toList(destination = emitted)
             }
             advanceUntilIdle()
 
-            themeRepository.setTheme(theme = Theme.DARK)
+            settingRepository.setTheme(theme = Theme.DARK)
             advanceUntilIdle()
-            themeRepository.setTheme(theme = Theme.DARK)
+            settingRepository.setTheme(theme = Theme.DARK)
             advanceUntilIdle()
-            themeRepository.setTheme(theme = Theme.AMOLED)
+            settingRepository.setTheme(theme = Theme.AMOLED)
             advanceUntilIdle()
             job.join()
 
@@ -107,16 +107,16 @@ class DefaultSettingRepositoryThemeTest {
     @Test
     fun `storage that cannot be read or written is a storage failure`() =
         runTest {
-            val themeRepository: SettingRepository = DefaultSettingRepository(
+            val settingRepository: SettingRepository = DefaultSettingRepository(
                 settingLocalDataSource = FailingSettingLocalDataSource(exception = IOException("disk full", null)),
                 systemSettingLocalDataSource = FakeSystemSettingLocalDataSource()
             )
 
             withRecordedLogs { recordingLogSink ->
                 val results: List<Either<Failure, Any>> = listOf(
-                    themeRepository.getTheme(),
-                    themeRepository.setTheme(theme = Theme.DARK),
-                    themeRepository.observeTheme().toList().single()
+                    settingRepository.getTheme(),
+                    settingRepository.setTheme(theme = Theme.DARK),
+                    settingRepository.observeTheme().toList().single()
                 )
 
                 assertEquals(
@@ -133,7 +133,7 @@ class DefaultSettingRepositoryThemeTest {
     @Test
     fun `anything else is unknown and logged as an error`() =
         runTest {
-            val themeRepository: SettingRepository = DefaultSettingRepository(
+            val settingRepository: SettingRepository = DefaultSettingRepository(
                 settingLocalDataSource = FailingSettingLocalDataSource(exception = IllegalStateException("bug")),
                 systemSettingLocalDataSource = FakeSystemSettingLocalDataSource()
             )
@@ -141,7 +141,7 @@ class DefaultSettingRepositoryThemeTest {
             withRecordedLogs { recordingLogSink ->
                 assertEquals(
                     expected = Failure.unknown().asLeft(),
-                    actual = themeRepository.getTheme()
+                    actual = settingRepository.getTheme()
                 )
                 assertEquals(expected = LogLevel.ERROR, actual = recordingLogSink.lines.single().level)
             }

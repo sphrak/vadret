@@ -34,8 +34,8 @@ import se.vadretapp.vadret.pushalert.model.PushAlertStateEntity
 import se.vadretapp.vadret.pushalert.model.PushAlertSubscription
 import se.vadretapp.vadret.pushalert.model.WarningAlertLevel
 import se.vadretapp.vadret.pushalert.remote.DefaultPushAlertRemoteDataSource
-import se.vadretapp.vadret.setting.model.AppLanguage
 import se.vadretapp.vadret.setting.model.HourFormat
+import se.vadretapp.vadret.setting.model.Language
 import se.vadretapp.vadret.testing.mockHttpClient
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -284,7 +284,7 @@ class DefaultPushAlertRepositoryTest {
                 strongWind = true,
                 slipperiness = true,
                 hourFormat = HourFormat.TWENTY_FOUR_HOUR,
-                language = AppLanguage.SWEDISH
+                language = Language.SWEDISH
             )
         )
         pushAlertRepository.replaceSubscription(
@@ -302,7 +302,7 @@ class DefaultPushAlertRepositoryTest {
     }
 
     @Test
-    fun aSubscriptionWithoutStrongWindSaysSoInsteadOfLeavingItOutNamesTheHourFormatAndLeavesOutAnUnknownLanguage() = runTest {
+    fun aSubscriptionWithoutStrongWindSaysSoInsteadOfLeavingItOutAndNamesTheHourFormat() = runTest {
         repository().replaceSubscription(
             installationToken = InstallationToken(value = INSTALLATION_TOKEN),
             pushAlertSubscription = PushAlertSubscription(
@@ -313,13 +313,39 @@ class DefaultPushAlertRepositoryTest {
                 strongWind = false,
                 slipperiness = false,
                 hourFormat = HourFormat.TWELVE_HOUR,
-                language = AppLanguage.SYSTEM
+                language = Language.POLISH
             )
         )
 
         assertEquals(
-            expected = listOf("""PUT /api/v1/subscription Bearer $INSTALLATION_TOKEN {"geohashes":["u6sce"],"pollen":[],"temperature_trend":false,"strong_wind":false,"slipperiness":false,"hour_format":"12h"}"""),
+            expected = listOf("""PUT /api/v1/subscription Bearer $INSTALLATION_TOKEN {"geohashes":["u6sce"],"pollen":[],"temperature_trend":false,"strong_wind":false,"slipperiness":false,"hour_format":"12h","language":"pl"}"""),
             actual = requests
+        )
+    }
+
+    @Test
+    fun everyLanguageIsSentAsTheCodeTheServerKnows() = runTest {
+        val repository = repository()
+
+        Language.entries.forEach { language: Language ->
+            repository.replaceSubscription(
+                installationToken = InstallationToken(value = INSTALLATION_TOKEN),
+                pushAlertSubscription = PushAlertSubscription(
+                    geohashes = listOf(Geohash(value = "u6sce")),
+                    warningLowestLevel = null,
+                    pollenChoices = emptyList(),
+                    temperatureTrend = false,
+                    strongWind = true,
+                    slipperiness = false,
+                    hourFormat = HourFormat.TWENTY_FOUR_HOUR,
+                    language = language
+                )
+            )
+        }
+
+        assertEquals(
+            expected = listOf("en", "sv", "da", "de", "fi", "fr", "no", "pl"),
+            actual = requests.map { request: String -> request.substringAfter(delimiter = "\"language\":\"").substringBefore(delimiter = "\"") }
         )
     }
 

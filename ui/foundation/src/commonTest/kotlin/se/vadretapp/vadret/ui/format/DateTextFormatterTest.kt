@@ -86,4 +86,36 @@ class DateTextFormatterTest {
             )
         )
     }
+
+    @Test
+    fun `midnight and noon are twelve on the 12 hour clock`() {
+        val midnightInUtc: Instant = Instant.parse(input = "2026-10-26T23:05:00Z")
+        val noonInUtc: Instant = Instant.parse(input = "2026-10-27T11:00:00Z")
+
+        assertEquals(
+            expected = listOf("12:05 AM", "12 AM", "12:00 PM", "12 PM"),
+            actual = listOf(
+                midnightInUtc.toTimeText(
+                    hourFormat = HourFormat.TWELVE_HOUR,
+                    timeZone = stockholm,
+                    languageTag = ENGLISH
+                ),
+                midnightInUtc.toHourText(
+                    hourFormat = HourFormat.TWELVE_HOUR,
+                    timeZone = stockholm,
+                    languageTag = ENGLISH
+                ),
+                noonInUtc.toTimeText(
+                    hourFormat = HourFormat.TWELVE_HOUR,
+                    timeZone = stockholm,
+                    languageTag = ENGLISH
+                ),
+                noonInUtc.toHourText(
+                    hourFormat = HourFormat.TWELVE_HOUR,
+                    timeZone = stockholm,
+                    languageTag = ENGLISH
+                )
+            )
+        )
+    }
 }

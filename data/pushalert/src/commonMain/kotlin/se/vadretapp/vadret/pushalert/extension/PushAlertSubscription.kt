@@ -5,8 +5,8 @@ import se.vadretapp.vadret.pushalert.model.LanguageDto
 import se.vadretapp.vadret.pushalert.model.PollenSubscriptionDto
 import se.vadretapp.vadret.pushalert.model.PushAlertSubscription
 import se.vadretapp.vadret.pushalert.model.SubscriptionDto
-import se.vadretapp.vadret.setting.model.AppLanguage
 import se.vadretapp.vadret.setting.model.HourFormat
+import se.vadretapp.vadret.setting.model.Language
 
 internal fun PushAlertSubscription?.toSubscriptionDto(): SubscriptionDto =
     if (this == null) {
@@ -35,16 +35,14 @@ private fun HourFormat.toHourFormatDto(): HourFormatDto =
         HourFormat.TWELVE_HOUR -> HourFormatDto.TWELVE_HOUR
     }
 
-// A sync sends the language the app shows, so the phone's own language is only ever left out, as an older app does.
-private fun AppLanguage.toLanguageDto(): LanguageDto? =
+private fun Language.toLanguageDto(): LanguageDto =
     when (this) {
-        AppLanguage.SYSTEM -> null
-        AppLanguage.ENGLISH -> LanguageDto.ENGLISH
-        AppLanguage.SWEDISH -> LanguageDto.SWEDISH
-        AppLanguage.DANISH -> LanguageDto.DANISH
-        AppLanguage.GERMAN -> LanguageDto.GERMAN
-        AppLanguage.FINNISH -> LanguageDto.FINNISH
-        AppLanguage.FRENCH -> LanguageDto.FRENCH
-        AppLanguage.NORWEGIAN -> LanguageDto.NORWEGIAN
-        AppLanguage.POLISH -> LanguageDto.POLISH
+        Language.ENGLISH -> LanguageDto.ENGLISH
+        Language.SWEDISH -> LanguageDto.SWEDISH
+        Language.DANISH -> LanguageDto.DANISH
+        Language.GERMAN -> LanguageDto.GERMAN
+        Language.FINNISH -> LanguageDto.FINNISH
+        Language.FRENCH -> LanguageDto.FRENCH
+        Language.NORWEGIAN -> LanguageDto.NORWEGIAN
+        Language.POLISH -> LanguageDto.POLISH
     }

@@ -19,6 +19,7 @@ import se.vadretapp.vadret.logging.LoggerFactory
 import se.vadretapp.vadret.setting.model.AppLanguage
 import se.vadretapp.vadret.setting.model.HourFormat
 import se.vadretapp.vadret.setting.model.Theme
+import se.vadretapp.vadret.setting.usecase.ObserveHourFormatTask
 import se.vadretapp.vadret.warning.usecase.GetReferencedWarningIdentifiersTask
 import kotlin.concurrent.atomics.AtomicBoolean
 

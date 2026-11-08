@@ -40,8 +40,8 @@ import se.vadretapp.vadret.pollenpreference.model.PollenPreferences
 import se.vadretapp.vadret.pollenseason.ObservePollenInSeasonTask
 import se.vadretapp.vadret.setting.SettingRepository
 import se.vadretapp.vadret.setting.model.AppLanguage
-import se.vadretapp.vadret.setting.model.HourFormat
 import se.vadretapp.vadret.setting.model.HourFormatChoice
+import se.vadretapp.vadret.setting.model.SystemSettings
 import se.vadretapp.vadret.setting.model.Theme
 import kotlin.concurrent.atomics.AtomicInt
 import kotlin.concurrent.atomics.fetchAndIncrement
@@ -124,14 +124,14 @@ internal class FakeSettingRepository(
         this.language = language.asRight()
         return Unit.asRight()
     }
-    override suspend fun getShownLanguage(): Either<Failure, AppLanguage> = error("Settings only show the choice")
     override suspend fun getHourFormatChoice(): Either<Failure, HourFormatChoice> = hourFormatChoice
-    override suspend fun getHourFormat(): Either<Failure, HourFormat> = error("Settings only show the choice")
-    override fun observeHourFormat(): Flow<Either<Failure, HourFormat>> = emptyFlow()
+    override fun observeHourFormatChoice(): Flow<Either<Failure, HourFormatChoice>> = emptyFlow()
     override suspend fun setHourFormatChoice(hourFormatChoice: HourFormatChoice): Either<Failure, Unit> {
         this.hourFormatChoice = hourFormatChoice.asRight()
         return Unit.asRight()
     }
+    override fun getSystemSettings(): Either<Failure, SystemSettings> = error("Settings only show the choices")
+    override fun observeSystemSettings(): Flow<Either<Failure, SystemSettings>> = error("Settings only show the choices")
 }
 
 internal class FakeForecastPreferenceRepository(

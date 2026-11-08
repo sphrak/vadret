@@ -220,4 +220,59 @@ class WarningViewModelTest {
             assertEquals(expected = true, actual = swedishText?.startsWith(prefix = "mån"))
             assertEquals(expected = listOf(false), actual = observeFollowedPlaceWarningsTask.refreshes)
         }
+
+    @Test
+    fun `another clock alone tells the times again without loading`() =
+        testScope.runTest {
+            observeFollowedPlaceWarningsTask.results.value = listOf(
+                aggregatedFeed(
+                    identifier = "smhi-1",
+                    endsAt = Instant.parse(input = "2026-10-24T08:30:00Z") + 48.hours
+                )
+            ).atOneFollowedPlace().asRight()
+            warningViewModel.onEvent(
+                event = WarningEvent.OnLocaleChanged(
+                    languageTag = "en",
+                    hourFormat = HourFormat.TWENTY_FOUR_HOUR
+                )
+            )
+            warningViewModel.onEvent(event = WarningEvent.OnStart)
+            advanceUntilIdle()
+            val onTheTwentyFourHourClock: String? = warningViewModel.state.value.warnings.single().endsAtText
+
+            warningViewModel.onEvent(
+                event = WarningEvent.OnLocaleChanged(
+                    languageTag = "en",
+                    hourFormat = HourFormat.TWELVE_HOUR
+                )
+            )
+            advanceUntilIdle()
+
+            assertEquals(
+                expected = onTheTwentyFourHourClock?.toTwelveHourText() to listOf(false),
+                actual = warningViewModel.state.value.warnings.single().endsAtText to observeFollowedPlaceWarningsTask.refreshes
+            )
+        }
 }
+
+// A time such as Mon 09:30 on the 24 hour clock is Mon 9:30 AM on the 12 hour clock.
+private fun String.toTwelveHourText(): String {
+    val (weekday: String, time: String) = split(WORD_SEPARATOR)
+    val (hour: String, minute: String) = time.split(TIME_SEPARATOR)
+    val hourOfDay: Int = hour.toInt()
+    val hourOfHalfDay: Int = if (hourOfDay % HOURS_PER_HALF_DAY == 0) {
+        HOURS_PER_HALF_DAY
+    } else {
+        hourOfDay % HOURS_PER_HALF_DAY
+    }
+    val dayPeriod: String = if (hourOfDay < HOURS_PER_HALF_DAY) {
+        "AM"
+    } else {
+        "PM"
+    }
+    return "$weekday$WORD_SEPARATOR$hourOfHalfDay$TIME_SEPARATOR$minute$WORD_SEPARATOR$dayPeriod"
+}
+
+private const val WORD_SEPARATOR = " "
+private const val TIME_SEPARATOR = ":"
+private const val HOURS_PER_HALF_DAY = 12

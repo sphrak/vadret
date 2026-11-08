@@ -1188,6 +1188,34 @@ class RadarViewModelTest {
         }
 
     @Test
+    fun `another clock alone rewrites the frame times`() =
+        testScope.runTest {
+            val radarViewModel: RadarViewModel = viewModel(isStarted = false)
+            radarViewModel.onEvent(
+                event = RadarEvent.OnLocaleChanged(
+                    languageTag = "en",
+                    hourFormat = HourFormat.TWENTY_FOUR_HOUR
+                )
+            )
+            radarViewModel.onEvent(event = RadarEvent.OnStart(initialImageUrl = null))
+            advanceUntilIdle()
+            val onTheTwentyFourHourClock: List<String> = radarViewModel.state.value.precipitationFrames.map { frame: RadarFrame -> frame.timeText }
+
+            radarViewModel.onEvent(
+                event = RadarEvent.OnLocaleChanged(
+                    languageTag = "en",
+                    hourFormat = HourFormat.TWELVE_HOUR
+                )
+            )
+            advanceUntilIdle()
+
+            assertEquals(
+                expected = onTheTwentyFourHourClock.map { timeText: String -> timeText.toTwelveHourText() },
+                actual = radarViewModel.state.value.precipitationFrames.map { frame: RadarFrame -> frame.timeText }
+            )
+        }
+
+    @Test
     fun `a new language rewrites the weekdays and keeps the chosen frame`() =
         testScope.runTest {
             val radarViewModel: RadarViewModel = viewModel(isStarted = false)
@@ -1638,3 +1666,22 @@ class RadarViewModelTest {
             )
         }
 }
+
+private fun String.toTwelveHourText(): String {
+    val (hour: String, minute: String) = split(TIME_SEPARATOR)
+    val hourOfDay: Int = hour.toInt()
+    val hourOfHalfDay: Int = if (hourOfDay % HOURS_PER_HALF_DAY == 0) {
+        HOURS_PER_HALF_DAY
+    } else {
+        hourOfDay % HOURS_PER_HALF_DAY
+    }
+    val dayPeriod: String = if (hourOfDay < HOURS_PER_HALF_DAY) {
+        "AM"
+    } else {
+        "PM"
+    }
+    return "$hourOfHalfDay$TIME_SEPARATOR$minute $dayPeriod"
+}
+
+private const val TIME_SEPARATOR = ":"
+private const val HOURS_PER_HALF_DAY = 12

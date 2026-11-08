@@ -35,6 +35,7 @@ kotlin {
                 implementation project(':data:setting')
                 implementation project(':domain:followedplace')
                 implementation project(':domain:pollenseason')
+                implementation project(':domain:setting')
                 implementation project(':domain:warning')
                 implementation project(':features:forecastwarning')
                 implementation project(':features:radar')

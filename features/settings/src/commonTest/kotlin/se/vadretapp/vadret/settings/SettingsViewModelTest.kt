@@ -111,6 +111,17 @@ class SettingsViewModelTest {
         }
 
     @Test
+    fun `a clock choice that cannot be read shows no settings`() =
+        testScope.runTest {
+            settingRepository.hourFormatChoice = Failure(errorCode = ErrorCode.STORAGE_FAILED).asLeft()
+
+            val settingsViewModel: SettingsViewModel = viewModel()
+            advanceUntilIdle()
+
+            assertNull(actual = settingsViewModel.state.value.settings)
+        }
+
+    @Test
     fun `the places row names the chosen place until the position is followed`() =
         testScope.runTest {
             val settingsViewModel: SettingsViewModel = viewModel()

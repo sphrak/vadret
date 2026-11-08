@@ -8,8 +8,8 @@ import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.setting.local.DefaultSettingLocalDataSource
 import se.vadretapp.vadret.setting.local.SystemSettingLocalDataSource
 import se.vadretapp.vadret.setting.model.AppLanguage
-import se.vadretapp.vadret.setting.model.HourFormat
 import se.vadretapp.vadret.setting.model.HourFormatChoice
+import se.vadretapp.vadret.setting.model.SystemSettings
 import se.vadretapp.vadret.setting.model.Theme
 
 interface SettingRepository {
@@ -19,11 +19,11 @@ interface SettingRepository {
     suspend fun getLanguage(): Either<Failure, AppLanguage>
     fun observeLanguage(): Flow<Either<Failure, AppLanguage>>
     suspend fun setLanguage(language: AppLanguage): Either<Failure, Unit>
-    suspend fun getShownLanguage(): Either<Failure, AppLanguage>
     suspend fun getHourFormatChoice(): Either<Failure, HourFormatChoice>
-    suspend fun getHourFormat(): Either<Failure, HourFormat>
-    fun observeHourFormat(): Flow<Either<Failure, HourFormat>>
+    fun observeHourFormatChoice(): Flow<Either<Failure, HourFormatChoice>>
     suspend fun setHourFormatChoice(hourFormatChoice: HourFormatChoice): Either<Failure, Unit>
+    fun getSystemSettings(): Either<Failure, SystemSettings>
+    fun observeSystemSettings(): Flow<Either<Failure, SystemSettings>>
 }
 
 internal fun SettingRepository(

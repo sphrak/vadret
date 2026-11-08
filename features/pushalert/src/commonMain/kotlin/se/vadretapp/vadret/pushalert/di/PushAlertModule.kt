@@ -15,7 +15,6 @@ import se.vadretapp.vadret.pushalert.usecase.DefaultGetCurrentGeohashTask
 import se.vadretapp.vadret.pushalert.usecase.DefaultGetForecastWarningRequestTask
 import se.vadretapp.vadret.pushalert.usecase.DefaultGetPushAlertGeohashesTask
 import se.vadretapp.vadret.pushalert.usecase.DefaultIsOutsideSwedenTask
-import se.vadretapp.vadret.pushalert.usecase.DefaultObserveNotificationTextSettingsTask
 import se.vadretapp.vadret.pushalert.usecase.DefaultObservePollenAllergensTask
 import se.vadretapp.vadret.pushalert.usecase.DefaultObservePushAlertChoicesTask
 import se.vadretapp.vadret.pushalert.usecase.DefaultObservePushAlertPlacesTask
@@ -26,7 +25,6 @@ import se.vadretapp.vadret.pushalert.usecase.DefaultSyncPushAlertsTask
 import se.vadretapp.vadret.pushalert.usecase.GetCurrentGeohashTask
 import se.vadretapp.vadret.pushalert.usecase.GetPushAlertGeohashesTask
 import se.vadretapp.vadret.pushalert.usecase.IsOutsideSwedenTask
-import se.vadretapp.vadret.pushalert.usecase.ObserveNotificationTextSettingsTask
 import se.vadretapp.vadret.pushalert.usecase.ObservePollenAllergensTask
 import se.vadretapp.vadret.pushalert.usecase.ObservePushAlertChoicesTask
 import se.vadretapp.vadret.pushalert.usecase.ObservePushAlertPlacesTask
@@ -42,7 +40,8 @@ val pushAlertModule: Module = module {
         DefaultSyncPushAlertsTask(
             pushAlertRepository = get(),
             pollenPreferenceRepository = get(),
-            settingRepository = get(),
+            getHourFormatTask = get(),
+            getShownLanguageTask = get(),
             deviceTokenSource = get(),
             notificationPermissionSource = get(),
             sealedMessageKey = get(),
@@ -60,7 +59,6 @@ val pushAlertModule: Module = module {
     factoryOf(::DefaultObservePushAlertSyncPendingTask) { bind<ObservePushAlertSyncPendingTask>() }
     factoryOf(::DefaultSavePushAlertChoicesTask) { bind<SavePushAlertChoicesTask>() }
     factoryOf(::DefaultObservePollenAllergensTask) { bind<ObservePollenAllergensTask>() }
-    factoryOf(::DefaultObserveNotificationTextSettingsTask) { bind<ObserveNotificationTextSettingsTask>() }
     factoryOf(::DefaultAddPlaceNameTask) { bind<AddPlaceNameTask>() }
     factoryOf(::DefaultOpenPushAlertTask) { bind<OpenPushAlertTask>() }
     factory<PushAlertsViewModel> {
@@ -81,7 +79,8 @@ val pushAlertModule: Module = module {
             syncPushAlertsTask = get(),
             observeFollowedPlacesTask = get(),
             observePollenAllergensTask = get(),
-            observeNotificationTextSettingsTask = get()
+            observeShownLanguageTask = get(),
+            observeHourFormatTask = get()
         )
     }
 }

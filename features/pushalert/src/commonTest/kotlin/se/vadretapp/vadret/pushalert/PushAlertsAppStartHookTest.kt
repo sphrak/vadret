@@ -12,10 +12,9 @@ import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.followedplace.model.FollowedPlace
 import se.vadretapp.vadret.logging.LogLevel
-import se.vadretapp.vadret.pushalert.usecase.DefaultObserveNotificationTextSettingsTask
 import se.vadretapp.vadret.pushalert.usecase.DefaultObservePollenAllergensTask
-import se.vadretapp.vadret.setting.model.AppLanguage
 import se.vadretapp.vadret.setting.model.HourFormat
+import se.vadretapp.vadret.setting.model.Language
 import se.vadretapp.vadret.testing.withRecordedLogs
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -101,23 +100,27 @@ class PushAlertsAppStartHookTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun choosingAnotherLanguageOrClockAnywhereInTheAppSyncsAgain() = runTest {
+    fun anotherLanguageOrClockSyncsAgainButTheSameOneAgainDoesNot() = runTest {
         val syncPushAlertsTask = FakeSyncPushAlertsTask()
-        val settingRepository = FakeSettingRepository()
+        val observeShownLanguageTask = FakeObserveShownLanguageTask()
+        val observeHourFormatTask = FakeObserveHourFormatTask()
         val hook = launch {
             pushAlertsAppStartHook(
                 syncPushAlertsTask = syncPushAlertsTask,
-                settingRepository = settingRepository
+                observeShownLanguageTask = observeShownLanguageTask,
+                observeHourFormatTask = observeHourFormatTask
             ).onAppStart()
         }
         advanceUntilIdle()
         val syncsAtStart = syncPushAlertsTask.syncs
 
-        settingRepository.language.value = AppLanguage.POLISH.asRight()
+        observeShownLanguageTask.languages.emit(value = Language.POLISH.asRight())
         advanceUntilIdle()
-        settingRepository.hourFormat.value = HourFormat.TWELVE_HOUR.asRight()
+        observeShownLanguageTask.languages.emit(value = Language.POLISH.asRight())
         advanceUntilIdle()
-        settingRepository.hourFormat.value = HourFormat.TWELVE_HOUR.asRight()
+        observeHourFormatTask.hourFormats.emit(value = HourFormat.TWELVE_HOUR.asRight())
+        advanceUntilIdle()
+        observeHourFormatTask.hourFormats.emit(value = HourFormat.TWELVE_HOUR.asRight())
         advanceUntilIdle()
         hook.cancel()
 
@@ -159,13 +162,15 @@ private fun pushAlertsAppStartHook(
     syncPushAlertsTask: FakeSyncPushAlertsTask = FakeSyncPushAlertsTask(),
     observeFollowedPlacesTask: FakeObserveFollowedPlacesTask = FakeObserveFollowedPlacesTask(),
     pollenPreferenceRepository: FakePollenPreferenceRepository = FakePollenPreferenceRepository(),
-    settingRepository: FakeSettingRepository = FakeSettingRepository()
+    observeShownLanguageTask: FakeObserveShownLanguageTask = FakeObserveShownLanguageTask(),
+    observeHourFormatTask: FakeObserveHourFormatTask = FakeObserveHourFormatTask()
 ): PushAlertsAppStartHook =
     PushAlertsAppStartHook(
         syncPushAlertsTask = syncPushAlertsTask,
         observeFollowedPlacesTask = observeFollowedPlacesTask,
         observePollenAllergensTask = DefaultObservePollenAllergensTask(pollenPreferenceRepository = pollenPreferenceRepository),
-        observeNotificationTextSettingsTask = DefaultObserveNotificationTextSettingsTask(settingRepository = settingRepository)
+        observeShownLanguageTask = observeShownLanguageTask,
+        observeHourFormatTask = observeHourFormatTask
     )
 
 private const val BIRCH_ID = "2a2a2a2a-2a2a-4a2a-aa2a-2a313a323236"

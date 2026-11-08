@@ -9,85 +9,91 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
+import se.vadretapp.vadret.logging.LogLevel
 import se.vadretapp.vadret.setting.local.DefaultSettingLocalDataSource
-import se.vadretapp.vadret.setting.model.HourFormat
 import se.vadretapp.vadret.setting.model.HourFormatChoice
+import se.vadretapp.vadret.testing.LogLine
 import se.vadretapp.vadret.testing.testPreferencesDataStore
+import se.vadretapp.vadret.testing.withRecordedLogs
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class DefaultSettingRepositoryHourFormatTest {
 
-    private val systemSettingLocalDataSource = FakeSystemSettingLocalDataSource()
-
     private fun TestScope.settingRepository(): SettingRepository =
         DefaultSettingRepository(
             settingLocalDataSource = DefaultSettingLocalDataSource(dataStore = testPreferencesDataStore(scope = backgroundScope)),
-            systemSettingLocalDataSource = systemSettingLocalDataSource
+            systemSettingLocalDataSource = FakeSystemSettingLocalDataSource()
         )
 
     @Test
     fun `nothing stored follows the clock of the phone`() =
         runTest {
             val settingRepository: SettingRepository = settingRepository()
-            val onATwentyFourHourPhone: Either<Failure, HourFormat> = settingRepository.getHourFormat()
-            systemSettingLocalDataSource.isTwentyFourHourClock = false
 
             assertEquals(
-                expected = listOf(
-                    HourFormatChoice.SYSTEM.asRight(),
-                    HourFormat.TWENTY_FOUR_HOUR.asRight(),
-                    HourFormat.TWELVE_HOUR.asRight()
-                ),
-                actual = listOf(
-                    settingRepository.getHourFormatChoice(),
-                    onATwentyFourHourPhone,
-                    settingRepository.getHourFormat()
-                )
+                expected = HourFormatChoice.SYSTEM.asRight() to HourFormatChoice.SYSTEM.asRight(),
+                actual = settingRepository.getHourFormatChoice() to settingRepository.observeHourFormatChoice().first()
             )
         }
 
     @Test
-    fun `a chosen clock reads back and wins over the clock of the phone`() =
+    fun `every clock reads back as it was chosen`() =
         runTest {
-            systemSettingLocalDataSource.isTwentyFourHourClock = false
             val settingRepository: SettingRepository = settingRepository()
 
-            val readBack: List<List<Either<Failure, Any>>> = HourFormatChoice.entries.map { hourFormatChoice: HourFormatChoice ->
-                settingRepository.setHourFormatChoice(hourFormatChoice = hourFormatChoice)
-                listOf(
-                    settingRepository.getHourFormatChoice(),
-                    settingRepository.getHourFormat(),
-                    settingRepository.observeHourFormat().first()
-                )
-            }
+            val readBack: List<Pair<Either<Failure, HourFormatChoice>, Either<Failure, HourFormatChoice>>> =
+                HourFormatChoice.entries.map { hourFormatChoice: HourFormatChoice ->
+                    settingRepository.setHourFormatChoice(hourFormatChoice = hourFormatChoice)
+                    settingRepository.getHourFormatChoice() to settingRepository.observeHourFormatChoice().first()
+                }
 
             assertEquals(
-                expected = listOf(
-                    listOf(HourFormatChoice.SYSTEM.asRight(), HourFormat.TWELVE_HOUR.asRight(), HourFormat.TWELVE_HOUR.asRight()),
-                    listOf(HourFormatChoice.TWENTY_FOUR_HOUR.asRight(), HourFormat.TWENTY_FOUR_HOUR.asRight(), HourFormat.TWENTY_FOUR_HOUR.asRight()),
-                    listOf(HourFormatChoice.TWELVE_HOUR.asRight(), HourFormat.TWELVE_HOUR.asRight(), HourFormat.TWELVE_HOUR.asRight())
-                ),
+                expected = HourFormatChoice.entries.map { hourFormatChoice: HourFormatChoice -> hourFormatChoice.asRight() to hourFormatChoice.asRight() },
                 actual = readBack
             )
         }
 
     @Test
-    fun `storage that fails says so instead of guessing a clock`() =
+    fun `storage that cannot be read or written is a storage failure`() =
         runTest {
             val settingRepository = DefaultSettingRepository(
                 settingLocalDataSource = FailingSettingLocalDataSource(exception = IOException("disk full", null)),
-                systemSettingLocalDataSource = systemSettingLocalDataSource
+                systemSettingLocalDataSource = FakeSystemSettingLocalDataSource()
             )
 
-            assertEquals(
-                expected = List(size = 4) { Failure(errorCode = ErrorCode.STORAGE_FAILED).asLeft() },
-                actual = listOf(
+            withRecordedLogs { recordingLogSink ->
+                val results: List<Either<Failure, Any>> = listOf(
                     settingRepository.getHourFormatChoice(),
-                    settingRepository.getHourFormat(),
-                    settingRepository.observeHourFormat().first(),
+                    settingRepository.observeHourFormatChoice().first(),
                     settingRepository.setHourFormatChoice(hourFormatChoice = HourFormatChoice.TWELVE_HOUR)
                 )
+
+                assertEquals(
+                    expected = List(size = results.size) { Failure(errorCode = ErrorCode.STORAGE_FAILED).asLeft() },
+                    actual = results
+                )
+                assertEquals(
+                    expected = List(size = results.size) { "se.vadretapp.vadret.setting" to LogLevel.WARN },
+                    actual = recordingLogSink.lines.map { line: LogLine -> line.tag to line.level }
+                )
+            }
+        }
+
+    @Test
+    fun `anything else is unknown and logged as an error`() =
+        runTest {
+            val settingRepository = DefaultSettingRepository(
+                settingLocalDataSource = FailingSettingLocalDataSource(exception = IllegalStateException("bug")),
+                systemSettingLocalDataSource = FakeSystemSettingLocalDataSource()
             )
+
+            withRecordedLogs { recordingLogSink ->
+                assertEquals(
+                    expected = Failure.unknown().asLeft(),
+                    actual = settingRepository.getHourFormatChoice()
+                )
+                assertEquals(expected = LogLevel.ERROR, actual = recordingLogSink.lines.single().level)
+            }
         }
 }

@@ -93,6 +93,7 @@ class ForecastTest {
             hour = 10
         ),
         languageTag: String = "en",
+        hourFormat: HourFormat = HourFormat.TWENTY_FOUR_HOUR,
         latitude: Double = 59.33,
         longitude: Double = 18.07
     ): List<ComingDay> =
@@ -110,8 +111,29 @@ class ForecastTest {
             now = now,
             timeZone = stockholm,
             languageTag = languageTag,
-            hourFormat = HourFormat.TWENTY_FOUR_HOUR
+            hourFormat = hourFormat
         ).comingDays
+
+    @Test
+    fun `the hours of the coming days follow the 12 hour clock in the language shown`() {
+        val forecasts: List<Forecast> = listOf(
+            forecast(validAt = localTime(day = 10, hour = 11)),
+            forecast(validAt = localTime(day = 10, hour = 12)),
+            forecast(validAt = localTime(day = 11, hour = 6)),
+            forecast(validAt = localTime(day = 11, hour = 12))
+        )
+
+        assertEquals(
+            expected = listOf("6 AM", "12 PM") to listOf("6 fm", "12 em"),
+            actual = listOf("en", "sv-SE").map { languageTag: String ->
+                comingDays(
+                    forecasts = forecasts,
+                    languageTag = languageTag,
+                    hourFormat = HourFormat.TWELVE_HOUR
+                ).last().hours.map { comingHour: ComingHour -> comingHour.timeText }
+            }.zipWithNext().single()
+        )
+    }
 
     @Test
     fun `days are grouped by local date and only the first hour of today is now`() {

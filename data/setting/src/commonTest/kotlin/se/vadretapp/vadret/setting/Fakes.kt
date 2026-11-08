@@ -1,16 +1,28 @@
 package se.vadretapp.vadret.setting
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
 import se.vadretapp.vadret.setting.local.SettingLocalDataSource
 import se.vadretapp.vadret.setting.local.SystemSettingLocalDataSource
+import se.vadretapp.vadret.setting.model.SystemSettingsEntity
 
 internal class FakeSystemSettingLocalDataSource(
-    var isTwentyFourHourClock: Boolean = true,
-    var systemLanguageTag: String = "sv-SE"
+    systemSettingsEntity: SystemSettingsEntity = SystemSettingsEntity(
+        isTwentyFourHour = true,
+        languageTag = "sv-SE"
+    )
 ) : SystemSettingLocalDataSource {
-    override fun isTwentyFourHour(): Boolean = isTwentyFourHourClock
-    override fun languageTag(): String = systemLanguageTag
+    val systemSettingsEntity: MutableStateFlow<SystemSettingsEntity> = MutableStateFlow(value = systemSettingsEntity)
+    override fun getSystemSettings(): SystemSettingsEntity = systemSettingsEntity.value
+    override fun observeSystemSettings(): Flow<SystemSettingsEntity> = systemSettingsEntity
+}
+
+internal class FailingSystemSettingLocalDataSource(
+    private val exception: Exception
+) : SystemSettingLocalDataSource {
+    override fun getSystemSettings(): SystemSettingsEntity = throw exception
+    override fun observeSystemSettings(): Flow<SystemSettingsEntity> = flow { throw exception }
 }
 
 internal class FailingSettingLocalDataSource(

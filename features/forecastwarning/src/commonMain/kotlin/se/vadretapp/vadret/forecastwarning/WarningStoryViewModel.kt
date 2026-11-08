@@ -7,6 +7,7 @@ import io.github.sphrak.either.extension.onResult
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -17,6 +18,8 @@ import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.forecastwarning.extension.toWarningItem
 import se.vadretapp.vadret.forecastwarning.model.WarningItem
 import se.vadretapp.vadret.setting.model.HourFormat
+import se.vadretapp.vadret.ui.extension.launchReplacing
+import se.vadretapp.vadret.ui.format.TextLocale
 import se.vadretapp.vadret.ui.format.currentLanguageTag
 import se.vadretapp.vadret.warning.usecase.GetWarningsTask
 import kotlin.concurrent.atomics.AtomicBoolean
@@ -39,8 +42,13 @@ class WarningStoryViewModel internal constructor(
 
     private val stepDispatcher: CoroutineDispatcher = coroutineDispatcher.limitedParallelism(parallelism = 1)
     private val isStarted: AtomicBoolean = AtomicBoolean(value = false)
-    private val languageTag: AtomicReference<String> = AtomicReference(value = currentLanguageTag())
-    private val hourFormat: AtomicReference<HourFormat> = AtomicReference(value = HourFormat.TWENTY_FOUR_HOUR)
+    private val textLocale: AtomicReference<TextLocale> = AtomicReference(
+        value = TextLocale(
+            languageTag = currentLanguageTag(),
+            hourFormat = HourFormat.TWENTY_FOUR_HOUR
+        )
+    )
+    private val textLocaleJob: AtomicReference<Job?> = AtomicReference(value = null)
     private val stories: AtomicReference<List<AggregatedFeed>> = AtomicReference(value = emptyList())
 
     internal fun onEvent(event: WarningStoryEvent) {
@@ -96,12 +104,18 @@ class WarningStoryViewModel internal constructor(
         languageTag: String,
         hourFormat: HourFormat
     ) {
-        val isLanguageSame: Boolean = this.languageTag.exchange(newValue = languageTag) == languageTag
-        val isHourFormatSame: Boolean = this.hourFormat.exchange(newValue = hourFormat) == hourFormat
-        if (isLanguageSame && isHourFormatSame) {
+        val shownTextLocale = TextLocale(
+            languageTag = languageTag,
+            hourFormat = hourFormat
+        )
+        if (textLocale.exchange(newValue = shownTextLocale) == shownTextLocale) {
             return
         }
-        viewModelScope.launch(context = coroutineDispatcher) {
+        // The language and clock change together and the newest change is the one shown, however the redrawing interleaves.
+        viewModelScope.launchReplacing(
+            currentJob = textLocaleJob,
+            context = coroutineDispatcher
+        ) {
             if (stories.load().isNotEmpty()) {
                 displayStories()
             }
@@ -121,6 +135,7 @@ class WarningStoryViewModel internal constructor(
     }
 
     private fun displayStories() {
+        val shownTextLocale: TextLocale = textLocale.load()
         val warnings: ImmutableList<WarningItem> = stories
             .load()
             .map { aggregatedFeed: AggregatedFeed ->
@@ -128,8 +143,8 @@ class WarningStoryViewModel internal constructor(
                     .toWarningItem(
                         now = clock.now(),
                         timeZone = TimeZone.currentSystemDefault(),
-                        languageTag = languageTag.load(),
-                        hourFormat = hourFormat.load()
+                        languageTag = shownTextLocale.languageTag,
+                        hourFormat = shownTextLocale.hourFormat
                     ).withStoryDetails()
             }.toImmutableList()
         state.update { state: WarningStoryState ->

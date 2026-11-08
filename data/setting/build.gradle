@@ -18,6 +18,11 @@ kotlin {
                 implementation libs.okio
             }
         }
+        androidMain {
+            dependencies {
+                implementation libs.androidx.core.ktx
+            }
+        }
         commonTest {
             dependencies {
                 implementation project(':core:testing')

@@ -95,7 +95,8 @@ class AggregatedFeedTest {
         senderName: String? = null,
         startsAt: Instant? = null,
         endsAt: Instant? = null,
-        regions: List<FeedRegion> = emptyList()
+        regions: List<FeedRegion> = emptyList(),
+        hourFormat: HourFormat = HourFormat.TWENTY_FOUR_HOUR
     ): WarningItem =
         aggregatedFeed(
             identifier = identifier,
@@ -111,8 +112,22 @@ class AggregatedFeedTest {
             now = now,
             timeZone = stockholm,
             languageTag = ENGLISH,
-            hourFormat = HourFormat.TWENTY_FOUR_HOUR
+            hourFormat = hourFormat
         )
+
+    @Test
+    fun `the times a warning starts and ends follow the 12 hour clock`() {
+        val warningItem: WarningItem = item(
+            startsAt = Instant.parse(input = "2026-10-26T12:00:00Z"),
+            endsAt = Instant.parse(input = "2026-10-27T05:00:00Z"),
+            hourFormat = HourFormat.TWELVE_HOUR
+        )
+
+        assertEquals(
+            expected = "1:00 PM" to "Tue 6:00 AM",
+            actual = warningItem.startsAtText to warningItem.endsAtText
+        )
+    }
 
     @Test
     fun `a feed item becomes a warning with spaced areas its age and the times it starts and ends`() {

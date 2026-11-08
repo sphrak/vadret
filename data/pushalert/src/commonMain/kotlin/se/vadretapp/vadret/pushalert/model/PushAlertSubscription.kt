@@ -1,8 +1,8 @@
 package se.vadretapp.vadret.pushalert.model
 
 import se.vadretapp.vadret.geohash.model.Geohash
-import se.vadretapp.vadret.setting.model.AppLanguage
 import se.vadretapp.vadret.setting.model.HourFormat
+import se.vadretapp.vadret.setting.model.Language
 
 data class PushAlertSubscription(
     val geohashes: List<Geohash>,
@@ -12,5 +12,5 @@ data class PushAlertSubscription(
     val strongWind: Boolean,
     val slipperiness: Boolean,
     val hourFormat: HourFormat,
-    val language: AppLanguage
+    val language: Language
 )

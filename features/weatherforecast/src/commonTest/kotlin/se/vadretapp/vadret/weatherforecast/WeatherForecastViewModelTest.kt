@@ -34,6 +34,7 @@ import se.vadretapp.vadret.testing.FixedClock
 import se.vadretapp.vadret.ui.extension.messageResource
 import se.vadretapp.vadret.ui.format.currentLanguageTag
 import se.vadretapp.vadret.ui.format.toDayTimeText
+import se.vadretapp.vadret.ui.format.toTimeText
 import se.vadretapp.vadret.ui.resources.Res
 import se.vadretapp.vadret.ui.resources.data_not_available_at_this_location
 import se.vadretapp.vadret.ui.resources.followed_places_limit_text
@@ -661,9 +662,21 @@ class WeatherForecastViewModelTest {
             advanceUntilIdle()
             val onTheTwelveHourClock: String? = weatherForecastViewModel.state.value.forecast.days.first().hours.firstOrNull()?.timeText
 
+            val firstHourAt: Instant = Instant.parse(input = weatherForecastViewModel.state.value.forecast.days.first().hours.first().key.removePrefix(prefix = "hour-"))
             assertEquals(
-                expected = true to true,
-                actual = (onTheTwentyFourHourClock?.contains(other = "M") == false) to (onTheTwelveHourClock?.endsWith(suffix = "M") == true)
+                expected = listOf(
+                    firstHourAt.toTimeText(
+                        hourFormat = HourFormat.TWENTY_FOUR_HOUR,
+                        timeZone = TimeZone.currentSystemDefault(),
+                        languageTag = "en"
+                    ),
+                    firstHourAt.toTimeText(
+                        hourFormat = HourFormat.TWELVE_HOUR,
+                        timeZone = TimeZone.currentSystemDefault(),
+                        languageTag = "en"
+                    )
+                ),
+                actual = listOf(onTheTwentyFourHourClock, onTheTwelveHourClock)
             )
         }
 

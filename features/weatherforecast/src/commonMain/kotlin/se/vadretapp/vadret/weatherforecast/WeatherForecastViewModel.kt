@@ -38,6 +38,7 @@ import se.vadretapp.vadret.place.model.Place
 import se.vadretapp.vadret.setting.model.HourFormat
 import se.vadretapp.vadret.ui.extension.launchReplacing
 import se.vadretapp.vadret.ui.extension.messageResource
+import se.vadretapp.vadret.ui.format.TextLocale
 import se.vadretapp.vadret.ui.format.currentLanguageTag
 import se.vadretapp.vadret.ui.format.toDayTimeText
 import se.vadretapp.vadret.warning.model.WarningPlace
@@ -98,8 +99,13 @@ class WeatherForecastViewModel internal constructor(
     private val loadedLocationMode: AtomicReference<Boolean?> = AtomicReference(value = null)
 
     private val droppedPlace: AtomicReference<Location?> = AtomicReference(value = null)
-    private val languageTag: AtomicReference<String> = AtomicReference(value = currentLanguageTag())
-    private val hourFormat: AtomicReference<HourFormat> = AtomicReference(value = HourFormat.TWENTY_FOUR_HOUR)
+    private val textLocale: AtomicReference<TextLocale> = AtomicReference(
+        value = TextLocale(
+            languageTag = currentLanguageTag(),
+            hourFormat = HourFormat.TWENTY_FOUR_HOUR
+        )
+    )
+    private val textLocaleJob: AtomicReference<Job?> = AtomicReference(value = null)
     private val placeForecast: AtomicReference<PlaceForecast?> = AtomicReference(value = null)
     private val unseenWarnings: AtomicReference<List<AggregatedFeed>> = AtomicReference(value = emptyList())
     private val fetchedAt: AtomicReference<Instant?> = AtomicReference(value = null)
@@ -428,13 +434,14 @@ class WeatherForecastViewModel internal constructor(
         }
 
     private fun displayLatestWarning() {
+        val shownTextLocale: TextLocale = textLocale.load()
         state.update { state: WeatherForecastState ->
             state.copy(
                 latestWarning = unseenWarnings.load().toLatestWarning(
                     now = clock.now(),
-                    hourFormat = hourFormat.load(),
+                    hourFormat = shownTextLocale.hourFormat,
                     timeZone = TimeZone.currentSystemDefault(),
-                    languageTag = languageTag.load()
+                    languageTag = shownTextLocale.languageTag
                 )
             )
         }
@@ -516,14 +523,20 @@ class WeatherForecastViewModel internal constructor(
         languageTag: String,
         hourFormat: HourFormat
     ) {
-        val isLanguageSame: Boolean = this.languageTag.exchange(newValue = languageTag) == languageTag
-        val isHourFormatSame: Boolean = this.hourFormat.exchange(newValue = hourFormat) == hourFormat
-        if (isLanguageSame && isHourFormatSame) {
+        val shownTextLocale = TextLocale(
+            languageTag = languageTag,
+            hourFormat = hourFormat
+        )
+        if (textLocale.exchange(newValue = shownTextLocale) == shownTextLocale) {
             return
         }
-        viewModelScope.launch(context = coroutineDispatcher) {
+        // The language and clock change together and the newest change is the one shown, however the redrawing interleaves.
+        viewModelScope.launchReplacing(
+            currentJob = textLocaleJob,
+            context = coroutineDispatcher
+        ) {
             displayLatestWarning()
-            val loadedPlaceForecast: PlaceForecast = placeForecast.load() ?: return@launch
+            val loadedPlaceForecast: PlaceForecast = placeForecast.load() ?: return@launchReplacing
             state.update { state: WeatherForecastState ->
                 state
                     .withForecast(
@@ -534,25 +547,29 @@ class WeatherForecastViewModel internal constructor(
         }
     }
 
-    private fun PlaceForecast.toForecast(): WeatherForecast =
-        toWeatherForecast(
+    private fun PlaceForecast.toForecast(): WeatherForecast {
+        val shownTextLocale: TextLocale = textLocale.load()
+        return toWeatherForecast(
             now = clock.now(),
             timeZone = TimeZone.currentSystemDefault(),
-            languageTag = languageTag.load(),
-            hourFormat = hourFormat.load()
+            languageTag = shownTextLocale.languageTag,
+            hourFormat = shownTextLocale.hourFormat
         )
+    }
 
-    private fun PlaceForecast.outdatedTimeText(): String? =
-        if (isRefreshFailed) {
+    private fun PlaceForecast.outdatedTimeText(): String? {
+        val shownTextLocale: TextLocale = textLocale.load()
+        return if (isRefreshFailed) {
             fetchedAt?.toDayTimeText(
                 now = clock.now(),
-                hourFormat = hourFormat.load(),
+                hourFormat = shownTextLocale.hourFormat,
                 timeZone = TimeZone.currentSystemDefault(),
-                languageTag = languageTag.load()
+                languageTag = shownTextLocale.languageTag
             )
         } else {
             null
         }
+    }
 
     private fun onSearchDismissed() {
         searchJob.exchange(newValue = null)?.cancel()

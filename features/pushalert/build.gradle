@@ -23,6 +23,7 @@ kotlin {
                 implementation project(':data:pushalert')
                 implementation project(':data:setting')
                 implementation project(':domain:followedplace')
+                implementation project(':domain:setting')
                 implementation project(':domain:warning')
                 implementation project(':ui:icons')
 

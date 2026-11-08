@@ -4,6 +4,7 @@ import org.koin.core.module.Module
 import se.vadretapp.vadret.followedplace.di.followedPlaceTaskModule
 import se.vadretapp.vadret.forecastwarning.di.warningModule
 import se.vadretapp.vadret.pollenseason.di.pollenSeasonTaskModule
+import se.vadretapp.vadret.setting.di.settingTaskModule
 import se.vadretapp.vadret.settings.di.settingsModule
 import se.vadretapp.vadret.warning.di.warningTaskModule
 import se.vadretapp.vadret.weatherforecast.di.weatherForecastModule
@@ -18,6 +19,7 @@ val sharedModules: List<Module> = listOf(
     mainModule,
     settingsModule,
     warningModule,
+    settingTaskModule,
     warningTaskModule,
     weatherForecastModule
 )

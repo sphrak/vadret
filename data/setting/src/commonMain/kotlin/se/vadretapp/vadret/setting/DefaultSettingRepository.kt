@@ -11,16 +11,16 @@ import se.vadretapp.vadret.common.catch
 import se.vadretapp.vadret.common.either
 import se.vadretapp.vadret.setting.extension.toAppLanguage
 import se.vadretapp.vadret.setting.extension.toFailure
-import se.vadretapp.vadret.setting.extension.toHourFormat
 import se.vadretapp.vadret.setting.extension.toHourFormatChoice
 import se.vadretapp.vadret.setting.extension.toPreferenceValue
-import se.vadretapp.vadret.setting.extension.toShownLanguage
+import se.vadretapp.vadret.setting.extension.toSystemSettings
 import se.vadretapp.vadret.setting.extension.toTheme
 import se.vadretapp.vadret.setting.local.SettingLocalDataSource
 import se.vadretapp.vadret.setting.local.SystemSettingLocalDataSource
 import se.vadretapp.vadret.setting.model.AppLanguage
-import se.vadretapp.vadret.setting.model.HourFormat
 import se.vadretapp.vadret.setting.model.HourFormatChoice
+import se.vadretapp.vadret.setting.model.SystemSettings
+import se.vadretapp.vadret.setting.model.SystemSettingsEntity
 import se.vadretapp.vadret.setting.model.Theme
 
 internal class DefaultSettingRepository(
@@ -54,38 +54,39 @@ internal class DefaultSettingRepository(
         either { settingLocalDataSource.setLanguage(value = language.toPreferenceValue()) }
             .catch { exception: Exception -> exception.toFailure() }
 
-    override suspend fun getShownLanguage(): Either<Failure, AppLanguage> =
-        either { settingLocalDataSource.getLanguage().toAppLanguage().toShownLanguage(systemLanguageTag = systemSettingLocalDataSource.languageTag()) }
-            .catch { exception: Exception -> exception.toFailure() }
-
     override suspend fun getHourFormatChoice(): Either<Failure, HourFormatChoice> =
         either { settingLocalDataSource.getHourFormatChoice().toHourFormatChoice() }
             .catch { exception: Exception -> exception.toFailure() }
 
-    override suspend fun getHourFormat(): Either<Failure, HourFormat> =
-        either { settingLocalDataSource.getHourFormatChoice().toHourFormat() }
-            .catch { exception: Exception -> exception.toFailure() }
-
-    override fun observeHourFormat(): Flow<Either<Failure, HourFormat>> =
+    override fun observeHourFormatChoice(): Flow<Either<Failure, HourFormatChoice>> =
         settingLocalDataSource
             .observeHourFormatChoice()
-            .toSetting { value: String? -> value.toHourFormat() }
+            .toSetting { value: String? -> value.toHourFormatChoice() }
 
     override suspend fun setHourFormatChoice(hourFormatChoice: HourFormatChoice): Either<Failure, Unit> =
         either { settingLocalDataSource.setHourFormatChoice(value = hourFormatChoice.toPreferenceValue()) }
             .catch { exception: Exception -> exception.toFailure() }
 
-    // The phone is asked each time, so a clock it switched to since is followed.
-    private fun String?.toHourFormat(): HourFormat =
-        toHourFormatChoice().toHourFormat(isSystemTwentyFourHour = systemSettingLocalDataSource.isTwentyFourHour())
+    override fun getSystemSettings(): Either<Failure, SystemSettings> =
+        either { systemSettingLocalDataSource.getSystemSettings().toSystemSettings() }
+            .catch { exception: Exception -> exception.toFailure() }
+
+    override fun observeSystemSettings(): Flow<Either<Failure, SystemSettings>> =
+        systemSettingLocalDataSource
+            .observeSystemSettings()
+            .map<SystemSettingsEntity, Either<Failure, SystemSettings>> { systemSettingsEntity: SystemSettingsEntity ->
+                systemSettingsEntity.toSystemSettings().asRight()
+            }.catchToFailure()
 
     private fun <T> Flow<String?>.toSetting(parse: (String?) -> T): Flow<Either<Failure, T>> =
-        map<String?, Either<Failure, T>> { value: String? -> parse(value).asRight() }
-            .catch { throwable: Throwable ->
-                if (throwable is Exception) {
-                    emit(throwable.toFailure().asLeft())
-                } else {
-                    throw throwable
-                }
+        map<String?, Either<Failure, T>> { value: String? -> parse(value).asRight() }.catchToFailure()
+
+    private fun <T> Flow<Either<Failure, T>>.catchToFailure(): Flow<Either<Failure, T>> =
+        catch { throwable: Throwable ->
+            if (throwable is Exception) {
+                emit(throwable.toFailure().asLeft())
+            } else {
+                throw throwable
             }
+        }
 }

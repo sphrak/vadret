@@ -65,6 +65,7 @@ import se.vadretapp.vadret.radar.wind.WindPalette
 import se.vadretapp.vadret.setting.model.HourFormat
 import se.vadretapp.vadret.ui.extension.launchReplacing
 import se.vadretapp.vadret.ui.extension.messageResource
+import se.vadretapp.vadret.ui.format.TextLocale
 import se.vadretapp.vadret.ui.format.currentLanguageTag
 import se.vadretapp.vadret.wind.model.WindForecast
 import se.vadretapp.vadret.wind.model.WindFrame
@@ -114,8 +115,13 @@ class RadarViewModel internal constructor(
     private val isPollenRequested: AtomicBoolean = AtomicBoolean(value = false)
     private val pollenMap: AtomicReference<PollenMap?> = AtomicReference(value = null)
     private val pollenCloudJob: AtomicReference<Job?> = AtomicReference(value = null)
-    private val languageTag: AtomicReference<String> = AtomicReference(value = currentLanguageTag())
-    private val hourFormat: AtomicReference<HourFormat> = AtomicReference(value = HourFormat.TWENTY_FOUR_HOUR)
+    private val textLocale: AtomicReference<TextLocale> = AtomicReference(
+        value = TextLocale(
+            languageTag = currentLanguageTag(),
+            hourFormat = HourFormat.TWENTY_FOUR_HOUR
+        )
+    )
+    private val textLocaleJob: AtomicReference<Job?> = AtomicReference(value = null)
     private val windPalette: AtomicReference<WindPalette> = AtomicReference(value = WindPalette.DAY)
     private val radar: AtomicReference<Radar?> = AtomicReference(value = null)
     private val windForecast: AtomicReference<WindForecast?> = AtomicReference(value = null)
@@ -323,12 +329,18 @@ class RadarViewModel internal constructor(
         languageTag: String,
         hourFormat: HourFormat
     ) {
-        val isLanguageSame: Boolean = this.languageTag.exchange(newValue = languageTag) == languageTag
-        val isHourFormatSame: Boolean = this.hourFormat.exchange(newValue = hourFormat) == hourFormat
-        if (isLanguageSame && isHourFormatSame) {
+        val shownTextLocale = TextLocale(
+            languageTag = languageTag,
+            hourFormat = hourFormat
+        )
+        if (textLocale.exchange(newValue = shownTextLocale) == shownTextLocale) {
             return
         }
-        viewModelScope.launch(context = coroutineDispatcher) {
+        // The language and clock change together and the newest change is the one shown, however the redrawing interleaves.
+        viewModelScope.launchReplacing(
+            currentJob = textLocaleJob,
+            context = coroutineDispatcher
+        ) {
             state.update { state: RadarState ->
                 state.copy(
                     precipitationFrames = radar.load()?.toFrames() ?: state.precipitationFrames,
@@ -363,20 +375,24 @@ class RadarViewModel internal constructor(
         }
     }
 
-    private fun Radar.toFrames(): ImmutableList<RadarFrame> =
-        toRadarFrames(
+    private fun Radar.toFrames(): ImmutableList<RadarFrame> {
+        val shownTextLocale: TextLocale = textLocale.load()
+        return toRadarFrames(
             now = clock.now(),
             timeZone = TimeZone.currentSystemDefault(),
-            languageTag = languageTag.load(),
-            hourFormat = hourFormat.load()
+            languageTag = shownTextLocale.languageTag,
+            hourFormat = shownTextLocale.hourFormat
         ).toImmutableList()
+    }
 
-    private fun WindForecast.toTimeFrames(): ImmutableList<WindTimeFrame> =
-        toWindTimeFrames(
+    private fun WindForecast.toTimeFrames(): ImmutableList<WindTimeFrame> {
+        val shownTextLocale: TextLocale = textLocale.load()
+        return toWindTimeFrames(
             timeZone = TimeZone.currentSystemDefault(),
-            languageTag = languageTag.load(),
-            hourFormat = hourFormat.load()
+            languageTag = shownTextLocale.languageTag,
+            hourFormat = shownTextLocale.hourFormat
         ).toImmutableList()
+    }
 
     private fun loadDeviceLocation() {
         viewModelScope.launch(context = coroutineDispatcher) {
@@ -518,13 +534,13 @@ class RadarViewModel internal constructor(
     private fun PollenMap.dayText(): String =
         toDayText(
             timeZone = TimeZone.currentSystemDefault(),
-            languageTag = languageTag.load()
+            languageTag = textLocale.load().languageTag
         )
 
     private fun PollenMap.dateText(): String =
         toDateText(
             timeZone = TimeZone.currentSystemDefault(),
-            languageTag = languageTag.load()
+            languageTag = textLocale.load().languageTag
         )
 
     private fun onIndexChanged(index: Int) {

@@ -26,11 +26,12 @@ class DayTimeTextTest {
 
     private fun Instant.text(
         now: Instant,
-        languageTag: String = ENGLISH
+        languageTag: String = ENGLISH,
+        hourFormat: HourFormat = HourFormat.TWENTY_FOUR_HOUR
     ): String =
         toDayTimeText(
             now = now,
-            hourFormat = HourFormat.TWENTY_FOUR_HOUR,
+            hourFormat = hourFormat,
             timeZone = stockholm,
             languageTag = languageTag
         )
@@ -40,6 +41,30 @@ class DayTimeTextTest {
         assertEquals(
             expected = List(size = DAYS_IN_A_WEEK) { "13:00" },
             actual = weekMornings.map { now: Instant -> (now + toOnePmLocal).text(now = now) }
+        )
+    }
+
+    @Test
+    fun `today and the coming week follow the 12 hour clock in the language shown`() {
+        val now: Instant = mondayMorning
+
+        assertEquals(
+            expected = listOf("1:00 PM", "Tue 12:30 AM", "tis 12:30 fm"),
+            actual = listOf(
+                (now + toOnePmLocal).text(
+                    now = now,
+                    hourFormat = HourFormat.TWELVE_HOUR
+                ),
+                (now + toHalfPastMidnightLocal).text(
+                    now = now,
+                    hourFormat = HourFormat.TWELVE_HOUR
+                ),
+                (now + toHalfPastMidnightLocal).text(
+                    now = now,
+                    languageTag = SWEDISH,
+                    hourFormat = HourFormat.TWELVE_HOUR
+                )
+            )
         )
     }
 
