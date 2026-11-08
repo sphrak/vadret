@@ -131,4 +131,18 @@
     <string name="settings_notifications">Varsler</string>
     <string name="notifications_are_off">Varsler er slått av</string>
     <string name="notifications_are_off_text">Tillat varsler for Vädret i systeminnstillingene for å få push-varsler.</string>
+    <string name="slipperiness_possible">Mulig glatt føre</string>
+    <string name="slipperiness_high">Stor fare for glatt føre</string>
+    <string name="slipperiness_cause_frost">Rimfrost</string>
+    <string name="slipperiness_cause_freezing_rain">Underkjølt regn</string>
+    <string name="slipperiness_cause_refreeze">Gjenfrysing</string>
+    <string name="slipperiness_cause_snow">Snø</string>
+    <string name="slipperiness_cause_frost_explanation">Klar og stille himmel kan kjøle bakken under null, så fukt fryser til rimfrost.</string>
+    <string name="slipperiness_cause_freezing_rain_explanation">Regn eller yr kan fryse til is når det treffer kald bakke.</string>
+    <string name="slipperiness_cause_refreeze_explanation">Våt bakke kan fryse når temperaturen synker.</string>
+    <string name="slipperiness_cause_snow_explanation">Snø eller sludd kan gjøre veier og fortau glatte.</string>
+    <string name="slipperiness_estimate_label">Om vurderingen</string>
+    <string name="slipperiness_estimate_explanation">Vadret API regner ut risikoen fra SMHIs prognose. Det er ikke et farevarsel fra SMHI.</string>
+    <string name="slipperiness_alerts">Glatt føre</string>
+    <string name="slipperiness_alerts_summary">Når det kan bli glatt det neste døgnet</string>
 </resources>

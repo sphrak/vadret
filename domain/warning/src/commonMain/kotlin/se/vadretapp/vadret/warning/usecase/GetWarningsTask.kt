@@ -10,4 +10,11 @@ interface GetWarningsTask {
     suspend operator fun invoke(): Either<Failure, List<AggregatedFeed>>
 }
 
-fun GetWarningsTask(feedRepository: FeedRepository): GetWarningsTask = DefaultGetWarningsTask(feedRepository = feedRepository)
+fun GetWarningsTask(
+    feedRepository: FeedRepository,
+    getForecastWarningRequestTask: GetForecastWarningRequestTask
+): GetWarningsTask =
+    DefaultGetWarningsTask(
+        feedRepository = feedRepository,
+        getForecastWarningRequestTask = getForecastWarningRequestTask
+    )

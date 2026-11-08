@@ -61,6 +61,7 @@ class DefaultObserveUnseenFollowedPlaceWarningsTaskTest {
     private val observeUnseenFollowedPlaceWarningsTask: ObserveUnseenFollowedPlaceWarningsTask = DefaultObserveUnseenFollowedPlaceWarningsTask(
         observeFollowedPlacesTask = observeFollowedPlacesTask,
         feedRepository = feedRepository,
+        getForecastWarningRequestTask = FakeGetForecastWarningRequestTask(),
         clock = clock
     )
 

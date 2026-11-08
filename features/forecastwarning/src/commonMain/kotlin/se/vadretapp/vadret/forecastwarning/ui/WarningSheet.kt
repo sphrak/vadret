@@ -2,8 +2,10 @@ package se.vadretapp.vadret.forecastwarning.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -16,9 +18,12 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import se.vadretapp.vadret.forecastwarning.model.WarningDetail
 import se.vadretapp.vadret.forecastwarning.model.WarningItem
+import se.vadretapp.vadret.icons.VadretIcon
+import se.vadretapp.vadret.icons.VadretIconGraphic
 import se.vadretapp.vadret.ui.VadretTheme
 import se.vadretapp.vadret.ui.WarningColors
 import se.vadretapp.vadret.ui.elapsedTimeText
@@ -41,6 +46,8 @@ private val areaTopPadding = 13.dp
 private val factSpacing = 21.dp
 private val factLabelSpacing = 3.dp
 private val dividerWidth = 1.dp
+private val iconSpacing = 16.dp
+private val levelIconSize = 48.dp
 private const val DIVIDER_ALPHA = 0.2f
 private const val OPAQUE = 1f
 private const val EXPANDED = 0f
@@ -71,7 +78,8 @@ internal fun WarningLevelBlock(
             thickness = dividerWidth,
             color = colors.content.copy(alpha = DIVIDER_ALPHA)
         )
-        Column(
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(space = iconSpacing),
             modifier = Modifier
                 .graphicsLayer { alpha = contentAlpha() }
                 .padding(
@@ -81,30 +89,55 @@ internal fun WarningLevelBlock(
                     bottom = sheetBottomPadding
                 )
         ) {
-            Text(
-                text = warningLabel(
-                    source = warning.source,
-                    warningLevel = warning.warningLevel,
-                    isPublicAlert = warning.isPublicAlert
-                ),
-                style = VadretTheme.textStyles.value,
-                color = colors.content
+            WarningLevelText(
+                warning = warning,
+                colors = colors,
+                modifier = Modifier.weight(weight = 1f)
             )
-            Text(
-                text = warning.headline,
-                style = VadretTheme.textStyles.headline,
-                color = colors.content,
-                modifier = Modifier.padding(top = headlineTopPadding)
-            )
-            val areaName: String? = warning.areaName
-            if (areaName != null) {
-                Text(
-                    text = areaName,
-                    style = VadretTheme.textStyles.listItem,
-                    color = colors.content,
-                    modifier = Modifier.padding(top = areaTopPadding)
+            val icon: VadretIconGraphic? = warning.icon
+            if (icon != null) {
+                VadretIcon(
+                    icon = icon,
+                    contentDescription = null,
+                    tint = colors.content,
+                    modifier = Modifier.size(size = levelIconSize)
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun WarningLevelText(
+    warning: WarningItem,
+    colors: WarningColors,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier) {
+        Text(
+            text = warningLabel(
+                source = warning.source,
+                warningLevel = warning.warningLevel,
+                isPublicAlert = warning.isPublicAlert,
+                slipperinessRisk = warning.slipperinessRisk
+            ),
+            style = VadretTheme.textStyles.value,
+            color = colors.content
+        )
+        Text(
+            text = warning.headlineText(),
+            style = VadretTheme.textStyles.headline,
+            color = colors.content,
+            modifier = Modifier.padding(top = headlineTopPadding)
+        )
+        val areaName: String? = warning.areaName
+        if (areaName != null) {
+            Text(
+                text = areaName,
+                style = VadretTheme.textStyles.listItem,
+                color = colors.content,
+                modifier = Modifier.padding(top = areaTopPadding)
+            )
         }
     }
 }
@@ -127,7 +160,7 @@ internal fun WarningFacts(
         warning.details.forEach { warningDetail: WarningDetail ->
             WarningFact(
                 label = warningDetail.label(),
-                text = warningDetail.text,
+                text = warningDetail.text(),
                 maxLines = detailMaxLines
             )
         }
@@ -210,11 +243,31 @@ internal fun periodText(warning: WarningItem): String? {
 }
 
 @Composable
+internal fun WarningItem.headlineText(): String {
+    val resource: StringResource? = headlineResource
+    return if (resource != null) {
+        stringResource(resource = resource)
+    } else {
+        headline
+    }
+}
+
+@Composable
 private fun WarningDetail.label(): String? =
     when (this) {
         is WarningDetail.Labelled -> stringResource(resource = labelResource)
         is WarningDetail.Titled -> title
         is WarningDetail.Paragraph -> null
+        is WarningDetail.Explained -> stringResource(resource = labelResource)
+    }
+
+@Composable
+private fun WarningDetail.text(): String =
+    when (this) {
+        is WarningDetail.Labelled -> text
+        is WarningDetail.Titled -> text
+        is WarningDetail.Paragraph -> text
+        is WarningDetail.Explained -> stringResource(resource = textResource)
     }
 
 private fun String.capitalized(): String = replaceFirstChar { character: Char -> character.titlecase() }

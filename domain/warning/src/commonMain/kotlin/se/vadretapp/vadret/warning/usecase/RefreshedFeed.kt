@@ -1,6 +1,7 @@
 package se.vadretapp.vadret.warning.usecase
 
 import io.github.sphrak.either.Either
+import io.github.sphrak.either.extension.onResult
 import io.github.sphrak.either.flatMap
 import io.github.sphrak.either.map
 import kotlinx.coroutines.flow.Flow
@@ -10,9 +11,13 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import se.vadretapp.vadret.aggregatedfeed.FeedRepository
 import se.vadretapp.vadret.aggregatedfeed.model.AggregatedFeed
+import se.vadretapp.vadret.aggregatedfeed.model.FeedSource
+import se.vadretapp.vadret.aggregatedfeed.model.ForecastWarningRequest
 import se.vadretapp.vadret.aggregatedfeed.model.SeenWarning
 import se.vadretapp.vadret.aggregatedfeed.model.WarningFeed
 import se.vadretapp.vadret.common.Failure
+import se.vadretapp.vadret.logging.Logger
+import se.vadretapp.vadret.logging.LoggerFactory
 import se.vadretapp.vadret.refresh.whileRefreshing
 import se.vadretapp.vadret.warning.extension.affects
 import se.vadretapp.vadret.warning.model.WarningPlace
@@ -23,8 +28,11 @@ import kotlin.time.Instant
 
 private val feedReuseAge: Duration = 5.minutes
 
+private val logger: Logger = LoggerFactory.getLogger(tag = "se.vadretapp.vadret.warning")
+
 internal fun FeedRepository.observeRefreshedFeed(
     isRefresh: Boolean,
+    getForecastWarningRequestTask: GetForecastWarningRequestTask,
     clock: Clock
 ): Flow<Either<Failure, List<AggregatedFeed>>> =
     observeAggregatedFeed()
@@ -32,6 +40,7 @@ internal fun FeedRepository.observeRefreshedFeed(
             refresh = {
                 refreshUnlessRecent(
                     isRefresh = isRefresh,
+                    getForecastWarningRequestTask = getForecastWarningRequestTask,
                     clock = clock
                 )
             },
@@ -46,11 +55,13 @@ internal fun FeedRepository.observeRefreshedFeed(
 internal fun FeedRepository.observeUnseenWarnings(
     warningPlaces: List<WarningPlace>,
     isRefresh: Boolean,
+    getForecastWarningRequestTask: GetForecastWarningRequestTask,
     clock: Clock
 ): Flow<Either<Failure, List<AggregatedFeed>>> =
     combine(
         flow = observeRefreshedFeed(
             isRefresh = isRefresh,
+            getForecastWarningRequestTask = getForecastWarningRequestTask,
             clock = clock
         ),
         flow2 = observeSeenWarnings()
@@ -64,8 +75,18 @@ internal fun FeedRepository.observeUnseenWarnings(
         }
     }.distinctUntilChanged()
 
+internal suspend fun GetForecastWarningRequestTask.forecastWarningRequestOrNull(): ForecastWarningRequest? =
+    invoke().onResult(
+        onError = { failure: Failure ->
+            logger.warn { "Vadret API warnings are left out this time: ${failure.errorCode}" }
+            null
+        },
+        onSuccess = { forecastWarningRequest: ForecastWarningRequest? -> forecastWarningRequest }
+    )
+
 private suspend fun FeedRepository.refreshUnlessRecent(
     isRefresh: Boolean,
+    getForecastWarningRequestTask: GetForecastWarningRequestTask,
     clock: Clock
 ): Either<Failure, WarningFeed?> {
     if (!isRefresh) {
@@ -74,7 +95,7 @@ private suspend fun FeedRepository.refreshUnlessRecent(
             return savedFeed
         }
     }
-    return refreshAggregatedFeed()
+    return refreshAggregatedFeed(forecastWarningRequest = getForecastWarningRequestTask.forecastWarningRequestOrNull())
 }
 
 private fun WarningFeed?.isRecent(now: Instant): Boolean {
@@ -94,5 +115,5 @@ private fun List<AggregatedFeed>.unseen(seenWarnings: List<SeenWarning>): List<A
 
 private fun AggregatedFeed.isSeenSincePublished(seenAtByWarningIdentifier: Map<String, Instant>): Boolean {
     val seenAt: Instant = seenAtByWarningIdentifier[identifier] ?: return false
-    return seenAt >= publishedAt
+    return source == FeedSource.VADRET_API || seenAt >= publishedAt
 }

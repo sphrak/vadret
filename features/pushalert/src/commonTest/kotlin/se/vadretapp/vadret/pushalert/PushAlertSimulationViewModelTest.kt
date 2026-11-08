@@ -8,13 +8,17 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import se.vadretapp.vadret.aggregatedfeed.model.WarningReference
+import se.vadretapp.vadret.geohash.model.Geohash
 import se.vadretapp.vadret.pushalert.model.PushAlertKind
 import se.vadretapp.vadret.pushalert.model.PushAlertMessage
 import se.vadretapp.vadret.pushalert.model.PushAlertType
+import se.vadretapp.vadret.testing.FixedClock
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.time.Instant
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class PushAlertSimulationViewModelTest {
@@ -42,7 +46,8 @@ class PushAlertSimulationViewModelTest {
                 PushAlertType.COLDER to PushAlertKind.TEMPERATURE,
                 PushAlertType.HARD_WIND to PushAlertKind.WIND,
                 PushAlertType.STORM to PushAlertKind.WIND,
-                PushAlertType.HURRICANE to PushAlertKind.WIND
+                PushAlertType.HURRICANE to PushAlertKind.WIND,
+                PushAlertType.SLIPPERINESS to PushAlertKind.SLIPPERINESS
             ),
             actual = viewModel.state.value.pushAlertMessages.map { pushAlertMessage: PushAlertMessage -> pushAlertMessage.pushAlertType to pushAlertMessage.kind }
         )
@@ -56,6 +61,24 @@ class PushAlertSimulationViewModelTest {
         assertEquals(
             expected = PushAlertType.entries.size,
             actual = notificationIds.filterNotNull().toSet().size
+        )
+    }
+
+    @Test
+    fun theSimulatedSlipperinessRefersToTheSlipperinessOfTheNightAheadOrJustPassed() {
+        val evening = Instant.parse(input = "2026-11-08T18:00:00Z")
+        val morning = Instant.parse(input = "2026-11-09T05:00:00Z")
+
+        assertEquals(
+            expected = List(size = 2) {
+                WarningReference.Slipperiness(
+                    geohash = Geohash(value = "u6sce"),
+                    slipperinessDay = "2026-11-08"
+                )
+            },
+            actual = listOf(evening, morning).map { now: Instant ->
+                simulatedPushAlertMessages(now = now).last().warningReference
+            }
         )
     }
 
@@ -103,6 +126,9 @@ class PushAlertSimulationViewModelTest {
 
     private fun viewModel(showSimulatedPushAlertTask: FakeShowSimulatedPushAlertTask): PushAlertSimulationViewModel = PushAlertSimulationViewModel(
         showSimulatedPushAlertTask = showSimulatedPushAlertTask,
+        clock = FixedClock(now = SIMULATED_AT),
         coroutineDispatcher = testDispatcher
     )
 }
+
+private val SIMULATED_AT: Instant = Instant.parse(input = "2026-11-08T18:00:00Z")

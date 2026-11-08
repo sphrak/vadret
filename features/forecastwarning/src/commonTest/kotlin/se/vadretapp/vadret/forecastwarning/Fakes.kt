@@ -53,7 +53,8 @@ internal fun aggregatedFeed(
             polygons = polygons,
             lines = lines,
             regions = regions
-        )
+        ),
+        slipperiness = null
     )
 
 internal class FakeGetWarningsTask(

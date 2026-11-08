@@ -135,4 +135,18 @@
     <string name="settings_notifications">Ilmoitukset</string>
     <string name="notifications_are_off">Ilmoitukset on poistettu käytöstä</string>
     <string name="notifications_are_off_text">Salli Vädretin ilmoitukset järjestelmäasetuksista, niin saat push-ilmoituksia.</string>
+    <string name="slipperiness_possible">Liukkaus mahdollista</string>
+    <string name="slipperiness_high">Suuri liukkauden riski</string>
+    <string name="slipperiness_cause_frost">Kuura</string>
+    <string name="slipperiness_cause_freezing_rain">Jäätävä sade</string>
+    <string name="slipperiness_cause_refreeze">Uudelleenjäätyminen</string>
+    <string name="slipperiness_cause_snow">Lumi</string>
+    <string name="slipperiness_cause_frost_explanation">Selkeä ja tyyni sää voi jäähdyttää maan pakkaselle, jolloin kosteus jäätyy kuuraksi.</string>
+    <string name="slipperiness_cause_freezing_rain_explanation">Sade tai tihku voi jäätyä, kun se osuu kylmään maahan.</string>
+    <string name="slipperiness_cause_refreeze_explanation">Märkä maa voi jäätyä, kun lämpötila laskee.</string>
+    <string name="slipperiness_cause_snow_explanation">Lumi tai räntä voi tehdä teistä ja jalkakäytävistä liukkaita.</string>
+    <string name="slipperiness_estimate_label">Tietoa arviosta</string>
+    <string name="slipperiness_estimate_explanation">Vadret API laskee riskin SMHI:n ennusteesta. Se ei ole SMHI:n varoitus.</string>
+    <string name="slipperiness_alerts">Liukkaus</string>
+    <string name="slipperiness_alerts_summary">Kun seuraavan vuorokauden aikana voi olla liukasta</string>
 </resources>

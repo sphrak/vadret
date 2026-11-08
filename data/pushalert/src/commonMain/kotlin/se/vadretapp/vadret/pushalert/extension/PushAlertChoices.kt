@@ -14,6 +14,7 @@ internal fun PushAlertChoices.toPushAlertChoicesEntity(): PushAlertChoicesEntity
     },
     temperatureTrend = temperatureTrend,
     strongWind = strongWind,
+    slipperiness = slipperiness,
     isChosenPlaceNotified = isChosenPlaceNotified,
     notifiedFavoriteIds = notifiedFavoriteIds.sorted()
 )

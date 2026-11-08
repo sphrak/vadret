@@ -10,11 +10,13 @@ import se.vadretapp.vadret.ui.resources.ic_warning
 
 private const val KRISINFORMATION_NAME = "Krisinformation"
 private const val SMHI_NAME = "SMHI"
+private const val VADRET_API_NAME = "Vadret API"
 
 fun FeedSource.displayName(): String =
     when (this) {
         FeedSource.KRISINFORMATION -> KRISINFORMATION_NAME
         FeedSource.SMHI -> SMHI_NAME
+        FeedSource.VADRET_API -> VADRET_API_NAME
     }
 
 fun FeedSource.iconResource(warningLevel: WarningLevel?): DrawableResource =
@@ -27,4 +29,5 @@ fun FeedSource.iconResource(warningLevel: WarningLevel?): DrawableResource =
             WarningLevel.MESSAGE,
             null -> Res.drawable.ic_info
         }
+        FeedSource.VADRET_API -> Res.drawable.ic_warning
     }

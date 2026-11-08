@@ -15,6 +15,7 @@ kotlin {
                 implementation project(':data:theme')
                 implementation project(':domain:followedplace')
                 implementation project(':domain:warning')
+                implementation project(':ui:icons')
                 implementation libs.either
                 implementation libs.koin.core
                 implementation libs.kotlinx.collections.immutable

@@ -18,6 +18,8 @@ import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.forecastwarning.model.WarningDetail
 import se.vadretapp.vadret.forecastwarning.model.WarningItem
 import se.vadretapp.vadret.testing.FixedClock
+import se.vadretapp.vadret.ui.resources.Res
+import se.vadretapp.vadret.ui.resources.warning_detail_description
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -90,11 +92,15 @@ class WarningStoryViewModelTest {
             advanceUntilIdle()
 
             assertEquals(
-                expected = listOf("Vindbyar på 30 m/s."),
+                expected = listOf<WarningDetail>(
+                    WarningDetail.Labelled(
+                        labelResource = Res.string.warning_detail_description,
+                        text = "Vindbyar på 30 m/s."
+                    )
+                ),
                 actual = warningStoryViewModel.state.value.warnings
                     .single()
                     .details
-                    .map { warningDetail: WarningDetail -> warningDetail.text }
             )
         }
 

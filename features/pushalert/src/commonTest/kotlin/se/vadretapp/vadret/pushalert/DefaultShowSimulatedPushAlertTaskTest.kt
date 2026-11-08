@@ -5,6 +5,7 @@ import se.vadretapp.vadret.pushalert.model.PushAlertMessage
 import se.vadretapp.vadret.pushalert.usecase.DefaultShowSimulatedPushAlertTask
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.time.Instant
 
 class DefaultShowSimulatedPushAlertTaskTest {
     @Test
@@ -40,4 +41,4 @@ class DefaultShowSimulatedPushAlertTaskTest {
     }
 }
 
-private val WARNING_MESSAGE: PushAlertMessage = simulatedPushAlertMessages.first()
+private val WARNING_MESSAGE: PushAlertMessage = simulatedPushAlertMessages(now = Instant.parse(input = "2026-11-08T18:00:00Z")).first()

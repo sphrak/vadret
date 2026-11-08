@@ -160,6 +160,37 @@ class DefaultAddPlaceNameTaskTest {
     }
 
     @Test
+    fun aSlipperinessAlertIsNamedAfterTheSavedPlaceInItsSmallerCellOnly() = runTest {
+        val slipperinessInLimhamn = WIND_IN_MALMO.copy(
+            title = "Möjlig halka i natt",
+            kind = PushAlertKind.SLIPPERINESS,
+            pushAlertType = PushAlertType.SLIPPERINESS,
+            cell = "u3chn"
+        )
+
+        assertEquals(
+            expected = listOf(
+                slipperinessInLimhamn.copy(title = "Möjlig halka i natt - Limhamn"),
+                slipperinessInLimhamn
+            ),
+            actual = listOf(
+                FakeFavoriteRepository(
+                    favorites = listOf(
+                        MALMO_FAVORITE,
+                        LIMHAMN_FAVORITE
+                    )
+                ),
+                FakeFavoriteRepository(favorites = listOf(MALMO_FAVORITE))
+            ).map { favoriteRepository: FakeFavoriteRepository ->
+                addPlaceName(
+                    pushAlertMessage = slipperinessInLimhamn,
+                    favoriteRepository = favoriteRepository
+                )
+            }
+        )
+    }
+
+    @Test
     fun savedPlacesThatCannotBeReadLeaveTheAlertAsItIs() = runTest {
         assertEquals(
             expected = WIND_IN_MALMO,
@@ -191,7 +222,8 @@ private val WIND_IN_MALMO = PushAlertMessage(
     kind = PushAlertKind.WIND,
     pushAlertType = PushAlertType.STORM,
     notificationId = "n-1",
-    cell = "u3ch"
+    cell = "u3ch",
+    warningReference = null
 )
 private val TEMPERATURE_IN_MALMO = WIND_IN_MALMO.copy(
     title = "Varmare",

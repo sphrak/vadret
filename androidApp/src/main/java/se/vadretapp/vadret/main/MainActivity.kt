@@ -14,6 +14,7 @@ import androidx.compose.runtime.DisposableEffect
 import org.koin.core.Koin
 import se.vadretapp.vadret.BaseApplication
 import se.vadretapp.vadret.BuildConfig
+import se.vadretapp.vadret.aggregatedfeed.model.WarningReference
 import se.vadretapp.vadret.di.LocalKoin
 import se.vadretapp.vadret.radar.ui.RadarMapHost
 import se.vadretapp.vadret.radar.ui.RadarRoute
@@ -46,6 +47,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val koin: Koin = (application as BaseApplication).koinApplication.koin
+        if (savedInstanceState == null) {
+            openWarningReference(intent = intent)
+        }
         val radarTab: RadarTab = radarTab(initialRadarImageUrl = intent.initialRadarImageUrl())
         setContent {
             CompositionLocalProvider(LocalKoin provides koin) {
@@ -57,6 +61,16 @@ class MainActivity : ComponentActivity() {
                 )
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        openWarningReference(intent = intent)
+    }
+
+    private fun openWarningReference(intent: Intent) {
+        val warningReference: WarningReference = intent.warningReferenceOrNull() ?: return
+        (application as BaseApplication).koinApplication.koin.get<OpenedWarningReferences>().open(warningReference = warningReference)
     }
 
     @Composable

@@ -761,6 +761,7 @@ private val WARNINGS_FROM_YELLOW = PushAlertChoices(
     pollenChoices = emptyList(),
     temperatureTrend = false,
     strongWind = false,
+    slipperiness = false,
     isChosenPlaceNotified = true,
     notifiedFavoriteIds = emptySet()
 )

@@ -11,6 +11,7 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import se.vadretapp.vadret.aggregatedfeed.model.FeedRegion
 import se.vadretapp.vadret.aggregatedfeed.model.FeedRegionKind
+import se.vadretapp.vadret.aggregatedfeed.model.ForecastWarningRequest
 import se.vadretapp.vadret.aggregatedfeed.model.GeoPolygon
 import se.vadretapp.vadret.aggregatedfeed.model.SeenWarning
 import se.vadretapp.vadret.common.ErrorCode
@@ -84,6 +85,7 @@ class DefaultObserveFollowedPlaceWarningsTaskTest {
     private val observeFollowedPlaceWarningsTask: ObserveFollowedPlaceWarningsTask = DefaultObserveFollowedPlaceWarningsTask(
         observeFollowedPlacesTask = observeFollowedPlacesTask,
         feedRepository = feedRepository,
+        getForecastWarningRequestTask = FakeGetForecastWarningRequestTask(),
         clock = clock
     )
 
@@ -179,5 +181,9 @@ class DefaultObserveFollowedPlaceWarningsTaskTest {
             observeFollowedPlaceWarningsTask(isRefresh = true).first()
 
             assertEquals(expected = 1, actual = feedRepository.refreshCount)
+            assertEquals(
+                expected = listOf<ForecastWarningRequest?>(FORECAST_WARNING_REQUEST),
+                actual = feedRepository.forecastWarningRequests
+            )
         }
 }

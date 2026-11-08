@@ -325,7 +325,7 @@ private fun WarningDetailTopBar(
             collapsedFraction = fraction
         )
         Text(
-            text = warning.headline,
+            text = warning.headlineText(),
             style = VadretTheme.textStyles.title,
             color = VadretTheme.colorScheme.onBackground,
             maxLines = 1,

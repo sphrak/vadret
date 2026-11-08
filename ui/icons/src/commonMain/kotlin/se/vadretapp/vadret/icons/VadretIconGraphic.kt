@@ -1,6 +1,7 @@
 package se.vadretapp.vadret.icons
 
 import androidx.compose.runtime.Immutable
+import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.vector.PathNode
@@ -52,7 +53,8 @@ internal class IconPlacement(
 internal sealed interface IconShape {
 
     class Outline(
-        val nodes: List<PathNode>
+        val nodes: List<PathNode>,
+        val fillType: PathFillType = PathFillType.NonZero
     ) : IconShape
 
     class Circle(

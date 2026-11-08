@@ -21,8 +21,11 @@ import se.vadretapp.vadret.aggregatedfeed.local.AggregatedFeedLocalDataSource
 import se.vadretapp.vadret.aggregatedfeed.local.SeenWarningEntity
 import se.vadretapp.vadret.aggregatedfeed.local.SeenWarningLocalDataSource
 import se.vadretapp.vadret.aggregatedfeed.model.AggregatedFeed
+import se.vadretapp.vadret.aggregatedfeed.model.FeedSource
+import se.vadretapp.vadret.aggregatedfeed.model.ForecastWarningRequest
 import se.vadretapp.vadret.aggregatedfeed.model.SeenWarning
 import se.vadretapp.vadret.aggregatedfeed.model.WarningFeed
+import se.vadretapp.vadret.aggregatedfeed.remote.ForecastWarningRemoteDataSource
 import se.vadretapp.vadret.aggregatedfeed.remote.KrisinformationFeedDto
 import se.vadretapp.vadret.aggregatedfeed.remote.KrisinformationRemoteDataSource
 import se.vadretapp.vadret.aggregatedfeed.remote.SmhiWarningDto
@@ -40,14 +43,15 @@ private val logger: Logger = LoggerFactory.getLogger(tag = "se.vadretapp.vadret.
 internal class DefaultFeedRepository(
     private val smhiWarningRemoteDataSource: SmhiWarningRemoteDataSource,
     private val krisinformationRemoteDataSource: KrisinformationRemoteDataSource,
+    private val forecastWarningRemoteDataSource: ForecastWarningRemoteDataSource,
     private val aggregatedFeedLocalDataSource: AggregatedFeedLocalDataSource,
     private val seenWarningLocalDataSource: SeenWarningLocalDataSource,
     private val clock: Clock
 ) : FeedRepository {
 
-    override suspend fun getAggregatedFeed(): Either<Failure, List<AggregatedFeed>> =
+    override suspend fun getAggregatedFeed(forecastWarningRequest: ForecastWarningRequest?): Either<Failure, List<AggregatedFeed>> =
         either {
-            (aggregatedFeedLocalDataSource.getAggregatedFeed() ?: fetchAggregatedFeed()).toAggregatedFeeds()
+            (aggregatedFeedLocalDataSource.getAggregatedFeed() ?: fetchAggregatedFeed(forecastWarningRequest = forecastWarningRequest)).toAggregatedFeeds()
         }.catch { exception: Exception -> exception.toFailure() }
 
     override fun observeAggregatedFeed(): Flow<Either<Failure, WarningFeed?>> =
@@ -64,8 +68,8 @@ internal class DefaultFeedRepository(
                 }
             }
 
-    override suspend fun refreshAggregatedFeed(): Either<Failure, WarningFeed> =
-        either { fetchAggregatedFeed().toWarningFeed() }
+    override suspend fun refreshAggregatedFeed(forecastWarningRequest: ForecastWarningRequest?): Either<Failure, WarningFeed> =
+        either { fetchAggregatedFeed(forecastWarningRequest = forecastWarningRequest).toWarningFeed() }
             .catch { exception: Exception -> exception.toFailure() }
 
     override fun observeSeenWarnings(): Flow<Either<Failure, List<SeenWarning>>> =
@@ -93,20 +97,21 @@ internal class DefaultFeedRepository(
             )
         }.catch { exception: Exception -> exception.toFailure() }
 
-    private suspend fun fetchAggregatedFeed(): AggregatedFeedCacheEntity {
+    private suspend fun fetchAggregatedFeed(forecastWarningRequest: ForecastWarningRequest?): AggregatedFeedCacheEntity {
         val fetchedFeed = AggregatedFeedCacheEntity(
             fetchedAtEpochMillis = clock.now().toEpochMilliseconds(),
-            items = fetchItems()
+            items = fetchItems(forecastWarningRequest = forecastWarningRequest)
         )
         aggregatedFeedLocalDataSource.setAggregatedFeed(aggregatedFeedCacheEntity = fetchedFeed)
         return fetchedFeed
     }
 
-    private suspend fun fetchItems(): List<AggregatedFeedEntity> =
+    private suspend fun fetchItems(forecastWarningRequest: ForecastWarningRequest?): List<AggregatedFeedEntity> =
         coroutineScope {
             val smhiWarnings: Deferred<List<AggregatedFeedEntity>> = async { getSmhiWarnings() }
             val krisinformation: Deferred<List<AggregatedFeedEntity>> = async { getKrisinformation() }
-            (smhiWarnings.await() + krisinformation.await())
+            val forecastWarnings: Deferred<List<AggregatedFeedEntity>> = async { getForecastWarnings(forecastWarningRequest = forecastWarningRequest) }
+            (smhiWarnings.await() + krisinformation.await() + forecastWarnings.await())
                 .distinctBy { aggregatedFeedEntity: AggregatedFeedEntity -> aggregatedFeedEntity.identifier }
                 .sortedByDescending { aggregatedFeedEntity: AggregatedFeedEntity -> aggregatedFeedEntity.publishedAtEpochMillis }
         }
@@ -121,6 +126,31 @@ internal class DefaultFeedRepository(
         return getPublicAlerts().mapNotNull { krisinformationFeedDto: KrisinformationFeedDto -> krisinformationFeedDto.toAggregatedFeedEntity(isPublicAlert = true) } +
             news.mapNotNull { krisinformationFeedDto: KrisinformationFeedDto -> krisinformationFeedDto.toAggregatedFeedEntity(isPublicAlert = false) }
     }
+
+    private suspend fun getForecastWarnings(forecastWarningRequest: ForecastWarningRequest?): List<AggregatedFeedEntity> {
+        if (forecastWarningRequest == null || forecastWarningRequest.geohashes.isEmpty()) {
+            return emptyList()
+        }
+        return try {
+            forecastWarningRemoteDataSource
+                .getWarnings(
+                    installationToken = forecastWarningRequest.installationToken,
+                    geohashes = forecastWarningRequest.geohashes
+                ).toAggregatedFeedEntities()
+        } catch (cancellationException: CancellationException) {
+            throw cancellationException
+        } catch (exception: Exception) {
+            logger.warn { "Keeping the last Vadret API warnings: ${exception::class.simpleName}: ${exception.message}" }
+            savedForecastWarnings()
+        }
+    }
+
+    private suspend fun savedForecastWarnings(): List<AggregatedFeedEntity> =
+        aggregatedFeedLocalDataSource
+            .getAggregatedFeed()
+            ?.items
+            .orEmpty()
+            .filter { aggregatedFeedEntity: AggregatedFeedEntity -> aggregatedFeedEntity.source == FeedSource.VADRET_API.name }
 
     private suspend fun getPublicAlerts(): List<KrisinformationFeedDto> =
         try {

@@ -18,9 +18,11 @@ interface ObserveUnseenWarningsTask {
 
 fun ObserveUnseenWarningsTask(
     feedRepository: FeedRepository,
+    getForecastWarningRequestTask: GetForecastWarningRequestTask,
     clock: Clock
 ): ObserveUnseenWarningsTask =
     DefaultObserveUnseenWarningsTask(
         feedRepository = feedRepository,
+        getForecastWarningRequestTask = getForecastWarningRequestTask,
         clock = clock
     )

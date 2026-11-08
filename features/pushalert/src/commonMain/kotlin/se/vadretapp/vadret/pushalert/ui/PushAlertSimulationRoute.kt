@@ -17,6 +17,7 @@ import se.vadretapp.vadret.pushalert.PushAlertSimulationViewModel
 import se.vadretapp.vadret.pushalert.extension.icon
 import se.vadretapp.vadret.pushalert.model.PushAlertMessage
 import se.vadretapp.vadret.pushalert.model.PushAlertType
+import se.vadretapp.vadret.pushalert.simulatedPushAlertMessages
 import se.vadretapp.vadret.theme.model.Theme
 import se.vadretapp.vadret.ui.InfoDialog
 import se.vadretapp.vadret.ui.SettingsRow
@@ -30,8 +31,11 @@ import se.vadretapp.vadret.ui.resources.notifications_are_off
 import se.vadretapp.vadret.ui.resources.notifications_are_off_text
 import se.vadretapp.vadret.ui.resources.settings_notifications
 import se.vadretapp.vadret.ui.resources.simulate_notifications
+import kotlin.time.Instant
 
 private const val SIMULATE_HEADER_KEY = "simulate-header"
+
+private val previewNow: Instant = Instant.parse(input = "2026-11-08T18:00:00Z")
 
 private enum class PushAlertSimulationContentType {
     HEADER,
@@ -104,7 +108,7 @@ private fun PushAlertSimulationScreenPreview(
 ) {
     VadretTheme(theme = theme) {
         PushAlertSimulationScreen(
-            state = PushAlertSimulationState(),
+            state = PushAlertSimulationState(pushAlertMessages = simulatedPushAlertMessages(now = previewNow)),
             onEvent = {},
             onBack = {},
             modifier = Modifier.background(color = VadretTheme.colorScheme.background)

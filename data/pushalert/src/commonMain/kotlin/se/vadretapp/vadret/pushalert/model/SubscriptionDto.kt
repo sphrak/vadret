@@ -14,5 +14,7 @@ internal data class SubscriptionDto(
     @SerialName(value = "temperature_trend")
     val temperatureTrend: Boolean? = null,
     @SerialName(value = "strong_wind")
-    val strongWind: Boolean? = null
+    val strongWind: Boolean? = null,
+    @SerialName(value = "slipperiness")
+    val slipperiness: Boolean? = null
 )

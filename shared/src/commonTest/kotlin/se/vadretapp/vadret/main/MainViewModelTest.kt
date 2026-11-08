@@ -15,10 +15,14 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import se.vadretapp.vadret.aggregatedfeed.model.WarningReference
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.language.model.AppLanguage
+import se.vadretapp.vadret.testing.LogLine
+import se.vadretapp.vadret.testing.withRecordedLogs
 import se.vadretapp.vadret.theme.model.Theme
+import se.vadretapp.vadret.warning.usecase.GetReferencedWarningIdentifiersTask
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -39,6 +43,13 @@ private class FakeObserveLanguageTask : ObserveLanguageTask {
     override fun invoke(): Flow<Either<Failure, AppLanguage>> = languages
 }
 
+private class FakeGetReferencedWarningIdentifiersTask : GetReferencedWarningIdentifiersTask {
+
+    var result: Either<Failure, List<String>> = listOf("smhi-1-12").asRight()
+
+    override suspend fun invoke(warningReference: WarningReference): Either<Failure, List<String>> = result
+}
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class MainViewModelTest {
 
@@ -47,10 +58,14 @@ class MainViewModelTest {
     private val observeThemeTask = FakeObserveThemeTask()
     private val observeLanguageTask = FakeObserveLanguageTask()
     private val appStartHook = CountingAppStartHook()
+    private val openedWarningReferences = OpenedWarningReferences()
+    private val getReferencedWarningIdentifiersTask = FakeGetReferencedWarningIdentifiersTask()
     private val mainViewModel = MainViewModel(
         observeThemeTask = observeThemeTask,
         observeLanguageTask = observeLanguageTask,
         appStartHooks = listOf(appStartHook),
+        openedWarningReferences = openedWarningReferences,
+        getReferencedWarningIdentifiersTask = getReferencedWarningIdentifiersTask,
         coroutineDispatcher = testDispatcher
     )
 
@@ -149,5 +164,51 @@ class MainViewModelTest {
                     observeLanguageTask.languages.subscriptionCount.value
                 )
             )
+        }
+
+    @Test
+    fun `a notification opened before the start opens the story it refers to once started`() =
+        testScope.runTest {
+            val opened = mutableListOf<List<String>>()
+            val job = launch { mainViewModel.openedWarningIdentifiers.collect { warningIdentifiers: List<String> -> opened.add(warningIdentifiers) } }
+            openedWarningReferences.open(warningReference = WarningReference.SmhiWarningArea(warningAreaId = 12))
+            advanceUntilIdle()
+            val beforeStart: List<List<String>> = opened.toList()
+
+            mainViewModel.onEvent(event = MainEvent.OnStart)
+            advanceUntilIdle()
+            job.cancel()
+
+            assertEquals(
+                expected = emptyList<List<String>>() to listOf(listOf("smhi-1-12")),
+                actual = beforeStart to opened
+            )
+        }
+
+    @Test
+    fun `a notification about a warning that is gone or cannot be found opens only the app`() =
+        testScope.runTest {
+            val opened = mutableListOf<List<String>>()
+            val job = launch { mainViewModel.openedWarningIdentifiers.collect { warningIdentifiers: List<String> -> opened.add(warningIdentifiers) } }
+            mainViewModel.onEvent(event = MainEvent.OnStart)
+            advanceUntilIdle()
+
+            withRecordedLogs { recordingLogSink ->
+                getReferencedWarningIdentifiersTask.result = emptyList<String>().asRight()
+                openedWarningReferences.open(warningReference = WarningReference.SmhiWarningArea(warningAreaId = 12))
+                advanceUntilIdle()
+                getReferencedWarningIdentifiersTask.result = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft()
+                openedWarningReferences.open(warningReference = WarningReference.SmhiWarningArea(warningAreaId = 13))
+                advanceUntilIdle()
+                job.cancel()
+
+                assertEquals(
+                    expected = emptyList<List<String>>() to listOf(
+                        "An opened notification refers to a warning that is gone, so only the app opens",
+                        "The story of an opened notification cannot be found: NETWORK_UNAVAILABLE"
+                    ),
+                    actual = opened to recordingLogSink.lines.map { line: LogLine -> line.message }
+                )
+            }
         }
 }

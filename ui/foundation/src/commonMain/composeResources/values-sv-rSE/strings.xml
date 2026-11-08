@@ -264,4 +264,18 @@
     <string name="end_of_season_is_simulated">Pollen döljs och radarn visar att pollen gått i ide nästa gång du öppnar den</string>
     <string name="end_of_season_is_not_simulated">Radarn följer den riktiga säsongen</string>
     <string name="simulate_notifications">Simulera notiser</string>
+    <string name="slipperiness_possible">Möjlig halka</string>
+    <string name="slipperiness_high">Stor risk för halka</string>
+    <string name="slipperiness_cause_frost">Rimfrost</string>
+    <string name="slipperiness_cause_freezing_rain">Underkylt regn</string>
+    <string name="slipperiness_cause_refreeze">Återfrysning</string>
+    <string name="slipperiness_cause_snow">Snö</string>
+    <string name="slipperiness_cause_frost_explanation">Klar och lugn himmel kan kyla marken under noll, så att fukt fryser till rimfrost.</string>
+    <string name="slipperiness_cause_freezing_rain_explanation">Regn eller duggregn kan frysa till is när det landar på kall mark.</string>
+    <string name="slipperiness_cause_refreeze_explanation">Våt mark kan frysa när temperaturen sjunker.</string>
+    <string name="slipperiness_cause_snow_explanation">Snö eller snöblandat regn kan göra vägar och trottoarer hala.</string>
+    <string name="slipperiness_estimate_label">Om bedömningen</string>
+    <string name="slipperiness_estimate_explanation">Vadret API räknar fram risken ur SMHI:s prognos. Det är ingen varning från SMHI.</string>
+    <string name="slipperiness_alerts">Halka</string>
+    <string name="slipperiness_alerts_summary">När det kan bli halt det kommande dygnet</string>
 </resources>

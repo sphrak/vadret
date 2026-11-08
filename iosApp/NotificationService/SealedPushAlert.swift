@@ -7,6 +7,7 @@ struct SealedPushAlert {
     let title: String
     let body: String
     let kind: String
+    let data: [String: String]
 
     init?(userInfo: [AnyHashable: Any]) {
         guard let appGroup = Bundle.main.object(forInfoDictionaryKey: appGroupKey) as? String else {
@@ -24,6 +25,7 @@ struct SealedPushAlert {
         title = sealedContent.title + placeNameSuffix(sealedContent: sealedContent, appGroup: appGroup)
         body = sealedContent.body
         kind = sealedContent.data[kindField] ?? ""
+        data = sealedContent.data
     }
 }
 
@@ -78,10 +80,14 @@ private func pushAlertKey(appGroup: String) -> SecKey? {
 private func placeNameSuffix(sealedContent: SealedContent, appGroup: String) -> String {
     guard let kind = sealedContent.data[kindField], kindsAboutOneCell.contains(kind),
           let cell = sealedContent.data[cellField],
-          let placeName = placeNamesByCell(appGroup: appGroup)[cell] else {
+          let placeName = placeName(cell: cell, placeNamesByCell: placeNamesByCell(appGroup: appGroup)) else {
         return ""
     }
     return placeNameSeparator + placeName
+}
+
+private func placeName(cell: String, placeNamesByCell: [String: String]) -> String? {
+    placeNamesByCell[cell] ?? placeNamesByCell[String(cell.prefix(placeNameCellLength))]
 }
 
 private func placeNamesByCell(appGroup: String) -> [String: String] {
@@ -106,5 +112,6 @@ private let placeNamesFileName = "push_alert_place_names.json"
 private let sealedField = "sealed"
 private let kindField = "kind"
 private let cellField = "cell"
-private let kindsAboutOneCell: Set<String> = ["temperature", "wind"]
+private let kindsAboutOneCell: Set<String> = ["temperature", "wind", "slipperiness"]
+private let placeNameCellLength = 4
 private let placeNameSeparator = " - "

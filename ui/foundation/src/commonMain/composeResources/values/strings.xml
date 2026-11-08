@@ -325,4 +325,18 @@
     <string name="warning_level">Level</string>
     <string name="strong_wind_alerts_summary">The evening before and the same day</string>
     <string name="places_not_followed">No warnings, at most 5 places are followed</string>
+    <string name="slipperiness_possible">Slippery roads possible</string>
+    <string name="slipperiness_high">High risk of slippery roads</string>
+    <string name="slipperiness_cause_frost">Frost</string>
+    <string name="slipperiness_cause_freezing_rain">Freezing rain</string>
+    <string name="slipperiness_cause_refreeze">Refreezing</string>
+    <string name="slipperiness_cause_snow">Snow</string>
+    <string name="slipperiness_cause_frost_explanation">A clear, calm sky can cool the ground below freezing, so moisture freezes to frost.</string>
+    <string name="slipperiness_cause_freezing_rain_explanation">Rain or drizzle can freeze to ice when it lands on cold ground.</string>
+    <string name="slipperiness_cause_refreeze_explanation">Wet ground can freeze as the temperature falls.</string>
+    <string name="slipperiness_cause_snow_explanation">Snow or sleet can make roads and pavements slippery.</string>
+    <string name="slipperiness_estimate_label">About this estimate</string>
+    <string name="slipperiness_estimate_explanation">Vadret API works out the risk from SMHI\'s forecast. It is not a warning from SMHI.</string>
+    <string name="slipperiness_alerts">Slipperiness</string>
+    <string name="slipperiness_alerts_summary">When the coming 24 hours may be slippery</string>
 </resources>

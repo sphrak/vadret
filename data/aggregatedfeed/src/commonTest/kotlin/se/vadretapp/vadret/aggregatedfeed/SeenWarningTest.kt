@@ -51,6 +51,7 @@ class SeenWarningTest {
         DefaultFeedRepository(
             smhiWarningRemoteDataSource = FakeSmhiWarningRemoteDataSource(),
             krisinformationRemoteDataSource = FakeKrisinformationRemoteDataSource(),
+            forecastWarningRemoteDataSource = FakeForecastWarningRemoteDataSource(),
             aggregatedFeedLocalDataSource = DefaultAggregatedFeedLocalDataSource(
                 diskCache = FakeDiskCache(),
                 coroutineDispatcher = StandardTestDispatcher(scheduler = testScope.testScheduler)

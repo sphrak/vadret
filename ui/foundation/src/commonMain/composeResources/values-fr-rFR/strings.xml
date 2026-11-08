@@ -125,4 +125,18 @@
     <string name="settings_notifications">Notifications</string>
     <string name="notifications_are_off">Les notifications sont désactivées</string>
     <string name="notifications_are_off_text">Autorisez les notifications de Vädret dans les paramètres du système pour recevoir des alertes push.</string>
+    <string name="slipperiness_possible">Chaussée glissante possible</string>
+    <string name="slipperiness_high">Risque élevé de chaussée glissante</string>
+    <string name="slipperiness_cause_frost">Gelée blanche</string>
+    <string name="slipperiness_cause_freezing_rain">Pluie verglaçante</string>
+    <string name="slipperiness_cause_refreeze">Regel</string>
+    <string name="slipperiness_cause_snow">Neige</string>
+    <string name="slipperiness_cause_frost_explanation">Un ciel clair et calme peut refroidir le sol sous zéro, et l\'humidité gèle en gelée blanche.</string>
+    <string name="slipperiness_cause_freezing_rain_explanation">La pluie ou la bruine peut geler en touchant un sol froid.</string>
+    <string name="slipperiness_cause_refreeze_explanation">Un sol mouillé peut geler quand la température baisse.</string>
+    <string name="slipperiness_cause_snow_explanation">La neige ou la neige fondue peut rendre routes et trottoirs glissants.</string>
+    <string name="slipperiness_estimate_label">À propos de cette estimation</string>
+    <string name="slipperiness_estimate_explanation">Vadret API calcule le risque à partir des prévisions du SMHI. Ce n\'est pas une alerte du SMHI.</string>
+    <string name="slipperiness_alerts">Chaussée glissante</string>
+    <string name="slipperiness_alerts_summary">Quand la chaussée risque d\'être glissante dans les 24 heures</string>
 </resources>

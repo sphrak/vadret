@@ -32,5 +32,7 @@ internal data class AggregatedFeedEntity(
     @SerialName(value = "lines")
     val lines: List<GeoLineEntity>,
     @SerialName(value = "regions")
-    val regions: List<FeedRegionEntity>
+    val regions: List<FeedRegionEntity>,
+    @SerialName(value = "slipperiness")
+    val slipperiness: SlipperinessEntity? = null
 )

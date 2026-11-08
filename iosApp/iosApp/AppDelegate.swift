@@ -37,9 +37,22 @@ final class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNU
 
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        if let pushAlertData = response.notification.request.content.userInfo[pushAlertDataKey] as? [String: String] {
+            PushAlertsBridgeKt.onPushAlertOpened(pushAlertData: pushAlertData)
+        }
+        completionHandler()
+    }
+
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
         completionHandler([.banner, .list, .sound])
     }
 }
+
+private let pushAlertDataKey = "push_alert_data"

@@ -363,7 +363,8 @@ internal fun warning(
             polygons = emptyList(),
             lines = emptyList(),
             regions = emptyList()
-        )
+        ),
+        slipperiness = null
     )
 
 // Answers for one place and for the followed places alike, and records which was asked: no place means the followed places.

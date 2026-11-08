@@ -122,7 +122,8 @@ internal class DefaultSyncPushAlertsTask(
                         warningLowestLevel = pushAlertChoices.warningLowestLevel,
                         pollenChoices = pushAlertChoices.pollenChoices,
                         temperatureTrend = pushAlertChoices.temperatureTrend,
-                        strongWind = pushAlertChoices.strongWind
+                        strongWind = pushAlertChoices.strongWind,
+                        slipperiness = pushAlertChoices.slipperiness
                     )
                 ).flatMap { pushAlertRepository.saveSyncedCurrentGeohash(geohash = currentGeohash) }
             }

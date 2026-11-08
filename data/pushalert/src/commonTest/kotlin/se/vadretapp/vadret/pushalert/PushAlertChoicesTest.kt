@@ -16,6 +16,7 @@ class PushAlertChoicesTest {
             "without warnings" to EVERYTHING.copy(warningLowestLevel = null),
             "without the temperature" to EVERYTHING.copy(temperatureTrend = false),
             "without strong wind" to EVERYTHING.copy(strongWind = false),
+            "without slipperiness" to EVERYTHING.copy(slipperiness = false),
             "without one pollen" to EVERYTHING.copy(pollenChoices = listOf(BIRCH_FROM_MODERATE))
         )
         val wider = mapOf(
@@ -34,11 +35,12 @@ class PushAlertChoicesTest {
             actual = (narrower + wider).mapValues { (_, pushAlertChoices) -> pushAlertChoices.isWithin(other = EVERYTHING) }
         )
         assertEquals(
-            expected = listOf(false, false, false),
+            expected = listOf(false, false, false, false),
             actual = listOf(
                 EVERYTHING.isWithin(other = EVERYTHING.copy(warningLowestLevel = null)),
                 EVERYTHING.isWithin(other = EVERYTHING.copy(temperatureTrend = false)),
-                EVERYTHING.isWithin(other = EVERYTHING.copy(strongWind = false))
+                EVERYTHING.isWithin(other = EVERYTHING.copy(strongWind = false)),
+                EVERYTHING.isWithin(other = EVERYTHING.copy(slipperiness = false))
             )
         )
     }
@@ -71,6 +73,7 @@ class PushAlertChoicesTest {
             "only pollen" to PushAlertChoices.NOTHING_CHOSEN.copy(pollenChoices = listOf(BIRCH_FROM_MODERATE)),
             "only the temperature" to PushAlertChoices.NOTHING_CHOSEN.copy(temperatureTrend = true),
             "only strong wind" to PushAlertChoices.NOTHING_CHOSEN.copy(strongWind = true),
+            "only slipperiness" to PushAlertChoices.NOTHING_CHOSEN.copy(slipperiness = true),
             "everything" to EVERYTHING
         )
 
@@ -81,6 +84,7 @@ class PushAlertChoicesTest {
                 "only pollen" to true,
                 "only the temperature" to true,
                 "only strong wind" to true,
+                "only slipperiness" to true,
                 "everything" to true
             ),
             actual = choices.mapValues { (_, pushAlertChoices) -> pushAlertChoices.isAnythingChosen() }
@@ -105,6 +109,7 @@ private val EVERYTHING = PushAlertChoices(
     pollenChoices = listOf(BIRCH_FROM_MODERATE, GRASS_FROM_LOW),
     temperatureTrend = true,
     strongWind = true,
+    slipperiness = true,
     isChosenPlaceNotified = true,
     notifiedFavoriteIds = emptySet()
 )

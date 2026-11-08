@@ -5,7 +5,7 @@ import kotlin.jvm.JvmInline
 @JvmInline
 value class Geohash(val value: String) {
     init {
-        require(value = value.length == GEOHASH_LENGTH && value.all { character -> character in GEOHASH_ALPHABET }) {
+        require(value = value.isGeohash()) {
             "A geohash is $GEOHASH_LENGTH characters of the geohash alphabet, was: $value"
         }
     }
@@ -44,6 +44,15 @@ value class Geohash(val value: String) {
             eastLongitude >= SWEDISH_WATERS_WEST_LONGITUDE
     }
 }
+
+fun geohashOrNull(value: String): Geohash? =
+    if (value.isGeohash()) {
+        Geohash(value = value)
+    } else {
+        null
+    }
+
+private fun String.isGeohash(): Boolean = length == GEOHASH_LENGTH && all { character -> character in GEOHASH_ALPHABET }
 
 fun geohashOf(
     latitude: Double,

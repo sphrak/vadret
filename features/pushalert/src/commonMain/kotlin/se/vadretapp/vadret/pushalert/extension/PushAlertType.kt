@@ -4,6 +4,7 @@ import se.vadretapp.vadret.icons.Colder
 import se.vadretapp.vadret.icons.HardWind
 import se.vadretapp.vadret.icons.Hurricane
 import se.vadretapp.vadret.icons.Pollen
+import se.vadretapp.vadret.icons.Slipperiness
 import se.vadretapp.vadret.icons.Storm
 import se.vadretapp.vadret.icons.VadretIconGraphic
 import se.vadretapp.vadret.icons.VadretIcons
@@ -21,4 +22,5 @@ internal fun PushAlertType.icon(): VadretIconGraphic =
         PushAlertType.HARD_WIND -> VadretIcons.Alert.HardWind
         PushAlertType.STORM -> VadretIcons.Alert.Storm
         PushAlertType.HURRICANE -> VadretIcons.Alert.Hurricane
+        PushAlertType.SLIPPERINESS -> VadretIcons.Alert.Slipperiness
     }

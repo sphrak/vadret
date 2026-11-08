@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Slipperiness warnings
 - App package name changed from `fi.kroon.vadret` to `se.vadretapp.vadret`
 - Add intervals to wind map legend
 - Improved the precipitation radar legend

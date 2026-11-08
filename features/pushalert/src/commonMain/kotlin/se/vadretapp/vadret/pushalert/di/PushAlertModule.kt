@@ -12,6 +12,7 @@ import se.vadretapp.vadret.pushalert.PushAlertsViewModel
 import se.vadretapp.vadret.pushalert.usecase.AddPlaceNameTask
 import se.vadretapp.vadret.pushalert.usecase.DefaultAddPlaceNameTask
 import se.vadretapp.vadret.pushalert.usecase.DefaultGetCurrentGeohashTask
+import se.vadretapp.vadret.pushalert.usecase.DefaultGetForecastWarningRequestTask
 import se.vadretapp.vadret.pushalert.usecase.DefaultGetPushAlertGeohashesTask
 import se.vadretapp.vadret.pushalert.usecase.DefaultIsOutsideSwedenTask
 import se.vadretapp.vadret.pushalert.usecase.DefaultObservePollenTypesTask
@@ -32,6 +33,7 @@ import se.vadretapp.vadret.pushalert.usecase.OpenPushAlertTask
 import se.vadretapp.vadret.pushalert.usecase.SavePushAlertChoicesTask
 import se.vadretapp.vadret.pushalert.usecase.SyncPushAlertsTask
 import se.vadretapp.vadret.ui.SettingsSection
+import se.vadretapp.vadret.warning.usecase.GetForecastWarningRequestTask
 
 val pushAlertModule: Module = module {
     single<SyncPushAlertsTask> {
@@ -47,6 +49,7 @@ val pushAlertModule: Module = module {
     }
     factoryOf(::DefaultGetCurrentGeohashTask) { bind<GetCurrentGeohashTask>() }
     factoryOf(::DefaultGetPushAlertGeohashesTask) { bind<GetPushAlertGeohashesTask>() }
+    factoryOf(::DefaultGetForecastWarningRequestTask) { bind<GetForecastWarningRequestTask>() }
     factoryOf(::DefaultIsOutsideSwedenTask) { bind<IsOutsideSwedenTask>() }
     factoryOf(::DefaultObservePushAlertChoicesTask) { bind<ObservePushAlertChoicesTask>() }
     factoryOf(::DefaultObservePushAlertPlacesTask) { bind<ObservePushAlertPlacesTask>() }

@@ -12,6 +12,7 @@ internal fun PushAlertChoicesEntity.toPushAlertChoices(): PushAlertChoices = Pus
     pollenChoices = pollenChoices.mapNotNull { pollenChoiceEntity -> pollenChoiceEntity.toPollenChoiceOrNull() },
     temperatureTrend = temperatureTrend,
     strongWind = strongWind,
+    slipperiness = slipperiness,
     isChosenPlaceNotified = isChosenPlaceNotified,
     notifiedFavoriteIds = notifiedFavoriteIds.toSet()
 )

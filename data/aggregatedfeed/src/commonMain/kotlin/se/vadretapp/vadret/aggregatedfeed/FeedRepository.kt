@@ -9,8 +9,10 @@ import se.vadretapp.vadret.aggregatedfeed.local.AggregatedFeedDatabase
 import se.vadretapp.vadret.aggregatedfeed.local.DefaultAggregatedFeedLocalDataSource
 import se.vadretapp.vadret.aggregatedfeed.local.DefaultSeenWarningLocalDataSource
 import se.vadretapp.vadret.aggregatedfeed.model.AggregatedFeed
+import se.vadretapp.vadret.aggregatedfeed.model.ForecastWarningRequest
 import se.vadretapp.vadret.aggregatedfeed.model.SeenWarning
 import se.vadretapp.vadret.aggregatedfeed.model.WarningFeed
+import se.vadretapp.vadret.aggregatedfeed.remote.DefaultForecastWarningRemoteDataSource
 import se.vadretapp.vadret.aggregatedfeed.remote.DefaultKrisinformationRemoteDataSource
 import se.vadretapp.vadret.aggregatedfeed.remote.DefaultSmhiWarningRemoteDataSource
 import se.vadretapp.vadret.common.DiskCache
@@ -21,11 +23,11 @@ internal const val AGGREGATED_FEED_DATABASE_NAME = "aggregatedfeed.db"
 
 interface FeedRepository {
 
-    suspend fun getAggregatedFeed(): Either<Failure, List<AggregatedFeed>>
+    suspend fun getAggregatedFeed(forecastWarningRequest: ForecastWarningRequest?): Either<Failure, List<AggregatedFeed>>
 
     fun observeAggregatedFeed(): Flow<Either<Failure, WarningFeed?>>
 
-    suspend fun refreshAggregatedFeed(): Either<Failure, WarningFeed>
+    suspend fun refreshAggregatedFeed(forecastWarningRequest: ForecastWarningRequest?): Either<Failure, WarningFeed>
 
     fun observeSeenWarnings(): Flow<Either<Failure, List<SeenWarning>>>
 
@@ -42,6 +44,7 @@ internal fun FeedRepository(
     DefaultFeedRepository(
         smhiWarningRemoteDataSource = DefaultSmhiWarningRemoteDataSource(httpClient = httpClient),
         krisinformationRemoteDataSource = DefaultKrisinformationRemoteDataSource(httpClient = httpClient),
+        forecastWarningRemoteDataSource = DefaultForecastWarningRemoteDataSource(httpClient = httpClient),
         aggregatedFeedLocalDataSource = DefaultAggregatedFeedLocalDataSource(
             diskCache = diskCache,
             coroutineDispatcher = coroutineDispatcher

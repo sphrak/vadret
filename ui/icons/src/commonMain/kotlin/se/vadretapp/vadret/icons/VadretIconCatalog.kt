@@ -41,5 +41,6 @@ internal val vadretIconCatalog: List<VadretIconGraphic> = listOf(
     VadretIcons.Alert.Colder,
     VadretIcons.Alert.HardWind,
     VadretIcons.Alert.Storm,
-    VadretIcons.Alert.Hurricane
+    VadretIcons.Alert.Hurricane,
+    VadretIcons.Alert.Slipperiness
 )

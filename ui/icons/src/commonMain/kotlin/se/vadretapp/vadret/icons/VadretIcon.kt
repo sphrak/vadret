@@ -137,7 +137,13 @@ private fun VadretIconGraphic.outlines(): Map<IconShape.Outline, Path> {
     return shapes
         .filterIsInstance<IconShape.Outline>()
         .distinct()
-        .associateWith { outline: IconShape.Outline -> outline.nodes.toPath() }
+        .associateWith { outline: IconShape.Outline -> outline.toPath() }
+}
+
+private fun IconShape.Outline.toPath(): Path {
+    val path = Path()
+    path.fillType = fillType
+    return nodes.toPath(target = path)
 }
 
 private fun DrawScope.drawLayer(

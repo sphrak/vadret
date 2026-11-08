@@ -15,6 +15,7 @@ internal fun List<AggregatedFeed>.toLatestWarning(
     val latest: AggregatedFeed = firstOrNull() ?: return null
     return LatestWarning(
         warningLevel = latest.warningLevel,
+        slipperinessRisk = latest.slipperiness?.risk,
         source = latest.source,
         isPublicAlert = latest.isPublicAlert,
         headline = latest.headline,

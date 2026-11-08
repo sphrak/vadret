@@ -9,14 +9,16 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import se.vadretapp.vadret.pushalert.model.PushAlertMessage
 import se.vadretapp.vadret.pushalert.usecase.ShowSimulatedPushAlertTask
+import kotlin.time.Clock
 
 internal class PushAlertSimulationViewModel(
     private val showSimulatedPushAlertTask: ShowSimulatedPushAlertTask,
+    clock: Clock,
     private val coroutineDispatcher: CoroutineDispatcher
 ) : ViewModel() {
 
     internal val state: StateFlow<PushAlertSimulationState>
-        field = MutableStateFlow(value = PushAlertSimulationState())
+        field = MutableStateFlow(value = PushAlertSimulationState(pushAlertMessages = simulatedPushAlertMessages(now = clock.now())))
 
     internal fun onEvent(event: PushAlertSimulationEvent) {
         when (event) {

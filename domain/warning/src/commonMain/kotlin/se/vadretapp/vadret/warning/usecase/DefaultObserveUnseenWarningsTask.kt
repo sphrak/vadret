@@ -10,6 +10,7 @@ import kotlin.time.Clock
 
 internal class DefaultObserveUnseenWarningsTask(
     private val feedRepository: FeedRepository,
+    private val getForecastWarningRequestTask: GetForecastWarningRequestTask,
     private val clock: Clock
 ) : ObserveUnseenWarningsTask {
 
@@ -20,6 +21,7 @@ internal class DefaultObserveUnseenWarningsTask(
         feedRepository.observeUnseenWarnings(
             warningPlaces = listOf(warningPlace),
             isRefresh = isRefresh,
+            getForecastWarningRequestTask = getForecastWarningRequestTask,
             clock = clock
         )
 }

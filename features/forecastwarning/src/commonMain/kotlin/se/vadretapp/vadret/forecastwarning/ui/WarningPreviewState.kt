@@ -11,6 +11,9 @@ import se.vadretapp.vadret.aggregatedfeed.model.FeedRegionKind
 import se.vadretapp.vadret.aggregatedfeed.model.FeedSource
 import se.vadretapp.vadret.aggregatedfeed.model.GeoPolygon
 import se.vadretapp.vadret.aggregatedfeed.model.GeoPosition
+import se.vadretapp.vadret.aggregatedfeed.model.Slipperiness
+import se.vadretapp.vadret.aggregatedfeed.model.SlipperinessCause
+import se.vadretapp.vadret.aggregatedfeed.model.SlipperinessRisk
 import se.vadretapp.vadret.aggregatedfeed.model.WarningLevel
 import se.vadretapp.vadret.forecastwarning.WarningState
 import se.vadretapp.vadret.forecastwarning.extension.toWarningItem
@@ -94,7 +97,8 @@ private fun smhiWarning(
             polygons = listOf(polygon),
             lines = emptyList(),
             regions = emptyList()
-        )
+        ),
+        slipperiness = null
     )
 
 private val previewFeeds: List<AggregatedFeed> = listOf(
@@ -173,7 +177,8 @@ private val previewFeeds: List<AggregatedFeed> = listOf(
                     name = "Jämtlands län"
                 )
             )
-        )
+        ),
+        slipperiness = null
     ),
     AggregatedFeed(
         identifier = "krisinformation-vma-ostersund",
@@ -201,6 +206,39 @@ private val previewFeeds: List<AggregatedFeed> = listOf(
                     kind = FeedRegionKind.COUNTY,
                     name = "Jämtlands län"
                 )
+            )
+        ),
+        slipperiness = null
+    ),
+    AggregatedFeed(
+        identifier = "vadret-slipperiness-u6sce-2026-10-24-HIGH",
+        headline = "",
+        areaName = null,
+        warningLevel = null,
+        details = emptyList(),
+        source = FeedSource.VADRET_API,
+        isPublicAlert = false,
+        senderName = null,
+        publishedAt = previewNow,
+        startsAt = previewNow + 13.hours,
+        endsAt = previewNow + 22.hours,
+        area = FeedArea(
+            polygons = listOf(
+                square(
+                    south = 59.326171875,
+                    west = 18.0615234375,
+                    north = 59.3701171875,
+                    east = 18.10546875
+                )
+            ),
+            lines = emptyList(),
+            regions = emptyList()
+        ),
+        slipperiness = Slipperiness(
+            risk = SlipperinessRisk.HIGH,
+            causes = listOf(
+                SlipperinessCause.REFREEZE,
+                SlipperinessCause.FROST
             )
         )
     )

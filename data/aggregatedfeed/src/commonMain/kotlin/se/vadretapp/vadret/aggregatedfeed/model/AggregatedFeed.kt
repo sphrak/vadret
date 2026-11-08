@@ -14,5 +14,6 @@ data class AggregatedFeed(
     val publishedAt: Instant,
     val startsAt: Instant?,
     val endsAt: Instant?,
-    val area: FeedArea
+    val area: FeedArea,
+    val slipperiness: Slipperiness?
 )

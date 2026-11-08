@@ -1,5 +1,6 @@
 package se.vadretapp.vadret.icons
 
+import androidx.compose.ui.graphics.PathFillType
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -8,7 +9,7 @@ class VadretIconCatalogTest {
 
     @Test
     fun `every icon has its own name`() {
-        assertEquals(expected = 41, actual = vadretIconCatalog.size)
+        assertEquals(expected = 42, actual = vadretIconCatalog.size)
         assertEquals(
             expected = vadretIconCatalog.size,
             actual = vadretIconCatalog.map { icon: VadretIconGraphic -> icon.name }.toSet().size
@@ -51,10 +52,24 @@ class VadretIconCatalogTest {
             VadretIcons.Alert.Colder,
             VadretIcons.Alert.HardWind,
             VadretIcons.Alert.Storm,
-            VadretIcons.Alert.Hurricane
+            VadretIcons.Alert.Hurricane,
+            VadretIcons.Alert.Slipperiness
         )
 
         assertTrue(actual = alertIcons.none { icon: VadretIconGraphic -> icon.hasMotion })
+    }
+
+    @Test
+    fun `the car in the slipperiness sign keeps its window open`() {
+        val shapes: List<IconShape> = VadretIcons.Alert.Slipperiness.layers
+            .single()
+            .elements
+            .map { iconElement: IconElement -> iconElement.shape }
+
+        assertEquals(
+            expected = listOf(PathFillType.NonZero, PathFillType.EvenOdd),
+            actual = shapes.filterIsInstance<IconShape.Outline>().map { outline: IconShape.Outline -> outline.fillType }
+        )
     }
 
     @Test

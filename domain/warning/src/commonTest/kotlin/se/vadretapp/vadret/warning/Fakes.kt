@@ -11,6 +11,7 @@ import se.vadretapp.vadret.aggregatedfeed.model.AggregatedFeed
 import se.vadretapp.vadret.aggregatedfeed.model.FeedArea
 import se.vadretapp.vadret.aggregatedfeed.model.FeedRegion
 import se.vadretapp.vadret.aggregatedfeed.model.FeedSource
+import se.vadretapp.vadret.aggregatedfeed.model.ForecastWarningRequest
 import se.vadretapp.vadret.aggregatedfeed.model.GeoLine
 import se.vadretapp.vadret.aggregatedfeed.model.GeoPolygon
 import se.vadretapp.vadret.aggregatedfeed.model.GeoPosition
@@ -18,6 +19,8 @@ import se.vadretapp.vadret.aggregatedfeed.model.SeenWarning
 import se.vadretapp.vadret.aggregatedfeed.model.WarningFeed
 import se.vadretapp.vadret.aggregatedfeed.model.WarningLevel
 import se.vadretapp.vadret.common.Failure
+import se.vadretapp.vadret.geohash.model.Geohash
+import se.vadretapp.vadret.warning.usecase.GetForecastWarningRequestTask
 import kotlin.time.Instant
 
 internal fun square(
@@ -73,7 +76,8 @@ internal fun aggregatedFeed(
             polygons = polygons,
             lines = lines,
             regions = regions
-        )
+        ),
+        slipperiness = null
     )
 
 internal val NOW: Instant = Instant.parse(input = "2026-10-24T12:00:00Z")
@@ -86,20 +90,22 @@ internal class FakeFeedRepository(
     val savedFeed: MutableStateFlow<WarningFeed?> = MutableStateFlow(value = null)
     val seenWarnings: MutableStateFlow<Either<Failure, List<SeenWarning>>> = MutableStateFlow(value = emptyList<SeenWarning>().asRight())
     val markedSeen = mutableListOf<String>()
+    val forecastWarningRequests = mutableListOf<ForecastWarningRequest?>()
 
-    override suspend fun getAggregatedFeed(): Either<Failure, List<AggregatedFeed>> {
+    override suspend fun getAggregatedFeed(forecastWarningRequest: ForecastWarningRequest?): Either<Failure, List<AggregatedFeed>> {
         val saved: WarningFeed? = savedFeed.value
         if (saved != null) {
             return saved.aggregatedFeeds.asRight()
         }
-        return refreshAggregatedFeed().map { refreshed: WarningFeed -> refreshed.aggregatedFeeds }
+        return refreshAggregatedFeed(forecastWarningRequest = forecastWarningRequest).map { refreshed: WarningFeed -> refreshed.aggregatedFeeds }
     }
 
     override fun observeAggregatedFeed(): Flow<Either<Failure, WarningFeed?>> =
         savedFeed.map { saved: WarningFeed? -> saved.asRight() }
 
-    override suspend fun refreshAggregatedFeed(): Either<Failure, WarningFeed> {
+    override suspend fun refreshAggregatedFeed(forecastWarningRequest: ForecastWarningRequest?): Either<Failure, WarningFeed> {
         refreshCount++
+        forecastWarningRequests += forecastWarningRequest
         return when (val refreshed: Either<Failure, List<AggregatedFeed>> = result) {
             is Either.Left -> refreshed
             is Either.Right -> {
@@ -120,3 +126,15 @@ internal class FakeFeedRepository(
         return Unit.asRight()
     }
 }
+
+internal class FakeGetForecastWarningRequestTask(
+    var result: Either<Failure, ForecastWarningRequest?> = FORECAST_WARNING_REQUEST.asRight()
+) : GetForecastWarningRequestTask {
+
+    override suspend fun invoke(): Either<Failure, ForecastWarningRequest?> = result
+}
+
+internal val FORECAST_WARNING_REQUEST = ForecastWarningRequest(
+    installationToken = "vadret_token",
+    geohashes = listOf(Geohash(value = "u6sce"))
+)

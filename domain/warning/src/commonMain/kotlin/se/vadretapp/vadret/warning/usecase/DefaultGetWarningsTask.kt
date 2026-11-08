@@ -6,8 +6,10 @@ import se.vadretapp.vadret.aggregatedfeed.model.AggregatedFeed
 import se.vadretapp.vadret.common.Failure
 
 internal class DefaultGetWarningsTask(
-    private val feedRepository: FeedRepository
+    private val feedRepository: FeedRepository,
+    private val getForecastWarningRequestTask: GetForecastWarningRequestTask
 ) : GetWarningsTask {
 
-    override suspend fun invoke(): Either<Failure, List<AggregatedFeed>> = feedRepository.getAggregatedFeed()
+    override suspend fun invoke(): Either<Failure, List<AggregatedFeed>> =
+        feedRepository.getAggregatedFeed(forecastWarningRequest = getForecastWarningRequestTask.forecastWarningRequestOrNull())
 }

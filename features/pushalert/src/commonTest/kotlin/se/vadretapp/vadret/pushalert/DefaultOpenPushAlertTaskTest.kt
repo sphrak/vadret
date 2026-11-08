@@ -4,6 +4,7 @@ import io.github.sphrak.either.extension.asLeft
 import io.github.sphrak.either.extension.asRight
 import io.github.sphrak.either.map
 import kotlinx.coroutines.test.runTest
+import se.vadretapp.vadret.aggregatedfeed.model.WarningReference
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.geohash.model.Geohash
@@ -31,7 +32,8 @@ class DefaultOpenPushAlertTaskTest {
                     kind = PushAlertKind.WARNING,
                     pushAlertType = null,
                     notificationId = "n-1",
-                    cell = null
+                    cell = null,
+                    warningReference = null
                 ).asRight(),
                 PushAlertMessage(
                     title = "Björkpollen",
@@ -39,7 +41,8 @@ class DefaultOpenPushAlertTaskTest {
                     kind = PushAlertKind.POLLEN,
                     pushAlertType = null,
                     notificationId = null,
-                    cell = null
+                    cell = null,
+                    warningReference = null
                 ).asRight(),
                 PushAlertMessage(
                     title = "Kallare",
@@ -47,7 +50,8 @@ class DefaultOpenPushAlertTaskTest {
                     kind = PushAlertKind.TEMPERATURE,
                     pushAlertType = null,
                     notificationId = "n-3",
-                    cell = null
+                    cell = null,
+                    warningReference = null
                 ).asRight(),
                 WIND_MESSAGE.asRight()
             ),
@@ -77,12 +81,13 @@ class DefaultOpenPushAlertTaskTest {
     @Test
     fun aKindThatIsTurnedOffHereIsDroppedEvenWhenTheServerStillSendsIt() = runTest {
         assertEquals(
-            expected = List(size = 4) { Failure(errorCode = ErrorCode.PUSH_ALERT_NOT_CHOSEN).asLeft() },
+            expected = List(size = 5) { Failure(errorCode = ErrorCode.PUSH_ALERT_NOT_CHOSEN).asLeft() },
             actual = listOf(
                 openPushAlert(pushAlertChoices = EVERYTHING_CHOSEN.copy(warningLowestLevel = null))(sealed = Base64.encode(source = SEALED_WARNING)),
                 openPushAlert(pushAlertChoices = EVERYTHING_CHOSEN.copy(pollenChoices = emptyList()))(sealed = Base64.encode(source = SEALED_POLLEN)),
                 openPushAlert(pushAlertChoices = EVERYTHING_CHOSEN.copy(temperatureTrend = false))(sealed = Base64.encode(source = SEALED_TEMPERATURE)),
-                openPushAlert(pushAlertChoices = EVERYTHING_CHOSEN.copy(strongWind = false))(sealed = Base64.encode(source = SEALED_WIND))
+                openPushAlert(pushAlertChoices = EVERYTHING_CHOSEN.copy(strongWind = false))(sealed = Base64.encode(source = SEALED_WIND)),
+                openPushAlert(pushAlertChoices = EVERYTHING_CHOSEN.copy(slipperiness = false))(sealed = Base64.encode(source = SEALED_SLIPPERINESS))
             )
         )
     }
@@ -134,6 +139,7 @@ class DefaultOpenPushAlertTaskTest {
                 PushAlertType.HARD_WIND,
                 PushAlertType.STORM,
                 PushAlertType.HURRICANE,
+                PushAlertType.SLIPPERINESS,
                 null
             ).map { pushAlertType -> pushAlertType.asRight() },
             actual = ALERT_TYPES.map { alertType ->
@@ -150,6 +156,38 @@ class DefaultOpenPushAlertTaskTest {
     }
 
     @Test
+    fun aSlipperinessAlertRefersToItsStoryAndIsNamedAfterTheSavedPlaceInItsCell() = runTest {
+        val openPushAlert = openPushAlert(
+            pushAlertChoices = PushAlertChoices.NOTHING_CHOSEN.copy(slipperiness = true),
+            favoriteRepository = FakeFavoriteRepository(favorites = listOf(MALMO_FAVORITE))
+        )
+
+        assertEquals(
+            expected = PushAlertMessage(
+                title = "Möjlig halka i natt - Malmö",
+                body = "Rimfrost, ungefär kl. 23-06.",
+                kind = PushAlertKind.SLIPPERINESS,
+                pushAlertType = PushAlertType.SLIPPERINESS,
+                notificationId = "n-7",
+                cell = "u3chr",
+                warningReference = WarningReference.Slipperiness(
+                    geohash = Geohash(value = "u3chr"),
+                    slipperinessDay = "2026-11-08"
+                )
+            ).asRight(),
+            actual = openPushAlert(sealed = Base64.encode(source = SEALED_SLIPPERINESS))
+        )
+    }
+
+    @Test
+    fun aWarningAlertRefersToTheStoryOfItsWarningArea() = runTest {
+        assertEquals(
+            expected = WarningReference.SmhiWarningArea(warningAreaId = 12).asRight(),
+            actual = openPushAlert(pushAlertChoices = EVERYTHING_CHOSEN)(sealed = Base64.encode(source = SEALED_WARNING_WITH_AREA)).map { pushAlertMessage -> pushAlertMessage.warningReference }
+        )
+    }
+
+    @Test
     fun aCellFromTheServerIsKeptWithTheAlert() = runTest {
         assertEquals(
             expected = PushAlertMessage(
@@ -158,7 +196,8 @@ class DefaultOpenPushAlertTaskTest {
                 kind = PushAlertKind.WIND,
                 pushAlertType = null,
                 notificationId = "n-5",
-                cell = "u3ch"
+                cell = "u3ch",
+                warningReference = null
             ).asRight(),
             actual = openPushAlert(pushAlertChoices = EVERYTHING_CHOSEN)(sealed = Base64.encode(source = SEALED_WIND_IN_MALMO))
         )
@@ -227,6 +266,14 @@ private val SEALED_POLLEN_WITH_CELL = byteArrayOf(
     30,
     31
 )
+private val SEALED_SLIPPERINESS = byteArrayOf(
+    32,
+    33
+)
+private val SEALED_WARNING_WITH_AREA = byteArrayOf(
+    34,
+    35
+)
 
 private val FAKE_SEALED_MESSAGE_KEY = FakeSealedMessageKey(
     openedBySealed = mapOf(
@@ -238,6 +285,8 @@ private val FAKE_SEALED_MESSAGE_KEY = FakeSealedMessageKey(
         SEALED_TEMPERATURE_IN_MALMO.toList() to """{"title":"Varmare","body":"3° varmare i morgon","data":{"kind":"temperature","notification_id":"n-6","cell":"u3ch"}}""".encodeToByteArray(),
         SEALED_WARNING_WITH_CELL.toList() to """{"title":"Gul varning: Skåne län","body":"Kuling","data":{"kind":"warning","cell":"u3ch"}}""".encodeToByteArray(),
         SEALED_POLLEN_WITH_CELL.toList() to """{"title":"Björkpollen i Malmö","body":"Höga halter","data":{"kind":"pollen","cell":"u3ch"}}""".encodeToByteArray(),
+        SEALED_SLIPPERINESS.toList() to """{"title":"Möjlig halka i natt","body":"Rimfrost, ungefär kl. 23-06.","data":{"kind":"slipperiness","alert_type":"slipperiness","notification_id":"n-7","cell":"u3chr","day":"2026-11-08","slipperiness_level":"POSSIBLE"}}""".encodeToByteArray(),
+        SEALED_WARNING_WITH_AREA.toList() to """{"title":"Gul varning: Skåne län","body":"Kuling","data":{"kind":"warning","alert_type":"warning","notification_id":"n-8","warning_area_id":"12"}}""".encodeToByteArray(),
         SEALED_WITHOUT_BODY.toList() to """{"title":"Gul varning","data":{"kind":"warning"}}""".encodeToByteArray(),
         SEALED_NONSENSE.toList() to "not json".encodeToByteArray(),
         SEALED_WITHOUT_TITLE.toList() to """{"body":"Kuling","data":{"kind":"warning"}}""".encodeToByteArray(),
@@ -257,11 +306,12 @@ private val EVERYTHING_CHOSEN = PushAlertChoices(
     ),
     temperatureTrend = true,
     strongWind = true,
+    slipperiness = true,
     isChosenPlaceNotified = true,
     notifiedFavoriteIds = emptySet()
 )
 
-private val ALERT_TYPES = listOf("warning", "pollen", "warmer", "colder", "hard_wind", "storm", "hurricane", "earthquake")
+private val ALERT_TYPES = listOf("warning", "pollen", "warmer", "colder", "hard_wind", "storm", "hurricane", "slipperiness", "earthquake")
 
 private val WIND_MESSAGE = PushAlertMessage(
     title = "Hård vind i morgon",
@@ -269,5 +319,6 @@ private val WIND_MESSAGE = PushAlertMessage(
     kind = PushAlertKind.WIND,
     pushAlertType = null,
     notificationId = "n-4",
-    cell = null
+    cell = null,
+    warningReference = null
 )

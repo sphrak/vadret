@@ -7,5 +7,6 @@ data class PushAlertSubscription(
     val warningLowestLevel: WarningAlertLevel?,
     val pollenChoices: List<PollenChoice>,
     val temperatureTrend: Boolean,
-    val strongWind: Boolean
+    val strongWind: Boolean,
+    val slipperiness: Boolean
 )

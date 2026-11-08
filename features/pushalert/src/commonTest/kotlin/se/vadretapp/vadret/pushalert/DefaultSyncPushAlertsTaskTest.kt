@@ -114,6 +114,24 @@ class DefaultSyncPushAlertsTaskTest {
     }
 
     @Test
+    fun theSubscriptionSaysWhetherSlipperinessIsFollowed() = runTest {
+        val subscribed = listOf(
+            WARNINGS_FROM_YELLOW,
+            WARNINGS_FROM_YELLOW.copy(slipperiness = true),
+            PushAlertChoices.NOTHING_CHOSEN.copy(slipperiness = true)
+        ).map { pushAlertChoices: PushAlertChoices ->
+            val pushAlertRepository = FakePushAlertRepository(choices = pushAlertChoices)
+            syncPushAlertsTask(pushAlertRepository = pushAlertRepository)()
+            pushAlertRepository.subscriptions.last()?.slipperiness
+        }
+
+        assertEquals(
+            expected = listOf(false, true, true),
+            actual = subscribed
+        )
+    }
+
+    @Test
     fun turningOffStrongWindWhenNothingElseIsChosenMakesTheServerForgetThePhone() = runTest {
         val pushAlertRepository = FakePushAlertRepository(
             choices = STRONG_WIND_ONLY,
@@ -836,6 +854,7 @@ private val WARNINGS_FROM_YELLOW = PushAlertChoices(
     pollenChoices = emptyList(),
     temperatureTrend = false,
     strongWind = false,
+    slipperiness = false,
     isChosenPlaceNotified = true,
     notifiedFavoriteIds = emptySet()
 )

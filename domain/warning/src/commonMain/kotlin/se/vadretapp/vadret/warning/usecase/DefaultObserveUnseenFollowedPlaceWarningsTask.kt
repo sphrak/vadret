@@ -18,6 +18,7 @@ import kotlin.time.Clock
 internal class DefaultObserveUnseenFollowedPlaceWarningsTask(
     private val observeFollowedPlacesTask: ObserveFollowedPlacesTask,
     private val feedRepository: FeedRepository,
+    private val getForecastWarningRequestTask: GetForecastWarningRequestTask,
     private val clock: Clock
 ) : ObserveUnseenFollowedPlaceWarningsTask {
 
@@ -30,6 +31,7 @@ internal class DefaultObserveUnseenFollowedPlaceWarningsTask(
                     feedRepository.observeUnseenWarnings(
                         warningPlaces = places.map { followedPlace: FollowedPlace -> followedPlace.toWarningPlace() },
                         isRefresh = isRefresh,
+                        getForecastWarningRequestTask = getForecastWarningRequestTask,
                         clock = clock
                     )
                 }

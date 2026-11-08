@@ -11,6 +11,8 @@ import se.vadretapp.vadret.di.koinViewModel
 import se.vadretapp.vadret.language.model.AppLanguage
 import se.vadretapp.vadret.main.navigation.TabNavigation
 import se.vadretapp.vadret.main.navigation.TopLevelDestination
+import se.vadretapp.vadret.main.navigation.WarningStoryKey
+import se.vadretapp.vadret.main.navigation.open
 import se.vadretapp.vadret.theme.model.Theme
 import se.vadretapp.vadret.ui.LanguageEnvironment
 import se.vadretapp.vadret.ui.VadretTheme
@@ -28,6 +30,11 @@ fun VadretRoot(
     val tabNavigation: TabNavigation = rememberTabNavigation(destinations = destinations)
     LaunchedEffect(Unit) {
         viewModel.onEvent(event = MainEvent.OnStart)
+    }
+    LaunchedEffect(viewModel, tabNavigation) {
+        viewModel.openedWarningIdentifiers.collect { warningIdentifiers: List<String> ->
+            tabNavigation.open(key = WarningStoryKey(warningIdentifiers = warningIdentifiers))
+        }
     }
     val currentTheme: Theme = theme ?: return
     val currentLanguage: AppLanguage = language ?: return

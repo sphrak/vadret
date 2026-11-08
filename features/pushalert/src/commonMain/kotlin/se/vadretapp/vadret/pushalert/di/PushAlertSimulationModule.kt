@@ -17,6 +17,7 @@ val pushAlertSimulationModule: Module = module {
     factory<PushAlertSimulationViewModel> {
         PushAlertSimulationViewModel(
             showSimulatedPushAlertTask = get(),
+            clock = get(),
             coroutineDispatcher = get()
         )
     }

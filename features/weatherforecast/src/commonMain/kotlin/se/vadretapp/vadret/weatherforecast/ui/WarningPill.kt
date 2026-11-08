@@ -91,7 +91,8 @@ private fun pillText(latestWarning: LatestWarning): AnnotatedString {
     val label: String = warningLabel(
         source = latestWarning.source,
         warningLevel = latestWarning.warningLevel,
-        isPublicAlert = latestWarning.isPublicAlert
+        isPublicAlert = latestWarning.isPublicAlert,
+        slipperinessRisk = latestWarning.slipperinessRisk
     )
     val endsAtText: String? = latestWarning.endsAtText
     val detail: String = if (endsAtText != null) {
@@ -120,6 +121,7 @@ private fun WarningPillPreview(
         WarningPill(
             latestWarning = LatestWarning(
                 warningLevel = WarningLevel.YELLOW,
+                slipperinessRisk = null,
                 source = FeedSource.SMHI,
                 isPublicAlert = false,
                 headline = "Kuling 14-17 m/s",

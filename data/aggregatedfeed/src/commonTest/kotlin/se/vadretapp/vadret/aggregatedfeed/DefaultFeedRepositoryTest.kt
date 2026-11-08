@@ -18,11 +18,19 @@ import se.vadretapp.vadret.aggregatedfeed.model.FeedDetailKind
 import se.vadretapp.vadret.aggregatedfeed.model.FeedRegion
 import se.vadretapp.vadret.aggregatedfeed.model.FeedRegionKind
 import se.vadretapp.vadret.aggregatedfeed.model.FeedSource
+import se.vadretapp.vadret.aggregatedfeed.model.ForecastWarningRequest
 import se.vadretapp.vadret.aggregatedfeed.model.GeoLine
 import se.vadretapp.vadret.aggregatedfeed.model.GeoPolygon
 import se.vadretapp.vadret.aggregatedfeed.model.GeoPosition
+import se.vadretapp.vadret.aggregatedfeed.model.Slipperiness
+import se.vadretapp.vadret.aggregatedfeed.model.SlipperinessCause
+import se.vadretapp.vadret.aggregatedfeed.model.SlipperinessRisk
 import se.vadretapp.vadret.aggregatedfeed.model.WarningFeed
 import se.vadretapp.vadret.aggregatedfeed.model.WarningLevel
+import se.vadretapp.vadret.aggregatedfeed.remote.ForecastWarningAreaDto
+import se.vadretapp.vadret.aggregatedfeed.remote.ForecastWarningCauseDto
+import se.vadretapp.vadret.aggregatedfeed.remote.ForecastWarningDto
+import se.vadretapp.vadret.aggregatedfeed.remote.ForecastWarningsDto
 import se.vadretapp.vadret.aggregatedfeed.remote.GeoJsonDto
 import se.vadretapp.vadret.aggregatedfeed.remote.GeoJsonGeometryDto
 import se.vadretapp.vadret.aggregatedfeed.remote.KrisinformationAreaDto
@@ -34,6 +42,7 @@ import se.vadretapp.vadret.aggregatedfeed.remote.SmhiWarningAreaDto
 import se.vadretapp.vadret.aggregatedfeed.remote.SmhiWarningDto
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
+import se.vadretapp.vadret.geohash.model.Geohash
 import se.vadretapp.vadret.logging.LogLevel
 import se.vadretapp.vadret.testing.FakeDiskCache
 import se.vadretapp.vadret.testing.FixedClock
@@ -156,10 +165,12 @@ class DefaultFeedRepositoryTest {
     private val clock = FixedClock(now = now)
     private val smhiWarningRemoteDataSource = FakeSmhiWarningRemoteDataSource()
     private val krisinformationRemoteDataSource = FakeKrisinformationRemoteDataSource()
+    private val forecastWarningRemoteDataSource = FakeForecastWarningRemoteDataSource()
     private val diskCache = FakeDiskCache()
     private val feedRepository: FeedRepository = DefaultFeedRepository(
         smhiWarningRemoteDataSource = smhiWarningRemoteDataSource,
         krisinformationRemoteDataSource = krisinformationRemoteDataSource,
+        forecastWarningRemoteDataSource = forecastWarningRemoteDataSource,
         aggregatedFeedLocalDataSource = DefaultAggregatedFeedLocalDataSource(
             diskCache = diskCache,
             coroutineDispatcher = StandardTestDispatcher(scheduler = testScope.testScheduler)
@@ -168,7 +179,8 @@ class DefaultFeedRepositoryTest {
         clock = clock
     )
 
-    private suspend fun fetchFeed(): Either<Failure, List<AggregatedFeed>> = feedRepository.refreshAggregatedFeed().map { warningFeed: WarningFeed -> warningFeed.aggregatedFeeds }
+    private suspend fun fetchFeed(forecastWarningRequest: ForecastWarningRequest? = null): Either<Failure, List<AggregatedFeed>> =
+        feedRepository.refreshAggregatedFeed(forecastWarningRequest = forecastWarningRequest).map { warningFeed: WarningFeed -> warningFeed.aggregatedFeeds }
 
     private fun Either<Failure, List<AggregatedFeed>>.identifiers(): List<String>? = (this as? Either.Right)?.b?.map { aggregatedFeed: AggregatedFeed -> aggregatedFeed.identifier }
 
@@ -234,7 +246,8 @@ class DefaultFeedRepositoryTest {
                                     name = "Område 41"
                                 )
                             )
-                        )
+                        ),
+                        slipperiness = null
                     ),
                     AggregatedFeed(
                         identifier = "smhi-7-2",
@@ -248,7 +261,8 @@ class DefaultFeedRepositoryTest {
                         publishedAt = Instant.parse(input = "2026-10-24T10:00:00Z"),
                         startsAt = null,
                         endsAt = null,
-                        area = noArea.copy(regions = smhiRegions(1, 14))
+                        area = noArea.copy(regions = smhiRegions(1, 14)),
+                        slipperiness = null
                     ),
                     AggregatedFeed(
                         identifier = "smhi-7-1",
@@ -262,7 +276,8 @@ class DefaultFeedRepositoryTest {
                         publishedAt = Instant.parse(input = "2026-10-24T09:00:00Z"),
                         startsAt = Instant.parse(input = "2026-10-24T12:00:00Z"),
                         endsAt = Instant.parse(input = "2026-10-25T06:00:00Z"),
-                        area = noArea.copy(regions = smhiRegions(14))
+                        area = noArea.copy(regions = smhiRegions(14)),
+                        slipperiness = null
                     )
                 ).asRight(),
                 actual = fetchFeed()
@@ -474,7 +489,7 @@ class DefaultFeedRepositoryTest {
 
             assertEquals(
                 expected = fetchedFeed to fetchedFeed,
-                actual = feedRepository.getAggregatedFeed() to feedRepository.observeAggregatedFeed().first().map { warningFeed: WarningFeed? -> warningFeed?.aggregatedFeeds.orEmpty() }
+                actual = feedRepository.getAggregatedFeed(forecastWarningRequest = null) to feedRepository.observeAggregatedFeed().first().map { warningFeed: WarningFeed? -> warningFeed?.aggregatedFeeds.orEmpty() }
             )
             assertEquals(expected = 1, actual = smhiWarningRemoteDataSource.requestCount)
         }
@@ -698,7 +713,8 @@ class DefaultFeedRepositoryTest {
                                     name = "Storsjön"
                                 )
                             )
-                        )
+                        ),
+                        slipperiness = null
                     ),
                     AggregatedFeed(
                         identifier = "krisinformation-b",
@@ -712,7 +728,8 @@ class DefaultFeedRepositoryTest {
                         publishedAt = Instant.parse(input = "2026-10-24T07:00:00Z"),
                         startsAt = null,
                         endsAt = null,
-                        area = noArea
+                        area = noArea,
+                        slipperiness = null
                     )
                 ).asRight(),
                 actual = fetchFeed()
@@ -731,7 +748,7 @@ class DefaultFeedRepositoryTest {
             )
 
             withRecordedLogs { recordingLogSink ->
-                assertEquals(expected = emptyList(), actual = feedRepository.getAggregatedFeed().identifiers())
+                assertEquals(expected = emptyList(), actual = feedRepository.getAggregatedFeed(forecastWarningRequest = null).identifiers())
                 assertEquals(expected = 1, actual = smhiWarningRemoteDataSource.requestCount)
                 assertEquals(
                     expected = listOf(LogLevel.WARN),
@@ -823,7 +840,7 @@ class DefaultFeedRepositoryTest {
         testScope.runTest {
             fetchFeed()
             clock.now = now + 2.days
-            feedRepository.getAggregatedFeed()
+            feedRepository.getAggregatedFeed(forecastWarningRequest = null)
 
             assertEquals(expected = 1, actual = smhiWarningRemoteDataSource.requestCount)
         }
@@ -873,8 +890,266 @@ class DefaultFeedRepositoryTest {
             withRecordedLogs {
                 assertEquals<Pair<Either<Failure, List<AggregatedFeed>>, List<String>?>>(
                     expected = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft() to listOf("smhi-7-1"),
-                    actual = fetchFeed() to feedRepository.getAggregatedFeed().identifiers()
+                    actual = fetchFeed() to feedRepository.getAggregatedFeed(forecastWarningRequest = null).identifiers()
                 )
             }
         }
+
+    @Test
+    fun `vadret api slipperiness becomes an item per area with its causes highest first`() =
+        testScope.runTest {
+            forecastWarningRemoteDataSource.forecastWarnings = {
+                slipperinessWarnings(
+                    slipperinessWarningArea(
+                        causes = listOf(
+                            slipperinessCause(cause = "FROST"),
+                            slipperinessCause(
+                                cause = "REFREEZE",
+                                level = "HIGH"
+                            ),
+                            slipperinessCause(cause = "SNOW")
+                        )
+                    )
+                )
+            }
+
+            assertEquals(
+                expected = listOf(
+                    AggregatedFeed(
+                        identifier = "vadret-slipperiness-u6sce-2026-10-24-HIGH",
+                        headline = "",
+                        areaName = null,
+                        warningLevel = null,
+                        details = emptyList(),
+                        source = FeedSource.VADRET_API,
+                        isPublicAlert = false,
+                        senderName = null,
+                        publishedAt = Instant.parse(input = "2026-10-24T13:30:00Z"),
+                        startsAt = Instant.parse(input = "2026-10-24T22:00:00Z"),
+                        endsAt = Instant.parse(input = "2026-10-25T06:00:00Z"),
+                        area = FeedArea(
+                            polygons = listOf(
+                                GeoPolygon(
+                                    outline = listOf(
+                                        GeoPosition(
+                                            latitude = 59.32,
+                                            longitude = 18.06
+                                        ),
+                                        GeoPosition(
+                                            latitude = 59.32,
+                                            longitude = 18.1
+                                        ),
+                                        GeoPosition(
+                                            latitude = 59.37,
+                                            longitude = 18.1
+                                        ),
+                                        GeoPosition(
+                                            latitude = 59.37,
+                                            longitude = 18.06
+                                        ),
+                                        GeoPosition(
+                                            latitude = 59.32,
+                                            longitude = 18.06
+                                        )
+                                    ),
+                                    holes = emptyList()
+                                )
+                            ),
+                            lines = emptyList(),
+                            regions = emptyList()
+                        ),
+                        slipperiness = Slipperiness(
+                            risk = SlipperinessRisk.HIGH,
+                            causes = listOf(
+                                SlipperinessCause.REFREEZE,
+                                SlipperinessCause.FROST,
+                                SlipperinessCause.SNOW
+                            )
+                        )
+                    )
+                ).asRight(),
+                actual = fetchFeed(forecastWarningRequest = forecastWarningRequest)
+            )
+        }
+
+    @Test
+    fun `vadret api is asked with the installation token and the geohashes of the places`() =
+        testScope.runTest {
+            fetchFeed(forecastWarningRequest = forecastWarningRequest)
+
+            assertEquals(
+                expected = listOf(
+                    "vadret_token" to listOf(
+                        Geohash(value = "u6sce"),
+                        Geohash(value = "u3chr")
+                    )
+                ),
+                actual = forecastWarningRemoteDataSource.requests
+            )
+        }
+
+    @Test
+    fun `without an installation or a place in sweden vadret api is not asked`() =
+        testScope.runTest {
+            fetchFeed(forecastWarningRequest = null)
+            fetchFeed(forecastWarningRequest = forecastWarningRequest.copy(geohashes = emptyList()))
+
+            assertEquals(
+                expected = emptyList(),
+                actual = forecastWarningRemoteDataSource.requests
+            )
+        }
+
+    @Test
+    fun `a failing vadret api still shows smhi and krisinformation`() =
+        testScope.runTest {
+            krisinformationRemoteDataSource.news = {
+                listOf(
+                    news(
+                        identifier = "a",
+                        published = "2026-10-24T08:00:00Z"
+                    )
+                )
+            }
+            forecastWarningRemoteDataSource.forecastWarnings = { throw IOException("reset") }
+
+            withRecordedLogs { recordingLogSink ->
+                assertEquals(
+                    expected = listOf("krisinformation-a"),
+                    actual = fetchFeed(forecastWarningRequest = forecastWarningRequest).identifiers()
+                )
+                assertEquals(
+                    expected = listOf("Keeping the last Vadret API warnings: IOException: reset"),
+                    actual = recordingLogSink.lines.map { line: LogLine -> line.message }
+                )
+            }
+        }
+
+    @Test
+    fun `a failing vadret api keeps the slipperiness it last got`() =
+        testScope.runTest {
+            forecastWarningRemoteDataSource.forecastWarnings = { slipperinessWarnings(slipperinessWarningArea()) }
+            fetchFeed(forecastWarningRequest = forecastWarningRequest)
+            krisinformationRemoteDataSource.news = {
+                listOf(
+                    news(
+                        identifier = "a",
+                        published = "2026-10-24T08:00:00Z"
+                    )
+                )
+            }
+            forecastWarningRemoteDataSource.forecastWarnings = { throw IOException("reset") }
+
+            assertEquals(
+                expected = listOf("vadret-slipperiness-u6sce-2026-10-24-HIGH", "krisinformation-a"),
+                actual = fetchFeed(forecastWarningRequest = forecastWarningRequest).identifiers()
+            )
+        }
+
+    @Test
+    fun `an unknown vadret api event level or cause is logged and left out`() =
+        testScope.runTest {
+            forecastWarningRemoteDataSource.forecastWarnings = {
+                ForecastWarningsDto(
+                    warnings = listOf(
+                        ForecastWarningDto(
+                            id = "heat",
+                            event = "HEAT",
+                            warningAreas = listOf(slipperinessWarningArea())
+                        ),
+                        ForecastWarningDto(
+                            id = "slipperiness",
+                            event = "SLIPPERINESS",
+                            warningAreas = listOf(
+                                slipperinessWarningArea().copy(
+                                    id = "u3chr-2026-10-24",
+                                    level = "EXTREME"
+                                ),
+                                slipperinessWarningArea(causes = listOf(slipperinessCause(cause = "HAIL")))
+                            )
+                        )
+                    )
+                )
+            }
+
+            withRecordedLogs { recordingLogSink ->
+                assertEquals(
+                    expected = listOf("vadret-slipperiness-u6sce-2026-10-24-HIGH"),
+                    actual = fetchFeed(forecastWarningRequest = forecastWarningRequest).identifiers()
+                )
+                assertEquals(
+                    expected = listOf(
+                        "Skipping Vadret API warning heat with unknown event HEAT",
+                        "Skipping Vadret API warning area u3chr-2026-10-24, published 2026-10-24T13:30:00Z, level EXTREME",
+                        "Skipping Vadret API slipperiness cause HAIL at level POSSIBLE"
+                    ),
+                    actual = recordingLogSink.lines.map { line: LogLine -> line.message }
+                )
+            }
+        }
+
+    @Test
+    fun `a saved vadret api item reads back with its slipperiness`() =
+        testScope.runTest {
+            forecastWarningRemoteDataSource.forecastWarnings = { slipperinessWarnings(slipperinessWarningArea()) }
+
+            val fetched: Either<Failure, List<AggregatedFeed>> = fetchFeed(forecastWarningRequest = forecastWarningRequest)
+
+            assertEquals(
+                expected = fetched,
+                actual = feedRepository.getAggregatedFeed(forecastWarningRequest = null)
+            )
+        }
 }
+
+private val forecastWarningRequest = ForecastWarningRequest(
+    installationToken = "vadret_token",
+    geohashes = listOf(
+        Geohash(value = "u6sce"),
+        Geohash(value = "u3chr")
+    )
+)
+
+private fun slipperinessWarnings(vararg forecastWarningAreaDtos: ForecastWarningAreaDto): ForecastWarningsDto =
+    ForecastWarningsDto(
+        warnings = listOf(
+            ForecastWarningDto(
+                id = "slipperiness",
+                event = "SLIPPERINESS",
+                warningAreas = forecastWarningAreaDtos.toList()
+            )
+        )
+    )
+
+private fun slipperinessWarningArea(
+    causes: List<ForecastWarningCauseDto> = listOf(
+        slipperinessCause(
+            cause = "FROST",
+            level = "HIGH"
+        )
+    )
+): ForecastWarningAreaDto =
+    ForecastWarningAreaDto(
+        id = "u6sce-2026-10-24",
+        published = "2026-10-24T13:30:00Z",
+        approximateStart = "2026-10-24T22:00:00Z",
+        approximateEnd = "2026-10-25T06:00:00Z",
+        level = "HIGH",
+        causes = causes,
+        area = GeoJsonDto(
+            type = "Feature",
+            geometry = GeoJsonGeometryDto(
+                type = "Polygon",
+                coordinates = Json.parseToJsonElement(string = "[[[18.06,59.32],[18.1,59.32],[18.1,59.37],[18.06,59.37],[18.06,59.32]]]")
+            )
+        )
+    )
+
+private fun slipperinessCause(
+    cause: String,
+    level: String = "POSSIBLE"
+): ForecastWarningCauseDto =
+    ForecastWarningCauseDto(
+        cause = cause,
+        level = level
+    )

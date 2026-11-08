@@ -168,4 +168,18 @@
     <string name="settings_notifications">Benachrichtigungen</string>
     <string name="notifications_are_off">Benachrichtigungen sind ausgeschaltet</string>
     <string name="notifications_are_off_text">Erlaube Benachrichtigungen für Vädret in den Systemeinstellungen, um Push-Benachrichtigungen zu erhalten.</string>
+    <string name="slipperiness_possible">Glätte möglich</string>
+    <string name="slipperiness_high">Hohe Glättegefahr</string>
+    <string name="slipperiness_cause_frost">Reif</string>
+    <string name="slipperiness_cause_freezing_rain">Gefrierender Regen</string>
+    <string name="slipperiness_cause_refreeze">Überfrierende Nässe</string>
+    <string name="slipperiness_cause_snow">Schnee</string>
+    <string name="slipperiness_cause_frost_explanation">Ein klarer, windstiller Himmel kann den Boden unter null abkühlen, sodass Feuchtigkeit zu Reif gefriert.</string>
+    <string name="slipperiness_cause_freezing_rain_explanation">Regen oder Nieselregen kann auf kaltem Boden zu Eis gefrieren.</string>
+    <string name="slipperiness_cause_refreeze_explanation">Nasser Boden kann gefrieren, wenn die Temperatur sinkt.</string>
+    <string name="slipperiness_cause_snow_explanation">Schnee oder Schneeregen kann Straßen und Gehwege glatt machen.</string>
+    <string name="slipperiness_estimate_label">Über diese Einschätzung</string>
+    <string name="slipperiness_estimate_explanation">Vadret API berechnet das Risiko aus der Vorhersage des SMHI. Es ist keine Warnung des SMHI.</string>
+    <string name="slipperiness_alerts">Glätte</string>
+    <string name="slipperiness_alerts_summary">Wenn es in den nächsten 24 Stunden glatt werden kann</string>
 </resources>

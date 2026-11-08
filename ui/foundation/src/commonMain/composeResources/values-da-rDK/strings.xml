@@ -133,4 +133,18 @@
     <string name="settings_notifications">Notifikationer</string>
     <string name="notifications_are_off">Notifikationer er slået fra</string>
     <string name="notifications_are_off_text">Tillad notifikationer for Vädret i systemindstillingerne for at få push-beskeder.</string>
+    <string name="slipperiness_possible">Mulig glat føre</string>
+    <string name="slipperiness_high">Stor risiko for glat føre</string>
+    <string name="slipperiness_cause_frost">Rimfrost</string>
+    <string name="slipperiness_cause_freezing_rain">Underafkølet regn</string>
+    <string name="slipperiness_cause_refreeze">Genfrysning</string>
+    <string name="slipperiness_cause_snow">Sne</string>
+    <string name="slipperiness_cause_frost_explanation">En klar og stille himmel kan køle jorden under frysepunktet, så fugt fryser til rimfrost.</string>
+    <string name="slipperiness_cause_freezing_rain_explanation">Regn eller støvregn kan fryse til is, når det lander på kold jord.</string>
+    <string name="slipperiness_cause_refreeze_explanation">Våd jord kan fryse, når temperaturen falder.</string>
+    <string name="slipperiness_cause_snow_explanation">Sne eller slud kan gøre veje og fortove glatte.</string>
+    <string name="slipperiness_estimate_label">Om vurderingen</string>
+    <string name="slipperiness_estimate_explanation">Vadret API beregner risikoen ud fra SMHI\'s prognose. Det er ikke en varsling fra SMHI.</string>
+    <string name="slipperiness_alerts">Glat føre</string>
+    <string name="slipperiness_alerts_summary">Når det kan blive glat det næste døgn</string>
 </resources>

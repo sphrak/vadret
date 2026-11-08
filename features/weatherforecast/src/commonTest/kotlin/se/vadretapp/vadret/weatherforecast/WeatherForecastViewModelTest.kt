@@ -314,6 +314,7 @@ class WeatherForecastViewModelTest {
             assertEquals(
                 expected = LatestWarning(
                     warningLevel = WarningLevel.YELLOW,
+                    slipperinessRisk = null,
                     source = FeedSource.SMHI,
                     isPublicAlert = false,
                     headline = "Vind",

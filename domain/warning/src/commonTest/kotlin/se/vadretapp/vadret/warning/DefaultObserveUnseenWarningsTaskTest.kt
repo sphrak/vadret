@@ -12,6 +12,7 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import se.vadretapp.vadret.aggregatedfeed.model.AggregatedFeed
+import se.vadretapp.vadret.aggregatedfeed.model.FeedSource
 import se.vadretapp.vadret.aggregatedfeed.model.GeoPolygon
 import se.vadretapp.vadret.aggregatedfeed.model.SeenWarning
 import se.vadretapp.vadret.aggregatedfeed.model.WarningFeed
@@ -77,6 +78,7 @@ class DefaultObserveUnseenWarningsTaskTest {
     private val clock = FixedClock(now = NOW)
     private val observeUnseenWarningsTask: ObserveUnseenWarningsTask = DefaultObserveUnseenWarningsTask(
         feedRepository = feedRepository,
+        getForecastWarningRequestTask = FakeGetForecastWarningRequestTask(),
         clock = clock
     )
 
@@ -243,6 +245,32 @@ class DefaultObserveUnseenWarningsTaskTest {
                     savedAgo = 1.minutes,
                     isRefresh = true
                 )
+            )
+        }
+
+    @Test
+    fun `a vadret api estimate seen once stays seen though every fetch publishes it again`() =
+        runTest {
+            val estimate: AggregatedFeed = aggregatedFeed(
+                identifier = "vadret-slipperiness-u6sce-2026-10-28-HIGH",
+                publishedAt = publishedAt + 3.minutes,
+                source = FeedSource.VADRET_API,
+                polygons = listOf(aroundFunasdalen)
+            )
+            feedRepository.result = listOf(estimate, newest).asRight()
+            feedRepository.seenWarnings.value = listOf(
+                seen(
+                    warningIdentifier = estimate.identifier,
+                    seenAt = publishedAt
+                )
+            ).asRight()
+
+            assertEquals<Either<Failure, List<AggregatedFeed>>>(
+                expected = listOf(newest).asRight(),
+                actual = observeUnseenWarningsTask(
+                    warningPlace = funasdalen,
+                    isRefresh = false
+                ).first()
             )
         }
 }

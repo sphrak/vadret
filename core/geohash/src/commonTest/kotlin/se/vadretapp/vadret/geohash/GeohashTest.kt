@@ -2,11 +2,20 @@ package se.vadretapp.vadret.geohash
 
 import se.vadretapp.vadret.geohash.model.Geohash
 import se.vadretapp.vadret.geohash.model.geohashOf
+import se.vadretapp.vadret.geohash.model.geohashOrNull
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class GeohashTest {
+    @Test
+    fun onlyFiveCharactersOfTheGeohashAlphabetReadAsAGeohash() {
+        assertEquals(
+            expected = listOf("u6sce", null, null, null, null),
+            actual = listOf("u6sce", "u6sc", "u6scee", "u6scA", "").map { value -> geohashOrNull(value = value)?.value }
+        )
+    }
+
     @Test
     fun aPlaceInSwedenBecomesTheCellTheServerExpects() {
         assertEquals(

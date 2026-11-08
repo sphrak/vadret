@@ -12,6 +12,7 @@ internal sealed interface PushAlertsEvent {
     data class OnWarningLevelSelected(val warningAlertLevel: WarningAlertLevel) : PushAlertsEvent
     data class OnTemperatureTrendToggled(val isEnabled: Boolean) : PushAlertsEvent
     data class OnStrongWindToggled(val isEnabled: Boolean) : PushAlertsEvent
+    data class OnSlipperinessToggled(val isEnabled: Boolean) : PushAlertsEvent
     data class OnPollenTypeToggled(
         val pollenTypeId: String,
         val isEnabled: Boolean

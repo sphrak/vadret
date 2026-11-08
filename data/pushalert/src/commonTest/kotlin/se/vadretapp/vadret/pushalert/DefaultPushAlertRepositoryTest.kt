@@ -279,7 +279,8 @@ class DefaultPushAlertRepositoryTest {
                 warningLowestLevel = WarningAlertLevel.YELLOW,
                 pollenChoices = listOf(PollenChoice(pollenTypeId = BIRCH, lowestLevel = PollenAlertLevel.HIGH)),
                 temperatureTrend = true,
-                strongWind = true
+                strongWind = true,
+                slipperiness = true
             )
         )
         pushAlertRepository.replaceSubscription(
@@ -289,7 +290,7 @@ class DefaultPushAlertRepositoryTest {
 
         assertEquals(
             expected = listOf(
-                """PUT /api/v1/subscription Bearer $INSTALLATION_TOKEN {"geohashes":["u6sce","u3chr"],"warning_lowest_level":"YELLOW","pollen":[{"pollen_type_id":"$BIRCH","lowest_level":5}],"temperature_trend":true,"strong_wind":true}""",
+                """PUT /api/v1/subscription Bearer $INSTALLATION_TOKEN {"geohashes":["u6sce","u3chr"],"warning_lowest_level":"YELLOW","pollen":[{"pollen_type_id":"$BIRCH","lowest_level":5}],"temperature_trend":true,"strong_wind":true,"slipperiness":true}""",
                 "PUT /api/v1/subscription Bearer $INSTALLATION_TOKEN {}"
             ),
             actual = requests
@@ -305,12 +306,13 @@ class DefaultPushAlertRepositoryTest {
                 warningLowestLevel = null,
                 pollenChoices = emptyList(),
                 temperatureTrend = false,
-                strongWind = false
+                strongWind = false,
+                slipperiness = false
             )
         )
 
         assertEquals(
-            expected = listOf("""PUT /api/v1/subscription Bearer $INSTALLATION_TOKEN {"geohashes":["u6sce"],"pollen":[],"temperature_trend":false,"strong_wind":false}"""),
+            expected = listOf("""PUT /api/v1/subscription Bearer $INSTALLATION_TOKEN {"geohashes":["u6sce"],"pollen":[],"temperature_trend":false,"strong_wind":false,"slipperiness":false}"""),
             actual = requests
         )
     }
@@ -450,6 +452,22 @@ class DefaultPushAlertRepositoryTest {
         assertEquals(
             expected = CHOICES.asRight(),
             actual = repository(pushAlertLocalDataSource = FakePushAlertLocalDataSource(initialState = storedBeforeForecastPlaces)).choices()
+        )
+    }
+
+    @Test
+    fun slipperinessIsStoredWithTheOtherChoicesAndReadBack() = runTest {
+        val pushAlertLocalDataSource = FakePushAlertLocalDataSource()
+        val pushAlertRepository = repository(pushAlertLocalDataSource = pushAlertLocalDataSource)
+
+        pushAlertRepository.saveChoices(pushAlertChoices = CHOICES.copy(slipperiness = true))
+
+        assertEquals(
+            expected = """{"choices":{"warning_lowest_level":"ORANGE","pollen_choices":[{"pollen_type_id":"$BIRCH","lowest_level":4}],"temperature_trend":true,"strong_wind":true,"slipperiness":true}}""" to CHOICES.copy(slipperiness = true).asRight(),
+            actual = Json.encodeToString(
+                serializer = PushAlertStateEntity.serializer(),
+                value = pushAlertLocalDataSource.state.value
+            ) to pushAlertRepository.choices()
         )
     }
 
@@ -668,6 +686,7 @@ private val CHOICES = PushAlertChoices(
     pollenChoices = listOf(PollenChoice(pollenTypeId = BIRCH, lowestLevel = PollenAlertLevel.MODERATE_TO_HIGH)),
     temperatureTrend = true,
     strongWind = true,
+    slipperiness = false,
     isChosenPlaceNotified = true,
     notifiedFavoriteIds = emptySet()
 )

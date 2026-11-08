@@ -9,14 +9,26 @@ import se.vadretapp.vadret.aggregatedfeed.model.FeedSource
 import se.vadretapp.vadret.aggregatedfeed.model.GeoLine
 import se.vadretapp.vadret.aggregatedfeed.model.GeoPolygon
 import se.vadretapp.vadret.aggregatedfeed.model.GeoPosition
+import se.vadretapp.vadret.aggregatedfeed.model.Slipperiness
+import se.vadretapp.vadret.aggregatedfeed.model.SlipperinessCause
+import se.vadretapp.vadret.aggregatedfeed.model.SlipperinessRisk
 import se.vadretapp.vadret.forecastwarning.aggregatedFeed
 import se.vadretapp.vadret.forecastwarning.model.MapBounds
 import se.vadretapp.vadret.forecastwarning.model.WarningDetail
 import se.vadretapp.vadret.forecastwarning.model.WarningItem
 import se.vadretapp.vadret.forecastwarning.model.WarningMapArea
+import se.vadretapp.vadret.icons.Slipperiness
+import se.vadretapp.vadret.icons.VadretIcons
 import se.vadretapp.vadret.ui.model.ElapsedTime
 import se.vadretapp.vadret.ui.resources.Res
 import se.vadretapp.vadret.ui.resources.hours_ago
+import se.vadretapp.vadret.ui.resources.slipperiness_cause_frost
+import se.vadretapp.vadret.ui.resources.slipperiness_cause_frost_explanation
+import se.vadretapp.vadret.ui.resources.slipperiness_cause_refreeze
+import se.vadretapp.vadret.ui.resources.slipperiness_cause_refreeze_explanation
+import se.vadretapp.vadret.ui.resources.slipperiness_estimate_explanation
+import se.vadretapp.vadret.ui.resources.slipperiness_estimate_label
+import se.vadretapp.vadret.ui.resources.slipperiness_high
 import se.vadretapp.vadret.ui.resources.warning_detail_advice
 import se.vadretapp.vadret.ui.resources.warning_detail_comment
 import se.vadretapp.vadret.ui.resources.warning_detail_description
@@ -119,6 +131,80 @@ class AggregatedFeedTest {
         )
         assertEquals(expected = "13:00", actual = warningItem.startsAtText)
         assertEquals(expected = "Tue 06:00", actual = warningItem.endsAtText)
+    }
+
+    @Test
+    fun `a vadret api estimate is headed by its strongest cause and explains each cause and itself`() {
+        val warningItem: WarningItem = aggregatedFeed(
+            identifier = "vadret-slipperiness-u6sce-2026-10-26-HIGH",
+            headline = "",
+            source = FeedSource.VADRET_API,
+            areaName = null,
+            warningLevel = null
+        ).copy(
+            slipperiness = Slipperiness(
+                risk = SlipperinessRisk.HIGH,
+                causes = listOf(
+                    SlipperinessCause.REFREEZE,
+                    SlipperinessCause.FROST
+                )
+            )
+        ).toWarningItem(
+            now = now,
+            timeZone = stockholm,
+            languageTag = ENGLISH
+        )
+
+        assertEquals(expected = Res.string.slipperiness_cause_refreeze, actual = warningItem.headlineResource)
+        assertEquals(expected = VadretIcons.Alert.Slipperiness, actual = warningItem.icon)
+        assertEquals(expected = SlipperinessRisk.HIGH, actual = warningItem.slipperinessRisk)
+        assertEquals(expected = null, actual = warningItem.warningLevel)
+        assertEquals(expected = "Vadret API", actual = warningItem.byline)
+        assertEquals(
+            expected = listOf<WarningDetail>(
+                WarningDetail.Explained(
+                    labelResource = Res.string.slipperiness_cause_refreeze,
+                    textResource = Res.string.slipperiness_cause_refreeze_explanation
+                ),
+                WarningDetail.Explained(
+                    labelResource = Res.string.slipperiness_cause_frost,
+                    textResource = Res.string.slipperiness_cause_frost_explanation
+                ),
+                WarningDetail.Explained(
+                    labelResource = Res.string.slipperiness_estimate_label,
+                    textResource = Res.string.slipperiness_estimate_explanation
+                )
+            ),
+            actual = warningItem.details
+        )
+    }
+
+    @Test
+    fun `a vadret api estimate without a known cause is headed by its risk`() {
+        val warningItem: WarningItem = aggregatedFeed(
+            identifier = "vadret-slipperiness-u6sce-2026-10-26-HIGH",
+            source = FeedSource.VADRET_API
+        ).copy(
+            slipperiness = Slipperiness(
+                risk = SlipperinessRisk.HIGH,
+                causes = emptyList()
+            )
+        ).toWarningItem(
+            now = now,
+            timeZone = stockholm,
+            languageTag = ENGLISH
+        )
+
+        assertEquals(expected = Res.string.slipperiness_high, actual = warningItem.headlineResource)
+    }
+
+    @Test
+    fun `an item from smhi or krisinformation has no slipperiness`() {
+        val warningItem: WarningItem = item()
+
+        assertEquals(expected = null, actual = warningItem.headlineResource)
+        assertEquals(expected = null, actual = warningItem.icon)
+        assertEquals(expected = null, actual = warningItem.slipperinessRisk)
     }
 
     @Test

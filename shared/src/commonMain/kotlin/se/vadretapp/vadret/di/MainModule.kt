@@ -9,15 +9,19 @@ import se.vadretapp.vadret.main.DefaultObserveThemeTask
 import se.vadretapp.vadret.main.MainViewModel
 import se.vadretapp.vadret.main.ObserveLanguageTask
 import se.vadretapp.vadret.main.ObserveThemeTask
+import se.vadretapp.vadret.main.OpenedWarningReferences
 
 internal val mainModule: Module = module {
     factoryOf(::DefaultObserveLanguageTask) { bind<ObserveLanguageTask>() }
     factoryOf(::DefaultObserveThemeTask) { bind<ObserveThemeTask>() }
+    single<OpenedWarningReferences> { OpenedWarningReferences() }
     factory<MainViewModel> {
         MainViewModel(
             observeThemeTask = get(),
             observeLanguageTask = get(),
             appStartHooks = getAll(),
+            openedWarningReferences = get(),
+            getReferencedWarningIdentifiersTask = get(),
             coroutineDispatcher = get()
         )
     }

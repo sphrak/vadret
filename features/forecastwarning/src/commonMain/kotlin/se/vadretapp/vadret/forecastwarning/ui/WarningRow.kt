@@ -80,7 +80,7 @@ internal fun WarningRow(
                 verticalArrangement = Arrangement.spacedBy(space = VadretTheme.spacing.extraSmall)
             ) {
                 Text(
-                    text = warning.headline,
+                    text = warning.headlineText(),
                     style = VadretTheme.textStyles.value,
                     color = VadretTheme.colorScheme.onSurface,
                     maxLines = 1,
@@ -127,7 +127,8 @@ internal fun WarningRow(
         }
         val tag: String? = warningTag(
             warningLevel = warning.warningLevel,
-            isPublicAlert = warning.isPublicAlert
+            isPublicAlert = warning.isPublicAlert,
+            slipperinessRisk = warning.slipperinessRisk
         )
         if (tag != null) {
             WarningTagText(

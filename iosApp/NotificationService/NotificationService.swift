@@ -15,6 +15,9 @@ final class NotificationService: UNNotificationServiceExtension {
         content.title = pushAlert.title
         content.body = pushAlert.body
         content.threadIdentifier = pushAlert.kind
+        content.userInfo[pushAlertDataKey] = pushAlert.data
         contentHandler(content)
     }
 }
+
+private let pushAlertDataKey = "push_alert_data"

@@ -14,9 +14,11 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
 import se.vadretapp.vadret.R
+import se.vadretapp.vadret.aggregatedfeed.model.WarningReference
 import se.vadretapp.vadret.logging.Logger
 import se.vadretapp.vadret.logging.LoggerFactory
 import se.vadretapp.vadret.main.MainActivity
+import se.vadretapp.vadret.main.putWarningReference
 import se.vadretapp.vadret.pushalert.model.PushAlertKind
 import se.vadretapp.vadret.pushalert.model.PushAlertMessage
 import se.vadretapp.vadret.pushalert.model.PushAlertType
@@ -32,6 +34,7 @@ internal class NotificationManagerPushAlertNotifier(
             return
         }
         notificationManager.createNotificationChannelsCompat(notificationChannels())
+        val notificationTag: String = pushAlertMessage.notificationId ?: pushAlertMessage.title
         val notification = NotificationCompat.Builder(context, pushAlertMessage.kind.channelId())
             .setSmallIcon(R.drawable.ic_push_alert)
             .setLargeIcon(largeIcon(pushAlertType = pushAlertMessage.pushAlertType))
@@ -39,12 +42,17 @@ internal class NotificationManagerPushAlertNotifier(
             .setContentTitle(pushAlertMessage.title)
             .setContentText(pushAlertMessage.body)
             .setStyle(NotificationCompat.BigTextStyle().bigText(pushAlertMessage.body))
-            .setContentIntent(openAppIntent())
+            .setContentIntent(
+                openAppIntent(
+                    pushAlertMessage = pushAlertMessage,
+                    requestCode = notificationTag.hashCode()
+                )
+            )
             .setAutoCancel(true)
             .build()
         notificationManager.notify(
             pushAlertMessage.kind.channelId(),
-            (pushAlertMessage.notificationId ?: pushAlertMessage.title).hashCode(),
+            notificationTag.hashCode(),
             notification
         )
     }
@@ -95,6 +103,11 @@ internal class NotificationManagerPushAlertNotifier(
             pushAlertKind = PushAlertKind.WIND,
             nameResource = R.string.push_alert_channel_wind,
             importance = NotificationManagerCompat.IMPORTANCE_DEFAULT
+        ),
+        notificationChannel(
+            pushAlertKind = PushAlertKind.SLIPPERINESS,
+            nameResource = R.string.push_alert_channel_slipperiness,
+            importance = NotificationManagerCompat.IMPORTANCE_DEFAULT
         )
     )
 
@@ -106,12 +119,24 @@ internal class NotificationManagerPushAlertNotifier(
         .setName(context.getString(nameResource))
         .build()
 
-    private fun openAppIntent(): PendingIntent = PendingIntent.getActivity(
+    private fun openAppIntent(
+        pushAlertMessage: PushAlertMessage,
+        requestCode: Int
+    ): PendingIntent = PendingIntent.getActivity(
         context,
-        OPEN_APP_REQUEST_CODE,
-        Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
+        requestCode,
+        openAppActivityIntent(warningReference = pushAlertMessage.warningReference),
         PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
     )
+
+    private fun openAppActivityIntent(warningReference: WarningReference?): Intent {
+        val intent = Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        return if (warningReference == null) {
+            intent
+        } else {
+            intent.putWarningReference(warningReference = warningReference)
+        }
+    }
 }
 
 internal fun PushAlertType.largeIconResource(): Int =
@@ -123,6 +148,7 @@ internal fun PushAlertType.largeIconResource(): Int =
         PushAlertType.HARD_WIND -> R.drawable.ic_push_alert_hard_wind
         PushAlertType.STORM -> R.drawable.ic_push_alert_storm
         PushAlertType.HURRICANE -> R.drawable.ic_push_alert_hurricane
+        PushAlertType.SLIPPERINESS -> R.drawable.ic_push_alert_slipperiness
     }
 
 internal fun PushAlertType.largeIconColorResource(): Int =
@@ -134,6 +160,7 @@ internal fun PushAlertType.largeIconColorResource(): Int =
         PushAlertType.HARD_WIND,
         PushAlertType.STORM,
         PushAlertType.HURRICANE -> R.color.push_alert_wind
+        PushAlertType.SLIPPERINESS -> R.color.push_alert_slipperiness
     }
 
 private fun PushAlertKind.channelId(): String =
@@ -142,6 +169,7 @@ private fun PushAlertKind.channelId(): String =
         PushAlertKind.POLLEN -> POLLEN_CHANNEL_ID
         PushAlertKind.TEMPERATURE -> TEMPERATURE_CHANNEL_ID
         PushAlertKind.WIND -> WIND_CHANNEL_ID
+        PushAlertKind.SLIPPERINESS -> SLIPPERINESS_CHANNEL_ID
     }
 
 private val logger: Logger = LoggerFactory.getLogger(tag = "se.vadretapp.vadret.pushalert")
@@ -150,4 +178,4 @@ private const val WARNING_CHANNEL_ID = "warning"
 private const val POLLEN_CHANNEL_ID = "pollen"
 private const val TEMPERATURE_CHANNEL_ID = "temperature"
 private const val WIND_CHANNEL_ID = "wind"
-private const val OPEN_APP_REQUEST_CODE = 0
+private const val SLIPPERINESS_CHANNEL_ID = "slipperiness"

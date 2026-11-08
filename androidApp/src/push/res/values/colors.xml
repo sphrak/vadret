@@ -6,4 +6,5 @@
     <color name="push_alert_warmer">#FFC4501A</color>
     <color name="push_alert_colder">#FF1F6FA8</color>
     <color name="push_alert_wind">#FF4A57C2</color>
+    <color name="push_alert_slipperiness">#FF4F6B80</color>
 </resources>

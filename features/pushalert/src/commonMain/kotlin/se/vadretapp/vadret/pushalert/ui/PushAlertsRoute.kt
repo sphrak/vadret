@@ -14,6 +14,7 @@ import org.jetbrains.compose.resources.stringResource
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.di.koinViewModel
 import se.vadretapp.vadret.icons.HardWind
+import se.vadretapp.vadret.icons.Slipperiness
 import se.vadretapp.vadret.icons.VadretIcons
 import se.vadretapp.vadret.icons.Warmer
 import se.vadretapp.vadret.icons.Warning
@@ -57,6 +58,8 @@ import se.vadretapp.vadret.ui.resources.push_alerts_only_in_sweden
 import se.vadretapp.vadret.ui.resources.push_alerts_only_in_sweden_text
 import se.vadretapp.vadret.ui.resources.settings_notifications
 import se.vadretapp.vadret.ui.resources.settings_places
+import se.vadretapp.vadret.ui.resources.slipperiness_alerts
+import se.vadretapp.vadret.ui.resources.slipperiness_alerts_summary
 import se.vadretapp.vadret.ui.resources.strong_wind_alerts
 import se.vadretapp.vadret.ui.resources.strong_wind_alerts_summary
 import se.vadretapp.vadret.ui.resources.temperature_alerts
@@ -72,6 +75,7 @@ private const val WARNINGS_KEY = "warnings"
 private const val WARNING_LEVEL_KEY = "warning-level"
 private const val TEMPERATURE_KEY = "temperature"
 private const val STRONG_WIND_KEY = "strong-wind"
+private const val SLIPPERINESS_KEY = "slipperiness"
 private const val POLLEN_HEADER_KEY = "pollen-header"
 private const val POLLEN_UNAVAILABLE_KEY = "pollen-unavailable"
 private const val POLLEN_LEVEL_KEY = "pollen-level"
@@ -204,6 +208,15 @@ private fun LazyListScope.weatherAlerts(
             isChecked = state.choices.strongWind,
             onCheckedChange = { isChecked: Boolean -> onEvent(PushAlertsEvent.OnStrongWindToggled(isEnabled = isChecked)) },
             leadingContent = { SettingsRowIcon(icon = VadretIcons.Alert.HardWind) }
+        )
+    }
+    item(key = SLIPPERINESS_KEY, contentType = PushAlertsContentType.ROW) {
+        SwitchRow(
+            title = stringResource(resource = Res.string.slipperiness_alerts),
+            summary = stringResource(resource = Res.string.slipperiness_alerts_summary),
+            isChecked = state.choices.slipperiness,
+            onCheckedChange = { isChecked: Boolean -> onEvent(PushAlertsEvent.OnSlipperinessToggled(isEnabled = isChecked)) },
+            leadingContent = { SettingsRowIcon(icon = VadretIcons.Alert.Slipperiness) }
         )
     }
 }

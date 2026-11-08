@@ -6,7 +6,7 @@ import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.favorite.FavoriteRepository
 import se.vadretapp.vadret.favorite.model.Favorite
 import se.vadretapp.vadret.pushalert.PushAlertRepository
-import se.vadretapp.vadret.pushalert.extension.toCell
+import se.vadretapp.vadret.pushalert.extension.isIn
 import se.vadretapp.vadret.pushalert.extension.toGeohashOrNull
 import se.vadretapp.vadret.pushalert.model.PushAlertKind
 import se.vadretapp.vadret.pushalert.model.PushAlertMessage
@@ -31,14 +31,14 @@ internal class DefaultAddPlaceNameTask(
         when (val favorites: Either<Failure, List<Favorite>> = favoriteRepository.observeFavorites().first()) {
             is Either.Left -> null
             is Either.Right -> favorites.b.firstOrNull { favorite: Favorite ->
-                favorite.toGeohashOrNull()?.toCell() == cell
+                favorite.toGeohashOrNull()?.isIn(cell = cell) == true
             }?.locality
         }
 
     private suspend fun isWhereThePhoneIs(cell: String): Boolean =
         when (val syncedCurrentGeohash = pushAlertRepository.syncedCurrentGeohash()) {
             is Either.Left -> false
-            is Either.Right -> syncedCurrentGeohash.b?.toCell() == cell
+            is Either.Right -> syncedCurrentGeohash.b?.isIn(cell = cell) == true
         }
 }
 
@@ -47,7 +47,8 @@ private fun PushAlertKind.isAboutOneCell(): Boolean =
         PushAlertKind.WARNING,
         PushAlertKind.POLLEN -> false
         PushAlertKind.TEMPERATURE,
-        PushAlertKind.WIND -> true
+        PushAlertKind.WIND,
+        PushAlertKind.SLIPPERINESS -> true
     }
 
 private const val PLACE_NAME_SEPARATOR = " - "

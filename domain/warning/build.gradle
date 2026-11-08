@@ -9,6 +9,7 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
+                implementation project(':core:logging')
                 implementation project(':core:refresh')
                 implementation project(':data:aggregatedfeed')
                 implementation project(':data:common')
@@ -20,6 +21,7 @@ kotlin {
         }
         commonTest {
             dependencies {
+                implementation project(':core:geohash')
                 implementation project(':core:testing')
             }
         }

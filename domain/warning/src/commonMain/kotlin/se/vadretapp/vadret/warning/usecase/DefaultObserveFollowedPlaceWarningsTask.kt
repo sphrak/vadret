@@ -19,6 +19,7 @@ import kotlin.time.Clock
 internal class DefaultObserveFollowedPlaceWarningsTask(
     private val observeFollowedPlacesTask: ObserveFollowedPlacesTask,
     private val feedRepository: FeedRepository,
+    private val getForecastWarningRequestTask: GetForecastWarningRequestTask,
     private val clock: Clock
 ) : ObserveFollowedPlaceWarningsTask {
 
@@ -27,6 +28,7 @@ internal class DefaultObserveFollowedPlaceWarningsTask(
             flow = observeFollowedPlacesTask(),
             flow2 = feedRepository.observeRefreshedFeed(
                 isRefresh = isRefresh,
+                getForecastWarningRequestTask = getForecastWarningRequestTask,
                 clock = clock
             )
         ) { followedPlaces: Either<Failure, List<FollowedPlace>>, aggregatedFeeds: Either<Failure, List<AggregatedFeed>> ->

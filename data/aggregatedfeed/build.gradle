@@ -16,6 +16,7 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
+                implementation project(':core:geohash')
                 implementation project(':core:logging')
                 implementation project(':data:common')
                 implementation libs.coroutines.core

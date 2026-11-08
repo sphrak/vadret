@@ -123,4 +123,18 @@
     <string name="notifications_are_off">Powiadomienia są wyłączone</string>
     <string name="notifications_are_off_text">Zezwól na powiadomienia z aplikacji Vädret w ustawieniach systemu, aby otrzymywać powiadomienia push.</string>
     <string name="weather">Pogoda</string>
+    <string name="slipperiness_possible">Możliwa śliskość</string>
+    <string name="slipperiness_high">Duże ryzyko śliskości</string>
+    <string name="slipperiness_cause_frost">Szron</string>
+    <string name="slipperiness_cause_freezing_rain">Marznący deszcz</string>
+    <string name="slipperiness_cause_refreeze">Ponowne zamarzanie</string>
+    <string name="slipperiness_cause_snow">Śnieg</string>
+    <string name="slipperiness_cause_frost_explanation">Bezchmurne, bezwietrzne niebo może schłodzić podłoże poniżej zera, a wilgoć zamarza w szron.</string>
+    <string name="slipperiness_cause_freezing_rain_explanation">Deszcz lub mżawka mogą zamarzać po zetknięciu z zimnym podłożem.</string>
+    <string name="slipperiness_cause_refreeze_explanation">Mokre podłoże może zamarznąć, gdy temperatura spada.</string>
+    <string name="slipperiness_cause_snow_explanation">Śnieg lub deszcz ze śniegiem mogą sprawić, że drogi i chodniki będą śliskie.</string>
+    <string name="slipperiness_estimate_label">O tej ocenie</string>
+    <string name="slipperiness_estimate_explanation">Vadret API wylicza ryzyko na podstawie prognozy SMHI. To nie jest ostrzeżenie SMHI.</string>
+    <string name="slipperiness_alerts">Śliskość</string>
+    <string name="slipperiness_alerts_summary">Gdy w ciągu najbliższej doby może być ślisko</string>
 </resources>
