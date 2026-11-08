@@ -4,6 +4,7 @@ import io.github.sphrak.either.Either
 import io.github.sphrak.either.extension.asLeft
 import io.github.sphrak.either.extension.asRight
 import io.github.sphrak.either.flatMap
+import io.github.sphrak.either.map
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import se.vadretapp.vadret.common.ErrorCode
@@ -12,12 +13,17 @@ import se.vadretapp.vadret.encryption.SealedMessageKey
 import se.vadretapp.vadret.geohash.model.Geohash
 import se.vadretapp.vadret.logging.Logger
 import se.vadretapp.vadret.logging.LoggerFactory
+import se.vadretapp.vadret.pollenpreference.PollenPreferenceRepository
+import se.vadretapp.vadret.pollenpreference.model.PollenPreferences
 import se.vadretapp.vadret.pushalert.DeviceTokenSource
 import se.vadretapp.vadret.pushalert.NotificationPermissionSource
 import se.vadretapp.vadret.pushalert.PushAlertRepository
+import se.vadretapp.vadret.pushalert.extension.notifiedAllergenIds
 import se.vadretapp.vadret.pushalert.model.DeviceRegistration
 import se.vadretapp.vadret.pushalert.model.DeviceToken
 import se.vadretapp.vadret.pushalert.model.InstallationToken
+import se.vadretapp.vadret.pushalert.model.PollenAlertLevel
+import se.vadretapp.vadret.pushalert.model.PollenChoice
 import se.vadretapp.vadret.pushalert.model.PushAlertChoices
 import se.vadretapp.vadret.pushalert.model.PushAlertSubscription
 import kotlin.io.encoding.Base64
@@ -25,6 +31,7 @@ import kotlin.time.Clock
 
 internal class DefaultSyncPushAlertsTask(
     private val pushAlertRepository: PushAlertRepository,
+    private val pollenPreferenceRepository: PollenPreferenceRepository,
     private val deviceTokenSource: DeviceTokenSource,
     private val notificationPermissionSource: NotificationPermissionSource,
     private val sealedMessageKey: SealedMessageKey,
@@ -115,17 +122,35 @@ internal class DefaultSyncPushAlertsTask(
                 logger.info { "No place is chosen for push alerts, so the server forgets this phone" }
                 forget()
             } else {
-                pushAlertRepository.replaceSubscription(
-                    installationToken = installationToken,
-                    pushAlertSubscription = PushAlertSubscription(
-                        geohashes = geohashes,
-                        warningLowestLevel = pushAlertChoices.warningLowestLevel,
-                        pollenChoices = pushAlertChoices.pollenChoices,
-                        temperatureTrend = pushAlertChoices.temperatureTrend,
-                        strongWind = pushAlertChoices.strongWind,
-                        slipperiness = pushAlertChoices.slipperiness
+                pollenChoices(pollenLowestLevel = pushAlertChoices.pollenLowestLevel).flatMap { pollenChoices: List<PollenChoice> ->
+                    pushAlertRepository.replaceSubscription(
+                        installationToken = installationToken,
+                        pushAlertSubscription = PushAlertSubscription(
+                            geohashes = geohashes,
+                            warningLowestLevel = pushAlertChoices.warningLowestLevel,
+                            pollenChoices = pollenChoices,
+                            temperatureTrend = pushAlertChoices.temperatureTrend,
+                            strongWind = pushAlertChoices.strongWind,
+                            slipperiness = pushAlertChoices.slipperiness,
+                            hourFormat = pushAlertChoices.hourFormat
+                        )
                     )
-                ).flatMap { pushAlertRepository.saveSyncedCurrentGeohash(geohash = currentGeohash) }
+                }.flatMap { pushAlertRepository.saveSyncedCurrentGeohash(geohash = currentGeohash) }
+            }
+        }
+
+    // The push alert settings only pick how high the pollen must reach; which pollen is the allergens picked for pollen.
+    private suspend fun pollenChoices(pollenLowestLevel: PollenAlertLevel?): Either<Failure, List<PollenChoice>> =
+        if (pollenLowestLevel == null) {
+            emptyList<PollenChoice>().asRight()
+        } else {
+            pollenPreferenceRepository.getPollenPreferences().map { pollenPreferences: PollenPreferences ->
+                pollenPreferences.notifiedAllergenIds().sorted().map { pollenTypeId: String ->
+                    PollenChoice(
+                        pollenTypeId = pollenTypeId,
+                        lowestLevel = pollenLowestLevel
+                    )
+                }
             }
         }
 

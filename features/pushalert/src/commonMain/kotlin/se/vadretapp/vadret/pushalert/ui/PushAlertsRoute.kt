@@ -14,23 +14,23 @@ import org.jetbrains.compose.resources.stringResource
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.di.koinViewModel
 import se.vadretapp.vadret.icons.HardWind
+import se.vadretapp.vadret.icons.Pollen
 import se.vadretapp.vadret.icons.Slipperiness
 import se.vadretapp.vadret.icons.VadretIcons
 import se.vadretapp.vadret.icons.Warmer
 import se.vadretapp.vadret.icons.Warning
-import se.vadretapp.vadret.pollen.model.PollenType
 import se.vadretapp.vadret.pushalert.PushAlertsEvent
 import se.vadretapp.vadret.pushalert.PushAlertsState
 import se.vadretapp.vadret.pushalert.PushAlertsViewModel
 import se.vadretapp.vadret.pushalert.extension.isNotified
 import se.vadretapp.vadret.pushalert.extension.labelResource
+import se.vadretapp.vadret.pushalert.model.HourFormat
 import se.vadretapp.vadret.pushalert.model.PollenAlertLevel
 import se.vadretapp.vadret.pushalert.model.PushAlertPlace
 import se.vadretapp.vadret.pushalert.model.WarningAlertLevel
 import se.vadretapp.vadret.theme.model.Theme
 import se.vadretapp.vadret.ui.ChoiceDialog
 import se.vadretapp.vadret.ui.InfoDialog
-import se.vadretapp.vadret.ui.SettingsFootnote
 import se.vadretapp.vadret.ui.SettingsNote
 import se.vadretapp.vadret.ui.SettingsRow
 import se.vadretapp.vadret.ui.SettingsRowIcon
@@ -44,13 +44,18 @@ import se.vadretapp.vadret.ui.extension.messageResource
 import se.vadretapp.vadret.ui.resources.Res
 import se.vadretapp.vadret.ui.resources.attestation_refused
 import se.vadretapp.vadret.ui.resources.followed_place_position
+import se.vadretapp.vadret.ui.resources.hour_format
+import se.vadretapp.vadret.ui.resources.ic_schedule
 import se.vadretapp.vadret.ui.resources.lowest_pollen_level
 import se.vadretapp.vadret.ui.resources.notifications_are_off
 import se.vadretapp.vadret.ui.resources.notifications_are_off_text
+import se.vadretapp.vadret.ui.resources.notifications_display
 import se.vadretapp.vadret.ui.resources.notifications_need_a_place
 import se.vadretapp.vadret.ui.resources.notifications_weather
 import se.vadretapp.vadret.ui.resources.pollen
-import se.vadretapp.vadret.ui.resources.pollen_types_not_available
+import se.vadretapp.vadret.ui.resources.pollen_alerts
+import se.vadretapp.vadret.ui.resources.pollen_alerts_need_allergens
+import se.vadretapp.vadret.ui.resources.pollen_alerts_summary
 import se.vadretapp.vadret.ui.resources.push_alert_setting_not_saved
 import se.vadretapp.vadret.ui.resources.push_alerts_not_available
 import se.vadretapp.vadret.ui.resources.push_alerts_not_sent
@@ -61,7 +66,6 @@ import se.vadretapp.vadret.ui.resources.settings_places
 import se.vadretapp.vadret.ui.resources.slipperiness_alerts
 import se.vadretapp.vadret.ui.resources.slipperiness_alerts_summary
 import se.vadretapp.vadret.ui.resources.strong_wind_alerts
-import se.vadretapp.vadret.ui.resources.strong_wind_alerts_summary
 import se.vadretapp.vadret.ui.resources.temperature_alerts
 import se.vadretapp.vadret.ui.resources.warning_alerts
 import se.vadretapp.vadret.ui.resources.warning_alerts_summary
@@ -77,8 +81,10 @@ private const val TEMPERATURE_KEY = "temperature"
 private const val STRONG_WIND_KEY = "strong-wind"
 private const val SLIPPERINESS_KEY = "slipperiness"
 private const val POLLEN_HEADER_KEY = "pollen-header"
-private const val POLLEN_UNAVAILABLE_KEY = "pollen-unavailable"
+private const val POLLEN_KEY = "pollen"
 private const val POLLEN_LEVEL_KEY = "pollen-level"
+private const val DISPLAY_HEADER_KEY = "display-header"
+private const val HOUR_FORMAT_KEY = "hour-format"
 private const val PLACES_HEADER_KEY = "places-header"
 private const val CHOSEN_PLACE_KEY = "chosen-place"
 private const val SAVED_PLACE_KEY_PREFIX = "place-"
@@ -86,8 +92,7 @@ private const val SAVED_PLACE_KEY_PREFIX = "place-"
 private enum class PushAlertsContentType {
     NOTE,
     HEADER,
-    ROW,
-    TEXT
+    ROW
 }
 
 @Composable
@@ -174,13 +179,15 @@ private fun LazyListScope.pushAlerts(
         state = state,
         onEvent = onEvent
     )
-    if (state.pollenTypes.isNotEmpty() || state.arePollenTypesUnavailable) {
-        pollenAlerts(
-            state = state,
-            onEvent = onEvent
-        )
-    }
     pushAlertPlaces(
+        state = state,
+        onEvent = onEvent
+    )
+    pollenAlerts(
+        state = state,
+        onEvent = onEvent
+    )
+    display(
         state = state,
         onEvent = onEvent
     )
@@ -204,7 +211,6 @@ private fun LazyListScope.weatherAlerts(
     item(key = STRONG_WIND_KEY, contentType = PushAlertsContentType.ROW) {
         SwitchRow(
             title = stringResource(resource = Res.string.strong_wind_alerts),
-            summary = stringResource(resource = Res.string.strong_wind_alerts_summary),
             isChecked = state.choices.strongWind,
             onCheckedChange = { isChecked: Boolean -> onEvent(PushAlertsEvent.OnStrongWindToggled(isEnabled = isChecked)) },
             leadingContent = { SettingsRowIcon(icon = VadretIcons.Alert.HardWind) }
@@ -254,42 +260,45 @@ private fun LazyListScope.pollenAlerts(
     state: PushAlertsState,
     onEvent: (PushAlertsEvent) -> Unit
 ) {
+    val pollenLowestLevel: PollenAlertLevel? = state.choices.pollenLowestLevel
     item(key = POLLEN_HEADER_KEY, contentType = PushAlertsContentType.HEADER) {
         SettingsSectionHeader(text = stringResource(resource = Res.string.pollen))
     }
-    if (state.arePollenTypesUnavailable) {
-        item(key = POLLEN_UNAVAILABLE_KEY, contentType = PushAlertsContentType.TEXT) {
-            SettingsFootnote(text = stringResource(resource = Res.string.pollen_types_not_available))
-        }
-    }
-    items(
-        items = state.pollenTypes,
-        key = { pollenType: PollenType -> pollenType.pollenId },
-        contentType = { PushAlertsContentType.ROW }
-    ) { pollenType: PollenType ->
+    item(key = POLLEN_KEY, contentType = PushAlertsContentType.ROW) {
         SwitchRow(
-            title = pollenType.name,
-            isChecked = pollenType.pollenId in state.chosenPollenTypeIds,
-            onCheckedChange = { isChecked: Boolean ->
-                onEvent(
-                    PushAlertsEvent.OnPollenTypeToggled(
-                        pollenTypeId = pollenType.pollenId,
-                        isEnabled = isChecked
-                    )
-                )
-            },
-            leadingContent = { SettingsRowIconSpace() }
+            title = stringResource(resource = Res.string.pollen_alerts),
+            summary = stringResource(resource = Res.string.pollen_alerts_summary),
+            isChecked = pollenLowestLevel != null,
+            onCheckedChange = { isChecked: Boolean -> onEvent(PushAlertsEvent.OnPollenAlertsToggled(isEnabled = isChecked)) },
+            leadingContent = { SettingsRowIcon(icon = VadretIcons.Alert.Pollen) }
         )
     }
-    if (state.chosenPollenTypeIds.isNotEmpty()) {
+    if (pollenLowestLevel != null) {
         item(key = POLLEN_LEVEL_KEY, contentType = PushAlertsContentType.ROW) {
             SettingsRow(
                 title = stringResource(resource = Res.string.lowest_pollen_level),
-                summary = stringResource(resource = state.pollenLevel.labelResource()),
+                summary = stringResource(resource = pollenLowestLevel.labelResource()),
                 onClick = { onEvent(PushAlertsEvent.OnPollenLevelRowClicked) },
                 leadingContent = { SettingsRowIconSpace() }
             )
         }
+    }
+}
+
+private fun LazyListScope.display(
+    state: PushAlertsState,
+    onEvent: (PushAlertsEvent) -> Unit
+) {
+    item(key = DISPLAY_HEADER_KEY, contentType = PushAlertsContentType.HEADER) {
+        SettingsSectionHeader(text = stringResource(resource = Res.string.notifications_display))
+    }
+    item(key = HOUR_FORMAT_KEY, contentType = PushAlertsContentType.ROW) {
+        SettingsRow(
+            title = stringResource(resource = Res.string.hour_format),
+            summary = stringResource(resource = state.choices.hourFormat.labelResource()),
+            iconResource = Res.drawable.ic_schedule,
+            onClick = { onEvent(PushAlertsEvent.OnHourFormatRowClicked) }
+        )
     }
 }
 
@@ -352,14 +361,34 @@ private fun PushAlertsDialogs(
             modifier = modifier
         )
     }
-    if (state.isPollenLevelDialogVisible) {
+    val pollenLowestLevel: PollenAlertLevel? = state.choices.pollenLowestLevel
+    if (state.isPollenLevelDialogVisible && pollenLowestLevel != null) {
         ChoiceDialog(
             title = stringResource(resource = Res.string.lowest_pollen_level),
             choices = PollenAlertLevel.entries,
-            selectedChoice = state.pollenLevel,
+            selectedChoice = pollenLowestLevel,
             choiceLabel = { pollenAlertLevel: PollenAlertLevel -> stringResource(resource = pollenAlertLevel.labelResource()) },
             onChoiceSelected = { pollenAlertLevel: PollenAlertLevel -> onEvent(PushAlertsEvent.OnPollenLevelSelected(pollenAlertLevel = pollenAlertLevel)) },
             onDismiss = { onEvent(PushAlertsEvent.OnPollenLevelDialogDismissed) },
+            modifier = modifier
+        )
+    }
+    if (state.isHourFormatDialogVisible) {
+        ChoiceDialog(
+            title = stringResource(resource = Res.string.hour_format),
+            choices = HourFormat.entries,
+            selectedChoice = state.choices.hourFormat,
+            choiceLabel = { hourFormat: HourFormat -> stringResource(resource = hourFormat.labelResource()) },
+            onChoiceSelected = { hourFormat: HourFormat -> onEvent(PushAlertsEvent.OnHourFormatSelected(hourFormat = hourFormat)) },
+            onDismiss = { onEvent(PushAlertsEvent.OnHourFormatDialogDismissed) },
+            modifier = modifier
+        )
+    }
+    if (state.isNoAllergensDialogVisible) {
+        InfoDialog(
+            title = stringResource(resource = Res.string.pollen_alerts),
+            text = stringResource(resource = Res.string.pollen_alerts_need_allergens),
+            onDismiss = { onEvent(PushAlertsEvent.OnNoAllergensDialogDismissed) },
             modifier = modifier
         )
     }

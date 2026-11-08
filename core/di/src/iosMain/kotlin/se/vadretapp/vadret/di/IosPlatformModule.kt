@@ -14,7 +14,8 @@ import platform.Foundation.NSSearchPathForDirectoriesInDomains
 import platform.Foundation.NSURL
 import platform.Foundation.NSURLCache
 import platform.Foundation.NSUserDomainMask
-import se.vadretapp.vadret.aggregatedfeed.FeedRepository
+import se.vadretapp.vadret.aggregatedfeed.SeenWarningRepository
+import se.vadretapp.vadret.aggregatedfeed.WarningsRepository
 import se.vadretapp.vadret.di.model.AppDirectories
 import se.vadretapp.vadret.di.model.AppInfo
 import se.vadretapp.vadret.favorite.FavoriteRepository
@@ -50,11 +51,17 @@ fun iosPlatformModule(appInfo: AppInfo): Module =
                 mainDispatcher = Dispatchers.Main
             )
         }
-        single<FeedRepository> {
-            FeedRepository(
-                databaseDirectory = get<AppDirectories>().filesDirectoryPath,
+        single<WarningsRepository> {
+            WarningsRepository(
                 httpClient = inject(),
                 diskCache = get(),
+                clock = get(),
+                coroutineDispatcher = get()
+            )
+        }
+        single<SeenWarningRepository> {
+            SeenWarningRepository(
+                databaseDirectory = get<AppDirectories>().filesDirectoryPath,
                 clock = get(),
                 coroutineDispatcher = get()
             )

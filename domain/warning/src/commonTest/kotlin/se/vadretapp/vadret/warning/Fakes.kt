@@ -6,7 +6,8 @@ import io.github.sphrak.either.map
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
-import se.vadretapp.vadret.aggregatedfeed.FeedRepository
+import se.vadretapp.vadret.aggregatedfeed.SeenWarningRepository
+import se.vadretapp.vadret.aggregatedfeed.WarningsRepository
 import se.vadretapp.vadret.aggregatedfeed.model.AggregatedFeed
 import se.vadretapp.vadret.aggregatedfeed.model.FeedArea
 import se.vadretapp.vadret.aggregatedfeed.model.FeedRegion
@@ -82,14 +83,12 @@ internal fun aggregatedFeed(
 
 internal val NOW: Instant = Instant.parse(input = "2026-10-24T12:00:00Z")
 
-internal class FakeFeedRepository(
+internal class FakeWarningsRepository(
     var result: Either<Failure, List<AggregatedFeed>> = listOf(aggregatedFeed(identifier = "smhi-1-1")).asRight()
-) : FeedRepository {
+) : WarningsRepository {
 
     var refreshCount: Int = 0
     val savedFeed: MutableStateFlow<WarningFeed?> = MutableStateFlow(value = null)
-    val seenWarnings: MutableStateFlow<Either<Failure, List<SeenWarning>>> = MutableStateFlow(value = emptyList<SeenWarning>().asRight())
-    val markedSeen = mutableListOf<String>()
     val forecastWarningRequests = mutableListOf<ForecastWarningRequest?>()
 
     override suspend fun getAggregatedFeed(forecastWarningRequest: ForecastWarningRequest?): Either<Failure, List<AggregatedFeed>> {
@@ -118,6 +117,12 @@ internal class FakeFeedRepository(
             }
         }
     }
+}
+
+internal class FakeSeenWarningRepository : SeenWarningRepository {
+
+    val seenWarnings: MutableStateFlow<Either<Failure, List<SeenWarning>>> = MutableStateFlow(value = emptyList<SeenWarning>().asRight())
+    val markedSeen = mutableListOf<String>()
 
     override fun observeSeenWarnings(): Flow<Either<Failure, List<SeenWarning>>> = seenWarnings
 

@@ -1,6 +1,7 @@
 package se.vadretapp.vadret.ui
 
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.Composable
@@ -12,6 +13,12 @@ import se.vadretapp.vadret.icons.VadretIconGraphic
 
 private val settingsRowIconSize: Dp = 24.dp
 
+// A row keeps 16dp before its icon but a list item only 12dp after it, so the icon takes 4dp more after itself to sit
+// with as much room on both sides.
+private val settingsRowIconEndPadding: Dp = 4.dp
+
+internal fun Modifier.settingsRowIconPadding(): Modifier = padding(end = settingsRowIconEndPadding)
+
 // An icon from VadretIcons, coloured like the drawable icons in the other rows.
 @Composable
 fun SettingsRowIcon(
@@ -22,12 +29,18 @@ fun SettingsRowIcon(
         icon = icon,
         contentDescription = null,
         tint = LocalContentColor.current,
-        modifier = modifier.size(size = settingsRowIconSize)
+        modifier = modifier
+            .settingsRowIconPadding()
+            .size(size = settingsRowIconSize)
     )
 }
 
 // Takes the room of an icon, so the text of a row without one lines up with the rows above and below that have one.
 @Composable
 fun SettingsRowIconSpace(modifier: Modifier = Modifier) {
-    Spacer(modifier = modifier.size(size = settingsRowIconSize))
+    Spacer(
+        modifier = modifier
+            .settingsRowIconPadding()
+            .size(size = settingsRowIconSize)
+    )
 }

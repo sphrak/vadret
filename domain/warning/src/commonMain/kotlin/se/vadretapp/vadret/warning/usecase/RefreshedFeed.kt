@@ -9,7 +9,8 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import se.vadretapp.vadret.aggregatedfeed.FeedRepository
+import se.vadretapp.vadret.aggregatedfeed.SeenWarningRepository
+import se.vadretapp.vadret.aggregatedfeed.WarningsRepository
 import se.vadretapp.vadret.aggregatedfeed.model.AggregatedFeed
 import se.vadretapp.vadret.aggregatedfeed.model.FeedSource
 import se.vadretapp.vadret.aggregatedfeed.model.ForecastWarningRequest
@@ -30,7 +31,7 @@ private val feedReuseAge: Duration = 5.minutes
 
 private val logger: Logger = LoggerFactory.getLogger(tag = "se.vadretapp.vadret.warning")
 
-internal fun FeedRepository.observeRefreshedFeed(
+internal fun WarningsRepository.observeRefreshedFeed(
     isRefresh: Boolean,
     getForecastWarningRequestTask: GetForecastWarningRequestTask,
     clock: Clock
@@ -52,7 +53,8 @@ internal fun FeedRepository.observeRefreshedFeed(
         }
 
 // A warning stays unseen until it is seen after it was last published, so an updated warning shows again.
-internal fun FeedRepository.observeUnseenWarnings(
+internal fun WarningsRepository.observeUnseenWarnings(
+    seenWarningRepository: SeenWarningRepository,
     warningPlaces: List<WarningPlace>,
     isRefresh: Boolean,
     getForecastWarningRequestTask: GetForecastWarningRequestTask,
@@ -64,7 +66,7 @@ internal fun FeedRepository.observeUnseenWarnings(
             getForecastWarningRequestTask = getForecastWarningRequestTask,
             clock = clock
         ),
-        flow2 = observeSeenWarnings()
+        flow2 = seenWarningRepository.observeSeenWarnings()
     ) { aggregatedFeeds: Either<Failure, List<AggregatedFeed>>, seenWarnings: Either<Failure, List<SeenWarning>> ->
         aggregatedFeeds.flatMap { feeds: List<AggregatedFeed> ->
             seenWarnings.map { seen: List<SeenWarning> ->
@@ -84,7 +86,7 @@ internal suspend fun GetForecastWarningRequestTask.forecastWarningRequestOrNull(
         onSuccess = { forecastWarningRequest: ForecastWarningRequest? -> forecastWarningRequest }
     )
 
-private suspend fun FeedRepository.refreshUnlessRecent(
+private suspend fun WarningsRepository.refreshUnlessRecent(
     isRefresh: Boolean,
     getForecastWarningRequestTask: GetForecastWarningRequestTask,
     clock: Clock

@@ -16,16 +16,15 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
-import se.vadretapp.vadret.pollen.model.PollenType
 import se.vadretapp.vadret.pushalert.extension.isNotified
 import se.vadretapp.vadret.pushalert.extension.withNotified
+import se.vadretapp.vadret.pushalert.model.HourFormat
 import se.vadretapp.vadret.pushalert.model.PollenAlertLevel
-import se.vadretapp.vadret.pushalert.model.PollenChoice
 import se.vadretapp.vadret.pushalert.model.PushAlertChoices
 import se.vadretapp.vadret.pushalert.model.PushAlertPlace
 import se.vadretapp.vadret.pushalert.model.WarningAlertLevel
 import se.vadretapp.vadret.pushalert.usecase.IsOutsideSwedenTask
-import se.vadretapp.vadret.pushalert.usecase.ObservePollenTypesTask
+import se.vadretapp.vadret.pushalert.usecase.ObservePollenAllergensTask
 import se.vadretapp.vadret.pushalert.usecase.ObservePushAlertChoicesTask
 import se.vadretapp.vadret.pushalert.usecase.ObservePushAlertPlacesTask
 import se.vadretapp.vadret.pushalert.usecase.ObservePushAlertSyncPendingTask
@@ -39,7 +38,7 @@ internal class PushAlertsViewModel(
     private val observePushAlertSyncPendingTask: ObservePushAlertSyncPendingTask,
     private val savePushAlertChoicesTask: SavePushAlertChoicesTask,
     private val syncPushAlertsTask: SyncPushAlertsTask,
-    private val observePollenTypesTask: ObservePollenTypesTask,
+    private val observePollenAllergensTask: ObservePollenAllergensTask,
     private val isOutsideSwedenTask: IsOutsideSwedenTask,
     private val coroutineDispatcher: CoroutineDispatcher
 ) : ViewModel() {
@@ -73,16 +72,15 @@ internal class PushAlertsViewModel(
             }
             viewModelScope.launch(context = coroutineDispatcher) { load() }
             viewModelScope.launch(context = coroutineDispatcher) { observeSyncPending() }
+            viewModelScope.launch(context = coroutineDispatcher) { observePollenAllergens() }
         }
     }
 
     private suspend fun load() {
         combine(
-            flow = observePollenTypesTask(),
-            flow2 = observePushAlertChoicesTask(),
-            flow3 = observePushAlertPlacesTask()
-        ) { pollenTypes: Either<Failure, List<PollenType>>, pushAlertChoices: Either<Failure, PushAlertChoices>, pushAlertPlaces: Either<Failure, List<PushAlertPlace>> ->
-            showPollenTypes(pollenTypes = pollenTypes)
+            flow = observePushAlertChoicesTask(),
+            flow2 = observePushAlertPlacesTask()
+        ) { pushAlertChoices: Either<Failure, PushAlertChoices>, pushAlertPlaces: Either<Failure, List<PushAlertPlace>> ->
             showChoices(
                 pushAlertChoices = pushAlertChoices,
                 pushAlertPlaces = pushAlertPlaces
@@ -107,7 +105,8 @@ internal class PushAlertsViewModel(
                 },
                 onSuccess = { loaded: Pair<PushAlertChoices, List<PushAlertPlace>> ->
                     state.update { state: PushAlertsState ->
-                        state.withChoices(pushAlertChoices = loaded.first).copy(
+                        state.copy(
+                            choices = loaded.first,
                             places = loaded.second,
                             isLoading = false
                         )
@@ -116,25 +115,22 @@ internal class PushAlertsViewModel(
             )
     }
 
-    private fun showPollenTypes(pollenTypes: Either<Failure, List<PollenType>>) {
-        pollenTypes.onResult(
-            onError = { _: Failure -> state.update { state: PushAlertsState -> state.copy(arePollenTypesUnavailable = true) } },
-            onSuccess = { loadedPollenTypes: List<PollenType> ->
-                state.update { state: PushAlertsState ->
-                    state.copy(
-                        pollenTypes = loadedPollenTypes,
-                        arePollenTypesUnavailable = false
-                    )
-                }
-            }
-        )
-    }
-
     private suspend fun observeSyncPending() {
         observePushAlertSyncPendingTask().collect { result: Either<Failure, Boolean> ->
             result.onResult(
                 onError = { failure: Failure -> state.update { state: PushAlertsState -> state.copy(failure = failure) } },
                 onSuccess = { isSyncPending: Boolean -> state.update { state: PushAlertsState -> state.copy(isSyncPending = isSyncPending) } }
+            )
+        }
+    }
+
+    private suspend fun observePollenAllergens() {
+        observePollenAllergensTask().collect { result: Either<Failure, Set<String>> ->
+            result.onResult(
+                onError = { failure: Failure -> state.update { state: PushAlertsState -> state.copy(failure = failure) } },
+                onSuccess = { allergenPollenIds: Set<String> ->
+                    state.update { state: PushAlertsState -> state.copy(hasPollenAllergens = allergenPollenIds.isNotEmpty()) }
+                }
             )
         }
     }
@@ -165,13 +161,17 @@ internal class PushAlertsViewModel(
                 isEnabled = event.isEnabled
             )
             PushAlertsEvent.OnLastPlaceDialogDismissed -> state.update { state: PushAlertsState -> state.copy(isLastPlaceDialogVisible = false) }
-            is PushAlertsEvent.OnPollenTypeToggled -> onPollenTypeToggled(
-                pollenTypeId = event.pollenTypeId,
-                isEnabled = event.isEnabled
-            )
+            is PushAlertsEvent.OnPollenAlertsToggled -> onPollenAlertsToggled(isEnabled = event.isEnabled)
+            PushAlertsEvent.OnNoAllergensDialogDismissed -> state.update { state: PushAlertsState -> state.copy(isNoAllergensDialogVisible = false) }
             PushAlertsEvent.OnPollenLevelRowClicked -> state.update { state: PushAlertsState -> state.copy(isPollenLevelDialogVisible = true) }
             PushAlertsEvent.OnPollenLevelDialogDismissed -> state.update { state: PushAlertsState -> state.copy(isPollenLevelDialogVisible = false) }
-            is PushAlertsEvent.OnPollenLevelSelected -> onPollenLevelSelected(pollenAlertLevel = event.pollenAlertLevel)
+            is PushAlertsEvent.OnPollenLevelSelected -> {
+                state.update { state: PushAlertsState -> state.copy(isPollenLevelDialogVisible = false) }
+                choose(pushAlertChoices = state.value.choices.copy(pollenLowestLevel = event.pollenAlertLevel))
+            }
+            PushAlertsEvent.OnHourFormatRowClicked -> state.update { state: PushAlertsState -> state.copy(isHourFormatDialogVisible = true) }
+            PushAlertsEvent.OnHourFormatDialogDismissed -> state.update { state: PushAlertsState -> state.copy(isHourFormatDialogVisible = false) }
+            is PushAlertsEvent.OnHourFormatSelected -> onHourFormatSelected(hourFormat = event.hourFormat)
             is PushAlertsEvent.OnNotificationPermissionResult -> onNotificationPermissionResult(isGranted = event.isGranted)
             PushAlertsEvent.OnNotificationPermissionDialogDismissed -> state.update { state: PushAlertsState ->
                 state.copy(isNotificationPermissionDialogVisible = false)
@@ -183,23 +183,6 @@ internal class PushAlertsViewModel(
             PushAlertsEvent.OnFailureDismissed -> state.update { state: PushAlertsState -> state.copy(failure = null) }
             PushAlertsEvent.OnSendFailedDialogDismissed -> state.update { state: PushAlertsState -> state.copy(isSendFailedDialogVisible = false) }
         }
-    }
-
-    private suspend fun onPollenTypeToggled(
-        pollenTypeId: String,
-        isEnabled: Boolean
-    ) {
-        val currentState = state.value
-        val otherPollenChoices = currentState.choices.pollenChoices.filter { pollenChoice: PollenChoice -> pollenChoice.pollenTypeId != pollenTypeId }
-        val pollenChoices = if (isEnabled) {
-            otherPollenChoices + PollenChoice(
-                pollenTypeId = pollenTypeId,
-                lowestLevel = currentState.pollenLevel
-            )
-        } else {
-            otherPollenChoices
-        }
-        choose(pushAlertChoices = currentState.choices.copy(pollenChoices = pollenChoices))
     }
 
     private suspend fun onPlaceToggled(
@@ -218,25 +201,33 @@ internal class PushAlertsViewModel(
         }
     }
 
-    private suspend fun onPollenLevelSelected(pollenAlertLevel: PollenAlertLevel) {
-        state.update { state: PushAlertsState ->
-            state.copy(
-                isPollenLevelDialogVisible = false,
-                pollenLevel = pollenAlertLevel
+    // Which pollen is pushed is the allergens picked for pollen, so without any there is nothing to turn on.
+    private suspend fun onPollenAlertsToggled(isEnabled: Boolean) {
+        if (isEnabled && !state.value.hasPollenAllergens) {
+            state.update { state: PushAlertsState -> state.copy(isNoAllergensDialogVisible = true) }
+        } else {
+            choose(
+                pushAlertChoices = state.value.choices.copy(
+                    pollenLowestLevel = if (isEnabled) {
+                        DEFAULT_POLLEN_LEVEL
+                    } else {
+                        null
+                    }
+                )
             )
         }
-        val choices = state.value.choices
-        choose(
-            pushAlertChoices = choices.copy(
-                pollenChoices = choices.pollenChoices.map { pollenChoice: PollenChoice -> pollenChoice.copy(lowestLevel = pollenAlertLevel) }
-            )
-        )
+    }
+
+    // How the hours are written turns no alert on, so it is saved even before any alert is chosen or allowed.
+    private fun onHourFormatSelected(hourFormat: HourFormat) {
+        state.update { state: PushAlertsState -> state.copy(isHourFormatDialogVisible = false) }
+        save(pushAlertChoices = state.value.choices.copy(hourFormat = hourFormat))
     }
 
     private suspend fun choose(pushAlertChoices: PushAlertChoices) {
         if (!pushAlertChoices.isWithin(other = state.value.choices) && isOutsideSwedenTask()) {
             state.update { state: PushAlertsState ->
-                state.withChoices(pushAlertChoices = state.choices).copy(isOutsideSwedenDialogVisible = true)
+                state.copy(isOutsideSwedenDialogVisible = true)
             }
         } else if (!state.value.choices.isAnythingChosen() && pushAlertChoices.isAnythingChosen()) {
             state.update { state: PushAlertsState -> state.copy(pendingChoices = pushAlertChoices) }
@@ -259,7 +250,7 @@ internal class PushAlertsViewModel(
     }
 
     private fun save(pushAlertChoices: PushAlertChoices) {
-        state.update { state: PushAlertsState -> state.withChoices(pushAlertChoices = pushAlertChoices) }
+        state.update { state: PushAlertsState -> state.copy(choices = pushAlertChoices) }
         choicesToSave.trySend(element = pushAlertChoices)
     }
 
@@ -292,11 +283,5 @@ internal class PushAlertsViewModel(
     }
 }
 
-private fun PushAlertsState.withChoices(pushAlertChoices: PushAlertChoices): PushAlertsState =
-    copy(
-        choices = pushAlertChoices,
-        chosenPollenTypeIds = pushAlertChoices.pollenChoices.map { pollenChoice: PollenChoice -> pollenChoice.pollenTypeId }.toSet(),
-        pollenLevel = pushAlertChoices.pollenChoices.firstOrNull()?.lowestLevel ?: pollenLevel
-    )
-
 private val DEFAULT_WARNING_LEVEL = WarningAlertLevel.YELLOW
+private val DEFAULT_POLLEN_LEVEL = PollenAlertLevel.MODERATE_TO_HIGH

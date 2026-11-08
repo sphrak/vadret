@@ -12,6 +12,7 @@ import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.followedplace.model.FollowedPlace
 import se.vadretapp.vadret.logging.LogLevel
+import se.vadretapp.vadret.pushalert.usecase.DefaultObservePollenAllergensTask
 import se.vadretapp.vadret.testing.withRecordedLogs
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -63,6 +64,60 @@ class PushAlertsAppStartHookTest {
 
         assertEquals(expected = 1 to 2, actual = syncsAtStart to syncPushAlertsTask.syncs)
     }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun pickingAnAllergenOrTurningPollenOffAnywhereInTheAppSyncsAgainButHidingANoticeDoesNot() = runTest {
+        val syncPushAlertsTask = FakeSyncPushAlertsTask()
+        val pollenPreferenceRepository = FakePollenPreferenceRepository()
+        val hook = launch {
+            pushAlertsAppStartHook(
+                syncPushAlertsTask = syncPushAlertsTask,
+                pollenPreferenceRepository = pollenPreferenceRepository
+            ).onAppStart()
+        }
+        advanceUntilIdle()
+        val syncsAtStart = syncPushAlertsTask.syncs
+
+        pollenPreferenceRepository.pollenPreferences.value = NO_ALLERGENS.copy(allergenPollenIds = setOf(BIRCH_ID)).asRight()
+        advanceUntilIdle()
+        pollenPreferenceRepository.pollenPreferences.value = NO_ALLERGENS.copy(
+            allergenPollenIds = setOf(BIRCH_ID),
+            isHibernationNoticeShown = false
+        ).asRight()
+        advanceUntilIdle()
+        pollenPreferenceRepository.pollenPreferences.value = NO_ALLERGENS.copy(
+            isPollenEnabled = false,
+            allergenPollenIds = setOf(BIRCH_ID)
+        ).asRight()
+        advanceUntilIdle()
+        hook.cancel()
+
+        assertEquals(expected = 1 to 3, actual = syncsAtStart to syncPushAlertsTask.syncs)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun aPlaceSavedWhileTheFirstSyncRunsSyncsAgain() = runTest {
+        val observeFollowedPlacesTask = FakeObserveFollowedPlacesTask()
+        val syncPushAlertsTask = FakeSyncPushAlertsTask(
+            whileSyncing = { sync: Int ->
+                if (sync == 1) {
+                    observeFollowedPlacesTask.followedPlaces.value = listOf(STOCKHOLM_PLACE).asRight()
+                }
+            }
+        )
+        val hook = launch {
+            pushAlertsAppStartHook(
+                syncPushAlertsTask = syncPushAlertsTask,
+                observeFollowedPlacesTask = observeFollowedPlacesTask
+            ).onAppStart()
+        }
+        advanceUntilIdle()
+        hook.cancel()
+
+        assertEquals(expected = 2, actual = syncPushAlertsTask.syncs)
+    }
 }
 
 // The hook keeps following the followed places, so a test starts it in the background and reads what it did so far.
@@ -74,12 +129,16 @@ private fun PushAlertsAppStartHook.startInBackground(scope: TestScope) {
 
 private fun pushAlertsAppStartHook(
     syncPushAlertsTask: FakeSyncPushAlertsTask = FakeSyncPushAlertsTask(),
-    observeFollowedPlacesTask: FakeObserveFollowedPlacesTask = FakeObserveFollowedPlacesTask()
+    observeFollowedPlacesTask: FakeObserveFollowedPlacesTask = FakeObserveFollowedPlacesTask(),
+    pollenPreferenceRepository: FakePollenPreferenceRepository = FakePollenPreferenceRepository()
 ): PushAlertsAppStartHook =
     PushAlertsAppStartHook(
         syncPushAlertsTask = syncPushAlertsTask,
-        observeFollowedPlacesTask = observeFollowedPlacesTask
+        observeFollowedPlacesTask = observeFollowedPlacesTask,
+        observePollenAllergensTask = DefaultObservePollenAllergensTask(pollenPreferenceRepository = pollenPreferenceRepository)
     )
+
+private const val BIRCH_ID = "2a2a2a2a-2a2a-4a2a-aa2a-2a313a323236"
 
 private val STOCKHOLM_PLACE = FollowedPlace(
     favoriteId = null,

@@ -14,7 +14,6 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import se.vadretapp.vadret.aggregatedfeed.local.AggregatedFeedDatabase
-import se.vadretapp.vadret.aggregatedfeed.local.DefaultAggregatedFeedLocalDataSource
 import se.vadretapp.vadret.aggregatedfeed.local.DefaultSeenWarningLocalDataSource
 import se.vadretapp.vadret.aggregatedfeed.local.SeenWarningLocalDataSource
 import se.vadretapp.vadret.aggregatedfeed.local.inMemoryAggregatedFeedDatabase
@@ -22,7 +21,6 @@ import se.vadretapp.vadret.aggregatedfeed.model.SeenWarning
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.logging.LogLevel
-import se.vadretapp.vadret.testing.FakeDiskCache
 import se.vadretapp.vadret.testing.FixedClock
 import se.vadretapp.vadret.testing.LogLine
 import se.vadretapp.vadret.testing.withRecordedLogs
@@ -43,19 +41,12 @@ class SeenWarningTest {
     private val aggregatedFeedDatabase: AggregatedFeedDatabase = inMemoryAggregatedFeedDatabase(
         coroutineDispatcher = StandardTestDispatcher(scheduler = testScope.testScheduler)
     )
-    private val feedRepository: FeedRepository = feedRepository(
+    private val seenWarningRepository: SeenWarningRepository = seenWarningRepository(
         seenWarningLocalDataSource = DefaultSeenWarningLocalDataSource(aggregatedFeedDatabase = aggregatedFeedDatabase)
     )
 
-    private fun feedRepository(seenWarningLocalDataSource: SeenWarningLocalDataSource): FeedRepository =
-        DefaultFeedRepository(
-            smhiWarningRemoteDataSource = FakeSmhiWarningRemoteDataSource(),
-            krisinformationRemoteDataSource = FakeKrisinformationRemoteDataSource(),
-            forecastWarningRemoteDataSource = FakeForecastWarningRemoteDataSource(),
-            aggregatedFeedLocalDataSource = DefaultAggregatedFeedLocalDataSource(
-                diskCache = FakeDiskCache(),
-                coroutineDispatcher = StandardTestDispatcher(scheduler = testScope.testScheduler)
-            ),
+    private fun seenWarningRepository(seenWarningLocalDataSource: SeenWarningLocalDataSource): SeenWarningRepository =
+        DefaultSeenWarningRepository(
             seenWarningLocalDataSource = seenWarningLocalDataSource,
             clock = clock
         )
@@ -68,7 +59,7 @@ class SeenWarningTest {
     @Test
     fun `a warning is marked seen at the current time`() =
         testScope.runTest {
-            assertEquals(expected = Unit.asRight(), actual = feedRepository.markSeen(warningIdentifier = "smhi-1-2"))
+            assertEquals(expected = Unit.asRight(), actual = seenWarningRepository.markSeen(warningIdentifier = "smhi-1-2"))
 
             assertEquals(
                 expected = listOf(
@@ -77,16 +68,16 @@ class SeenWarningTest {
                         seenAt = now
                     )
                 ).asRight(),
-                actual = feedRepository.observeSeenWarnings().first()
+                actual = seenWarningRepository.observeSeenWarnings().first()
             )
         }
 
     @Test
     fun `seeing a warning again moves its seen time forward`() =
         testScope.runTest {
-            feedRepository.markSeen(warningIdentifier = "smhi-1-2")
+            seenWarningRepository.markSeen(warningIdentifier = "smhi-1-2")
             clock.now = now + 3.minutes
-            feedRepository.markSeen(warningIdentifier = "smhi-1-2")
+            seenWarningRepository.markSeen(warningIdentifier = "smhi-1-2")
 
             assertEquals(
                 expected = listOf(
@@ -95,7 +86,7 @@ class SeenWarningTest {
                         seenAt = now + 3.minutes
                     )
                 ).asRight(),
-                actual = feedRepository.observeSeenWarnings().first()
+                actual = seenWarningRepository.observeSeenWarnings().first()
             )
         }
 
@@ -105,14 +96,14 @@ class SeenWarningTest {
         testScope.runTest {
             val emitted = mutableListOf<Either<Failure, List<SeenWarning>>>()
             val job = launch {
-                feedRepository.observeSeenWarnings().take(count = 3).toList(destination = emitted)
+                seenWarningRepository.observeSeenWarnings().take(count = 3).toList(destination = emitted)
             }
             advanceUntilIdle()
 
-            feedRepository.markSeen(warningIdentifier = "a")
+            seenWarningRepository.markSeen(warningIdentifier = "a")
             advanceUntilIdle()
             clock.now = now + 1.minutes
-            feedRepository.markSeen(warningIdentifier = "b")
+            seenWarningRepository.markSeen(warningIdentifier = "b")
             advanceUntilIdle()
             job.join()
 
@@ -143,14 +134,14 @@ class SeenWarningTest {
     @Test
     fun `storage that cannot be read or written is a storage failure`() =
         testScope.runTest {
-            val failingFeedRepository: FeedRepository = feedRepository(
+            val failingSeenWarningRepository: SeenWarningRepository = seenWarningRepository(
                 seenWarningLocalDataSource = FailingSeenWarningLocalDataSource(exception = SQLiteException("disk full"))
             )
 
             withRecordedLogs { recordingLogSink ->
                 val results: List<Either<Failure, Any>> = listOf(
-                    failingFeedRepository.markSeen(warningIdentifier = "a"),
-                    failingFeedRepository.observeSeenWarnings().toList().single()
+                    failingSeenWarningRepository.markSeen(warningIdentifier = "a"),
+                    failingSeenWarningRepository.observeSeenWarnings().toList().single()
                 )
 
                 assertEquals(
@@ -167,14 +158,14 @@ class SeenWarningTest {
     @Test
     fun `anything else is unknown and logged as an error`() =
         testScope.runTest {
-            val failingFeedRepository: FeedRepository = feedRepository(
+            val failingSeenWarningRepository: SeenWarningRepository = seenWarningRepository(
                 seenWarningLocalDataSource = FailingSeenWarningLocalDataSource(exception = IllegalStateException("bug"))
             )
 
             withRecordedLogs { recordingLogSink ->
                 assertEquals(
                     expected = Failure.unknown().asLeft(),
-                    actual = failingFeedRepository.markSeen(warningIdentifier = "a")
+                    actual = failingSeenWarningRepository.markSeen(warningIdentifier = "a")
                 )
                 assertEquals(expected = LogLevel.ERROR, actual = recordingLogSink.lines.single().level)
             }
@@ -183,12 +174,12 @@ class SeenWarningTest {
     @Test
     fun `cancellation is rethrown`() =
         testScope.runTest {
-            val failingFeedRepository: FeedRepository = feedRepository(
+            val failingSeenWarningRepository: SeenWarningRepository = seenWarningRepository(
                 seenWarningLocalDataSource = FailingSeenWarningLocalDataSource(exception = CancellationException("cancelled"))
             )
 
             assertFailsWith<CancellationException> {
-                failingFeedRepository.markSeen(warningIdentifier = "a")
+                failingSeenWarningRepository.markSeen(warningIdentifier = "a")
             }
         }
 }

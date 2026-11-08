@@ -16,10 +16,10 @@ import kotlin.test.assertEquals
 
 class DefaultGetWarningsTaskTest {
 
-    private val feedRepository = FakeFeedRepository()
+    private val warningsRepository = FakeWarningsRepository()
     private val getForecastWarningRequestTask = FakeGetForecastWarningRequestTask()
     private val getWarningsTask: GetWarningsTask = DefaultGetWarningsTask(
-        feedRepository = feedRepository,
+        warningsRepository = warningsRepository,
         getForecastWarningRequestTask = getForecastWarningRequestTask
     )
 
@@ -27,7 +27,7 @@ class DefaultGetWarningsTaskTest {
     fun `every warning is returned unfiltered`() =
         runTest {
             assertEquals<Either<Failure, List<AggregatedFeed>>>(
-                expected = feedRepository.result,
+                expected = warningsRepository.result,
                 actual = getWarningsTask()
             )
         }
@@ -38,13 +38,13 @@ class DefaultGetWarningsTaskTest {
             getWarningsTask()
             getWarningsTask()
 
-            assertEquals(expected = 1, actual = feedRepository.refreshCount)
+            assertEquals(expected = 1, actual = warningsRepository.refreshCount)
         }
 
     @Test
     fun `a failing feed fails the task`() =
         runTest {
-            feedRepository.result = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft()
+            warningsRepository.result = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft()
 
             assertEquals<Either<Failure, List<AggregatedFeed>>>(
                 expected = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft(),
@@ -59,7 +59,7 @@ class DefaultGetWarningsTaskTest {
 
             assertEquals(
                 expected = listOf<ForecastWarningRequest?>(FORECAST_WARNING_REQUEST),
-                actual = feedRepository.forecastWarningRequests
+                actual = warningsRepository.forecastWarningRequests
             )
         }
 
@@ -73,7 +73,7 @@ class DefaultGetWarningsTaskTest {
 
                 assertEquals(
                     expected = listOf<ForecastWarningRequest?>(null),
-                    actual = feedRepository.forecastWarningRequests
+                    actual = warningsRepository.forecastWarningRequests
                 )
                 assertEquals(
                     expected = listOf("Vadret API warnings are left out this time: STORAGE_FAILED"),

@@ -166,6 +166,8 @@
 
     <string name="county">county</string>
     <string name="clear_search">Clear search</string>
+    <string name="search_nothing_found">No place found by that name</string>
+    <string name="search">Search</string>
     <string name="place_municipality_county">%1$s, %2$s</string>
     <string name="search_failed">Search failed</string>
     <string name="search_results">Search results</string>
@@ -323,7 +325,6 @@
     <string name="notifications_weather">Weather</string>
     <string name="warning_alerts_summary">From SMHI</string>
     <string name="warning_level">Level</string>
-    <string name="strong_wind_alerts_summary">The evening before and the same day</string>
     <string name="places_not_followed">No warnings, at most 5 places are followed</string>
     <string name="slipperiness_possible">Slippery roads possible</string>
     <string name="slipperiness_high">High risk of slippery roads</string>
@@ -339,4 +340,13 @@
     <string name="slipperiness_estimate_explanation">Vadret API works out the risk from SMHI\'s forecast. It is not a warning from SMHI.</string>
     <string name="slipperiness_alerts">Slipperiness</string>
     <string name="slipperiness_alerts_summary">When the coming 24 hours may be slippery</string>
+    <string name="pollen_alerts">Pollen levels</string>
+    <string name="pollen_alerts_summary">For the pollen picked under Pollen</string>
+    <string name="pollen_alerts_need_allergens">Turn on pollen and pick the pollen you are allergic to under Pollen first.</string>
+    <string name="notifications_display">Display</string>
+    <string name="hour_format">Time format</string>
+    <string name="hour_format_24">24-hour</string>
+    <string name="hour_format_12">12-hour</string>
+    <string name="labs">Labs</string>
+    <string name="labs_footnote">Features still being tried out. They may change or go away.</string>
 </resources>

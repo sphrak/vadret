@@ -145,4 +145,15 @@
     <string name="slipperiness_estimate_explanation">Vadret API regner ut risikoen fra SMHIs prognose. Det er ikke et farevarsel fra SMHI.</string>
     <string name="slipperiness_alerts">Glatt føre</string>
     <string name="slipperiness_alerts_summary">Når det kan bli glatt det neste døgnet</string>
+    <string name="pollen_alerts">Pollennivåer</string>
+    <string name="pollen_alerts_summary">For pollen du har valgt under Pollen</string>
+    <string name="pollen_alerts_need_allergens">Slå på pollen og velg hvilke pollen du er allergisk mot under Pollen først.</string>
+    <string name="notifications_display">Visning</string>
+    <string name="hour_format">Tidsformat</string>
+    <string name="hour_format_24">24 timer</string>
+    <string name="hour_format_12">12 timer</string>
+    <string name="labs">Labs</string>
+    <string name="labs_footnote">Funksjoner som fortsatt testes. De kan endres eller forsvinne.</string>
+    <string name="search">Søk</string>
+    <string name="search_nothing_found">Fant ikke noe sted med det navnet</string>
 </resources>

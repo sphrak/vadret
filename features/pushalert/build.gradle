@@ -19,7 +19,7 @@ kotlin {
                 implementation project(':data:common')
                 implementation project(':data:favorite')
                 implementation project(':data:location')
-                implementation project(':data:pollen')
+                implementation project(':data:pollenpreference')
                 implementation project(':data:pushalert')
                 implementation project(':data:theme')
                 implementation project(':domain:followedplace')

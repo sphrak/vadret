@@ -159,7 +159,7 @@ private val smhiDetails: List<FeedDetail> = listOf(
     )
 )
 
-class DefaultFeedRepositoryTest {
+class DefaultWarningsRepositoryTest {
 
     private val testScope = TestScope(StandardTestDispatcher())
     private val clock = FixedClock(now = now)
@@ -167,7 +167,7 @@ class DefaultFeedRepositoryTest {
     private val krisinformationRemoteDataSource = FakeKrisinformationRemoteDataSource()
     private val forecastWarningRemoteDataSource = FakeForecastWarningRemoteDataSource()
     private val diskCache = FakeDiskCache()
-    private val feedRepository: FeedRepository = DefaultFeedRepository(
+    private val warningsRepository: WarningsRepository = DefaultWarningsRepository(
         smhiWarningRemoteDataSource = smhiWarningRemoteDataSource,
         krisinformationRemoteDataSource = krisinformationRemoteDataSource,
         forecastWarningRemoteDataSource = forecastWarningRemoteDataSource,
@@ -175,12 +175,11 @@ class DefaultFeedRepositoryTest {
             diskCache = diskCache,
             coroutineDispatcher = StandardTestDispatcher(scheduler = testScope.testScheduler)
         ),
-        seenWarningLocalDataSource = EmptySeenWarningLocalDataSource(),
         clock = clock
     )
 
     private suspend fun fetchFeed(forecastWarningRequest: ForecastWarningRequest? = null): Either<Failure, List<AggregatedFeed>> =
-        feedRepository.refreshAggregatedFeed(forecastWarningRequest = forecastWarningRequest).map { warningFeed: WarningFeed -> warningFeed.aggregatedFeeds }
+        warningsRepository.refreshAggregatedFeed(forecastWarningRequest = forecastWarningRequest).map { warningFeed: WarningFeed -> warningFeed.aggregatedFeeds }
 
     private fun Either<Failure, List<AggregatedFeed>>.identifiers(): List<String>? = (this as? Either.Right)?.b?.map { aggregatedFeed: AggregatedFeed -> aggregatedFeed.identifier }
 
@@ -489,7 +488,7 @@ class DefaultFeedRepositoryTest {
 
             assertEquals(
                 expected = fetchedFeed to fetchedFeed,
-                actual = feedRepository.getAggregatedFeed(forecastWarningRequest = null) to feedRepository.observeAggregatedFeed().first().map { warningFeed: WarningFeed? -> warningFeed?.aggregatedFeeds.orEmpty() }
+                actual = warningsRepository.getAggregatedFeed(forecastWarningRequest = null) to warningsRepository.observeAggregatedFeed().first().map { warningFeed: WarningFeed? -> warningFeed?.aggregatedFeeds.orEmpty() }
             )
             assertEquals(expected = 1, actual = smhiWarningRemoteDataSource.requestCount)
         }
@@ -748,7 +747,7 @@ class DefaultFeedRepositoryTest {
             )
 
             withRecordedLogs { recordingLogSink ->
-                assertEquals(expected = emptyList(), actual = feedRepository.getAggregatedFeed(forecastWarningRequest = null).identifiers())
+                assertEquals(expected = emptyList(), actual = warningsRepository.getAggregatedFeed(forecastWarningRequest = null).identifiers())
                 assertEquals(expected = 1, actual = smhiWarningRemoteDataSource.requestCount)
                 assertEquals(
                     expected = listOf(LogLevel.WARN),
@@ -840,7 +839,7 @@ class DefaultFeedRepositoryTest {
         testScope.runTest {
             fetchFeed()
             clock.now = now + 2.days
-            feedRepository.getAggregatedFeed(forecastWarningRequest = null)
+            warningsRepository.getAggregatedFeed(forecastWarningRequest = null)
 
             assertEquals(expected = 1, actual = smhiWarningRemoteDataSource.requestCount)
         }
@@ -854,7 +853,7 @@ class DefaultFeedRepositoryTest {
 
             assertEquals(
                 expected = 2 to now + 1.minutes,
-                actual = smhiWarningRemoteDataSource.requestCount to (feedRepository.observeAggregatedFeed().first() as Either.Right).b?.fetchedAt
+                actual = smhiWarningRemoteDataSource.requestCount to (warningsRepository.observeAggregatedFeed().first() as Either.Right).b?.fetchedAt
             )
         }
 
@@ -863,7 +862,7 @@ class DefaultFeedRepositoryTest {
         testScope.runTest {
             assertEquals<Either<Failure, WarningFeed?>>(
                 expected = null.asRight(),
-                actual = feedRepository.observeAggregatedFeed().first()
+                actual = warningsRepository.observeAggregatedFeed().first()
             )
         }
 
@@ -890,7 +889,7 @@ class DefaultFeedRepositoryTest {
             withRecordedLogs {
                 assertEquals<Pair<Either<Failure, List<AggregatedFeed>>, List<String>?>>(
                     expected = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft() to listOf("smhi-7-1"),
-                    actual = fetchFeed() to feedRepository.getAggregatedFeed(forecastWarningRequest = null).identifiers()
+                    actual = fetchFeed() to warningsRepository.getAggregatedFeed(forecastWarningRequest = null).identifiers()
                 )
             }
         }
@@ -1097,7 +1096,7 @@ class DefaultFeedRepositoryTest {
 
             assertEquals(
                 expected = fetched,
-                actual = feedRepository.getAggregatedFeed(forecastWarningRequest = null)
+                actual = warningsRepository.getAggregatedFeed(forecastWarningRequest = null)
             )
         }
 }

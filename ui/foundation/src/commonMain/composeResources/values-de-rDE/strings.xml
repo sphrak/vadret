@@ -182,4 +182,15 @@
     <string name="slipperiness_estimate_explanation">Vadret API berechnet das Risiko aus der Vorhersage des SMHI. Es ist keine Warnung des SMHI.</string>
     <string name="slipperiness_alerts">Glätte</string>
     <string name="slipperiness_alerts_summary">Wenn es in den nächsten 24 Stunden glatt werden kann</string>
+    <string name="pollen_alerts">Pollenbelastung</string>
+    <string name="pollen_alerts_summary">Für die unter Pollen gewählten Pollen</string>
+    <string name="pollen_alerts_need_allergens">Schalte zuerst Pollen ein und wähle unter Pollen, gegen welche Pollen du allergisch bist.</string>
+    <string name="notifications_display">Anzeige</string>
+    <string name="hour_format">Zeitformat</string>
+    <string name="hour_format_24">24 Stunden</string>
+    <string name="hour_format_12">12 Stunden</string>
+    <string name="labs">Labs</string>
+    <string name="labs_footnote">Funktionen, die noch erprobt werden. Sie können sich ändern oder wegfallen.</string>
+    <string name="search">Suchen</string>
+    <string name="search_nothing_found">Kein Ort mit diesem Namen gefunden</string>
 </resources>

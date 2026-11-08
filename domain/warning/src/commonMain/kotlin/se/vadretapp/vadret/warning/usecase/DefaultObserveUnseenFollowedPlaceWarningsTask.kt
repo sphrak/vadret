@@ -7,7 +7,8 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
-import se.vadretapp.vadret.aggregatedfeed.FeedRepository
+import se.vadretapp.vadret.aggregatedfeed.SeenWarningRepository
+import se.vadretapp.vadret.aggregatedfeed.WarningsRepository
 import se.vadretapp.vadret.aggregatedfeed.model.AggregatedFeed
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.followedplace.ObserveFollowedPlacesTask
@@ -17,7 +18,8 @@ import kotlin.time.Clock
 
 internal class DefaultObserveUnseenFollowedPlaceWarningsTask(
     private val observeFollowedPlacesTask: ObserveFollowedPlacesTask,
-    private val feedRepository: FeedRepository,
+    private val warningsRepository: WarningsRepository,
+    private val seenWarningRepository: SeenWarningRepository,
     private val getForecastWarningRequestTask: GetForecastWarningRequestTask,
     private val clock: Clock
 ) : ObserveUnseenFollowedPlaceWarningsTask {
@@ -28,7 +30,8 @@ internal class DefaultObserveUnseenFollowedPlaceWarningsTask(
             followedPlaces.onResult(
                 onError = { failure: Failure -> flowOf(value = failure.asLeft()) },
                 onSuccess = { places: List<FollowedPlace> ->
-                    feedRepository.observeUnseenWarnings(
+                    warningsRepository.observeUnseenWarnings(
+                        seenWarningRepository = seenWarningRepository,
                         warningPlaces = places.map { followedPlace: FollowedPlace -> followedPlace.toWarningPlace() },
                         isRefresh = isRefresh,
                         getForecastWarningRequestTask = getForecastWarningRequestTask,

@@ -1,7 +1,7 @@
 package se.vadretapp.vadret.pushalert
 
+import se.vadretapp.vadret.pushalert.model.HourFormat
 import se.vadretapp.vadret.pushalert.model.PollenAlertLevel
-import se.vadretapp.vadret.pushalert.model.PollenChoice
 import se.vadretapp.vadret.pushalert.model.PushAlertChoices
 import se.vadretapp.vadret.pushalert.model.WarningAlertLevel
 import kotlin.test.Test
@@ -17,17 +17,12 @@ class PushAlertChoicesTest {
             "without the temperature" to EVERYTHING.copy(temperatureTrend = false),
             "without strong wind" to EVERYTHING.copy(strongWind = false),
             "without slipperiness" to EVERYTHING.copy(slipperiness = false),
-            "without one pollen" to EVERYTHING.copy(pollenChoices = listOf(BIRCH_FROM_MODERATE))
+            "without pollen" to EVERYTHING.copy(pollenLowestLevel = null),
+            "another hour format" to EVERYTHING.copy(hourFormat = HourFormat.TWELVE_HOUR)
         )
         val wider = mapOf(
             "another warning level" to EVERYTHING.copy(warningLowestLevel = WarningAlertLevel.RED),
-            "another pollen level" to EVERYTHING.copy(
-                pollenChoices = listOf(
-                    BIRCH_FROM_MODERATE.copy(lowestLevel = PollenAlertLevel.HIGH),
-                    GRASS_FROM_LOW
-                )
-            ),
-            "another pollen" to EVERYTHING.copy(pollenChoices = listOf(BIRCH_FROM_MODERATE, GRASS_FROM_LOW, ALDER_FROM_LOW))
+            "another pollen level" to EVERYTHING.copy(pollenLowestLevel = PollenAlertLevel.LOW)
         )
 
         assertEquals(
@@ -35,9 +30,10 @@ class PushAlertChoicesTest {
             actual = (narrower + wider).mapValues { (_, pushAlertChoices) -> pushAlertChoices.isWithin(other = EVERYTHING) }
         )
         assertEquals(
-            expected = listOf(false, false, false, false),
+            expected = listOf(false, false, false, false, false),
             actual = listOf(
                 EVERYTHING.isWithin(other = EVERYTHING.copy(warningLowestLevel = null)),
+                EVERYTHING.isWithin(other = EVERYTHING.copy(pollenLowestLevel = null)),
                 EVERYTHING.isWithin(other = EVERYTHING.copy(temperatureTrend = false)),
                 EVERYTHING.isWithin(other = EVERYTHING.copy(strongWind = false)),
                 EVERYTHING.isWithin(other = EVERYTHING.copy(slipperiness = false))
@@ -66,11 +62,19 @@ class PushAlertChoicesTest {
     }
 
     @Test
+    fun hoursAreWrittenTheTwentyFourHourWayUntilChangedAndTurnNoAlertOn() {
+        assertEquals(
+            expected = HourFormat.TWENTY_FOUR_HOUR to false,
+            actual = PushAlertChoices.NOTHING_CHOSEN.hourFormat to PushAlertChoices.NOTHING_CHOSEN.copy(hourFormat = HourFormat.TWELVE_HOUR).isAnythingChosen()
+        )
+    }
+
+    @Test
     fun anyOneAlertTurnedOnIsEnoughForSomethingToBeChosen() {
         val choices = mapOf(
             "nothing" to PushAlertChoices.NOTHING_CHOSEN,
             "only warnings" to PushAlertChoices.NOTHING_CHOSEN.copy(warningLowestLevel = WarningAlertLevel.YELLOW),
-            "only pollen" to PushAlertChoices.NOTHING_CHOSEN.copy(pollenChoices = listOf(BIRCH_FROM_MODERATE)),
+            "only pollen" to PushAlertChoices.NOTHING_CHOSEN.copy(pollenLowestLevel = PollenAlertLevel.MODERATE),
             "only the temperature" to PushAlertChoices.NOTHING_CHOSEN.copy(temperatureTrend = true),
             "only strong wind" to PushAlertChoices.NOTHING_CHOSEN.copy(strongWind = true),
             "only slipperiness" to PushAlertChoices.NOTHING_CHOSEN.copy(slipperiness = true),
@@ -92,24 +96,13 @@ class PushAlertChoicesTest {
     }
 }
 
-private val BIRCH_FROM_MODERATE = PollenChoice(
-    pollenTypeId = "birch",
-    lowestLevel = PollenAlertLevel.MODERATE
-)
-private val GRASS_FROM_LOW = PollenChoice(
-    pollenTypeId = "grass",
-    lowestLevel = PollenAlertLevel.LOW
-)
-private val ALDER_FROM_LOW = PollenChoice(
-    pollenTypeId = "alder",
-    lowestLevel = PollenAlertLevel.LOW
-)
 private val EVERYTHING = PushAlertChoices(
     warningLowestLevel = WarningAlertLevel.YELLOW,
-    pollenChoices = listOf(BIRCH_FROM_MODERATE, GRASS_FROM_LOW),
+    pollenLowestLevel = PollenAlertLevel.MODERATE,
     temperatureTrend = true,
     strongWind = true,
     slipperiness = true,
+    hourFormat = HourFormat.TWENTY_FOUR_HOUR,
     isChosenPlaceNotified = true,
     notifiedFavoriteIds = emptySet()
 )

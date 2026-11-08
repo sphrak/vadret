@@ -137,4 +137,15 @@
     <string name="slipperiness_estimate_explanation">Vadret API wylicza ryzyko na podstawie prognozy SMHI. To nie jest ostrzeżenie SMHI.</string>
     <string name="slipperiness_alerts">Śliskość</string>
     <string name="slipperiness_alerts_summary">Gdy w ciągu najbliższej doby może być ślisko</string>
+    <string name="pollen_alerts">Stężenie pyłków</string>
+    <string name="pollen_alerts_summary">Dla pyłków wybranych w sekcji Pyłki</string>
+    <string name="pollen_alerts_need_allergens">Najpierw włącz pyłki i wybierz w sekcji Pyłki te, na które masz alergię.</string>
+    <string name="notifications_display">Wyświetlanie</string>
+    <string name="hour_format">Format godziny</string>
+    <string name="hour_format_24">24-godzinny</string>
+    <string name="hour_format_12">12-godzinny</string>
+    <string name="labs">Labs</string>
+    <string name="labs_footnote">Funkcje, które wciąż testujemy. Mogą się zmienić lub zniknąć.</string>
+    <string name="search">Szukaj</string>
+    <string name="search_nothing_found">Nie znaleziono miejsca o tej nazwie</string>
 </resources>

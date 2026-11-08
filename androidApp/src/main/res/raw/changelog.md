@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- 12h/24h format on notifications
+- Add labs section
 - Slipperiness warnings
 - App package name changed from `fi.kroon.vadret` to `se.vadretapp.vadret`
 - Add intervals to wind map legend

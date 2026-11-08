@@ -4,7 +4,7 @@ import io.github.sphrak.either.Either
 import io.github.sphrak.either.extension.asRight
 import io.github.sphrak.either.flatMap
 import io.github.sphrak.either.map
-import se.vadretapp.vadret.aggregatedfeed.FeedRepository
+import se.vadretapp.vadret.aggregatedfeed.WarningsRepository
 import se.vadretapp.vadret.aggregatedfeed.model.AggregatedFeed
 import se.vadretapp.vadret.aggregatedfeed.model.ForecastWarningRequest
 import se.vadretapp.vadret.aggregatedfeed.model.WarningFeed
@@ -12,16 +12,16 @@ import se.vadretapp.vadret.aggregatedfeed.model.WarningReference
 import se.vadretapp.vadret.common.Failure
 
 internal class DefaultGetReferencedWarningIdentifiersTask(
-    private val feedRepository: FeedRepository,
+    private val warningsRepository: WarningsRepository,
     private val getForecastWarningRequestTask: GetForecastWarningRequestTask
 ) : GetReferencedWarningIdentifiersTask {
 
     override suspend fun invoke(warningReference: WarningReference): Either<Failure, List<String>> {
         val forecastWarningRequest: ForecastWarningRequest? = getForecastWarningRequestTask.forecastWarningRequestOrNull()
-        return feedRepository.getAggregatedFeed(forecastWarningRequest = forecastWarningRequest).flatMap { aggregatedFeeds: List<AggregatedFeed> ->
+        return warningsRepository.getAggregatedFeed(forecastWarningRequest = forecastWarningRequest).flatMap { aggregatedFeeds: List<AggregatedFeed> ->
             val savedIdentifiers: List<String> = aggregatedFeeds.identifiersReferencedBy(warningReference = warningReference)
             if (savedIdentifiers.isEmpty()) {
-                feedRepository.refreshAggregatedFeed(forecastWarningRequest = forecastWarningRequest).map { warningFeed: WarningFeed ->
+                warningsRepository.refreshAggregatedFeed(forecastWarningRequest = forecastWarningRequest).map { warningFeed: WarningFeed ->
                     warningFeed.aggregatedFeeds.identifiersReferencedBy(warningReference = warningReference)
                 }
             } else {

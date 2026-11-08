@@ -70,7 +70,7 @@ internal class DefaultOpenPushAlertTask(
 private fun PushAlertChoices.isChosen(pushAlertKind: PushAlertKind): Boolean =
     when (pushAlertKind) {
         PushAlertKind.WARNING -> warningLowestLevel != null
-        PushAlertKind.POLLEN -> pollenChoices.isNotEmpty()
+        PushAlertKind.POLLEN -> pollenLowestLevel != null
         PushAlertKind.TEMPERATURE -> temperatureTrend
         PushAlertKind.WIND -> strongWind
         PushAlertKind.SLIPPERINESS -> slipperiness

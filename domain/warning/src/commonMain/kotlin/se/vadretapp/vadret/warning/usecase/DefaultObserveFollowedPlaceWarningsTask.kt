@@ -5,7 +5,7 @@ import io.github.sphrak.either.flatMap
 import io.github.sphrak.either.map
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
-import se.vadretapp.vadret.aggregatedfeed.FeedRepository
+import se.vadretapp.vadret.aggregatedfeed.WarningsRepository
 import se.vadretapp.vadret.aggregatedfeed.model.AggregatedFeed
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.followedplace.ObserveFollowedPlacesTask
@@ -18,7 +18,7 @@ import kotlin.time.Clock
 
 internal class DefaultObserveFollowedPlaceWarningsTask(
     private val observeFollowedPlacesTask: ObserveFollowedPlacesTask,
-    private val feedRepository: FeedRepository,
+    private val warningsRepository: WarningsRepository,
     private val getForecastWarningRequestTask: GetForecastWarningRequestTask,
     private val clock: Clock
 ) : ObserveFollowedPlaceWarningsTask {
@@ -26,7 +26,7 @@ internal class DefaultObserveFollowedPlaceWarningsTask(
     override fun invoke(isRefresh: Boolean): Flow<Either<Failure, FollowedPlaceWarnings>> =
         combine(
             flow = observeFollowedPlacesTask(),
-            flow2 = feedRepository.observeRefreshedFeed(
+            flow2 = warningsRepository.observeRefreshedFeed(
                 isRefresh = isRefresh,
                 getForecastWarningRequestTask = getForecastWarningRequestTask,
                 clock = clock

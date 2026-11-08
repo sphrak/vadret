@@ -74,10 +74,12 @@ class DefaultObserveUnseenWarningsTaskTest {
         publishedAt = publishedAt,
         polygons = listOf(aroundFunasdalen)
     )
-    private val feedRepository = FakeFeedRepository(result = listOf(newest, elsewhere, oldest).asRight())
+    private val warningsRepository = FakeWarningsRepository(result = listOf(newest, elsewhere, oldest).asRight())
+    private val seenWarningRepository = FakeSeenWarningRepository()
     private val clock = FixedClock(now = NOW)
     private val observeUnseenWarningsTask: ObserveUnseenWarningsTask = DefaultObserveUnseenWarningsTask(
-        feedRepository = feedRepository,
+        warningsRepository = warningsRepository,
+        seenWarningRepository = seenWarningRepository,
         getForecastWarningRequestTask = FakeGetForecastWarningRequestTask(),
         clock = clock
     )
@@ -106,7 +108,7 @@ class DefaultObserveUnseenWarningsTaskTest {
     @Test
     fun `a warning seen after it was published is left out but one updated since is kept`() =
         runTest {
-            feedRepository.seenWarnings.value = listOf(
+            seenWarningRepository.seenWarnings.value = listOf(
                 seen(
                     warningIdentifier = newest.identifier,
                     seenAt = newest.publishedAt
@@ -139,14 +141,14 @@ class DefaultObserveUnseenWarningsTaskTest {
             }
             advanceUntilIdle()
 
-            feedRepository.seenWarnings.value = listOf(
+            seenWarningRepository.seenWarnings.value = listOf(
                 seen(
                     warningIdentifier = elsewhere.identifier,
                     seenAt = publishedAt + 5.minutes
                 )
             ).asRight()
             advanceUntilIdle()
-            feedRepository.seenWarnings.value = listOf(
+            seenWarningRepository.seenWarnings.value = listOf(
                 seen(
                     warningIdentifier = newest.identifier,
                     seenAt = publishedAt + 5.minutes
@@ -162,13 +164,13 @@ class DefaultObserveUnseenWarningsTaskTest {
                 ),
                 actual = emitted
             )
-            assertEquals(expected = 1, actual = feedRepository.refreshCount)
+            assertEquals(expected = 1, actual = warningsRepository.refreshCount)
         }
 
     @Test
     fun `a failing feed is emitted once`() =
         runTest {
-            feedRepository.result = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft()
+            warningsRepository.result = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft()
 
             assertEquals<List<Either<Failure, List<AggregatedFeed>>>>(
                 expected = listOf(Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft()),
@@ -182,7 +184,7 @@ class DefaultObserveUnseenWarningsTaskTest {
     @Test
     fun `failing seen storage is emitted`() =
         runTest {
-            feedRepository.seenWarnings.value = Failure(errorCode = ErrorCode.STORAGE_FAILED).asLeft()
+            seenWarningRepository.seenWarnings.value = Failure(errorCode = ErrorCode.STORAGE_FAILED).asLeft()
 
             assertEquals<Either<Failure, List<AggregatedFeed>>>(
                 expected = Failure(errorCode = ErrorCode.STORAGE_FAILED).asLeft(),
@@ -197,7 +199,7 @@ class DefaultObserveUnseenWarningsTaskTest {
         savedAgo: Duration,
         isRefresh: Boolean
     ): Int {
-        feedRepository.savedFeed.value = WarningFeed(
+        warningsRepository.savedFeed.value = WarningFeed(
             aggregatedFeeds = listOf(newest),
             fetchedAt = NOW - savedAgo
         )
@@ -209,7 +211,7 @@ class DefaultObserveUnseenWarningsTaskTest {
         }
         advanceUntilIdle()
         observing.cancel()
-        return feedRepository.refreshCount
+        return warningsRepository.refreshCount
     }
 
     @Test
@@ -257,8 +259,8 @@ class DefaultObserveUnseenWarningsTaskTest {
                 source = FeedSource.VADRET_API,
                 polygons = listOf(aroundFunasdalen)
             )
-            feedRepository.result = listOf(estimate, newest).asRight()
-            feedRepository.seenWarnings.value = listOf(
+            warningsRepository.result = listOf(estimate, newest).asRight()
+            seenWarningRepository.seenWarnings.value = listOf(
                 seen(
                     warningIdentifier = estimate.identifier,
                     seenAt = publishedAt

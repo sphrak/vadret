@@ -2,7 +2,6 @@ package se.vadretapp.vadret.pushalert
 
 import io.github.sphrak.either.extension.asLeft
 import io.github.sphrak.either.extension.asRight
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -14,12 +13,12 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
-import se.vadretapp.vadret.pollen.model.PollenType
+import se.vadretapp.vadret.pushalert.model.HourFormat
 import se.vadretapp.vadret.pushalert.model.PollenAlertLevel
-import se.vadretapp.vadret.pushalert.model.PollenChoice
 import se.vadretapp.vadret.pushalert.model.PushAlertChoices
 import se.vadretapp.vadret.pushalert.model.PushAlertPlace
 import se.vadretapp.vadret.pushalert.model.WarningAlertLevel
+import se.vadretapp.vadret.pushalert.usecase.DefaultObservePollenAllergensTask
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -314,82 +313,142 @@ class PushAlertsViewModelTest {
     }
 
     @Test
-    fun aPollenTypeIsFollowedAtTheChosenLevelAndTheLevelMovesThemAll() = runTest(context = testDispatcher) {
+    fun pollenIsTurnedOnFromModerateToHighAndItsLevelCanBeMovedBeforeItIsTurnedOff() = runTest(context = testDispatcher) {
         val savePushAlertChoicesTask = FakeSavePushAlertChoicesTask()
         val viewModel = startedViewModel(
             choices = WARNINGS_FROM_YELLOW,
             savePushAlertChoicesTask = savePushAlertChoicesTask
         )
 
-        viewModel.onEvent(
-
-            event = PushAlertsEvent.OnPollenTypeToggled(
-
-                pollenTypeId = BIRCH.pollenId,
-
-                isEnabled = true
-
-            )
-
-        )
-        advanceUntilIdle()
-        viewModel.onEvent(
-            event = PushAlertsEvent.OnPollenTypeToggled(
-                pollenTypeId = GRASS.pollenId,
-                isEnabled = true
-            )
-        )
-        advanceUntilIdle()
-        viewModel.onEvent(event = PushAlertsEvent.OnPollenLevelSelected(pollenAlertLevel = PollenAlertLevel.HIGH_TO_VERY_HIGH))
-        advanceUntilIdle()
-        viewModel.onEvent(
-            event = PushAlertsEvent.OnPollenTypeToggled(
-                pollenTypeId = BIRCH.pollenId,
-                isEnabled = false
-            )
-        )
-        advanceUntilIdle()
+        listOf(
+            PushAlertsEvent.OnPollenAlertsToggled(isEnabled = true),
+            PushAlertsEvent.OnPollenLevelSelected(pollenAlertLevel = PollenAlertLevel.HIGH_TO_VERY_HIGH),
+            PushAlertsEvent.OnPollenAlertsToggled(isEnabled = false)
+        ).forEach { event: PushAlertsEvent ->
+            viewModel.onEvent(event = event)
+            advanceUntilIdle()
+        }
 
         assertEquals(
-            expected = listOf(
-                listOf(
-                    PollenChoice(
-                        pollenTypeId = BIRCH.pollenId,
-                        lowestLevel = PollenAlertLevel.MODERATE_TO_HIGH
-                    )
-                ),
-                listOf(
-                    PollenChoice(
-                        pollenTypeId = BIRCH.pollenId,
-                        lowestLevel = PollenAlertLevel.MODERATE_TO_HIGH
-                    ),
-                    PollenChoice(
-                        pollenTypeId = GRASS.pollenId,
-                        lowestLevel = PollenAlertLevel.MODERATE_TO_HIGH
-                    )
-                ),
-                listOf(
-                    PollenChoice(
-                        pollenTypeId = BIRCH.pollenId,
-                        lowestLevel = PollenAlertLevel.HIGH_TO_VERY_HIGH
-                    ),
-                    PollenChoice(
-                        pollenTypeId = GRASS.pollenId,
-                        lowestLevel = PollenAlertLevel.HIGH_TO_VERY_HIGH
-                    )
-                ),
-                listOf(
-                    PollenChoice(
-                        pollenTypeId = GRASS.pollenId,
-                        lowestLevel = PollenAlertLevel.HIGH_TO_VERY_HIGH
+            expected = listOf(PollenAlertLevel.MODERATE_TO_HIGH, PollenAlertLevel.HIGH_TO_VERY_HIGH, null),
+            actual = savePushAlertChoicesTask.saved.map { pushAlertChoices -> pushAlertChoices.pollenLowestLevel }
+        )
+    }
+
+    @Test
+    fun withoutAllergensPickedForPollenTurningPollenOnSaysWhyAndSavesNothing() = runTest(context = testDispatcher) {
+        val shown = listOf(
+            NO_ALLERGENS,
+            BIRCH_ALLERGY.copy(isPollenEnabled = false)
+        ).map { pollenPreferences ->
+            val savePushAlertChoicesTask = FakeSavePushAlertChoicesTask()
+            val viewModel = startedViewModel(
+                choices = WARNINGS_FROM_YELLOW,
+                savePushAlertChoicesTask = savePushAlertChoicesTask,
+                pollenPreferenceRepository = FakePollenPreferenceRepository(pollenPreferences = pollenPreferences.asRight())
+            )
+            viewModel.onEvent(event = PushAlertsEvent.OnPollenAlertsToggled(isEnabled = true))
+            advanceUntilIdle()
+            val isExplained = viewModel.state.value.isNoAllergensDialogVisible
+            viewModel.onEvent(event = PushAlertsEvent.OnNoAllergensDialogDismissed)
+            advanceUntilIdle()
+            Triple(
+                first = isExplained,
+                second = viewModel.state.value.isNoAllergensDialogVisible,
+                third = savePushAlertChoicesTask.saved to viewModel.state.value.choices.pollenLowestLevel
+            )
+        }
+
+        assertEquals(
+            expected = List(size = 2) {
+                Triple(
+                    first = true,
+                    second = false,
+                    third = Pair<List<PushAlertChoices>, PollenAlertLevel?>(
+                        first = emptyList(),
+                        second = null
                     )
                 )
-            ),
-            actual = savePushAlertChoicesTask.saved.map { pushAlertChoices -> pushAlertChoices.pollenChoices }
+            },
+            actual = shown
+        )
+    }
+
+    @Test
+    fun pollenCanBeTurnedOffEvenAfterTheLastAllergenIsDropped() = runTest(context = testDispatcher) {
+        val savePushAlertChoicesTask = FakeSavePushAlertChoicesTask()
+        val viewModel = startedViewModel(
+            choices = WARNINGS_FROM_YELLOW.copy(pollenLowestLevel = PollenAlertLevel.HIGH),
+            savePushAlertChoicesTask = savePushAlertChoicesTask,
+            pollenPreferenceRepository = FakePollenPreferenceRepository(pollenPreferences = NO_ALLERGENS.asRight())
+        )
+
+        viewModel.onEvent(event = PushAlertsEvent.OnPollenAlertsToggled(isEnabled = false))
+        advanceUntilIdle()
+
+        assertEquals(
+            expected = listOf<PollenAlertLevel?>(null) to false,
+            actual = savePushAlertChoicesTask.saved.map { pushAlertChoices -> pushAlertChoices.pollenLowestLevel } to viewModel.state.value.isNoAllergensDialogVisible
+        )
+    }
+
+    @Test
+    fun allergensThatCannotBeReadAreShownAsTheFailure() = runTest(context = testDispatcher) {
+        val viewModel = startedViewModel(
+            choices = WARNINGS_FROM_YELLOW,
+            pollenPreferenceRepository = FakePollenPreferenceRepository(pollenPreferences = Failure(errorCode = ErrorCode.STORAGE_FAILED).asLeft())
+        )
+
+        assertEquals(
+            expected = Failure(errorCode = ErrorCode.STORAGE_FAILED) to false,
+            actual = viewModel.state.value.failure to viewModel.state.value.hasPollenAllergens
+        )
+    }
+
+    @Test
+    fun theHourFormatIsSavedAndSentEvenWithNothingChosenAndWithoutAskingForNotifications() = runTest(context = testDispatcher) {
+        val savePushAlertChoicesTask = FakeSavePushAlertChoicesTask()
+        val syncPushAlertsTask = FakeSyncPushAlertsTask()
+        val viewModel = startedViewModel(
+            savePushAlertChoicesTask = savePushAlertChoicesTask,
+            syncPushAlertsTask = syncPushAlertsTask,
+            isOutsideSwedenTask = FakeIsOutsideSwedenTask(isOutsideSweden = true)
+        )
+
+        viewModel.onEvent(event = PushAlertsEvent.OnHourFormatRowClicked)
+        advanceUntilIdle()
+        val isDialogShown = viewModel.state.value.isHourFormatDialogVisible
+        viewModel.onEvent(event = PushAlertsEvent.OnHourFormatSelected(hourFormat = HourFormat.TWELVE_HOUR))
+        advanceUntilIdle()
+
+        assertEquals(
+            expected = listOf(true, false, false, false),
+            actual = listOf(
+                isDialogShown,
+                viewModel.state.value.isHourFormatDialogVisible,
+                viewModel.state.value.pendingChoices != null,
+                viewModel.state.value.isOutsideSwedenDialogVisible
+            )
         )
         assertEquals(
-            expected = setOf(GRASS.pollenId) to PollenAlertLevel.HIGH_TO_VERY_HIGH,
-            actual = viewModel.state.value.chosenPollenTypeIds to viewModel.state.value.pollenLevel
+            expected = listOf(PushAlertChoices.NOTHING_CHOSEN.copy(hourFormat = HourFormat.TWELVE_HOUR)) to 1,
+            actual = savePushAlertChoicesTask.saved to syncPushAlertsTask.syncs
+        )
+    }
+
+    @Test
+    fun theHourFormatDialogClosesWithoutSavingWhenDismissed() = runTest(context = testDispatcher) {
+        val savePushAlertChoicesTask = FakeSavePushAlertChoicesTask()
+        val viewModel = startedViewModel(savePushAlertChoicesTask = savePushAlertChoicesTask)
+
+        viewModel.onEvent(event = PushAlertsEvent.OnHourFormatRowClicked)
+        advanceUntilIdle()
+        viewModel.onEvent(event = PushAlertsEvent.OnHourFormatDialogDismissed)
+        advanceUntilIdle()
+
+        assertEquals(
+            expected = false to emptyList<PushAlertChoices>(),
+            actual = viewModel.state.value.isHourFormatDialogVisible to savePushAlertChoicesTask.saved
         )
     }
 
@@ -461,14 +520,7 @@ class PushAlertsViewModelTest {
     @Test
     fun outsideSwedenAChangedLevelIsNotSavedAndTheShownLevelStays() = runTest(context = testDispatcher) {
         val savePushAlertChoicesTask = FakeSavePushAlertChoicesTask()
-        val pollenFromModerate = WARNINGS_FROM_YELLOW.copy(
-            pollenChoices = listOf(
-                PollenChoice(
-                    pollenTypeId = BIRCH.pollenId,
-                    lowestLevel = PollenAlertLevel.MODERATE
-                )
-            )
-        )
+        val pollenFromModerate = WARNINGS_FROM_YELLOW.copy(pollenLowestLevel = PollenAlertLevel.MODERATE)
         val viewModel = startedViewModel(
             choices = pollenFromModerate,
             savePushAlertChoicesTask = savePushAlertChoicesTask,
@@ -479,10 +531,14 @@ class PushAlertsViewModelTest {
         advanceUntilIdle()
 
         assertEquals(
-            expected = Triple(emptyList<PushAlertChoices>(), PollenAlertLevel.MODERATE, true),
+            expected = Triple<List<PushAlertChoices>, PollenAlertLevel?, Boolean>(
+                first = emptyList(),
+                second = PollenAlertLevel.MODERATE,
+                third = true
+            ),
             actual = Triple(
                 savePushAlertChoicesTask.saved,
-                viewModel.state.value.pollenLevel,
+                viewModel.state.value.choices.pollenLowestLevel,
                 viewModel.state.value.isOutsideSwedenDialogVisible
             )
         )
@@ -633,52 +689,6 @@ class PushAlertsViewModelTest {
     }
 
     @Test
-    fun nothingShowsUntilThePollenTypesAreInPlaceSoEverySectionShowsAtOnce() = runTest(context = testDispatcher) {
-        val observePollenTypesTask = FakeObservePollenTypesTask(pollenTypes = CompletableDeferred())
-        val viewModel = startedViewModel(
-            choices = WARNINGS_FROM_YELLOW,
-            observePollenTypesTask = observePollenTypesTask
-        )
-        val isLoadingBefore = viewModel.state.value.isLoading
-        observePollenTypesTask.pollenTypes.complete(value = listOf(BIRCH, GRASS).asRight())
-        advanceUntilIdle()
-
-        assertEquals(
-            expected = Triple(
-                first = true,
-                second = false,
-                third = WARNINGS_FROM_YELLOW to listOf(BIRCH, GRASS)
-            ),
-            actual = Triple(
-                first = isLoadingBefore,
-                second = viewModel.state.value.isLoading,
-                third = viewModel.state.value.choices to viewModel.state.value.pollenTypes
-            )
-        )
-    }
-
-    @Test
-    fun pollenTypesThatCannotBeLoadedAreSaidToBeMissingWithoutADialog() = runTest(context = testDispatcher) {
-        val viewModel = startedViewModel(
-            choices = WARNINGS_FROM_YELLOW,
-            observePollenTypesTask = FakeObservePollenTypesTask(pollenTypes = CompletableDeferred(value = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft()))
-        )
-
-        assertEquals(
-            expected = Triple(
-                first = false,
-                second = true,
-                third = null
-            ),
-            actual = Triple(
-                first = viewModel.state.value.isLoading,
-                second = viewModel.state.value.arePollenTypesUnavailable,
-                third = viewModel.state.value.failure
-            )
-        )
-    }
-
-    @Test
     fun aPlaceTheServerDoesNotCoverIsExplainedAsOutsideSweden() = runTest(context = testDispatcher) {
         val viewModel = startedViewModel(
             choices = WARNINGS_FROM_YELLOW,
@@ -727,8 +737,8 @@ class PushAlertsViewModelTest {
         syncPushAlertsTask: FakeSyncPushAlertsTask = FakeSyncPushAlertsTask(),
         observePushAlertSyncPendingTask: FakeObservePushAlertSyncPendingTask = FakeObservePushAlertSyncPendingTask(),
         isOutsideSwedenTask: FakeIsOutsideSwedenTask = FakeIsOutsideSwedenTask(),
-        observePollenTypesTask: FakeObservePollenTypesTask = FakeObservePollenTypesTask(pollenTypes = CompletableDeferred(value = listOf(BIRCH, GRASS).asRight())),
-        observePushAlertPlacesTask: FakeObservePushAlertPlacesTask = FakeObservePushAlertPlacesTask(places = PLACES)
+        observePushAlertPlacesTask: FakeObservePushAlertPlacesTask = FakeObservePushAlertPlacesTask(places = PLACES),
+        pollenPreferenceRepository: FakePollenPreferenceRepository = FakePollenPreferenceRepository(pollenPreferences = BIRCH_ALLERGY.asRight())
     ): PushAlertsViewModel {
         val viewModel = PushAlertsViewModel(
             observePushAlertChoicesTask = FakeObservePushAlertChoicesTask(choices = choices),
@@ -736,7 +746,7 @@ class PushAlertsViewModelTest {
             observePushAlertSyncPendingTask = observePushAlertSyncPendingTask,
             savePushAlertChoicesTask = savePushAlertChoicesTask,
             syncPushAlertsTask = syncPushAlertsTask,
-            observePollenTypesTask = observePollenTypesTask,
+            observePollenAllergensTask = DefaultObservePollenAllergensTask(pollenPreferenceRepository = pollenPreferenceRepository),
             isOutsideSwedenTask = isOutsideSwedenTask,
             coroutineDispatcher = testDispatcher
         )
@@ -746,25 +756,17 @@ class PushAlertsViewModelTest {
     }
 }
 
-private val BIRCH = PollenType(
-    pollenId = "2a2a2a2a-2a2a-4a2a-aa2a-2a313a323236",
-    name = "Björk",
-    hasForecasts = true
-)
-private val GRASS = PollenType(
-    pollenId = "2a2a2a2a-2a2a-4a2a-aa2a-2a313a323237",
-    name = "Gräs",
-    hasForecasts = true
-)
 private val WARNINGS_FROM_YELLOW = PushAlertChoices(
     warningLowestLevel = WarningAlertLevel.YELLOW,
-    pollenChoices = emptyList(),
+    pollenLowestLevel = null,
     temperatureTrend = false,
     strongWind = false,
     slipperiness = false,
+    hourFormat = HourFormat.TWENTY_FOUR_HOUR,
     isChosenPlaceNotified = true,
     notifiedFavoriteIds = emptySet()
 )
+private val BIRCH_ALLERGY = NO_ALLERGENS.copy(allergenPollenIds = setOf("2a2a2a2a-2a2a-4a2a-aa2a-2a313a323236"))
 private val UPPSALA = PushAlertPlace.SavedPlace(
     favoriteId = "favorite-uppsala",
     name = "Uppsala"

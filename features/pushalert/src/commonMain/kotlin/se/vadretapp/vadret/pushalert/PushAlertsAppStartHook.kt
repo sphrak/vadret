@@ -3,8 +3,8 @@ package se.vadretapp.vadret.pushalert
 import io.github.sphrak.either.Either
 import io.github.sphrak.either.extension.onResult
 import io.github.sphrak.either.map
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.map
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.followedplace.ObserveFollowedPlacesTask
@@ -12,20 +12,26 @@ import se.vadretapp.vadret.followedplace.model.FollowedPlace
 import se.vadretapp.vadret.lifecycle.AppStartHook
 import se.vadretapp.vadret.logging.Logger
 import se.vadretapp.vadret.logging.LoggerFactory
+import se.vadretapp.vadret.pushalert.usecase.ObservePollenAllergensTask
 import se.vadretapp.vadret.pushalert.usecase.SyncPushAlertsTask
 
 internal class PushAlertsAppStartHook(
     private val syncPushAlertsTask: SyncPushAlertsTask,
-    private val observeFollowedPlacesTask: ObserveFollowedPlacesTask
+    private val observeFollowedPlacesTask: ObserveFollowedPlacesTask,
+    private val observePollenAllergensTask: ObservePollenAllergensTask
 ) : AppStartHook {
 
-    // The server learns of a place chosen or saved anywhere in the app, not only on the push alert settings.
+    // The server learns of a place chosen or saved, or an allergen picked, anywhere in the app, not only on the push
+    // alert settings. The first sync waits for the first places and allergens, so a change made while it runs is
+    // already followed and syncs again.
     override suspend fun onAppStart() {
-        sync()
-        observeFollowedPlacesTask()
-            .map { followedPlaces: Either<Failure, List<FollowedPlace>> -> followedPlaces.map { places: List<FollowedPlace> -> places.coordinates() } }
-            .distinctUntilChanged()
-            .drop(count = 1)
+        combine(
+            flow = observeFollowedPlacesTask()
+                .map { followedPlaces: Either<Failure, List<FollowedPlace>> ->
+                    followedPlaces.map { places: List<FollowedPlace> -> places.coordinates() }
+                }.distinctUntilChanged(),
+            flow2 = observePollenAllergensTask().distinctUntilChanged()
+        ) { _: Either<Failure, List<Pair<Double, Double>>>, _: Either<Failure, Set<String>> -> }
             .collect { sync() }
     }
 

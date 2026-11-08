@@ -18,7 +18,6 @@ import se.vadretapp.vadret.language.model.AppLanguage
 import se.vadretapp.vadret.settings.model.RowSummary
 import se.vadretapp.vadret.settings.usecase.DefaultGetSettingsTask
 import se.vadretapp.vadret.settings.usecase.DefaultObserveDeveloperModeTask
-import se.vadretapp.vadret.settings.usecase.DefaultSetHourlyForecastTask
 import se.vadretapp.vadret.settings.usecase.DefaultSetLanguageTask
 import se.vadretapp.vadret.settings.usecase.DefaultSetThemeTask
 import se.vadretapp.vadret.theme.model.Theme
@@ -63,7 +62,6 @@ class SettingsViewModelTest {
             ),
             setThemeTask = DefaultSetThemeTask(themeRepository = themeRepository),
             setLanguageTask = DefaultSetLanguageTask(languageRepository = languageRepository),
-            setHourlyForecastTask = DefaultSetHourlyForecastTask(forecastPreferenceRepository = forecastPreferenceRepository),
             observeLocationChoicesTask = ObserveLocationChoicesTask(
                 favoriteRepository = favoriteRepository,
                 locationRepository = locationRepository
@@ -137,18 +135,6 @@ class SettingsViewModelTest {
             advanceUntilIdle()
 
             assertEquals(expected = RowSummary.Plain(text = "Umeå"), actual = settingsViewModel.state.value.placesSummary)
-        }
-
-    @Test
-    fun `turning the hourly forecast on is stored and shown`() =
-        testScope.runTest {
-            val settingsViewModel: SettingsViewModel = viewModel()
-            advanceUntilIdle()
-
-            settingsViewModel.onEvent(event = SettingsEvent.OnHourlyForecastToggled(isHourlyForecastEnabled = true))
-            advanceUntilIdle()
-
-            assertEquals(expected = true, actual = settingsViewModel.state.value.settings?.isHourlyForecastEnabled)
         }
 
     @Test

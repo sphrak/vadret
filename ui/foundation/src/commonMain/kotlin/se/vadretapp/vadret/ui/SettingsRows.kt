@@ -121,7 +121,8 @@ internal fun rowLeadingContent(iconResource: DrawableResource?): (@Composable ()
         {
             Icon(
                 painter = painterResource(resource = iconResource),
-                contentDescription = null
+                contentDescription = null,
+                modifier = Modifier.settingsRowIconPadding()
             )
         }
     } else {
@@ -173,7 +174,8 @@ fun SettingsNote(
         leadingContent = {
             Icon(
                 painter = painterResource(resource = Res.drawable.ic_info),
-                contentDescription = null
+                contentDescription = null,
+                modifier = Modifier.settingsRowIconPadding()
             )
         },
         colors = settingsRowColors(),

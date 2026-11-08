@@ -13,17 +13,13 @@ import se.vadretapp.vadret.aggregatedfeed.extension.toAggregatedFeedEntities
 import se.vadretapp.vadret.aggregatedfeed.extension.toAggregatedFeedEntity
 import se.vadretapp.vadret.aggregatedfeed.extension.toAggregatedFeeds
 import se.vadretapp.vadret.aggregatedfeed.extension.toFailure
-import se.vadretapp.vadret.aggregatedfeed.extension.toSeenWarning
 import se.vadretapp.vadret.aggregatedfeed.extension.toWarningFeed
 import se.vadretapp.vadret.aggregatedfeed.local.AggregatedFeedCacheEntity
 import se.vadretapp.vadret.aggregatedfeed.local.AggregatedFeedEntity
 import se.vadretapp.vadret.aggregatedfeed.local.AggregatedFeedLocalDataSource
-import se.vadretapp.vadret.aggregatedfeed.local.SeenWarningEntity
-import se.vadretapp.vadret.aggregatedfeed.local.SeenWarningLocalDataSource
 import se.vadretapp.vadret.aggregatedfeed.model.AggregatedFeed
 import se.vadretapp.vadret.aggregatedfeed.model.FeedSource
 import se.vadretapp.vadret.aggregatedfeed.model.ForecastWarningRequest
-import se.vadretapp.vadret.aggregatedfeed.model.SeenWarning
 import se.vadretapp.vadret.aggregatedfeed.model.WarningFeed
 import se.vadretapp.vadret.aggregatedfeed.remote.ForecastWarningRemoteDataSource
 import se.vadretapp.vadret.aggregatedfeed.remote.KrisinformationFeedDto
@@ -40,14 +36,13 @@ import kotlin.time.Clock
 
 private val logger: Logger = LoggerFactory.getLogger(tag = "se.vadretapp.vadret.aggregatedfeed")
 
-internal class DefaultFeedRepository(
+internal class DefaultWarningsRepository(
     private val smhiWarningRemoteDataSource: SmhiWarningRemoteDataSource,
     private val krisinformationRemoteDataSource: KrisinformationRemoteDataSource,
     private val forecastWarningRemoteDataSource: ForecastWarningRemoteDataSource,
     private val aggregatedFeedLocalDataSource: AggregatedFeedLocalDataSource,
-    private val seenWarningLocalDataSource: SeenWarningLocalDataSource,
     private val clock: Clock
-) : FeedRepository {
+) : WarningsRepository {
 
     override suspend fun getAggregatedFeed(forecastWarningRequest: ForecastWarningRequest?): Either<Failure, List<AggregatedFeed>> =
         either {
@@ -71,31 +66,6 @@ internal class DefaultFeedRepository(
     override suspend fun refreshAggregatedFeed(forecastWarningRequest: ForecastWarningRequest?): Either<Failure, WarningFeed> =
         either { fetchAggregatedFeed(forecastWarningRequest = forecastWarningRequest).toWarningFeed() }
             .catch { exception: Exception -> exception.toFailure() }
-
-    override fun observeSeenWarnings(): Flow<Either<Failure, List<SeenWarning>>> =
-        seenWarningLocalDataSource
-            .observeSeenWarnings()
-            .map<List<SeenWarningEntity>, Either<Failure, List<SeenWarning>>> { seenWarningEntities: List<SeenWarningEntity> ->
-                seenWarningEntities
-                    .map { seenWarningEntity: SeenWarningEntity -> seenWarningEntity.toSeenWarning() }
-                    .asRight()
-            }.catch { throwable: Throwable ->
-                if (throwable is Exception) {
-                    emit(throwable.toFailure().asLeft())
-                } else {
-                    throw throwable
-                }
-            }
-
-    override suspend fun markSeen(warningIdentifier: String): Either<Failure, Unit> =
-        either {
-            seenWarningLocalDataSource.markSeen(
-                seenWarningEntity = SeenWarningEntity(
-                    warningIdentifier = warningIdentifier,
-                    seenAtEpochMillis = clock.now().toEpochMilliseconds()
-                )
-            )
-        }.catch { exception: Exception -> exception.toFailure() }
 
     private suspend fun fetchAggregatedFeed(forecastWarningRequest: ForecastWarningRequest?): AggregatedFeedCacheEntity {
         val fetchedFeed = AggregatedFeedCacheEntity(

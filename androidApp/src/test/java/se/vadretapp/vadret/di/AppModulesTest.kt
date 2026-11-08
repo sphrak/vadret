@@ -20,6 +20,7 @@ import se.vadretapp.vadret.forecastwarning.WarningViewModel
 import se.vadretapp.vadret.radar.RadarViewModel
 import se.vadretapp.vadret.settings.AboutViewModel
 import se.vadretapp.vadret.settings.DeveloperViewModel
+import se.vadretapp.vadret.settings.LabsViewModel
 import se.vadretapp.vadret.settings.LicensesViewModel
 import se.vadretapp.vadret.settings.PlacesViewModel
 import se.vadretapp.vadret.settings.PollenSettingsViewModel
@@ -73,6 +74,7 @@ class AppModulesTest {
         assertNotNull(actual = koin.get<SettingsViewModel>())
         assertNotNull(actual = koin.get<AboutViewModel>())
         assertNotNull(actual = koin.get<DeveloperViewModel>())
+        assertNotNull(actual = koin.get<LabsViewModel>())
         assertNotNull(actual = koin.get<LicensesViewModel>())
         assertNotNull(actual = koin.get<PlacesViewModel>())
         assertNotNull(actual = koin.get<PollenSettingsViewModel>())

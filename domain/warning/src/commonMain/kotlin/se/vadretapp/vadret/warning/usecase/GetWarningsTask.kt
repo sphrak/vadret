@@ -1,7 +1,7 @@
 package se.vadretapp.vadret.warning.usecase
 
 import io.github.sphrak.either.Either
-import se.vadretapp.vadret.aggregatedfeed.FeedRepository
+import se.vadretapp.vadret.aggregatedfeed.WarningsRepository
 import se.vadretapp.vadret.aggregatedfeed.model.AggregatedFeed
 import se.vadretapp.vadret.common.Failure
 
@@ -11,10 +11,10 @@ interface GetWarningsTask {
 }
 
 fun GetWarningsTask(
-    feedRepository: FeedRepository,
+    warningsRepository: WarningsRepository,
     getForecastWarningRequestTask: GetForecastWarningRequestTask
 ): GetWarningsTask =
     DefaultGetWarningsTask(
-        feedRepository = feedRepository,
+        warningsRepository = warningsRepository,
         getForecastWarningRequestTask = getForecastWarningRequestTask
     )

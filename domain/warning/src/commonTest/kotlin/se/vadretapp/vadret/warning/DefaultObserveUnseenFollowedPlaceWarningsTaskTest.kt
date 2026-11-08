@@ -55,12 +55,14 @@ class DefaultObserveUnseenFollowedPlaceWarningsTaskTest {
             )
         )
     )
-    private val feedRepository = FakeFeedRepository(result = listOf(inFunasdalen, onGotland).asRight())
+    private val warningsRepository = FakeWarningsRepository(result = listOf(inFunasdalen, onGotland).asRight())
+    private val seenWarningRepository = FakeSeenWarningRepository()
     private val clock = FixedClock(now = NOW)
     private val observeFollowedPlacesTask = FakeObserveFollowedPlacesTask()
     private val observeUnseenFollowedPlaceWarningsTask: ObserveUnseenFollowedPlaceWarningsTask = DefaultObserveUnseenFollowedPlaceWarningsTask(
         observeFollowedPlacesTask = observeFollowedPlacesTask,
-        feedRepository = feedRepository,
+        warningsRepository = warningsRepository,
+        seenWarningRepository = seenWarningRepository,
         getForecastWarningRequestTask = FakeGetForecastWarningRequestTask(),
         clock = clock
     )
@@ -80,7 +82,7 @@ class DefaultObserveUnseenFollowedPlaceWarningsTaskTest {
     fun `a warning seen since it was published is left out`() =
         runTest {
             observeFollowedPlacesTask.followedPlaces.value = listOf(followedFunasdalen, followedVisby).asRight()
-            feedRepository.seenWarnings.value = listOf(
+            seenWarningRepository.seenWarnings.value = listOf(
                 SeenWarning(
                     warningIdentifier = onGotland.identifier,
                     seenAt = publishedAt

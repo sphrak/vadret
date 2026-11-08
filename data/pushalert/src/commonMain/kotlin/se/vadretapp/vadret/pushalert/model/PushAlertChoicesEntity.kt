@@ -7,6 +7,8 @@ import kotlinx.serialization.Serializable
 internal data class PushAlertChoicesEntity(
     @SerialName(value = "warning_lowest_level")
     val warningLowestLevel: String? = null,
+    @SerialName(value = "pollen_lowest_level")
+    val pollenLowestLevel: Int? = null,
     @SerialName(value = "pollen_choices")
     val pollenChoices: List<PollenChoiceEntity> = emptyList(),
     @SerialName(value = "temperature_trend")
@@ -15,6 +17,8 @@ internal data class PushAlertChoicesEntity(
     val strongWind: Boolean = false,
     @SerialName(value = "slipperiness")
     val slipperiness: Boolean = false,
+    @SerialName(value = "hour_format")
+    val hourFormat: String? = null,
     @SerialName(value = "is_chosen_place_notified")
     val isChosenPlaceNotified: Boolean = true,
     @SerialName(value = "notified_favorite_ids")

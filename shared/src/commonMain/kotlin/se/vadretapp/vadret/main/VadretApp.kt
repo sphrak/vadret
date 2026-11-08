@@ -45,6 +45,7 @@ import se.vadretapp.vadret.main.navigation.SettingsAboutKey
 import se.vadretapp.vadret.main.navigation.SettingsDeveloperKey
 import se.vadretapp.vadret.main.navigation.SettingsDeveloperSectionKey
 import se.vadretapp.vadret.main.navigation.SettingsKey
+import se.vadretapp.vadret.main.navigation.SettingsLabsKey
 import se.vadretapp.vadret.main.navigation.SettingsLicensesKey
 import se.vadretapp.vadret.main.navigation.SettingsPlacesKey
 import se.vadretapp.vadret.main.navigation.SettingsPollenKey
@@ -69,6 +70,7 @@ import se.vadretapp.vadret.main.navigation.selectTab
 import se.vadretapp.vadret.main.navigation.shownEntries
 import se.vadretapp.vadret.settings.ui.AboutRoute
 import se.vadretapp.vadret.settings.ui.DeveloperRoute
+import se.vadretapp.vadret.settings.ui.LabsRoute
 import se.vadretapp.vadret.settings.ui.LicensesRoute
 import se.vadretapp.vadret.settings.ui.PlacesRoute
 import se.vadretapp.vadret.settings.ui.PollenSettingsRoute
@@ -122,6 +124,10 @@ private val navigationConfiguration: SavedStateConfiguration = SavedStateConfigu
             subclass(
                 subclass = SettingsPollenKey::class,
                 serializer = SettingsPollenKey.serializer()
+            )
+            subclass(
+                subclass = SettingsLabsKey::class,
+                serializer = SettingsLabsKey.serializer()
             )
             subclass(
                 subclass = SettingsAboutKey::class,
@@ -262,6 +268,7 @@ internal fun VadretApp(
                     onPlacesClick = { tabNavigation.open(key = SettingsPlacesKey) },
                     onSectionClick = { sectionKey: String -> tabNavigation.open(key = SettingsSectionKey(sectionKey = sectionKey)) },
                     onPollenClick = { tabNavigation.open(key = SettingsPollenKey) },
+                    onLabsClick = { tabNavigation.open(key = SettingsLabsKey) },
                     onDeveloperClick = { tabNavigation.open(key = SettingsDeveloperKey) },
                     onAboutClick = { tabNavigation.open(key = SettingsAboutKey) },
                     settingsSections = settingsSections
@@ -281,6 +288,11 @@ internal fun VadretApp(
         entry<SettingsPollenKey>(metadata = detailTransitions) {
             TabPage(paddingValues = tabPadding) {
                 PollenSettingsRoute(onBack = { tabNavigation.close(key = SettingsPollenKey) })
+            }
+        }
+        entry<SettingsLabsKey>(metadata = detailTransitions) {
+            TabPage(paddingValues = tabPadding) {
+                LabsRoute(onBack = { tabNavigation.close(key = SettingsLabsKey) })
             }
         }
         entry<SettingsAboutKey>(metadata = detailTransitions) {

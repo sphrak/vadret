@@ -13,7 +13,6 @@ import se.vadretapp.vadret.aggregatedfeed.model.FeedRegion
 import se.vadretapp.vadret.aggregatedfeed.model.FeedRegionKind
 import se.vadretapp.vadret.aggregatedfeed.model.ForecastWarningRequest
 import se.vadretapp.vadret.aggregatedfeed.model.GeoPolygon
-import se.vadretapp.vadret.aggregatedfeed.model.SeenWarning
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.testing.FixedClock
@@ -23,7 +22,6 @@ import se.vadretapp.vadret.warning.usecase.DefaultObserveFollowedPlaceWarningsTa
 import se.vadretapp.vadret.warning.usecase.ObserveFollowedPlaceWarningsTask
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.time.Instant
 
 private val aroundFunasdalen = GeoPolygon(
     outline = square(
@@ -79,12 +77,12 @@ class DefaultObserveFollowedPlaceWarningsTaskTest {
             )
         )
     )
-    private val feedRepository = FakeFeedRepository(result = listOf(inFunasdalen, onGotland, inSkane, overBoth).asRight())
+    private val warningsRepository = FakeWarningsRepository(result = listOf(inFunasdalen, onGotland, inSkane, overBoth).asRight())
     private val clock = FixedClock(now = NOW)
     private val observeFollowedPlacesTask = FakeObserveFollowedPlacesTask()
     private val observeFollowedPlaceWarningsTask: ObserveFollowedPlaceWarningsTask = DefaultObserveFollowedPlaceWarningsTask(
         observeFollowedPlacesTask = observeFollowedPlacesTask,
-        feedRepository = feedRepository,
+        warningsRepository = warningsRepository,
         getForecastWarningRequestTask = FakeGetForecastWarningRequestTask(),
         clock = clock
     )
@@ -117,24 +115,6 @@ class DefaultObserveFollowedPlaceWarningsTaskTest {
         }
 
     @Test
-    fun `a warning already seen stays among the warnings of the followed places`() =
-        runTest {
-            feedRepository.seenWarnings.value = listOf(
-                SeenWarning(
-                    warningIdentifier = inFunasdalen.identifier,
-                    seenAt = Instant.parse(input = "2026-10-29T08:00:00Z")
-                )
-            ).asRight()
-
-            val placeWarnings: List<PlaceWarning> = (observeFollowedPlaceWarningsTask(isRefresh = false).first() as Either.Right).b.placeWarnings
-
-            assertEquals(
-                expected = listOf(inFunasdalen, overBoth),
-                actual = placeWarnings.map { placeWarning: PlaceWarning -> placeWarning.aggregatedFeed }
-            )
-        }
-
-    @Test
     fun `followed places that cannot be read are the failure`() =
         runTest {
             val failure = Failure(errorCode = ErrorCode.STORAGE_FAILED)
@@ -147,7 +127,7 @@ class DefaultObserveFollowedPlaceWarningsTaskTest {
     fun `warnings that cannot be loaded are the failure`() =
         runTest {
             val failure = Failure(errorCode = ErrorCode.NETWORK_FAILURE)
-            feedRepository.result = failure.asLeft()
+            warningsRepository.result = failure.asLeft()
 
             assertEquals<Either<Failure, FollowedPlaceWarnings>>(expected = failure.asLeft(), actual = observeFollowedPlaceWarningsTask(isRefresh = false).first())
         }
@@ -180,10 +160,10 @@ class DefaultObserveFollowedPlaceWarningsTaskTest {
         runTest {
             observeFollowedPlaceWarningsTask(isRefresh = true).first()
 
-            assertEquals(expected = 1, actual = feedRepository.refreshCount)
+            assertEquals(expected = 1, actual = warningsRepository.refreshCount)
             assertEquals(
                 expected = listOf<ForecastWarningRequest?>(FORECAST_WARNING_REQUEST),
-                actual = feedRepository.forecastWarningRequests
+                actual = warningsRepository.forecastWarningRequests
             )
         }
 }

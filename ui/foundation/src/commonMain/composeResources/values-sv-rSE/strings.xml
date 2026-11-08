@@ -62,6 +62,8 @@
     <string name="theme">Tema</string>
     <string name="settings">Inställningar</string>
     <string name="clear_search">Rensa sökningen</string>
+    <string name="search_nothing_found">Ingen plats hittades med det namnet</string>
+    <string name="search">Sök</string>
     <string name="place_municipality_county">%1$s, %2$s</string>
     <string name="search_failed">Sökning misslyckades</string>
     <string name="alert_description">Beskrivning</string>
@@ -255,7 +257,6 @@
     <string name="notifications_weather">Väder</string>
     <string name="warning_alerts_summary">Från SMHI</string>
     <string name="warning_level">Nivå</string>
-    <string name="strong_wind_alerts_summary">Kvällen före och samma dag</string>
     <string name="places_not_followed">Får inga varningar, högst 5 platser bevakas</string>
     <string name="allow_expand_once">En öppen dag i taget</string>
     <string name="expand_once_is_enabled">När du öppnar en dag stängs den som redan är öppen</string>
@@ -278,4 +279,13 @@
     <string name="slipperiness_estimate_explanation">Vadret API räknar fram risken ur SMHI:s prognos. Det är ingen varning från SMHI.</string>
     <string name="slipperiness_alerts">Halka</string>
     <string name="slipperiness_alerts_summary">När det kan bli halt det kommande dygnet</string>
+    <string name="pollen_alerts">Pollenhalter</string>
+    <string name="pollen_alerts_summary">För pollen du valt under Pollen</string>
+    <string name="pollen_alerts_need_allergens">Slå på pollen och välj vilka pollen du är allergisk mot under Pollen först.</string>
+    <string name="notifications_display">Visning</string>
+    <string name="hour_format">Tidsformat</string>
+    <string name="hour_format_24">24 timmar</string>
+    <string name="hour_format_12">12 timmar</string>
+    <string name="labs">Labs</string>
+    <string name="labs_footnote">Funktioner som fortfarande testas. De kan ändras eller försvinna.</string>
 </resources>

@@ -4,6 +4,7 @@ import io.github.sphrak.either.Either
 import io.github.sphrak.either.extension.asLeft
 import io.github.sphrak.either.extension.asRight
 import io.github.sphrak.either.map
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.emptyFlow
@@ -43,6 +44,7 @@ import se.vadretapp.vadret.theme.ThemeRepository
 import se.vadretapp.vadret.theme.model.Theme
 import kotlin.concurrent.atomics.AtomicInt
 import kotlin.concurrent.atomics.fetchAndIncrement
+import kotlin.time.Duration
 import kotlin.time.Instant
 
 internal val umea = Favorite(
@@ -127,19 +129,35 @@ internal class FakeThemeRepository(
 }
 
 internal class FakeForecastPreferenceRepository(
-    var forecastPreferences: Either<Failure, ForecastPreferences> = ForecastPreferences(
+    forecastPreferences: Either<Failure, ForecastPreferences> = ForecastPreferences(
         isHourlyForecastEnabled = false,
         isExpandOnceEnabled = true
     ).asRight()
 ) : ForecastPreferenceRepository {
-    override suspend fun getForecastPreferences(): Either<Failure, ForecastPreferences> = forecastPreferences
-    override fun observeForecastPreferences(): Flow<Either<Failure, ForecastPreferences>> = emptyFlow()
+    val forecastPreferences: MutableStateFlow<Either<Failure, ForecastPreferences>> = MutableStateFlow(value = forecastPreferences)
+    var writeFailure: Failure? = null
+    var hourlyForecastWriteDurations: Map<Boolean, Duration> = emptyMap()
+    var observations = 0
+    override suspend fun getForecastPreferences(): Either<Failure, ForecastPreferences> = forecastPreferences.value
+    override fun observeForecastPreferences(): Flow<Either<Failure, ForecastPreferences>> {
+        observations++
+        return forecastPreferences
+    }
     override suspend fun setHourlyForecastEnabled(isEnabled: Boolean): Either<Failure, Unit> {
-        forecastPreferences = forecastPreferences.map { stored: ForecastPreferences -> stored.copy(isHourlyForecastEnabled = isEnabled) }
+        delay(duration = hourlyForecastWriteDurations[isEnabled] ?: Duration.ZERO)
+        val currentWriteFailure: Failure? = writeFailure
+        if (currentWriteFailure != null) {
+            return currentWriteFailure.asLeft()
+        }
+        forecastPreferences.update { stored: Either<Failure, ForecastPreferences> ->
+            stored.map { preferences: ForecastPreferences -> preferences.copy(isHourlyForecastEnabled = isEnabled) }
+        }
         return Unit.asRight()
     }
     override suspend fun setExpandOnceEnabled(isEnabled: Boolean): Either<Failure, Unit> {
-        forecastPreferences = forecastPreferences.map { stored: ForecastPreferences -> stored.copy(isExpandOnceEnabled = isEnabled) }
+        forecastPreferences.update { stored: Either<Failure, ForecastPreferences> ->
+            stored.map { preferences: ForecastPreferences -> preferences.copy(isExpandOnceEnabled = isEnabled) }
+        }
         return Unit.asRight()
     }
 }

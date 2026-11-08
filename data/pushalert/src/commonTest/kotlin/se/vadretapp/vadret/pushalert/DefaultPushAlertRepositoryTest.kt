@@ -25,6 +25,7 @@ import se.vadretapp.vadret.pushalert.model.AndroidAttestation
 import se.vadretapp.vadret.pushalert.model.Attestation
 import se.vadretapp.vadret.pushalert.model.DeviceRegistration
 import se.vadretapp.vadret.pushalert.model.DeviceToken
+import se.vadretapp.vadret.pushalert.model.HourFormat
 import se.vadretapp.vadret.pushalert.model.InstallationToken
 import se.vadretapp.vadret.pushalert.model.IosAttestation
 import se.vadretapp.vadret.pushalert.model.PollenAlertLevel
@@ -280,7 +281,8 @@ class DefaultPushAlertRepositoryTest {
                 pollenChoices = listOf(PollenChoice(pollenTypeId = BIRCH, lowestLevel = PollenAlertLevel.HIGH)),
                 temperatureTrend = true,
                 strongWind = true,
-                slipperiness = true
+                slipperiness = true,
+                hourFormat = HourFormat.TWENTY_FOUR_HOUR
             )
         )
         pushAlertRepository.replaceSubscription(
@@ -290,7 +292,7 @@ class DefaultPushAlertRepositoryTest {
 
         assertEquals(
             expected = listOf(
-                """PUT /api/v1/subscription Bearer $INSTALLATION_TOKEN {"geohashes":["u6sce","u3chr"],"warning_lowest_level":"YELLOW","pollen":[{"pollen_type_id":"$BIRCH","lowest_level":5}],"temperature_trend":true,"strong_wind":true,"slipperiness":true}""",
+                """PUT /api/v1/subscription Bearer $INSTALLATION_TOKEN {"geohashes":["u6sce","u3chr"],"warning_lowest_level":"YELLOW","pollen":[{"pollen_type_id":"$BIRCH","lowest_level":5}],"temperature_trend":true,"strong_wind":true,"slipperiness":true,"hour_format":"24h"}""",
                 "PUT /api/v1/subscription Bearer $INSTALLATION_TOKEN {}"
             ),
             actual = requests
@@ -298,7 +300,7 @@ class DefaultPushAlertRepositoryTest {
     }
 
     @Test
-    fun aSubscriptionWithoutStrongWindSaysSoInsteadOfLeavingItOut() = runTest {
+    fun aSubscriptionWithoutStrongWindSaysSoInsteadOfLeavingItOutAndNamesTheHourFormat() = runTest {
         repository().replaceSubscription(
             installationToken = InstallationToken(value = INSTALLATION_TOKEN),
             pushAlertSubscription = PushAlertSubscription(
@@ -307,12 +309,13 @@ class DefaultPushAlertRepositoryTest {
                 pollenChoices = emptyList(),
                 temperatureTrend = false,
                 strongWind = false,
-                slipperiness = false
+                slipperiness = false,
+                hourFormat = HourFormat.TWELVE_HOUR
             )
         )
 
         assertEquals(
-            expected = listOf("""PUT /api/v1/subscription Bearer $INSTALLATION_TOKEN {"geohashes":["u6sce"],"pollen":[],"temperature_trend":false,"strong_wind":false,"slipperiness":false}"""),
+            expected = listOf("""PUT /api/v1/subscription Bearer $INSTALLATION_TOKEN {"geohashes":["u6sce"],"pollen":[],"temperature_trend":false,"strong_wind":false,"slipperiness":false,"hour_format":"12h"}"""),
             actual = requests
         )
     }
@@ -396,7 +399,7 @@ class DefaultPushAlertRepositoryTest {
         repository(pushAlertLocalDataSource = pushAlertLocalDataSource).saveChoices(pushAlertChoices = CHOICES)
 
         assertEquals(
-            expected = """{"choices":{"warning_lowest_level":"ORANGE","pollen_choices":[{"pollen_type_id":"$BIRCH","lowest_level":4}],"temperature_trend":true,"strong_wind":true}}""",
+            expected = """{"choices":{"warning_lowest_level":"ORANGE","pollen_lowest_level":4,"temperature_trend":true,"strong_wind":true,"hour_format":"TWENTY_FOUR_HOUR"}}""",
             actual = Json.encodeToString(
                 serializer = PushAlertStateEntity.serializer(),
                 value = pushAlertLocalDataSource.state.value
@@ -430,7 +433,7 @@ class DefaultPushAlertRepositoryTest {
         pushAlertRepository.saveChoices(pushAlertChoices = choicesWithPlaces)
 
         assertEquals(
-            expected = """{"choices":{"warning_lowest_level":"ORANGE","pollen_choices":[{"pollen_type_id":"$BIRCH","lowest_level":4}],"temperature_trend":true,"strong_wind":true,"is_chosen_place_notified":false,"notified_favorite_ids":["solna","uppsala"]}}""",
+            expected = """{"choices":{"warning_lowest_level":"ORANGE","pollen_lowest_level":4,"temperature_trend":true,"strong_wind":true,"hour_format":"TWENTY_FOUR_HOUR","is_chosen_place_notified":false,"notified_favorite_ids":["solna","uppsala"]}}""",
             actual = Json.encodeToString(
                 serializer = PushAlertStateEntity.serializer(),
                 value = pushAlertLocalDataSource.state.value
@@ -444,9 +447,9 @@ class DefaultPushAlertRepositoryTest {
 
     @Test
     fun choicesStoredBeforeTheForecastPlacesExistedReadAsOnePlace() = runTest {
-        val storedBeforeForecastPlaces = Json.decodeFromString(
-            deserializer = PushAlertStateEntity.serializer(),
-            string = """{"installation_token":"$INSTALLATION_TOKEN","choices":{"warning_lowest_level":"ORANGE","pollen_choices":[{"pollen_type_id":"$BIRCH","lowest_level":4}],"temperature_trend":true,"strong_wind":true}}"""
+        val storedBeforeForecastPlaces = PushAlertStateEntity.serializer().decode(
+            bytes = """{"installation_token":"$INSTALLATION_TOKEN","choices":{"warning_lowest_level":"ORANGE","pollen_choices":[{"pollen_type_id":"$BIRCH","lowest_level":4}],"temperature_trend":true,"strong_wind":true}}""".encodeToByteArray(),
+            fileName = PUSH_ALERT_FILE_NAME
         )
 
         assertEquals(
@@ -463,7 +466,7 @@ class DefaultPushAlertRepositoryTest {
         pushAlertRepository.saveChoices(pushAlertChoices = CHOICES.copy(slipperiness = true))
 
         assertEquals(
-            expected = """{"choices":{"warning_lowest_level":"ORANGE","pollen_choices":[{"pollen_type_id":"$BIRCH","lowest_level":4}],"temperature_trend":true,"strong_wind":true,"slipperiness":true}}""" to CHOICES.copy(slipperiness = true).asRight(),
+            expected = """{"choices":{"warning_lowest_level":"ORANGE","pollen_lowest_level":4,"temperature_trend":true,"strong_wind":true,"slipperiness":true,"hour_format":"TWENTY_FOUR_HOUR"}}""" to CHOICES.copy(slipperiness = true).asRight(),
             actual = Json.encodeToString(
                 serializer = PushAlertStateEntity.serializer(),
                 value = pushAlertLocalDataSource.state.value
@@ -473,14 +476,41 @@ class DefaultPushAlertRepositoryTest {
 
     @Test
     fun choicesStoredBeforeStrongWindExistedReadAsStrongWindTurnedOff() = runTest {
-        val storedBeforeStrongWind = Json.decodeFromString(
-            deserializer = PushAlertStateEntity.serializer(),
-            string = """{"installation_token":"$INSTALLATION_TOKEN","choices":{"warning_lowest_level":"ORANGE","pollen_choices":[{"pollen_type_id":"$BIRCH","lowest_level":4}],"temperature_trend":true}}"""
+        val storedBeforeStrongWind = PushAlertStateEntity.serializer().decode(
+            bytes = """{"installation_token":"$INSTALLATION_TOKEN","choices":{"warning_lowest_level":"ORANGE","pollen_choices":[{"pollen_type_id":"$BIRCH","lowest_level":4}],"temperature_trend":true}}""".encodeToByteArray(),
+            fileName = PUSH_ALERT_FILE_NAME
         )
 
         assertEquals(
             expected = CHOICES.copy(strongWind = false).asRight(),
             actual = repository(pushAlertLocalDataSource = FakePushAlertLocalDataSource(initialState = storedBeforeStrongWind)).choices()
+        )
+    }
+
+    @Test
+    fun theLevelOfThePollenChosenOneByOneInTheBetasIsKeptAsTheOnePollenLevelUntilALevelIsSavedTheNewWay() = runTest {
+        val storedInTheBetas = PushAlertStateEntity.serializer().decode(
+            bytes = """{"installation_token":"$INSTALLATION_TOKEN","choices":{"warning_lowest_level":"ORANGE","pollen_choices":[{"pollen_type_id":"$BIRCH","lowest_level":4},{"pollen_type_id":"$GRASS","lowest_level":4}],"temperature_trend":true,"strong_wind":true}}""".encodeToByteArray(),
+            fileName = PUSH_ALERT_FILE_NAME
+        )
+        val storedBothWays = PushAlertStateEntity.serializer().decode(
+            bytes = """{"installation_token":"$INSTALLATION_TOKEN","choices":{"warning_lowest_level":"ORANGE","pollen_lowest_level":5,"pollen_choices":[{"pollen_type_id":"$BIRCH","lowest_level":4}],"temperature_trend":true,"strong_wind":true}}""".encodeToByteArray(),
+            fileName = PUSH_ALERT_FILE_NAME
+        )
+        val storedWithoutPollen = PushAlertStateEntity.serializer().decode(
+            bytes = """{"installation_token":"$INSTALLATION_TOKEN","choices":{"warning_lowest_level":"ORANGE","pollen_choices":[],"temperature_trend":true,"strong_wind":true}}""".encodeToByteArray(),
+            fileName = PUSH_ALERT_FILE_NAME
+        )
+
+        assertEquals(
+            expected = listOf(
+                CHOICES.asRight(),
+                CHOICES.copy(pollenLowestLevel = PollenAlertLevel.HIGH).asRight(),
+                CHOICES.copy(pollenLowestLevel = null).asRight()
+            ),
+            actual = listOf(storedInTheBetas, storedBothWays, storedWithoutPollen).map { stored: PushAlertStateEntity ->
+                repository(pushAlertLocalDataSource = FakePushAlertLocalDataSource(initialState = stored)).choices()
+            }
         )
     }
 
@@ -680,13 +710,15 @@ private val CHALLENGE_BYTES = List(size = 32) { index -> index.toByte() }
 private const val CHALLENGE = "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8="
 private const val INSTALLATION_TOKEN = "vadret_secret"
 private const val BIRCH = "2a2a2a2a-2a2a-4a2a-aa2a-2a313a323236"
+private const val GRASS = "2a2a2a2a-2a2a-4a2a-aa2a-2a313a323237"
 private const val REGISTERED_AT_MILLIS = 1_793_000_000_000L
 private val CHOICES = PushAlertChoices(
     warningLowestLevel = WarningAlertLevel.ORANGE,
-    pollenChoices = listOf(PollenChoice(pollenTypeId = BIRCH, lowestLevel = PollenAlertLevel.MODERATE_TO_HIGH)),
+    pollenLowestLevel = PollenAlertLevel.MODERATE_TO_HIGH,
     temperatureTrend = true,
     strongWind = true,
     slipperiness = false,
+    hourFormat = HourFormat.TWENTY_FOUR_HOUR,
     isChosenPlaceNotified = true,
     notifiedFavoriteIds = emptySet()
 )

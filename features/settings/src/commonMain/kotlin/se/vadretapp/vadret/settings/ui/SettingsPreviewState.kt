@@ -9,6 +9,7 @@ import se.vadretapp.vadret.language.model.AppLanguage
 import se.vadretapp.vadret.library.model.Library
 import se.vadretapp.vadret.settings.AboutState
 import se.vadretapp.vadret.settings.DeveloperState
+import se.vadretapp.vadret.settings.LabsState
 import se.vadretapp.vadret.settings.LicensesState
 import se.vadretapp.vadret.settings.PlacesState
 import se.vadretapp.vadret.settings.PollenSettingsState
@@ -134,3 +135,5 @@ internal fun pollenSettingsPreviewState(): PollenSettingsState =
     )
 
 internal fun developerPreviewState(theme: Theme): DeveloperState = DeveloperState(settings = settingsPreviewState(theme = theme).settings)
+
+internal fun labsPreviewState(theme: Theme): LabsState = LabsState(isHourlyForecastEnabled = settingsPreviewState(theme = theme).settings?.isHourlyForecastEnabled)

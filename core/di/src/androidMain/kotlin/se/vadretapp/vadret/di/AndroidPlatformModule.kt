@@ -11,7 +11,8 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import org.koin.core.module.Module
 import org.koin.dsl.module
-import se.vadretapp.vadret.aggregatedfeed.FeedRepository
+import se.vadretapp.vadret.aggregatedfeed.SeenWarningRepository
+import se.vadretapp.vadret.aggregatedfeed.WarningsRepository
 import se.vadretapp.vadret.di.model.AppDirectories
 import se.vadretapp.vadret.di.model.AppInfo
 import se.vadretapp.vadret.favorite.FavoriteRepository
@@ -62,13 +63,18 @@ fun androidPlatformModule(
                 coroutineDispatcher = get()
             )
         }
-        single<FeedRepository> {
-            FeedRepository(
-                context = context,
+        single<WarningsRepository> {
+            WarningsRepository(
                 httpClient = inject(),
                 diskCache = get(),
                 clock = get(),
                 coroutineDispatcher = get()
+            )
+        }
+        single<SeenWarningRepository> {
+            SeenWarningRepository(
+                context = context,
+                clock = get()
             )
         }
     }

@@ -12,9 +12,13 @@ import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.favorite.model.Favorite
 import se.vadretapp.vadret.geohash.model.Geohash
 import se.vadretapp.vadret.location.model.Location
+import se.vadretapp.vadret.pollenpreference.model.PollenPreferences
 import se.vadretapp.vadret.pushalert.model.DeviceRegistration
 import se.vadretapp.vadret.pushalert.model.DeviceToken
+import se.vadretapp.vadret.pushalert.model.HourFormat
 import se.vadretapp.vadret.pushalert.model.InstallationToken
+import se.vadretapp.vadret.pushalert.model.PollenAlertLevel
+import se.vadretapp.vadret.pushalert.model.PollenChoice
 import se.vadretapp.vadret.pushalert.model.PushAlertChoices
 import se.vadretapp.vadret.pushalert.model.WarningAlertLevel
 import se.vadretapp.vadret.pushalert.usecase.DefaultGetCurrentGeohashTask
@@ -127,6 +131,75 @@ class DefaultSyncPushAlertsTaskTest {
 
         assertEquals(
             expected = listOf(false, true, true),
+            actual = subscribed
+        )
+    }
+
+    @Test
+    fun thePollenLevelIsAskedForEveryAllergenPickedForPollenAndForNoneWhenPollenIsTurnedOff() = runTest {
+        val subscribed = listOf(
+            WARNINGS_FROM_YELLOW to TWO_ALLERGENS,
+            WARNINGS_FROM_YELLOW.copy(pollenLowestLevel = PollenAlertLevel.HIGH) to TWO_ALLERGENS,
+            WARNINGS_FROM_YELLOW.copy(pollenLowestLevel = PollenAlertLevel.HIGH) to TWO_ALLERGENS.copy(isPollenEnabled = false),
+            WARNINGS_FROM_YELLOW.copy(pollenLowestLevel = PollenAlertLevel.HIGH) to NO_ALLERGENS
+        ).map { (pushAlertChoices: PushAlertChoices, pollenPreferences: PollenPreferences) ->
+            val pushAlertRepository = FakePushAlertRepository(choices = pushAlertChoices)
+            syncPushAlertsTask(
+                pushAlertRepository = pushAlertRepository,
+                pollenPreferenceRepository = FakePollenPreferenceRepository(pollenPreferences = pollenPreferences.asRight())
+            )()
+            pushAlertRepository.subscriptions.last()?.pollenChoices
+        }
+
+        assertEquals(
+            expected = listOf(
+                emptyList(),
+                listOf(
+                    PollenChoice(
+                        pollenTypeId = BIRCH_ID,
+                        lowestLevel = PollenAlertLevel.HIGH
+                    ),
+                    PollenChoice(
+                        pollenTypeId = GRASS_ID,
+                        lowestLevel = PollenAlertLevel.HIGH
+                    )
+                ),
+                emptyList(),
+                emptyList()
+            ),
+            actual = subscribed
+        )
+    }
+
+    @Test
+    fun pollenPreferencesThatCannotBeReadSubscribeNothingAndAreTriedAgainLater() = runTest {
+        val pushAlertRepository = FakePushAlertRepository(choices = WARNINGS_FROM_YELLOW.copy(pollenLowestLevel = PollenAlertLevel.HIGH))
+
+        val synced = syncPushAlertsTask(
+            pushAlertRepository = pushAlertRepository,
+            pollenPreferenceRepository = FakePollenPreferenceRepository(pollenPreferences = STORAGE_FAILED.asLeft())
+        )()
+
+        assertEquals(
+            expected = STORAGE_FAILED.asLeft(),
+            actual = synced
+        )
+        assertEquals(
+            expected = false to true,
+            actual = pushAlertRepository.calls.any { call -> call.startsWith(prefix = "subscribe") } to pushAlertRepository.isSyncPending.value
+        )
+    }
+
+    @Test
+    fun theSubscriptionSaysHowTheHoursAreWritten() = runTest {
+        val subscribed = HourFormat.entries.map { hourFormat: HourFormat ->
+            val pushAlertRepository = FakePushAlertRepository(choices = WARNINGS_FROM_YELLOW.copy(hourFormat = hourFormat))
+            syncPushAlertsTask(pushAlertRepository = pushAlertRepository)()
+            pushAlertRepository.subscriptions.last()?.hourFormat
+        }
+
+        assertEquals(
+            expected = HourFormat.entries,
             actual = subscribed
         )
     }
@@ -831,9 +904,11 @@ private fun syncPushAlertsTask(
     notificationPermissionSource: FakeNotificationPermissionSource = FakeNotificationPermissionSource(),
     sealedMessageKey: FakeSealedMessageKey = FakeSealedMessageKey(),
     locationRepository: FakeLocationRepository = FakeLocationRepository(),
-    favoriteRepository: FakeFavoriteRepository = FakeFavoriteRepository()
+    favoriteRepository: FakeFavoriteRepository = FakeFavoriteRepository(),
+    pollenPreferenceRepository: FakePollenPreferenceRepository = FakePollenPreferenceRepository()
 ): DefaultSyncPushAlertsTask = DefaultSyncPushAlertsTask(
     pushAlertRepository = pushAlertRepository,
+    pollenPreferenceRepository = pollenPreferenceRepository,
     deviceTokenSource = deviceTokenSource,
     notificationPermissionSource = notificationPermissionSource,
     sealedMessageKey = sealedMessageKey,
@@ -851,10 +926,11 @@ private val FIXED_CLOCK: Clock = object : Clock {
 
 private val WARNINGS_FROM_YELLOW = PushAlertChoices(
     warningLowestLevel = WarningAlertLevel.YELLOW,
-    pollenChoices = emptyList(),
+    pollenLowestLevel = null,
     temperatureTrend = false,
     strongWind = false,
     slipperiness = false,
+    hourFormat = HourFormat.TWENTY_FOUR_HOUR,
     isChosenPlaceNotified = true,
     notifiedFavoriteIds = emptySet()
 )
@@ -867,6 +943,14 @@ private fun PushAlertChoices.notifying(favorites: List<Favorite>): PushAlertChoi
     copy(notifiedFavoriteIds = favorites.map { favorite: Favorite -> favorite.favoriteId }.toSet())
 
 private val UNAUTHORIZED = Failure(errorCode = ErrorCode.HTTP_UNAUTHORIZED)
+
+private val STORAGE_FAILED = Failure(errorCode = ErrorCode.STORAGE_FAILED)
+
+private const val BIRCH_ID = "2a2a2a2a-2a2a-4a2a-aa2a-2a313a323236"
+
+private const val GRASS_ID = "2a2a2a2a-2a2a-4a2a-aa2a-2a313a323237"
+
+private val TWO_ALLERGENS = NO_ALLERGENS.copy(allergenPollenIds = setOf(GRASS_ID, BIRCH_ID))
 
 private const val NOW_MILLIS = 1_793_000_000_000L
 private const val DAY_MILLIS = 86_400_000L

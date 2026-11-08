@@ -5,7 +5,6 @@ import se.vadretapp.vadret.theme.model.Theme
 
 internal sealed interface SettingsEvent {
     data object OnStart : SettingsEvent
-    data class OnHourlyForecastToggled(val isHourlyForecastEnabled: Boolean) : SettingsEvent
     data object OnThemeRowClicked : SettingsEvent
     data object OnThemeDialogDismissed : SettingsEvent
     data class OnThemeSelected(val theme: Theme) : SettingsEvent

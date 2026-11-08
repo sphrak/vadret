@@ -52,6 +52,9 @@ internal data class SettingsSectionKey(val sectionKey: String) : NavKey
 internal data object SettingsPollenKey : NavKey
 
 @Serializable
+internal data object SettingsLabsKey : NavKey
+
+@Serializable
 internal data object SettingsAboutKey : NavKey
 
 @Serializable

@@ -2,7 +2,6 @@ package se.vadretapp.vadret.aggregatedfeed
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOf
 import se.vadretapp.vadret.aggregatedfeed.local.SeenWarningEntity
 import se.vadretapp.vadret.aggregatedfeed.local.SeenWarningLocalDataSource
 import se.vadretapp.vadret.aggregatedfeed.remote.ForecastWarningRemoteDataSource
@@ -48,11 +47,6 @@ internal class FakeForecastWarningRemoteDataSource(
         requests += installationToken to geohashes
         return forecastWarnings()
     }
-}
-
-internal class EmptySeenWarningLocalDataSource : SeenWarningLocalDataSource {
-    override fun observeSeenWarnings(): Flow<List<SeenWarningEntity>> = flowOf(emptyList())
-    override suspend fun markSeen(seenWarningEntity: SeenWarningEntity) = Unit
 }
 
 internal class FailingSeenWarningLocalDataSource(

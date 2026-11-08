@@ -139,4 +139,15 @@
     <string name="slipperiness_estimate_explanation">Vadret API calcule le risque à partir des prévisions du SMHI. Ce n\'est pas une alerte du SMHI.</string>
     <string name="slipperiness_alerts">Chaussée glissante</string>
     <string name="slipperiness_alerts_summary">Quand la chaussée risque d\'être glissante dans les 24 heures</string>
+    <string name="pollen_alerts">Niveaux de pollen</string>
+    <string name="pollen_alerts_summary">Pour les pollens choisis sous Pollen</string>
+    <string name="pollen_alerts_need_allergens">Activez d\'abord le pollen et choisissez sous Pollen les pollens auxquels vous êtes allergique.</string>
+    <string name="notifications_display">Affichage</string>
+    <string name="hour_format">Format de l\'heure</string>
+    <string name="hour_format_24">24 heures</string>
+    <string name="hour_format_12">12 heures</string>
+    <string name="labs">Labs</string>
+    <string name="labs_footnote">Des fonctions encore à l\'essai. Elles peuvent changer ou disparaître.</string>
+    <string name="search">Rechercher</string>
+    <string name="search_nothing_found">Aucun lieu trouvé sous ce nom</string>
 </resources>

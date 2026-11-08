@@ -8,5 +8,6 @@ data class PushAlertSubscription(
     val pollenChoices: List<PollenChoice>,
     val temperatureTrend: Boolean,
     val strongWind: Boolean,
-    val slipperiness: Boolean
+    val slipperiness: Boolean,
+    val hourFormat: HourFormat
 )

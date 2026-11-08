@@ -149,4 +149,15 @@
     <string name="slipperiness_estimate_explanation">Vadret API laskee riskin SMHI:n ennusteesta. Se ei ole SMHI:n varoitus.</string>
     <string name="slipperiness_alerts">Liukkaus</string>
     <string name="slipperiness_alerts_summary">Kun seuraavan vuorokauden aikana voi olla liukasta</string>
+    <string name="pollen_alerts">Siitepölytasot</string>
+    <string name="pollen_alerts_summary">Siitepöly-kohdassa valituille siitepölyille</string>
+    <string name="pollen_alerts_need_allergens">Ota ensin siitepöly käyttöön ja valitse Siitepöly-kohdassa, mille siitepölyille olet allerginen.</string>
+    <string name="notifications_display">Näyttö</string>
+    <string name="hour_format">Aikamuoto</string>
+    <string name="hour_format_24">24 tuntia</string>
+    <string name="hour_format_12">12 tuntia</string>
+    <string name="labs">Labs</string>
+    <string name="labs_footnote">Ominaisuuksia, joita vielä kokeillaan. Ne voivat muuttua tai poistua.</string>
+    <string name="search">Hae</string>
+    <string name="search_nothing_found">Tällä nimellä ei löytynyt paikkaa</string>
 </resources>

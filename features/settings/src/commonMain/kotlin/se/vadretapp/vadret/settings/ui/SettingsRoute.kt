@@ -30,7 +30,6 @@ import se.vadretapp.vadret.ui.SettingsRow
 import se.vadretapp.vadret.ui.SettingsRowDivider
 import se.vadretapp.vadret.ui.SettingsRowIcon
 import se.vadretapp.vadret.ui.SettingsSection
-import se.vadretapp.vadret.ui.SwitchRow
 import se.vadretapp.vadret.ui.ThemePreviewParameterProvider
 import se.vadretapp.vadret.ui.VadretTheme
 import se.vadretapp.vadret.ui.VadretTopAppBar
@@ -41,13 +40,12 @@ import se.vadretapp.vadret.ui.resources.ic_dark_mode
 import se.vadretapp.vadret.ui.resources.ic_info
 import se.vadretapp.vadret.ui.resources.ic_language
 import se.vadretapp.vadret.ui.resources.ic_location_on
-import se.vadretapp.vadret.ui.resources.ic_schedule
+import se.vadretapp.vadret.ui.resources.ic_science
+import se.vadretapp.vadret.ui.resources.labs
 import se.vadretapp.vadret.ui.resources.pollen
 import se.vadretapp.vadret.ui.resources.select_a_language
 import se.vadretapp.vadret.ui.resources.select_a_theme
 import se.vadretapp.vadret.ui.resources.settings_about
-import se.vadretapp.vadret.ui.resources.settings_hourly_forecast
-import se.vadretapp.vadret.ui.resources.settings_hourly_forecast_summary
 import se.vadretapp.vadret.ui.resources.settings_language
 import se.vadretapp.vadret.ui.resources.settings_places
 import se.vadretapp.vadret.ui.resources.theme
@@ -57,8 +55,8 @@ private const val POLLEN_KEY = "pollen"
 private const val DISPLAY_DIVIDER_KEY = "display-divider"
 private const val THEME_KEY = "theme"
 private const val LANGUAGE_KEY = "language"
-private const val HOURLY_FORECAST_KEY = "hourly-forecast"
 private const val ABOUT_DIVIDER_KEY = "about-divider"
+private const val LABS_KEY = "labs"
 private const val DEVELOPER_KEY = "developer"
 private const val ABOUT_KEY = "about"
 
@@ -72,6 +70,7 @@ fun SettingsRoute(
     onPlacesClick: () -> Unit,
     onSectionClick: (sectionKey: String) -> Unit,
     onPollenClick: () -> Unit,
+    onLabsClick: () -> Unit,
     onDeveloperClick: () -> Unit,
     onAboutClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -89,6 +88,7 @@ fun SettingsRoute(
         onPlacesClick = onPlacesClick,
         onSectionClick = onSectionClick,
         onPollenClick = onPollenClick,
+        onLabsClick = onLabsClick,
         onDeveloperClick = onDeveloperClick,
         onAboutClick = onAboutClick,
         modifier = modifier
@@ -103,6 +103,7 @@ private fun SettingsScreen(
     onPlacesClick: () -> Unit,
     onSectionClick: (sectionKey: String) -> Unit,
     onPollenClick: () -> Unit,
+    onLabsClick: () -> Unit,
     onDeveloperClick: () -> Unit,
     onAboutClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -116,6 +117,7 @@ private fun SettingsScreen(
             onPlacesClick = onPlacesClick,
             onSectionClick = onSectionClick,
             onPollenClick = onPollenClick,
+            onLabsClick = onLabsClick,
             onDeveloperClick = onDeveloperClick,
             onAboutClick = onAboutClick,
             modifier = Modifier.fillMaxSize()
@@ -135,6 +137,7 @@ private fun SettingsList(
     onPlacesClick: () -> Unit,
     onSectionClick: (sectionKey: String) -> Unit,
     onPollenClick: () -> Unit,
+    onLabsClick: () -> Unit,
     onDeveloperClick: () -> Unit,
     onAboutClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -187,20 +190,16 @@ private fun SettingsList(
                     onClick = { onEvent(SettingsEvent.OnLanguageRowClicked) }
                 )
             }
-            item(key = HOURLY_FORECAST_KEY, contentType = SettingsContentType.ROW) {
-                SwitchRow(
-                    title = stringResource(resource = Res.string.settings_hourly_forecast),
-                    summary = stringResource(resource = Res.string.settings_hourly_forecast_summary),
-                    iconResource = Res.drawable.ic_schedule,
-                    isChecked = settings.isHourlyForecastEnabled,
-                    onCheckedChange = { isChecked: Boolean ->
-                        onEvent(SettingsEvent.OnHourlyForecastToggled(isHourlyForecastEnabled = isChecked))
-                    }
-                )
-            }
         }
         item(key = ABOUT_DIVIDER_KEY, contentType = SettingsContentType.DIVIDER) {
             SettingsRowDivider()
+        }
+        item(key = LABS_KEY, contentType = SettingsContentType.ROW) {
+            SettingsRow(
+                title = stringResource(resource = Res.string.labs),
+                iconResource = Res.drawable.ic_science,
+                onClick = onLabsClick
+            )
         }
         if (state.isDeveloperRowVisible) {
             item(key = DEVELOPER_KEY, contentType = SettingsContentType.ROW) {
@@ -265,6 +264,7 @@ private fun SettingsScreenPreview(
             onPlacesClick = {},
             onSectionClick = {},
             onPollenClick = {},
+            onLabsClick = {},
             onDeveloperClick = {},
             onAboutClick = {},
             modifier = Modifier.background(color = VadretTheme.colorScheme.background)

@@ -8,8 +8,8 @@ import se.vadretapp.vadret.aggregatedfeed.model.WarningReference
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.geohash.model.Geohash
+import se.vadretapp.vadret.pushalert.model.HourFormat
 import se.vadretapp.vadret.pushalert.model.PollenAlertLevel
-import se.vadretapp.vadret.pushalert.model.PollenChoice
 import se.vadretapp.vadret.pushalert.model.PushAlertChoices
 import se.vadretapp.vadret.pushalert.model.PushAlertKind
 import se.vadretapp.vadret.pushalert.model.PushAlertMessage
@@ -84,7 +84,7 @@ class DefaultOpenPushAlertTaskTest {
             expected = List(size = 5) { Failure(errorCode = ErrorCode.PUSH_ALERT_NOT_CHOSEN).asLeft() },
             actual = listOf(
                 openPushAlert(pushAlertChoices = EVERYTHING_CHOSEN.copy(warningLowestLevel = null))(sealed = Base64.encode(source = SEALED_WARNING)),
-                openPushAlert(pushAlertChoices = EVERYTHING_CHOSEN.copy(pollenChoices = emptyList()))(sealed = Base64.encode(source = SEALED_POLLEN)),
+                openPushAlert(pushAlertChoices = EVERYTHING_CHOSEN.copy(pollenLowestLevel = null))(sealed = Base64.encode(source = SEALED_POLLEN)),
                 openPushAlert(pushAlertChoices = EVERYTHING_CHOSEN.copy(temperatureTrend = false))(sealed = Base64.encode(source = SEALED_TEMPERATURE)),
                 openPushAlert(pushAlertChoices = EVERYTHING_CHOSEN.copy(strongWind = false))(sealed = Base64.encode(source = SEALED_WIND)),
                 openPushAlert(pushAlertChoices = EVERYTHING_CHOSEN.copy(slipperiness = false))(sealed = Base64.encode(source = SEALED_SLIPPERINESS))
@@ -298,15 +298,11 @@ private val FAKE_SEALED_MESSAGE_KEY = FakeSealedMessageKey(
 
 private val EVERYTHING_CHOSEN = PushAlertChoices(
     warningLowestLevel = WarningAlertLevel.YELLOW,
-    pollenChoices = listOf(
-        PollenChoice(
-            pollenTypeId = "2a2a2a2a-2a2a-4a2a-aa2a-2a313a323236",
-            lowestLevel = PollenAlertLevel.HIGH
-        )
-    ),
+    pollenLowestLevel = PollenAlertLevel.HIGH,
     temperatureTrend = true,
     strongWind = true,
     slipperiness = true,
+    hourFormat = HourFormat.TWENTY_FOUR_HOUR,
     isChosenPlaceNotified = true,
     notifiedFavoriteIds = emptySet()
 )

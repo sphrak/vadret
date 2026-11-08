@@ -18,16 +18,16 @@ import kotlin.test.assertEquals
 
 class DefaultGetReferencedWarningIdentifiersTaskTest {
 
-    private val feedRepository = FakeFeedRepository()
+    private val warningsRepository = FakeWarningsRepository()
     private val getReferencedWarningIdentifiersTask: GetReferencedWarningIdentifiersTask = DefaultGetReferencedWarningIdentifiersTask(
-        feedRepository = feedRepository,
+        warningsRepository = warningsRepository,
         getForecastWarningRequestTask = FakeGetForecastWarningRequestTask()
     )
 
     @Test
     fun `a saved warning the notification refers to is found without fetching the feed again`() =
         runTest {
-            feedRepository.savedFeed.value = WarningFeed(
+            warningsRepository.savedFeed.value = WarningFeed(
                 aggregatedFeeds = listOf(
                     aggregatedFeed(identifier = "smhi-1-12"),
                     aggregatedFeed(identifier = "smhi-2-13")
@@ -37,18 +37,18 @@ class DefaultGetReferencedWarningIdentifiersTaskTest {
 
             assertEquals<Pair<Either<Failure, List<String>>, Int>>(
                 expected = listOf("smhi-1-12").asRight() to 0,
-                actual = getReferencedWarningIdentifiersTask(warningReference = WarningReference.SmhiWarningArea(warningAreaId = 12)) to feedRepository.refreshCount
+                actual = getReferencedWarningIdentifiersTask(warningReference = WarningReference.SmhiWarningArea(warningAreaId = 12)) to warningsRepository.refreshCount
             )
         }
 
     @Test
     fun `a warning missing from the saved feed is looked for once more in a fetched feed`() =
         runTest {
-            feedRepository.savedFeed.value = WarningFeed(
+            warningsRepository.savedFeed.value = WarningFeed(
                 aggregatedFeeds = listOf(aggregatedFeed(identifier = "smhi-1-12")),
                 fetchedAt = NOW
             )
-            feedRepository.result = listOf(
+            warningsRepository.result = listOf(
                 aggregatedFeed(identifier = "smhi-1-12"),
                 aggregatedFeed(
                     identifier = "vadret-slipperiness-u6sce-2026-11-08-HIGH",
@@ -63,7 +63,7 @@ class DefaultGetReferencedWarningIdentifiersTaskTest {
                         geohash = Geohash(value = "u6sce"),
                         slipperinessDay = "2026-11-08"
                     )
-                ) to feedRepository.forecastWarningRequests
+                ) to warningsRepository.forecastWarningRequests
             )
         }
 
@@ -72,14 +72,14 @@ class DefaultGetReferencedWarningIdentifiersTaskTest {
         runTest {
             assertEquals<Pair<Either<Failure, List<String>>, Int>>(
                 expected = emptyList<String>().asRight() to 2,
-                actual = getReferencedWarningIdentifiersTask(warningReference = WarningReference.SmhiWarningArea(warningAreaId = 99)) to feedRepository.refreshCount
+                actual = getReferencedWarningIdentifiersTask(warningReference = WarningReference.SmhiWarningArea(warningAreaId = 99)) to warningsRepository.refreshCount
             )
         }
 
     @Test
     fun `a feed that cannot be fetched fails the task`() =
         runTest {
-            feedRepository.result = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft()
+            warningsRepository.result = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft()
 
             assertEquals<Either<Failure, List<String>>>(
                 expected = Failure(errorCode = ErrorCode.NETWORK_UNAVAILABLE).asLeft(),

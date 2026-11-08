@@ -16,7 +16,6 @@ import se.vadretapp.vadret.language.model.AppLanguage
 import se.vadretapp.vadret.settings.extension.toPlacesSummary
 import se.vadretapp.vadret.settings.usecase.GetSettingsTask
 import se.vadretapp.vadret.settings.usecase.ObserveDeveloperModeTask
-import se.vadretapp.vadret.settings.usecase.SetHourlyForecastTask
 import se.vadretapp.vadret.settings.usecase.SetLanguageTask
 import se.vadretapp.vadret.settings.usecase.SetThemeTask
 import se.vadretapp.vadret.theme.model.Theme
@@ -26,7 +25,6 @@ class SettingsViewModel internal constructor(
     private val getSettingsTask: GetSettingsTask,
     private val setThemeTask: SetThemeTask,
     private val setLanguageTask: SetLanguageTask,
-    private val setHourlyForecastTask: SetHourlyForecastTask,
     private val observeLocationChoicesTask: ObserveLocationChoicesTask,
     private val observeDeveloperModeTask: ObserveDeveloperModeTask,
     private val coroutineDispatcher: CoroutineDispatcher
@@ -40,7 +38,6 @@ class SettingsViewModel internal constructor(
     internal fun onEvent(event: SettingsEvent) {
         when (event) {
             SettingsEvent.OnStart -> onStart()
-            is SettingsEvent.OnHourlyForecastToggled -> onHourlyForecastToggled(isHourlyForecastEnabled = event.isHourlyForecastEnabled)
             SettingsEvent.OnThemeRowClicked -> state.update { state: SettingsState -> state.copy(isThemeDialogVisible = true) }
             SettingsEvent.OnThemeDialogDismissed -> state.update { state: SettingsState -> state.copy(isThemeDialogVisible = false) }
             is SettingsEvent.OnThemeSelected -> onThemeSelected(theme = event.theme)
@@ -83,15 +80,6 @@ class SettingsViewModel internal constructor(
                 onSuccess = { isDeveloperMode: Boolean ->
                     state.update { state: SettingsState -> state.copy(isDeveloperRowVisible = isDeveloperMode) }
                 }
-            )
-        }
-    }
-
-    private fun onHourlyForecastToggled(isHourlyForecastEnabled: Boolean) {
-        viewModelScope.launch(context = coroutineDispatcher) {
-            setHourlyForecastTask(isHourlyForecastEnabled = isHourlyForecastEnabled).onResult(
-                onError = { _: Failure -> },
-                onSuccess = { loadSettings() }
             )
         }
     }
