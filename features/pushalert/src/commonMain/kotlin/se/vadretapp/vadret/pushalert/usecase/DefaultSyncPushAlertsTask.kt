@@ -10,6 +10,8 @@ import kotlinx.coroutines.sync.withLock
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.encryption.SealedMessageKey
+import se.vadretapp.vadret.forecastpreference.ForecastPreferenceRepository
+import se.vadretapp.vadret.forecastpreference.model.ForecastPreferences
 import se.vadretapp.vadret.geohash.model.Geohash
 import se.vadretapp.vadret.logging.Logger
 import se.vadretapp.vadret.logging.LoggerFactory
@@ -36,6 +38,7 @@ import kotlin.time.Clock
 internal class DefaultSyncPushAlertsTask(
     private val pushAlertRepository: PushAlertRepository,
     private val pollenPreferenceRepository: PollenPreferenceRepository,
+    private val forecastPreferenceRepository: ForecastPreferenceRepository,
     private val getHourFormatTask: GetHourFormatTask,
     private val getShownLanguageTask: GetShownLanguageTask,
     private val deviceTokenSource: DeviceTokenSource,
@@ -77,11 +80,19 @@ internal class DefaultSyncPushAlertsTask(
     }
 
     private suspend fun sync(): Either<Failure, Unit> =
-        pushAlertRepository.choices().flatMap { pushAlertChoices: PushAlertChoices ->
+        followedChoices().flatMap { pushAlertChoices: PushAlertChoices ->
             if (pushAlertChoices.isAnythingChosen() && isNotificationAllowed()) {
                 follow(pushAlertChoices = pushAlertChoices)
             } else {
                 forget()
+            }
+        }
+
+    // Aurora is a lab, so the server only sends aurora while the lab is on, and the stored choice comes back with it.
+    private suspend fun followedChoices(): Either<Failure, PushAlertChoices> =
+        pushAlertRepository.choices().flatMap { pushAlertChoices: PushAlertChoices ->
+            forecastPreferenceRepository.getForecastPreferences().map { forecastPreferences: ForecastPreferences ->
+                pushAlertChoices.copy(aurora = pushAlertChoices.aurora && forecastPreferences.isAuroraEnabled)
             }
         }
 

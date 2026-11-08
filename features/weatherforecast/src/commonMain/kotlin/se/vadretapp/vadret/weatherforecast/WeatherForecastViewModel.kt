@@ -6,11 +6,8 @@ import androidx.lifecycle.viewModelScope
 import io.github.sphrak.either.Either
 import io.github.sphrak.either.extension.errorOrNull
 import io.github.sphrak.either.extension.onResult
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,16 +22,13 @@ import se.vadretapp.vadret.followedplace.AddFavoriteTask
 import se.vadretapp.vadret.followedplace.GetChosenPlaceTask
 import se.vadretapp.vadret.followedplace.ObserveLocationChoicesTask
 import se.vadretapp.vadret.followedplace.RemoveFavoriteTask
-import se.vadretapp.vadret.followedplace.SearchPlacesTask
 import se.vadretapp.vadret.followedplace.SelectFavoriteTask
-import se.vadretapp.vadret.followedplace.SelectPlaceTask
 import se.vadretapp.vadret.followedplace.SetLocationModeTask
 import se.vadretapp.vadret.followedplace.model.FavoriteChoice
 import se.vadretapp.vadret.followedplace.model.FollowedPlace
 import se.vadretapp.vadret.followedplace.model.LocationChoices
 import se.vadretapp.vadret.forecastpreference.model.ForecastPreferences
 import se.vadretapp.vadret.location.model.Location
-import se.vadretapp.vadret.place.model.Place
 import se.vadretapp.vadret.setting.model.HourFormat
 import se.vadretapp.vadret.ui.extension.launchReplacing
 import se.vadretapp.vadret.ui.extension.messageResource
@@ -56,7 +50,6 @@ import se.vadretapp.vadret.weatherforecast.extension.withoutName
 import se.vadretapp.vadret.weatherforecast.model.ForecastView
 import se.vadretapp.vadret.weatherforecast.model.PlaceForecast
 import se.vadretapp.vadret.weatherforecast.model.PlaceNaming
-import se.vadretapp.vadret.weatherforecast.model.SearchState
 import se.vadretapp.vadret.weatherforecast.model.WeatherForecast
 import se.vadretapp.vadret.weatherforecast.usecase.GetLocationModeTask
 import se.vadretapp.vadret.weatherforecast.usecase.ObserveForecastPreferencesTask
@@ -66,11 +59,9 @@ import kotlin.concurrent.atomics.AtomicBoolean
 import kotlin.concurrent.atomics.AtomicReference
 import kotlin.time.Clock
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
 
-private val searchDebounce: Duration = 70.milliseconds
 private val staleForecastAge: Duration = 2.minutes
 
 @Immutable
@@ -83,8 +74,6 @@ class WeatherForecastViewModel internal constructor(
     private val observeForecastPreferencesTask: ObserveForecastPreferencesTask,
     private val selectFavoriteTask: SelectFavoriteTask,
     private val removeFavoriteTask: RemoveFavoriteTask,
-    private val searchPlacesTask: SearchPlacesTask,
-    private val selectPlaceTask: SelectPlaceTask,
     private val observePlaceForecastTask: ObservePlaceForecastTask,
     private val addFavoriteTask: AddFavoriteTask,
     private val observeUnseenWarningsTask: ObserveUnseenWarningsTask,
@@ -113,7 +102,6 @@ class WeatherForecastViewModel internal constructor(
     private val isObservingForecastPreferences: AtomicBoolean = AtomicBoolean(value = false)
     private val isExpandOnceEnabled: AtomicBoolean = AtomicBoolean(value = true)
     private val loadJob: AtomicReference<Job?> = AtomicReference(value = null)
-    private val searchJob: AtomicReference<Job?> = AtomicReference(value = null)
     private val warningJob: AtomicReference<Job?> = AtomicReference(value = null)
 
     fun onEvent(event: WeatherForecastEvent) {
@@ -156,13 +144,6 @@ class WeatherForecastViewModel internal constructor(
             }
             is WeatherForecastEvent.OnFavoriteClicked -> onFavoriteClicked(favorite = event.favorite)
             is WeatherForecastEvent.OnFavoriteRemoveClicked -> onFavoriteRemoveClicked(favoriteId = event.favoriteId)
-            WeatherForecastEvent.OnAddPlaceClicked -> state.update { state: WeatherForecastState ->
-                state.copy(search = SearchState())
-            }
-            WeatherForecastEvent.OnSearchDismissed -> onSearchDismissed()
-            is WeatherForecastEvent.OnSearchSubmitted -> onSearchSubmitted(query = event.query)
-            is WeatherForecastEvent.OnSearchQueryChanged -> onSearchQueryChanged(query = event.query)
-            is WeatherForecastEvent.OnSuggestionClicked -> onSuggestionClicked(place = event.place)
         }
     }
 
@@ -292,10 +273,7 @@ class WeatherForecastViewModel internal constructor(
 
     private fun reloadStoredLocation() {
         state.update { state: WeatherForecastState ->
-            state.copy(
-                search = null,
-                isRefreshing = true
-            )
+            state.copy(isRefreshing = true)
         }
         load(
             isAutomatic = false,
@@ -568,80 +546,6 @@ class WeatherForecastViewModel internal constructor(
             )
         } else {
             null
-        }
-    }
-
-    private fun onSearchDismissed() {
-        searchJob.exchange(newValue = null)?.cancel()
-        state.update { state: WeatherForecastState ->
-            state.copy(search = null)
-        }
-    }
-
-    private fun onSearchQueryChanged(query: String) {
-        state.update { state: WeatherForecastState ->
-            val search: SearchState? = state.search
-            if (search != null) {
-                state.copy(search = search.copy(query = query))
-            } else {
-                state
-            }
-        }
-        viewModelScope.launchReplacing(
-            currentJob = searchJob,
-            context = coroutineDispatcher
-        ) {
-            delay(duration = searchDebounce)
-            searchPlacesTask(query = query).onResult(
-                onError = { failure: Failure -> displayError(failure = failure) },
-                onSuccess = { suggestions: List<Place> ->
-                    displaySuggestions(
-                        query = query,
-                        suggestions = suggestions.toImmutableList()
-                    )
-                }
-            )
-        }
-    }
-
-    private fun displaySuggestions(
-        query: String,
-        suggestions: ImmutableList<Place>
-    ) {
-        state.update { state: WeatherForecastState ->
-            val search: SearchState? = state.search
-            if (search != null && search.query == query) {
-                state.copy(search = search.copy(suggestions = suggestions))
-            } else {
-                state
-            }
-        }
-    }
-
-    // The places shown may still be for an earlier query, so the query as written is searched again.
-    private fun onSearchSubmitted(query: String) {
-        searchJob.exchange(newValue = null)?.cancel()
-        viewModelScope.launch(context = coroutineDispatcher) {
-            searchPlacesTask(query = query).onResult(
-                onError = { failure: Failure -> displayError(failure = failure) },
-                onSuccess = { places: List<Place> ->
-                    val place: Place? = places.firstOrNull()
-                    if (place != null) {
-                        onSuggestionClicked(place = place)
-                    }
-                }
-            )
-        }
-    }
-
-    private fun onSuggestionClicked(place: Place) {
-        searchJob.exchange(newValue = null)?.cancel()
-        viewModelScope.launch(context = coroutineDispatcher) {
-            selectPlaceTask(place = place)
-                .onResult(
-                    onError = { failure: Failure -> displayError(failure = failure) },
-                    onSuccess = { reloadStoredLocation() }
-                )
         }
     }
 

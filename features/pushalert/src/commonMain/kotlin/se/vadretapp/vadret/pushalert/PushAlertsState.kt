@@ -9,6 +9,7 @@ internal data class PushAlertsState(
     val choices: PushAlertChoices = PushAlertChoices.NOTHING_CHOSEN,
     val places: List<PushAlertPlace> = emptyList(),
     val hasPollenAllergens: Boolean = false,
+    val isAuroraShown: Boolean = false,
     val pendingChoices: PushAlertChoices? = null,
     val isWarningLevelDialogVisible: Boolean = false,
     val isPollenLevelDialogVisible: Boolean = false,

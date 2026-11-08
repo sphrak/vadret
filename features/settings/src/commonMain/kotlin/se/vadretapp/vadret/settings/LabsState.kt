@@ -1,8 +1,9 @@
 package se.vadretapp.vadret.settings
 
 import se.vadretapp.vadret.common.Failure
+import se.vadretapp.vadret.settings.model.Labs
 
 internal data class LabsState(
-    val isHourlyForecastEnabled: Boolean? = null,
+    val labs: Labs? = null,
     val failure: Failure? = null
 )

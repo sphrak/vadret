@@ -13,13 +13,16 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import se.vadretapp.vadret.common.Failure
-import se.vadretapp.vadret.settings.usecase.ObserveHourlyForecastTask
+import se.vadretapp.vadret.settings.model.Labs
+import se.vadretapp.vadret.settings.usecase.ObserveLabsTask
+import se.vadretapp.vadret.settings.usecase.SetAuroraTask
 import se.vadretapp.vadret.settings.usecase.SetHourlyForecastTask
 import kotlin.concurrent.atomics.AtomicBoolean
 
 class LabsViewModel internal constructor(
-    private val observeHourlyForecastTask: ObserveHourlyForecastTask,
+    private val observeLabsTask: ObserveLabsTask,
     private val setHourlyForecastTask: SetHourlyForecastTask,
+    private val setAuroraTask: SetAuroraTask,
     private val coroutineDispatcher: CoroutineDispatcher
 ) : ViewModel() {
 
@@ -32,37 +35,38 @@ class LabsViewModel internal constructor(
     internal fun onEvent(event: LabsEvent) {
         when (event) {
             LabsEvent.OnStart -> onStart()
-            is LabsEvent.OnHourlyForecastToggled -> onHourlyForecastToggled(isHourlyForecastEnabled = event.isHourlyForecastEnabled)
+            is LabsEvent.OnHourlyForecastToggled -> store { setHourlyForecastTask(isHourlyForecastEnabled = event.isHourlyForecastEnabled) }
+            is LabsEvent.OnAuroraToggled -> store { setAuroraTask(isAuroraEnabled = event.isAuroraEnabled) }
             LabsEvent.OnFailureDismissed -> state.update { state: LabsState -> state.copy(failure = null) }
         }
     }
 
     private fun onStart() {
         if (isStarted.compareAndSet(expectedValue = false, newValue = true)) {
-            viewModelScope.launch(context = coroutineDispatcher) { observeHourlyForecast() }
+            viewModelScope.launch(context = coroutineDispatcher) { observeLabs() }
         }
     }
 
-    // The switch shows what is stored, so a toggle that cannot be stored leaves it as it was.
-    private suspend fun observeHourlyForecast() {
-        observeHourlyForecastTask().collect { hourlyForecast: Either<Failure, Boolean> ->
-            hourlyForecast.onResult(
+    // The switches show what is stored, so a toggle that cannot be stored leaves its switch as it was.
+    private suspend fun observeLabs() {
+        observeLabsTask().collect { labs: Either<Failure, Labs> ->
+            labs.onResult(
                 onError = { failure: Failure -> showFailure(failure = failure) },
-                onSuccess = { isHourlyForecastEnabled: Boolean ->
-                    state.update { state: LabsState -> state.copy(isHourlyForecastEnabled = isHourlyForecastEnabled) }
+                onSuccess = { storedLabs: Labs ->
+                    state.update { state: LabsState -> state.copy(labs = storedLabs) }
                 }
             )
         }
     }
 
     // Writes start in tap order and take turns, so the last tap is what is stored.
-    private fun onHourlyForecastToggled(isHourlyForecastEnabled: Boolean) {
+    private fun store(write: suspend () -> Either<Failure, Unit>) {
         viewModelScope.launch(
             context = coroutineDispatcher,
             start = CoroutineStart.UNDISPATCHED
         ) {
             writeMutex.withLock {
-                setHourlyForecastTask(isHourlyForecastEnabled = isHourlyForecastEnabled).onResult(
+                write().onResult(
                     onError = { failure: Failure -> showFailure(failure = failure) },
                     onSuccess = {}
                 )

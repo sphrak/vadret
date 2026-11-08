@@ -28,7 +28,8 @@ import kotlin.test.assertEquals
 
 private val defaultForecastPreferences = ForecastPreferences(
     isHourlyForecastEnabled = false,
-    isExpandOnceEnabled = true
+    isExpandOnceEnabled = true,
+    isAuroraEnabled = false
 )
 
 private class FailingForecastPreferenceLocalDataSource(
@@ -38,6 +39,7 @@ private class FailingForecastPreferenceLocalDataSource(
     override fun observeForecastPreferences(): Flow<ForecastPreferencesEntity> = flow { throw exception }
     override suspend fun setHourlyForecastEnabled(value: Boolean) = throw exception
     override suspend fun setExpandOnceEnabled(value: Boolean) = throw exception
+    override suspend fun setAuroraEnabled(value: Boolean) = throw exception
 }
 
 class DefaultForecastPreferenceRepositoryTest {
@@ -50,7 +52,7 @@ class DefaultForecastPreferenceRepositoryTest {
         )
 
     @Test
-    fun `nothing stored hides the hourly forecast and expands one day at a time`() =
+    fun `nothing stored hides the hourly forecast and aurora and expands one day at a time`() =
         runTest {
             assertEquals(
                 expected = defaultForecastPreferences.asRight(),
@@ -68,13 +70,17 @@ class DefaultForecastPreferenceRepositoryTest {
             forecastPreferenceRepository.setExpandOnceEnabled(isEnabled = false)
             forecastPreferenceRepository.setHourlyForecastEnabled(isEnabled = false)
             val expandOnceChanged: Either<Failure, ForecastPreferences> = forecastPreferenceRepository.getForecastPreferences()
+            forecastPreferenceRepository.setExpandOnceEnabled(isEnabled = true)
+            forecastPreferenceRepository.setAuroraEnabled(isEnabled = true)
+            val auroraChanged: Either<Failure, ForecastPreferences> = forecastPreferenceRepository.getForecastPreferences()
 
             assertEquals(
                 expected = listOf(
                     defaultForecastPreferences.copy(isHourlyForecastEnabled = true).asRight(),
-                    defaultForecastPreferences.copy(isExpandOnceEnabled = false).asRight()
+                    defaultForecastPreferences.copy(isExpandOnceEnabled = false).asRight(),
+                    defaultForecastPreferences.copy(isAuroraEnabled = true).asRight()
                 ),
-                actual = listOf(hourlyChanged, expandOnceChanged)
+                actual = listOf(hourlyChanged, expandOnceChanged, auroraChanged)
             )
         }
 
@@ -103,7 +109,8 @@ class DefaultForecastPreferenceRepositoryTest {
                     defaultForecastPreferences.copy(isHourlyForecastEnabled = true).asRight(),
                     ForecastPreferences(
                         isHourlyForecastEnabled = true,
-                        isExpandOnceEnabled = false
+                        isExpandOnceEnabled = false,
+                        isAuroraEnabled = false
                     ).asRight()
                 ),
                 actual = emitted
@@ -122,6 +129,7 @@ class DefaultForecastPreferenceRepositoryTest {
                     forecastPreferenceRepository.getForecastPreferences(),
                     forecastPreferenceRepository.setHourlyForecastEnabled(isEnabled = true),
                     forecastPreferenceRepository.setExpandOnceEnabled(isEnabled = true),
+                    forecastPreferenceRepository.setAuroraEnabled(isEnabled = true),
                     forecastPreferenceRepository.observeForecastPreferences().toList().single()
                 )
 

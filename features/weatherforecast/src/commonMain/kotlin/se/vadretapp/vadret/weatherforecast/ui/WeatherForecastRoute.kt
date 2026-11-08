@@ -25,6 +25,7 @@ private val locationEndPadding = 9.dp
 @Composable
 fun WeatherForecastRoute(
     onWarningClick: (List<String>) -> Unit,
+    onAddPlaceClick: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: WeatherForecastViewModel = koinViewModel()
 ) {
@@ -33,6 +34,7 @@ fun WeatherForecastRoute(
         state = state,
         onEvent = viewModel::onEvent,
         onWarningClick = onWarningClick,
+        onAddPlaceClick = onAddPlaceClick,
         modifier = modifier
     )
 }
@@ -42,6 +44,7 @@ internal fun WeatherForecastScreen(
     state: WeatherForecastState,
     onEvent: (WeatherForecastEvent) -> Unit,
     onWarningClick: (List<String>) -> Unit,
+    onAddPlaceClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     LaunchedEffect(Unit) {
@@ -64,7 +67,8 @@ internal fun WeatherForecastScreen(
                         modifier = Modifier.padding(end = locationEndPadding),
                         localityName = state.localityName,
                         locationChoices = state.locationChoices,
-                        onEvent = onEvent
+                        onEvent = onEvent,
+                        onAddPlaceClick = onAddPlaceClick
                     )
                 }
             )
@@ -82,7 +86,8 @@ private fun WeatherForecastScreenPreview(
         WeatherForecastScreen(
             state = weatherForecastPreviewState(),
             onEvent = {},
-            onWarningClick = {}
+            onWarningClick = {},
+            onAddPlaceClick = {}
         )
     }
 }

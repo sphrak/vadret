@@ -43,4 +43,8 @@ internal class DefaultForecastPreferenceRepository(
     override suspend fun setExpandOnceEnabled(isEnabled: Boolean): Either<Failure, Unit> =
         either { forecastPreferenceLocalDataSource.setExpandOnceEnabled(value = isEnabled) }
             .catch { exception: Exception -> exception.toFailure() }
+
+    override suspend fun setAuroraEnabled(isEnabled: Boolean): Either<Failure, Unit> =
+        either { forecastPreferenceLocalDataSource.setAuroraEnabled(value = isEnabled) }
+            .catch { exception: Exception -> exception.toFailure() }
 }

@@ -142,5 +142,6 @@ internal class FakeGetForecastWarningRequestTask(
 
 internal val FORECAST_WARNING_REQUEST = ForecastWarningRequest(
     installationToken = "vadret_token",
-    geohashes = listOf(Geohash(value = "u6sce"))
+    geohashes = listOf(Geohash(value = "u6sce")),
+    isAuroraIncluded = false
 )

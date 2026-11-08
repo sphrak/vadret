@@ -137,7 +137,8 @@ internal class FakeSettingRepository(
 internal class FakeForecastPreferenceRepository(
     forecastPreferences: Either<Failure, ForecastPreferences> = ForecastPreferences(
         isHourlyForecastEnabled = false,
-        isExpandOnceEnabled = true
+        isExpandOnceEnabled = true,
+        isAuroraEnabled = false
     ).asRight()
 ) : ForecastPreferenceRepository {
     val forecastPreferences: MutableStateFlow<Either<Failure, ForecastPreferences>> = MutableStateFlow(value = forecastPreferences)
@@ -163,6 +164,16 @@ internal class FakeForecastPreferenceRepository(
     override suspend fun setExpandOnceEnabled(isEnabled: Boolean): Either<Failure, Unit> {
         forecastPreferences.update { stored: Either<Failure, ForecastPreferences> ->
             stored.map { preferences: ForecastPreferences -> preferences.copy(isExpandOnceEnabled = isEnabled) }
+        }
+        return Unit.asRight()
+    }
+    override suspend fun setAuroraEnabled(isEnabled: Boolean): Either<Failure, Unit> {
+        val currentWriteFailure: Failure? = writeFailure
+        if (currentWriteFailure != null) {
+            return currentWriteFailure.asLeft()
+        }
+        forecastPreferences.update { stored: Either<Failure, ForecastPreferences> ->
+            stored.map { preferences: ForecastPreferences -> preferences.copy(isAuroraEnabled = isEnabled) }
         }
         return Unit.asRight()
     }

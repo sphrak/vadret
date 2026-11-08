@@ -30,6 +30,7 @@ import se.vadretapp.vadret.ui.ChoiceDialog
 import se.vadretapp.vadret.ui.SettingsRow
 import se.vadretapp.vadret.ui.SettingsRowDivider
 import se.vadretapp.vadret.ui.SettingsRowIcon
+import se.vadretapp.vadret.ui.SettingsRowSeparator
 import se.vadretapp.vadret.ui.SettingsSection
 import se.vadretapp.vadret.ui.ThemePreviewParameterProvider
 import se.vadretapp.vadret.ui.VadretTheme
@@ -149,23 +150,27 @@ private fun SettingsList(
     val settings: Settings? = state.settings
     LazyColumn(modifier = modifier) {
         item(key = PLACES_KEY, contentType = SettingsContentType.ROW) {
-            SettingsRow(
-                title = stringResource(resource = Res.string.settings_places),
-                summary = state.placesSummary?.text(),
-                iconResource = Res.drawable.ic_location_on,
-                onClick = onPlacesClick
-            )
+            SeparatedRow {
+                SettingsRow(
+                    title = stringResource(resource = Res.string.settings_places),
+                    summary = state.placesSummary?.text(),
+                    iconResource = Res.drawable.ic_location_on,
+                    onClick = onPlacesClick
+                )
+            }
         }
         items(
             items = settingsSections,
             key = { settingsSection: SettingsSection -> settingsSection.key },
             contentType = { SettingsContentType.ROW }
         ) { settingsSection: SettingsSection ->
-            SettingsRow(
-                title = stringResource(resource = settingsSection.titleResource),
-                iconResource = settingsSection.iconResource,
-                onClick = { onSectionClick(settingsSection.key) }
-            )
+            SeparatedRow {
+                SettingsRow(
+                    title = stringResource(resource = settingsSection.titleResource),
+                    iconResource = settingsSection.iconResource,
+                    onClick = { onSectionClick(settingsSection.key) }
+                )
+            }
         }
         item(key = POLLEN_KEY, contentType = SettingsContentType.ROW) {
             SettingsRow(
@@ -179,20 +184,24 @@ private fun SettingsList(
                 SettingsRowDivider()
             }
             item(key = THEME_KEY, contentType = SettingsContentType.ROW) {
-                SettingsRow(
-                    title = stringResource(resource = Res.string.theme),
-                    summary = stringResource(resource = settings.theme.labelResource()),
-                    iconResource = Res.drawable.ic_dark_mode,
-                    onClick = { onEvent(SettingsEvent.OnThemeRowClicked) }
-                )
+                SeparatedRow {
+                    SettingsRow(
+                        title = stringResource(resource = Res.string.theme),
+                        summary = stringResource(resource = settings.theme.labelResource()),
+                        iconResource = Res.drawable.ic_dark_mode,
+                        onClick = { onEvent(SettingsEvent.OnThemeRowClicked) }
+                    )
+                }
             }
             item(key = LANGUAGE_KEY, contentType = SettingsContentType.ROW) {
-                SettingsRow(
-                    title = stringResource(resource = Res.string.settings_language),
-                    summary = stringResource(resource = settings.language.labelResource()),
-                    iconResource = Res.drawable.ic_language,
-                    onClick = { onEvent(SettingsEvent.OnLanguageRowClicked) }
-                )
+                SeparatedRow {
+                    SettingsRow(
+                        title = stringResource(resource = Res.string.settings_language),
+                        summary = stringResource(resource = settings.language.labelResource()),
+                        iconResource = Res.drawable.ic_language,
+                        onClick = { onEvent(SettingsEvent.OnLanguageRowClicked) }
+                    )
+                }
             }
             item(key = HOUR_FORMAT_KEY, contentType = SettingsContentType.ROW) {
                 SettingsRow(
@@ -207,19 +216,23 @@ private fun SettingsList(
             SettingsRowDivider()
         }
         item(key = LABS_KEY, contentType = SettingsContentType.ROW) {
-            SettingsRow(
-                title = stringResource(resource = Res.string.labs),
-                iconResource = Res.drawable.ic_science,
-                onClick = onLabsClick
-            )
+            SeparatedRow {
+                SettingsRow(
+                    title = stringResource(resource = Res.string.labs),
+                    iconResource = Res.drawable.ic_science,
+                    onClick = onLabsClick
+                )
+            }
         }
         if (state.isDeveloperRowVisible) {
             item(key = DEVELOPER_KEY, contentType = SettingsContentType.ROW) {
-                SettingsRow(
-                    title = stringResource(resource = Res.string.developer_settings_title),
-                    iconResource = Res.drawable.ic_code,
-                    onClick = onDeveloperClick
-                )
+                SeparatedRow {
+                    SettingsRow(
+                        title = stringResource(resource = Res.string.developer_settings_title),
+                        iconResource = Res.drawable.ic_code,
+                        onClick = onDeveloperClick
+                    )
+                }
             }
         }
         item(key = ABOUT_KEY, contentType = SettingsContentType.ROW) {
@@ -229,6 +242,18 @@ private fun SettingsList(
                 onClick = onAboutClick
             )
         }
+    }
+}
+
+// A row followed by another row of its group, so a line under its text sets it apart from the next.
+@Composable
+private fun SeparatedRow(
+    modifier: Modifier = Modifier,
+    row: @Composable () -> Unit
+) {
+    Column(modifier = modifier) {
+        row()
+        SettingsRowSeparator()
     }
 }
 

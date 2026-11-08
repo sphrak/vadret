@@ -111,14 +111,6 @@ private fun PlacesScreen(
         navigationIcon = navigationIcon,
         modifier = modifier
     ) {
-        item(key = FOLLOW_POSITION_KEY, contentType = PlacesContentType.ROW) {
-            SwitchRow(
-                title = stringResource(resource = Res.string.places_follow_position),
-                summary = stringResource(resource = Res.string.places_follow_position_summary),
-                isChecked = state.isFollowingPosition,
-                onCheckedChange = { isChecked: Boolean -> onEvent(PlacesEvent.OnFollowPositionToggled(isFollowingPosition = isChecked)) }
-            )
-        }
         item(key = SEARCH_KEY, contentType = PlacesContentType.SEARCH) {
             PlaceSearchBar(
                 modifier = Modifier
@@ -133,6 +125,14 @@ private fun PlacesScreen(
                 onSearch = { query: String -> onEvent(PlacesEvent.OnSearchSubmitted(query = query)) },
                 onSuggestionClick = { place: Place -> onEvent(PlacesEvent.OnSuggestionClicked(place = place)) },
                 onCollapse = { onEvent(PlacesEvent.OnSearchCleared) }
+            )
+        }
+        item(key = FOLLOW_POSITION_KEY, contentType = PlacesContentType.ROW) {
+            SwitchRow(
+                title = stringResource(resource = Res.string.places_follow_position),
+                summary = stringResource(resource = Res.string.places_follow_position_summary),
+                isChecked = state.isFollowingPosition,
+                onCheckedChange = { isChecked: Boolean -> onEvent(PlacesEvent.OnFollowPositionToggled(isFollowingPosition = isChecked)) }
             )
         }
         item(key = MINE_HEADER_KEY, contentType = PlacesContentType.HEADER) {

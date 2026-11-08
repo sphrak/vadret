@@ -25,24 +25,20 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
-import se.vadretapp.vadret.place.model.Place
 import se.vadretapp.vadret.setting.model.HourFormat
 import se.vadretapp.vadret.ui.LocalHourFormat
 import se.vadretapp.vadret.ui.LocalLanguageTag
-import se.vadretapp.vadret.ui.PlaceSearchBar
 import se.vadretapp.vadret.ui.VadretProgressBar
 import se.vadretapp.vadret.ui.VadretPullToRefreshBox
 import se.vadretapp.vadret.ui.VadretTheme
 import se.vadretapp.vadret.ui.resources.Res
 import se.vadretapp.vadret.ui.resources.ic_info
-import se.vadretapp.vadret.ui.resources.places_search
 import se.vadretapp.vadret.ui.resources.showing_saved_forecast
 import se.vadretapp.vadret.weatherforecast.WeatherForecastEvent
 import se.vadretapp.vadret.weatherforecast.WeatherForecastState
 import se.vadretapp.vadret.weatherforecast.model.CurrentWeather
 import se.vadretapp.vadret.weatherforecast.model.ForecastView
 import se.vadretapp.vadret.weatherforecast.model.LatestWarning
-import se.vadretapp.vadret.weatherforecast.model.SearchState
 
 private const val CURRENT_WEATHER_KEY = "current-weather"
 private const val FORECAST_VIEW_KEY = "forecast-view"
@@ -85,7 +81,6 @@ internal fun ForecastScaffold(
         }
     }
 
-    val search: SearchState? = state.search
     val currentWeather: CurrentWeather? = state.forecast.current
     Scaffold(
         modifier = modifier,
@@ -127,20 +122,6 @@ internal fun ForecastScaffold(
                 forecast(
                     state = state,
                     onEvent = onEvent
-                )
-            }
-            if (search != null) {
-                PlaceSearchBar(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = contentHorizontalPadding),
-                    placeholder = stringResource(resource = Res.string.places_search),
-                    suggestions = search.suggestions,
-                    onQueryChange = { query: String -> onEvent(WeatherForecastEvent.OnSearchQueryChanged(query = query)) },
-                    onSearch = { query: String -> onEvent(WeatherForecastEvent.OnSearchSubmitted(query = query)) },
-                    onSuggestionClick = { place: Place -> onEvent(WeatherForecastEvent.OnSuggestionClicked(place = place)) },
-                    onCollapse = { onEvent(WeatherForecastEvent.OnSearchDismissed) },
-                    isExpandedAtStart = true
                 )
             }
             if (state.isLoading) {

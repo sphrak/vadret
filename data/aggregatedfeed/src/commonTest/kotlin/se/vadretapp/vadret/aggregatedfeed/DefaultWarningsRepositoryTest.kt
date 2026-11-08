@@ -980,18 +980,42 @@ class DefaultWarningsRepositoryTest {
         }
 
     @Test
-    fun `vadret api is asked with the installation token and the geohashes of the places`() =
+    fun `vadret api is asked with the installation token the geohashes of the places and whether aurora is wanted`() =
         testScope.runTest {
             fetchFeed(forecastWarningRequest = forecastWarningRequest)
+            fetchFeed(forecastWarningRequest = forecastWarningRequest.copy(isAuroraIncluded = false))
+
+            val geohashes: List<Geohash> = listOf(
+                Geohash(value = "u6sce"),
+                Geohash(value = "u3chr")
+            )
+            assertEquals(
+                expected = listOf(
+                    Triple("vadret_token", geohashes, true),
+                    Triple("vadret_token", geohashes, false)
+                ),
+                actual = forecastWarningRemoteDataSource.requests
+            )
+        }
+
+    @Test
+    fun `a failing vadret api keeps the aurora it last got only while aurora is still wanted`() =
+        testScope.runTest {
+            forecastWarningRemoteDataSource.forecastWarnings = {
+                ForecastWarningsDto(warnings = slipperinessWarnings(slipperinessWarningArea()).warnings.orEmpty() + auroraWarnings(auroraWarningArea()).warnings.orEmpty())
+            }
+            fetchFeed(forecastWarningRequest = forecastWarningRequest)
+            forecastWarningRemoteDataSource.forecastWarnings = { throw IOException("reset") }
 
             assertEquals(
                 expected = listOf(
-                    "vadret_token" to listOf(
-                        Geohash(value = "u6sce"),
-                        Geohash(value = "u3chr")
-                    )
+                    listOf("vadret-aurora-u6sce-2026-10-24-HIGH", "vadret-slipperiness-u6sce-2026-10-24-HIGH"),
+                    listOf("vadret-slipperiness-u6sce-2026-10-24-HIGH")
                 ),
-                actual = forecastWarningRemoteDataSource.requests
+                actual = listOf(
+                    fetchFeed(forecastWarningRequest = forecastWarningRequest).identifiers()?.sorted(),
+                    fetchFeed(forecastWarningRequest = forecastWarningRequest.copy(isAuroraIncluded = false)).identifiers()?.sorted()
+                )
             )
         }
 
@@ -1198,7 +1222,8 @@ private val forecastWarningRequest = ForecastWarningRequest(
     geohashes = listOf(
         Geohash(value = "u6sce"),
         Geohash(value = "u3chr")
-    )
+    ),
+    isAuroraIncluded = true
 )
 
 private fun slipperinessWarnings(vararg forecastWarningAreaDtos: ForecastWarningAreaDto): ForecastWarningsDto =

@@ -105,22 +105,25 @@ internal class DefaultWarningsRepository(
             forecastWarningRemoteDataSource
                 .getWarnings(
                     installationToken = forecastWarningRequest.installationToken,
-                    geohashes = forecastWarningRequest.geohashes
+                    geohashes = forecastWarningRequest.geohashes,
+                    isAuroraIncluded = forecastWarningRequest.isAuroraIncluded
                 ).toAggregatedFeedEntities()
         } catch (cancellationException: CancellationException) {
             throw cancellationException
         } catch (exception: Exception) {
             logger.warn { "Keeping the last Vadret API warnings: ${exception::class.simpleName}: ${exception.message}" }
-            savedForecastWarnings()
+            savedForecastWarnings(isAuroraIncluded = forecastWarningRequest.isAuroraIncluded)
         }
     }
 
-    private suspend fun savedForecastWarnings(): List<AggregatedFeedEntity> =
+    // Aurora that is no longer asked for is not kept either, so turning it off removes it even while offline.
+    private suspend fun savedForecastWarnings(isAuroraIncluded: Boolean): List<AggregatedFeedEntity> =
         aggregatedFeedLocalDataSource
             .getAggregatedFeed()
             ?.items
             .orEmpty()
             .filter { aggregatedFeedEntity: AggregatedFeedEntity -> aggregatedFeedEntity.source == FeedSource.VADRET_API.name }
+            .filter { aggregatedFeedEntity: AggregatedFeedEntity -> isAuroraIncluded || aggregatedFeedEntity.aurora == null }
 
     private suspend fun getPublicAlerts(): List<KrisinformationFeedDto> =
         try {

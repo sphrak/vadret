@@ -11,11 +11,11 @@ import androidx.compose.ui.unit.dp
 import se.vadretapp.vadret.icons.VadretIcon
 import se.vadretapp.vadret.icons.VadretIconGraphic
 
-private val settingsRowIconSize: Dp = 24.dp
+internal val settingsRowIconSize: Dp = 24.dp
 
 // A row keeps 16dp before its icon but a list item only 12dp after it, so the icon takes 4dp more after itself to sit
 // with as much room on both sides.
-private val settingsRowIconEndPadding: Dp = 4.dp
+internal val settingsRowIconEndPadding: Dp = 4.dp
 
 internal fun Modifier.settingsRowIconPadding(): Modifier = padding(end = settingsRowIconEndPadding)
 

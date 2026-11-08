@@ -50,11 +50,27 @@ fun SettingsRowDivider(modifier: Modifier = Modifier) {
     )
 }
 
+// Rows of one group are told apart by a line under their text only, so their icons stand in an unbroken column.
+@Composable
+fun SettingsRowSeparator(modifier: Modifier = Modifier) {
+    HorizontalDivider(
+        thickness = settingsRowSeparatorThickness,
+        color = VadretTheme.colors.divider,
+        modifier = modifier.padding(start = settingsRowTextStart)
+    )
+}
+
 // Android's own settings give every row at least this height and this much room above and below the text, so the rows
 // here sit like the phone's settings do.
 private val settingsRowMinimumHeight: Dp = 72.dp
 private val settingsRowVerticalPadding: Dp = 16.dp
 private val settingsRowHorizontalPadding: Dp = 16.dp
+
+// A list item keeps this much room after its leading icon, so the text of a row with an icon starts after the row's
+// padding, the icon with its own padding and this room.
+private val listItemLeadingContentEndPadding: Dp = 12.dp
+private val settingsRowTextStart: Dp = settingsRowHorizontalPadding + settingsRowIconSize + settingsRowIconEndPadding + listItemLeadingContentEndPadding
+private val settingsRowSeparatorThickness: Dp = 0.5.dp
 
 internal val settingsRowContentPadding: PaddingValues = PaddingValues(
     horizontal = settingsRowHorizontalPadding,

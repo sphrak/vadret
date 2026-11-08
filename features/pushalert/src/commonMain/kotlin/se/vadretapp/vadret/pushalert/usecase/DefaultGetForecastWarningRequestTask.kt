@@ -10,6 +10,8 @@ import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.followedplace.MAXIMUM_FOLLOWED_PLACES
 import se.vadretapp.vadret.followedplace.ObserveFollowedPlacesTask
 import se.vadretapp.vadret.followedplace.model.FollowedPlace
+import se.vadretapp.vadret.forecastpreference.ForecastPreferenceRepository
+import se.vadretapp.vadret.forecastpreference.model.ForecastPreferences
 import se.vadretapp.vadret.geohash.model.Geohash
 import se.vadretapp.vadret.geohash.model.geohashOf
 import se.vadretapp.vadret.pushalert.PushAlertRepository
@@ -18,7 +20,8 @@ import se.vadretapp.vadret.warning.usecase.GetForecastWarningRequestTask
 
 internal class DefaultGetForecastWarningRequestTask(
     private val pushAlertRepository: PushAlertRepository,
-    private val observeFollowedPlacesTask: ObserveFollowedPlacesTask
+    private val observeFollowedPlacesTask: ObserveFollowedPlacesTask,
+    private val forecastPreferenceRepository: ForecastPreferenceRepository
 ) : GetForecastWarningRequestTask {
 
     override suspend fun invoke(): Either<Failure, ForecastWarningRequest?> =
@@ -27,11 +30,14 @@ internal class DefaultGetForecastWarningRequestTask(
                 null.asRight()
             } else {
                 pushAlertRepository.syncedCurrentGeohash().flatMap { syncedCurrentGeohash: Geohash? ->
-                    observeFollowedPlacesTask().first().map { followedPlaces: List<FollowedPlace> ->
-                        ForecastWarningRequest(
-                            installationToken = installationToken.value,
-                            geohashes = (listOfNotNull(syncedCurrentGeohash) + followedPlaces.toGeohashes()).toSwedishGeohashes()
-                        )
+                    observeFollowedPlacesTask().first().flatMap { followedPlaces: List<FollowedPlace> ->
+                        forecastPreferenceRepository.getForecastPreferences().map { forecastPreferences: ForecastPreferences ->
+                            ForecastWarningRequest(
+                                installationToken = installationToken.value,
+                                geohashes = (listOfNotNull(syncedCurrentGeohash) + followedPlaces.toGeohashes()).toSwedishGeohashes(),
+                                isAuroraIncluded = forecastPreferences.isAuroraEnabled
+                            )
+                        }
                     }
                 }
             }

@@ -14,7 +14,8 @@ internal class DefaultForecastWarningRemoteDataSource(
 
     override suspend fun getWarnings(
         installationToken: String,
-        geohashes: List<Geohash>
+        geohashes: List<Geohash>,
+        isAuroraIncluded: Boolean
     ): ForecastWarningsDto =
         httpClient.value.get(urlString = "https://api.vadretapp.se/api/v1/warnings") {
             expectSuccess = true
@@ -22,6 +23,10 @@ internal class DefaultForecastWarningRemoteDataSource(
             parameter(
                 key = "geohashes",
                 value = geohashes.joinToString(separator = GEOHASH_SEPARATOR) { geohash: Geohash -> geohash.value }
+            )
+            parameter(
+                key = "aurora",
+                value = isAuroraIncluded
             )
         }.body()
 }

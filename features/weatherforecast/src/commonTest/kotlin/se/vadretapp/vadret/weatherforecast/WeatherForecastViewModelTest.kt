@@ -8,7 +8,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -23,12 +22,9 @@ import se.vadretapp.vadret.favorite.model.Favorite
 import se.vadretapp.vadret.followedplace.AddFavoriteTask
 import se.vadretapp.vadret.followedplace.ObserveLocationChoicesTask
 import se.vadretapp.vadret.followedplace.RemoveFavoriteTask
-import se.vadretapp.vadret.followedplace.SearchPlacesTask
 import se.vadretapp.vadret.followedplace.SelectFavoriteTask
-import se.vadretapp.vadret.followedplace.SelectPlaceTask
 import se.vadretapp.vadret.followedplace.SetLocationModeTask
 import se.vadretapp.vadret.followedplace.model.FavoriteChoice
-import se.vadretapp.vadret.followedplace.model.LocationChoices
 import se.vadretapp.vadret.setting.model.HourFormat
 import se.vadretapp.vadret.testing.FixedClock
 import se.vadretapp.vadret.ui.extension.messageResource
@@ -37,7 +33,6 @@ import se.vadretapp.vadret.ui.format.toDayTimeText
 import se.vadretapp.vadret.ui.format.toTimeText
 import se.vadretapp.vadret.ui.resources.Res
 import se.vadretapp.vadret.ui.resources.data_not_available_at_this_location
-import se.vadretapp.vadret.ui.resources.followed_places_limit_text
 import se.vadretapp.vadret.ui.resources.unhandled_error
 import se.vadretapp.vadret.warning.model.WarningPlace
 import se.vadretapp.vadret.weatherforecast.model.ComingDay
@@ -46,7 +41,6 @@ import se.vadretapp.vadret.weatherforecast.model.ForecastDay
 import se.vadretapp.vadret.weatherforecast.model.ForecastView
 import se.vadretapp.vadret.weatherforecast.model.LatestWarning
 import se.vadretapp.vadret.weatherforecast.model.PlaceNaming
-import se.vadretapp.vadret.weatherforecast.model.SearchState
 import se.vadretapp.vadret.weatherforecast.usecase.DefaultGetLocationModeTask
 import se.vadretapp.vadret.weatherforecast.usecase.DefaultObserveForecastPreferencesTask
 import se.vadretapp.vadret.weatherforecast.usecase.DefaultObservePlaceForecastTask
@@ -81,7 +75,6 @@ class WeatherForecastViewModelTest {
     private val testScope = TestScope(testDispatcher)
     private val locationRepository = FakeLocationRepository()
     private val weatherForecastRepository = FakeWeatherForecastRepository(now = { clock.now })
-    private val placeRepository = FakePlaceRepository()
     private val favoriteRepository = FakeFavoriteRepository()
     private val clock = FixedClock(now = Instant.parse(input = "2026-10-24T12:00:00Z"))
     private val observeUnseenWarningsTask = FakeObserveUnseenWarningsTask()
@@ -111,11 +104,6 @@ class WeatherForecastViewModelTest {
         observeForecastPreferencesTask = DefaultObserveForecastPreferencesTask(forecastPreferenceRepository = forecastPreferenceRepository),
         selectFavoriteTask = SelectFavoriteTask(locationRepository = locationRepository),
         removeFavoriteTask = RemoveFavoriteTask(favoriteRepository = favoriteRepository),
-        searchPlacesTask = SearchPlacesTask(placeRepository = placeRepository),
-        selectPlaceTask = SelectPlaceTask(
-            favoriteRepository = favoriteRepository,
-            locationRepository = locationRepository
-        ),
         observePlaceForecastTask = DefaultObservePlaceForecastTask(
             weatherForecastRepository = weatherForecastRepository,
             nominatimRepository = nominatimRepository
@@ -450,111 +438,6 @@ class WeatherForecastViewModelTest {
             )
             weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnErrorShown)
             assertNull(actual = weatherForecastViewModel.state.value.errorMessageResource)
-        }
-
-    @Test
-    fun `typing searches once it pauses and keeps only the latest query`() =
-        testScope.runTest {
-            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnAddPlaceClicked)
-            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnSearchQueryChanged(query = "K"))
-            advanceTimeBy(delayTimeMillis = 30)
-            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnSearchQueryChanged(query = "Ki"))
-            advanceUntilIdle()
-
-            assertEquals(expected = listOf("Ki" to 10), actual = placeRepository.searches)
-            assertEquals(
-                expected = SearchState(
-                    query = "Ki",
-                    suggestions = persistentListOf(kiruna)
-                ),
-                actual = weatherForecastViewModel.state.value.search
-            )
-        }
-
-    @Test
-    fun `a blank query clears the suggestions without searching`() =
-        testScope.runTest {
-            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnAddPlaceClicked)
-            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnSearchQueryChanged(query = " "))
-            advanceUntilIdle()
-
-            assertTrue(actual = placeRepository.searches.isEmpty())
-            assertEquals(
-                expected = SearchState(
-                    query = " ",
-                    suggestions = persistentListOf()
-                ),
-                actual = weatherForecastViewModel.state.value.search
-            )
-        }
-
-    @Test
-    fun `submitting picks the first suggestion and loads its forecast`() =
-        testScope.runTest {
-            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnAddPlaceClicked)
-            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnSearchQueryChanged(query = "Ki"))
-            advanceUntilIdle()
-
-            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnSearchSubmitted(query = "Kir"))
-            advanceUntilIdle()
-
-            val state: WeatherForecastState = weatherForecastViewModel.state.value
-            assertNull(actual = state.search)
-            assertEquals(expected = "Kiruna", actual = state.localityName)
-            assertEquals(expected = listOf(67.8558 to 20.2253), actual = weatherForecastRepository.requestedCoordinates)
-        }
-
-    @Test
-    fun `dismissing the search closes it`() =
-        testScope.runTest {
-            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnAddPlaceClicked)
-            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnSearchDismissed)
-
-            assertNull(actual = weatherForecastViewModel.state.value.search)
-        }
-
-    @Test
-    fun `a picked suggestion becomes the selected favorite`() =
-        testScope.runTest {
-            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnShown)
-            advanceUntilIdle()
-
-            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnSuggestionClicked(place = kiruna))
-            advanceUntilIdle()
-
-            assertEquals(
-                expected = LocationChoices(
-                    isAutomatic = false,
-                    chosenPlaceName = "Kiruna",
-                    favorites = persistentListOf(
-                        FavoriteChoice(
-                            favorite = kirunaFavorite,
-                            isSelected = true,
-                            isFollowed = true
-                        )
-                    )
-                ),
-                actual = weatherForecastViewModel.state.value.locationChoices
-            )
-        }
-
-    @Test
-    fun `a sixth saved place is refused and says why`() =
-        testScope.runTest {
-            favoriteRepository.favorites.value = (1..5).map { number: Int ->
-                kirunaFavorite.copy(
-                    favoriteId = "favorite-$number",
-                    locality = "Plats $number"
-                )
-            }
-            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnShown)
-            advanceUntilIdle()
-
-            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnSuggestionClicked(place = kiruna))
-            advanceUntilIdle()
-
-            assertEquals(expected = Res.string.followed_places_limit_text, actual = weatherForecastViewModel.state.value.errorMessageResource)
-            assertEquals(expected = 5, actual = favoriteRepository.favorites.value.size)
         }
 
     @Test

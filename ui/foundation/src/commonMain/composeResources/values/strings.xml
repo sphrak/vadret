@@ -282,6 +282,9 @@
     <string name="end_of_season_is_simulated">Pollen is hidden and the hibernation notice shows on the next radar visit</string>
     <string name="end_of_season_is_not_simulated">The radar follows the real season</string>
     <string name="simulate_notifications">Simulate notifications</string>
+    <string name="simulated_stories">Stories</string>
+    <string name="simulate_stories">Simulate warning stories</string>
+    <string name="play_all_stories">Play all</string>
     <string name="save_place">Save place</string>
     <string name="open_forecast">Open forecast</string>
     <string name="warning_affects_places">Affects %1$s</string>
@@ -348,6 +351,7 @@
     <string name="aurora_estimate_explanation">Vadret API works out the chance from NOAA\'s space weather forecast, SMHI\'s cloud forecast and how dark the sky is. It is not a forecast from SMHI.</string>
     <string name="aurora_alerts">Northern lights</string>
     <string name="aurora_alerts_summary">When the northern lights may show in the coming 24 hours</string>
+    <string name="labs_aurora_summary">Shows the chance of northern lights at your places</string>
     <string name="pollen_alerts">Pollen levels</string>
     <string name="pollen_alerts_summary">For the pollen picked under Pollen</string>
     <string name="pollen_alerts_need_allergens">Turn on pollen and pick the pollen you are allergic to under Pollen first.</string>

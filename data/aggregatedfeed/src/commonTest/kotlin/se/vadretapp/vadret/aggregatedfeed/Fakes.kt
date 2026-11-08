@@ -38,13 +38,14 @@ internal class FakeForecastWarningRemoteDataSource(
     var forecastWarnings: () -> ForecastWarningsDto = { ForecastWarningsDto(warnings = emptyList()) }
 ) : ForecastWarningRemoteDataSource {
 
-    val requests: MutableList<Pair<String, List<Geohash>>> = mutableListOf()
+    val requests: MutableList<Triple<String, List<Geohash>, Boolean>> = mutableListOf()
 
     override suspend fun getWarnings(
         installationToken: String,
-        geohashes: List<Geohash>
+        geohashes: List<Geohash>,
+        isAuroraIncluded: Boolean
     ): ForecastWarningsDto {
-        requests += installationToken to geohashes
+        requests += Triple(installationToken, geohashes, isAuroraIncluded)
         return forecastWarnings()
     }
 }

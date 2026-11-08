@@ -7,6 +7,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.koin.core.Koin
+import org.koin.core.qualifier.Qualifier
 
 val LocalKoin: ProvidableCompositionLocal<Koin> = staticCompositionLocalOf {
     error("No Koin instance provided, wrap the content in CompositionLocalProvider(LocalKoin provides koin)")
@@ -22,4 +23,10 @@ inline fun <reified T : Any> koinAll(): List<T> {
 inline fun <reified T : ViewModel> koinViewModel(): T {
     val koin: Koin = LocalKoin.current
     return viewModel { koin.get<T>() }
+}
+
+@Composable
+inline fun <reified T : ViewModel> koinViewModel(qualifier: Qualifier): T {
+    val koin: Koin = LocalKoin.current
+    return viewModel { koin.get<T>(qualifier = qualifier) }
 }

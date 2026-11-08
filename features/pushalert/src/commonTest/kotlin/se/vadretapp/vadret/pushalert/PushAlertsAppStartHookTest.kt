@@ -1,8 +1,11 @@
 package se.vadretapp.vadret.pushalert
 
+import io.github.sphrak.either.Either
 import io.github.sphrak.either.extension.asLeft
 import io.github.sphrak.either.extension.asRight
+import io.github.sphrak.either.map
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -11,7 +14,9 @@ import kotlinx.coroutines.test.runTest
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.followedplace.model.FollowedPlace
+import se.vadretapp.vadret.forecastpreference.model.ForecastPreferences
 import se.vadretapp.vadret.logging.LogLevel
+import se.vadretapp.vadret.pushalert.usecase.DefaultObserveAuroraEnabledTask
 import se.vadretapp.vadret.pushalert.usecase.DefaultObservePollenAllergensTask
 import se.vadretapp.vadret.setting.model.HourFormat
 import se.vadretapp.vadret.setting.model.Language
@@ -129,6 +134,33 @@ class PushAlertsAppStartHookTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
+    fun turningTheAuroraLabOnOrOffSyncsAgainButChangingAnotherForecastPreferenceDoesNot() = runTest {
+        val syncPushAlertsTask = FakeSyncPushAlertsTask()
+        val forecastPreferenceRepository = FakeForecastPreferenceRepository(isAuroraEnabled = false)
+        val hook = launch {
+            pushAlertsAppStartHook(
+                syncPushAlertsTask = syncPushAlertsTask,
+                forecastPreferenceRepository = forecastPreferenceRepository
+            ).onAppStart()
+        }
+        advanceUntilIdle()
+        val syncsAtStart = syncPushAlertsTask.syncs
+
+        listOf<(ForecastPreferences) -> ForecastPreferences>(
+            { forecastPreferences: ForecastPreferences -> forecastPreferences.copy(isAuroraEnabled = true) },
+            { forecastPreferences: ForecastPreferences -> forecastPreferences.copy(isHourlyForecastEnabled = true) },
+            { forecastPreferences: ForecastPreferences -> forecastPreferences.copy(isAuroraEnabled = false) }
+        ).forEach { change: (ForecastPreferences) -> ForecastPreferences ->
+            forecastPreferenceRepository.forecastPreferences.update { stored: Either<Failure, ForecastPreferences> -> stored.map(change) }
+            advanceUntilIdle()
+        }
+        hook.cancel()
+
+        assertEquals(expected = 1 to 3, actual = syncsAtStart to syncPushAlertsTask.syncs)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
     fun aPlaceSavedWhileTheFirstSyncRunsSyncsAgain() = runTest {
         val observeFollowedPlacesTask = FakeObserveFollowedPlacesTask()
         val syncPushAlertsTask = FakeSyncPushAlertsTask(
@@ -163,14 +195,16 @@ private fun pushAlertsAppStartHook(
     observeFollowedPlacesTask: FakeObserveFollowedPlacesTask = FakeObserveFollowedPlacesTask(),
     pollenPreferenceRepository: FakePollenPreferenceRepository = FakePollenPreferenceRepository(),
     observeShownLanguageTask: FakeObserveShownLanguageTask = FakeObserveShownLanguageTask(),
-    observeHourFormatTask: FakeObserveHourFormatTask = FakeObserveHourFormatTask()
+    observeHourFormatTask: FakeObserveHourFormatTask = FakeObserveHourFormatTask(),
+    forecastPreferenceRepository: FakeForecastPreferenceRepository = FakeForecastPreferenceRepository()
 ): PushAlertsAppStartHook =
     PushAlertsAppStartHook(
         syncPushAlertsTask = syncPushAlertsTask,
         observeFollowedPlacesTask = observeFollowedPlacesTask,
         observePollenAllergensTask = DefaultObservePollenAllergensTask(pollenPreferenceRepository = pollenPreferenceRepository),
         observeShownLanguageTask = observeShownLanguageTask,
-        observeHourFormatTask = observeHourFormatTask
+        observeHourFormatTask = observeHourFormatTask,
+        observeAuroraEnabledTask = DefaultObserveAuroraEnabledTask(forecastPreferenceRepository = forecastPreferenceRepository)
     )
 
 private const val BIRCH_ID = "2a2a2a2a-2a2a-4a2a-aa2a-2a313a323236"

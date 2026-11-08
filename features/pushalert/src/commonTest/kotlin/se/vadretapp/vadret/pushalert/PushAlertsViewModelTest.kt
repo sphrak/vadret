@@ -1,9 +1,12 @@
 package se.vadretapp.vadret.pushalert
 
+import io.github.sphrak.either.Either
 import io.github.sphrak.either.extension.asLeft
 import io.github.sphrak.either.extension.asRight
+import io.github.sphrak.either.map
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -13,10 +16,12 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
+import se.vadretapp.vadret.forecastpreference.model.ForecastPreferences
 import se.vadretapp.vadret.pushalert.model.PollenAlertLevel
 import se.vadretapp.vadret.pushalert.model.PushAlertChoices
 import se.vadretapp.vadret.pushalert.model.PushAlertPlace
 import se.vadretapp.vadret.pushalert.model.WarningAlertLevel
+import se.vadretapp.vadret.pushalert.usecase.DefaultObserveAuroraEnabledTask
 import se.vadretapp.vadret.pushalert.usecase.DefaultObservePollenAllergensTask
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -77,6 +82,23 @@ class PushAlertsViewModelTest {
         assertEquals(
             expected = null,
             actual = viewModel.state.value.pendingChoices
+        )
+    }
+
+    @Test
+    fun auroraAlertsAreOnlyOfferedWhileTheAuroraLabIsOn() = runTest(context = testDispatcher) {
+        val forecastPreferenceRepository = FakeForecastPreferenceRepository(isAuroraEnabled = false)
+        val viewModel = startedViewModel(forecastPreferenceRepository = forecastPreferenceRepository)
+        val offeredWhileOff = viewModel.state.value.isAuroraShown
+
+        forecastPreferenceRepository.forecastPreferences.update { stored: Either<Failure, ForecastPreferences> ->
+            stored.map { forecastPreferences: ForecastPreferences -> forecastPreferences.copy(isAuroraEnabled = true) }
+        }
+        advanceUntilIdle()
+
+        assertEquals(
+            expected = false to true,
+            actual = offeredWhileOff to viewModel.state.value.isAuroraShown
         )
     }
 
@@ -727,7 +749,8 @@ class PushAlertsViewModelTest {
         observePushAlertSyncPendingTask: FakeObservePushAlertSyncPendingTask = FakeObservePushAlertSyncPendingTask(),
         isOutsideSwedenTask: FakeIsOutsideSwedenTask = FakeIsOutsideSwedenTask(),
         observePushAlertPlacesTask: FakeObservePushAlertPlacesTask = FakeObservePushAlertPlacesTask(places = PLACES),
-        pollenPreferenceRepository: FakePollenPreferenceRepository = FakePollenPreferenceRepository(pollenPreferences = BIRCH_ALLERGY.asRight())
+        pollenPreferenceRepository: FakePollenPreferenceRepository = FakePollenPreferenceRepository(pollenPreferences = BIRCH_ALLERGY.asRight()),
+        forecastPreferenceRepository: FakeForecastPreferenceRepository = FakeForecastPreferenceRepository()
     ): PushAlertsViewModel {
         val viewModel = PushAlertsViewModel(
             observePushAlertChoicesTask = FakeObservePushAlertChoicesTask(choices = choices),
@@ -736,6 +759,7 @@ class PushAlertsViewModelTest {
             savePushAlertChoicesTask = savePushAlertChoicesTask,
             syncPushAlertsTask = syncPushAlertsTask,
             observePollenAllergensTask = DefaultObservePollenAllergensTask(pollenPreferenceRepository = pollenPreferenceRepository),
+            observeAuroraEnabledTask = DefaultObserveAuroraEnabledTask(forecastPreferenceRepository = forecastPreferenceRepository),
             isOutsideSwedenTask = isOutsideSwedenTask,
             coroutineDispatcher = testDispatcher
         )

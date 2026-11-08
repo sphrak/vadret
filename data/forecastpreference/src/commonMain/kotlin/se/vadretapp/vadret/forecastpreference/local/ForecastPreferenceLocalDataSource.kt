@@ -7,4 +7,5 @@ internal interface ForecastPreferenceLocalDataSource {
     fun observeForecastPreferences(): Flow<ForecastPreferencesEntity>
     suspend fun setHourlyForecastEnabled(value: Boolean)
     suspend fun setExpandOnceEnabled(value: Boolean)
+    suspend fun setAuroraEnabled(value: Boolean)
 }

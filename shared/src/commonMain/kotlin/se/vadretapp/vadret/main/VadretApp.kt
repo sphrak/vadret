@@ -36,11 +36,14 @@ import kotlinx.collections.immutable.toImmutableList
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import se.vadretapp.vadret.di.koinAll
+import se.vadretapp.vadret.forecastwarning.ui.SimulatedWarningStoryRoute
 import se.vadretapp.vadret.forecastwarning.ui.WarningDetailRoute
 import se.vadretapp.vadret.forecastwarning.ui.WarningMapHost
 import se.vadretapp.vadret.forecastwarning.ui.WarningRoute
 import se.vadretapp.vadret.forecastwarning.ui.WarningStoryRoute
+import se.vadretapp.vadret.forecastwarning.warningStorySimulationSection
 import se.vadretapp.vadret.main.navigation.PlaceForecastKey
+import se.vadretapp.vadret.main.navigation.PlaceSearchKey
 import se.vadretapp.vadret.main.navigation.RadarKey
 import se.vadretapp.vadret.main.navigation.SettingsAboutKey
 import se.vadretapp.vadret.main.navigation.SettingsDeveloperKey
@@ -51,6 +54,7 @@ import se.vadretapp.vadret.main.navigation.SettingsLicensesKey
 import se.vadretapp.vadret.main.navigation.SettingsPlacesKey
 import se.vadretapp.vadret.main.navigation.SettingsPollenKey
 import se.vadretapp.vadret.main.navigation.SettingsSectionKey
+import se.vadretapp.vadret.main.navigation.SimulatedWarningStoryKey
 import se.vadretapp.vadret.main.navigation.TabNavigation
 import se.vadretapp.vadret.main.navigation.TopLevelDestination
 import se.vadretapp.vadret.main.navigation.VadretNavigationBar
@@ -82,6 +86,7 @@ import se.vadretapp.vadret.ui.VadretTheme
 import se.vadretapp.vadret.ui.model.NavigationIcon
 import se.vadretapp.vadret.weatherforecast.ui.PlaceForecastRoute
 import se.vadretapp.vadret.weatherforecast.ui.PlaceIslandRoute
+import se.vadretapp.vadret.weatherforecast.ui.PlaceSearchRoute
 import se.vadretapp.vadret.weatherforecast.ui.WeatherForecastRoute
 
 private val navigationConfiguration: SavedStateConfiguration = SavedStateConfiguration {
@@ -90,6 +95,10 @@ private val navigationConfiguration: SavedStateConfiguration = SavedStateConfigu
             subclass(
                 subclass = WeatherKey::class,
                 serializer = WeatherKey.serializer()
+            )
+            subclass(
+                subclass = PlaceSearchKey::class,
+                serializer = PlaceSearchKey.serializer()
             )
             subclass(
                 subclass = WarningKey::class,
@@ -106,6 +115,10 @@ private val navigationConfiguration: SavedStateConfiguration = SavedStateConfigu
             subclass(
                 subclass = WarningStoryKey::class,
                 serializer = WarningStoryKey.serializer()
+            )
+            subclass(
+                subclass = SimulatedWarningStoryKey::class,
+                serializer = SimulatedWarningStoryKey.serializer()
             )
             subclass(
                 subclass = RadarKey::class,
@@ -188,7 +201,14 @@ internal fun VadretApp(
     val settingsSectionsByKey: Map<String, SettingsSection> = remember(settingsSections) {
         settingsSections.associateBy { settingsSection: SettingsSection -> settingsSection.key }
     }
-    val developerSettingsSections: List<DeveloperSettingsSection> = koinAll()
+    val koinDeveloperSettingsSections: List<DeveloperSettingsSection> = koinAll()
+    val developerSettingsSections: List<DeveloperSettingsSection> = remember(koinDeveloperSettingsSections, tabNavigation) {
+        koinDeveloperSettingsSections + warningStorySimulationSection(
+            onStoryClick = { warningIdentifiers: List<String> ->
+                tabNavigation.open(key = SimulatedWarningStoryKey(warningIdentifiers = warningIdentifiers))
+            }
+        )
+    }
     val developerSettingsSectionsByKey: Map<String, DeveloperSettingsSection> = remember(developerSettingsSections) {
         developerSettingsSections.associateBy { developerSettingsSection: DeveloperSettingsSection -> developerSettingsSection.key }
     }
@@ -198,8 +218,14 @@ internal fun VadretApp(
                 WeatherForecastRoute(
                     onWarningClick = { warningIdentifiers: List<String> ->
                         tabNavigation.open(key = WarningStoryKey(warningIdentifiers = warningIdentifiers))
-                    }
+                    },
+                    onAddPlaceClick = { tabNavigation.open(key = PlaceSearchKey) }
                 )
+            }
+        }
+        entry<PlaceSearchKey>(metadata = storyTransitions) {
+            SheetPage {
+                PlaceSearchRoute(onClose = { tabNavigation.close(key = PlaceSearchKey) })
             }
         }
         entry<PlaceForecastKey>(metadata = detailTransitions) { placeForecastKey: PlaceForecastKey ->
@@ -244,6 +270,12 @@ internal fun VadretApp(
             WarningStoryRoute(
                 warningIdentifiers = warningStoryKey.warningIdentifiers,
                 onDismiss = { tabNavigation.close(key = warningStoryKey) }
+            )
+        }
+        entry<SimulatedWarningStoryKey>(metadata = storyTransitions) { simulatedWarningStoryKey: SimulatedWarningStoryKey ->
+            SimulatedWarningStoryRoute(
+                warningIdentifiers = simulatedWarningStoryKey.warningIdentifiers,
+                onDismiss = { tabNavigation.close(key = simulatedWarningStoryKey) }
             )
         }
         if (radarTab != null) {

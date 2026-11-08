@@ -23,6 +23,7 @@ import se.vadretapp.vadret.pushalert.model.PushAlertChoices
 import se.vadretapp.vadret.pushalert.model.PushAlertPlace
 import se.vadretapp.vadret.pushalert.model.WarningAlertLevel
 import se.vadretapp.vadret.pushalert.usecase.IsOutsideSwedenTask
+import se.vadretapp.vadret.pushalert.usecase.ObserveAuroraEnabledTask
 import se.vadretapp.vadret.pushalert.usecase.ObservePollenAllergensTask
 import se.vadretapp.vadret.pushalert.usecase.ObservePushAlertChoicesTask
 import se.vadretapp.vadret.pushalert.usecase.ObservePushAlertPlacesTask
@@ -38,6 +39,7 @@ internal class PushAlertsViewModel(
     private val savePushAlertChoicesTask: SavePushAlertChoicesTask,
     private val syncPushAlertsTask: SyncPushAlertsTask,
     private val observePollenAllergensTask: ObservePollenAllergensTask,
+    private val observeAuroraEnabledTask: ObserveAuroraEnabledTask,
     private val isOutsideSwedenTask: IsOutsideSwedenTask,
     private val coroutineDispatcher: CoroutineDispatcher
 ) : ViewModel() {
@@ -72,6 +74,7 @@ internal class PushAlertsViewModel(
             viewModelScope.launch(context = coroutineDispatcher) { load() }
             viewModelScope.launch(context = coroutineDispatcher) { observeSyncPending() }
             viewModelScope.launch(context = coroutineDispatcher) { observePollenAllergens() }
+            viewModelScope.launch(context = coroutineDispatcher) { observeAuroraEnabled() }
         }
     }
 
@@ -130,6 +133,16 @@ internal class PushAlertsViewModel(
                 onSuccess = { allergenPollenIds: Set<String> ->
                     state.update { state: PushAlertsState -> state.copy(hasPollenAllergens = allergenPollenIds.isNotEmpty()) }
                 }
+            )
+        }
+    }
+
+    // Aurora is a lab, so its alerts are only offered while the lab is on.
+    private suspend fun observeAuroraEnabled() {
+        observeAuroraEnabledTask().collect { result: Either<Failure, Boolean> ->
+            result.onResult(
+                onError = { failure: Failure -> state.update { state: PushAlertsState -> state.copy(failure = failure) } },
+                onSuccess = { isAuroraEnabled: Boolean -> state.update { state: PushAlertsState -> state.copy(isAuroraShown = isAuroraEnabled) } }
             )
         }
     }

@@ -53,6 +53,7 @@ internal fun LocationPicker(
     localityName: String?,
     locationChoices: LocationChoices,
     onEvent: (WeatherForecastEvent) -> Unit,
+    onAddPlaceClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var isExpanded: Boolean by remember { mutableStateOf(value = false) }
@@ -82,6 +83,10 @@ internal fun LocationPicker(
                     isExpanded = false
                 }
                 onEvent(event)
+            },
+            onAddPlaceClick = {
+                isExpanded = false
+                onAddPlaceClick()
             }
         )
     }
@@ -93,6 +98,7 @@ private fun LocationMenu(
     locationChoices: LocationChoices,
     onDismiss: () -> Unit,
     onEvent: (WeatherForecastEvent) -> Unit,
+    onAddPlaceClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     DropdownMenu(
@@ -138,7 +144,7 @@ private fun LocationMenu(
         DropdownMenuItem(
             text = { MenuText(text = stringResource(resource = Res.string.add_place)) },
             leadingIcon = { MenuIcon(iconResource = Res.drawable.ic_add) },
-            onClick = { onEvent(WeatherForecastEvent.OnAddPlaceClicked) }
+            onClick = onAddPlaceClick
         )
     }
 }

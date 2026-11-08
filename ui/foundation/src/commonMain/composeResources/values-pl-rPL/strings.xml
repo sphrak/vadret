@@ -115,6 +115,9 @@
     <string name="end_of_season_is_simulated">Pyłki są ukryte, a przy następnym otwarciu radar pokaże, że zapadły w sen zimowy</string>
     <string name="end_of_season_is_not_simulated">Radar pokazuje prawdziwy sezon</string>
     <string name="simulate_notifications">Symuluj powiadomienia</string>
+    <string name="simulated_stories">Relacje</string>
+    <string name="simulate_stories">Symuluj relacje ostrzeżeń</string>
+    <string name="play_all_stories">Odtwórz wszystkie</string>
     <string name="developer_unlocked">Jesteś teraz deweloperem</string>
     <string name="developer_already_unlocked">Jesteś już deweloperem</string>
     <string name="settings_notifications">Powiadomienia</string>
@@ -144,6 +147,7 @@
     <string name="aurora_estimate_explanation">Vadret API oblicza szansę na podstawie prognozy pogody kosmicznej NOAA, prognozy zachmurzenia SMHI i tego, jak jest ciemno. To nie jest prognoza SMHI.</string>
     <string name="aurora_alerts">Zorza polarna</string>
     <string name="aurora_alerts_summary">Gdy w ciągu najbliższej doby może być widać zorzę polarną</string>
+    <string name="labs_aurora_summary">Pokazuje szansę na zorzę polarną w twoich miejscach</string>
     <string name="pollen_alerts">Stężenie pyłków</string>
     <string name="pollen_alerts_summary">Dla pyłków wybranych w sekcji Pyłki</string>
     <string name="pollen_alerts_need_allergens">Najpierw włącz pyłki i wybierz w sekcji Pyłki te, na które masz alergię.</string>

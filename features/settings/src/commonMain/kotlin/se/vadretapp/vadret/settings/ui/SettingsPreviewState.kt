@@ -19,6 +19,7 @@ import se.vadretapp.vadret.settings.Settings
 import se.vadretapp.vadret.settings.SettingsState
 import se.vadretapp.vadret.settings.aboutRows
 import se.vadretapp.vadret.settings.extension.toLibraryGroups
+import se.vadretapp.vadret.settings.model.Labs
 import se.vadretapp.vadret.settings.model.PollenAllergenRow
 import se.vadretapp.vadret.settings.model.PollenGroup
 import se.vadretapp.vadret.settings.model.PollenGroupRows
@@ -138,4 +139,9 @@ internal fun pollenSettingsPreviewState(): PollenSettingsState =
 
 internal fun developerPreviewState(theme: Theme): DeveloperState = DeveloperState(settings = settingsPreviewState(theme = theme).settings)
 
-internal fun labsPreviewState(theme: Theme): LabsState = LabsState(isHourlyForecastEnabled = settingsPreviewState(theme = theme).settings?.isHourlyForecastEnabled)
+internal fun labsPreviewState(theme: Theme): LabsState = LabsState(
+    labs = Labs(
+        isHourlyForecastEnabled = settingsPreviewState(theme = theme).settings?.isHourlyForecastEnabled == true,
+        isAuroraEnabled = true
+    )
+)

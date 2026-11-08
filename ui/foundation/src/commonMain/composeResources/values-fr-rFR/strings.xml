@@ -118,6 +118,9 @@
     <string name="end_of_season_is_simulated">Les pollens sont masqués et le radar indique qu\'ils hibernent à la prochaine ouverture</string>
     <string name="end_of_season_is_not_simulated">Le radar suit la vraie saison</string>
     <string name="simulate_notifications">Simuler des notifications</string>
+    <string name="simulated_stories">Stories</string>
+    <string name="simulate_stories">Simuler les stories d\'alerte</string>
+    <string name="play_all_stories">Tout lire</string>
     <string name="developer_unlocked">Vous êtes maintenant développeur</string>
     <string name="developer_already_unlocked">Vous êtes déjà développeur</string>
     <string name="settings_notifications">Notifications</string>
@@ -146,6 +149,7 @@
     <string name="aurora_estimate_explanation">Vadret API calcule la probabilité à partir des prévisions de météo spatiale de la NOAA, des prévisions de nébulosité du SMHI et de l\'obscurité du ciel. Ce n\'est pas une prévision du SMHI.</string>
     <string name="aurora_alerts">Aurores boréales</string>
     <string name="aurora_alerts_summary">Quand des aurores boréales peuvent être visibles dans les prochaines 24 heures</string>
+    <string name="labs_aurora_summary">Indique les chances d\'aurores boréales pour vos lieux</string>
     <string name="pollen_alerts">Niveaux de pollen</string>
     <string name="pollen_alerts_summary">Pour les pollens choisis sous Pollen</string>
     <string name="pollen_alerts_need_allergens">Activez d\'abord le pollen et choisissez sous Pollen les pollens auxquels vous êtes allergique.</string>

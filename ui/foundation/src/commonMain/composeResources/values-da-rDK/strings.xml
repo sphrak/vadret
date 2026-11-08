@@ -126,6 +126,9 @@
     <string name="end_of_season_is_simulated">Pollen skjules, og radaren viser, at pollen er gået i hi, næste gang du åbner den</string>
     <string name="end_of_season_is_not_simulated">Radaren følger den rigtige sæson</string>
     <string name="simulate_notifications">Simulér notifikationer</string>
+    <string name="simulated_stories">Historier</string>
+    <string name="simulate_stories">Simulér advarselshistorier</string>
+    <string name="play_all_stories">Afspil alle</string>
     <string name="developer_unlocked">Du er nu udvikler</string>
     <string name="developer_already_unlocked">Du er allerede udvikler</string>
     <string name="settings_notifications">Notifikationer</string>
@@ -154,6 +157,7 @@
     <string name="aurora_estimate_explanation">Vadret API beregner chancen ud fra NOAA\'s rumvejrsprognose, SMHI\'s skyprognose og hvor mørkt det er. Det er ikke en prognose fra SMHI.</string>
     <string name="aurora_alerts">Nordlys</string>
     <string name="aurora_alerts_summary">Når der kan være nordlys det kommende døgn</string>
+    <string name="labs_aurora_summary">Viser chancen for nordlys ved dine steder</string>
     <string name="pollen_alerts">Pollenniveauer</string>
     <string name="pollen_alerts_summary">For de pollen, du har valgt under Pollen</string>
     <string name="pollen_alerts_need_allergens">Slå pollen til og vælg de pollen, du er allergisk over for, under Pollen først.</string>

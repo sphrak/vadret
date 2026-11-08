@@ -161,6 +161,9 @@
     <string name="end_of_season_is_simulated">Die Pollen werden ausgeblendet, und der Radar zeigt beim nächsten Öffnen, dass sie Winterschlaf halten</string>
     <string name="end_of_season_is_not_simulated">Der Radar folgt der echten Saison</string>
     <string name="simulate_notifications">Benachrichtigungen simulieren</string>
+    <string name="simulated_stories">Storys</string>
+    <string name="simulate_stories">Warnungs-Storys simulieren</string>
+    <string name="play_all_stories">Alle abspielen</string>
     <string name="developer_unlocked">Du bist jetzt Entwickler</string>
     <string name="developer_already_unlocked">Du bist bereits Entwickler</string>
     <string name="settings_notifications">Benachrichtigungen</string>
@@ -189,6 +192,7 @@
     <string name="aurora_estimate_explanation">Vadret API berechnet die Chance aus der Weltraumwettervorhersage der NOAA, der Wolkenvorhersage des SMHI und wie dunkel es ist. Es ist keine Vorhersage des SMHI.</string>
     <string name="aurora_alerts">Polarlichter</string>
     <string name="aurora_alerts_summary">Wenn in den nächsten 24 Stunden Polarlichter zu sehen sein können</string>
+    <string name="labs_aurora_summary">Zeigt die Chance auf Polarlichter an deinen Orten</string>
     <string name="pollen_alerts">Pollenbelastung</string>
     <string name="pollen_alerts_summary">Für die unter Pollen gewählten Pollen</string>
     <string name="pollen_alerts_need_allergens">Schalte zuerst Pollen ein und wähle unter Pollen, gegen welche Pollen du allergisch bist.</string>

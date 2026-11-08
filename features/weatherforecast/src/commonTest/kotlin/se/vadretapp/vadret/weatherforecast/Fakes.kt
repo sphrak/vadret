@@ -323,7 +323,8 @@ internal class FakeNominatimRepository(
 }
 
 internal class FakePlaceRepository(
-    var items: List<Place> = listOf(kiruna)
+    var items: List<Place> = listOf(kiruna),
+    var failure: Failure? = null
 ) : PlaceRepository {
 
     val searches = mutableListOf<Pair<String, Int>>()
@@ -333,6 +334,10 @@ internal class FakePlaceRepository(
         limit: Int
     ): Either<Failure, List<Place>> {
         searches.add(query to limit)
+        val currentFailure: Failure? = failure
+        if (currentFailure != null) {
+            return currentFailure.asLeft()
+        }
         return items
             .filter { place: Place ->
                 place.locality.startsWith(
@@ -398,7 +403,8 @@ internal class FakeForecastPreferenceRepository : ForecastPreferenceRepository {
 
     private var forecastPreferences = ForecastPreferences(
         isHourlyForecastEnabled = false,
-        isExpandOnceEnabled = true
+        isExpandOnceEnabled = true,
+        isAuroraEnabled = false
     )
     private val observedForecastPreferences = MutableStateFlow<Either<Failure, ForecastPreferences>>(value = forecastPreferences.asRight())
 
@@ -413,6 +419,11 @@ internal class FakeForecastPreferenceRepository : ForecastPreferenceRepository {
 
     override suspend fun setExpandOnceEnabled(isEnabled: Boolean): Either<Failure, Unit> {
         store(forecastPreferences = forecastPreferences.copy(isExpandOnceEnabled = isEnabled))
+        return Unit.asRight()
+    }
+
+    override suspend fun setAuroraEnabled(isEnabled: Boolean): Either<Failure, Unit> {
+        store(forecastPreferences = forecastPreferences.copy(isAuroraEnabled = isEnabled))
         return Unit.asRight()
     }
 

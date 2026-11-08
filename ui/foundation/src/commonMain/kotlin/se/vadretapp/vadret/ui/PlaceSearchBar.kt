@@ -1,12 +1,17 @@
 package se.vadretapp.vadret.ui
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.ExpandedFullScreenSearchBar
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.SearchBar
@@ -26,6 +31,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.drop
@@ -34,10 +41,11 @@ import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import se.vadretapp.vadret.place.model.Place
+import se.vadretapp.vadret.ui.model.NavigationIcon
+import se.vadretapp.vadret.ui.model.descriptionResource
+import se.vadretapp.vadret.ui.model.iconResource
 import se.vadretapp.vadret.ui.resources.Res
-import se.vadretapp.vadret.ui.resources.back
 import se.vadretapp.vadret.ui.resources.clear_search
-import se.vadretapp.vadret.ui.resources.ic_arrow_back
 import se.vadretapp.vadret.ui.resources.ic_close
 import se.vadretapp.vadret.ui.resources.ic_search
 import se.vadretapp.vadret.ui.resources.place_municipality_county
@@ -60,29 +68,20 @@ fun PlaceSearchBar(
     onSearch: (query: String) -> Unit,
     onSuggestionClick: (Place) -> Unit,
     onCollapse: () -> Unit,
-    modifier: Modifier = Modifier,
-    isExpandedAtStart: Boolean = false
+    modifier: Modifier = Modifier
 ) {
     val textFieldState: TextFieldState = rememberTextFieldState()
-    val searchBarState: SearchBarState = rememberSearchBarState(
-        initialValue = if (isExpandedAtStart) {
-            SearchBarValue.Expanded
-        } else {
-            SearchBarValue.Collapsed
-        }
-    )
+    val searchBarState: SearchBarState = rememberSearchBarState()
     val coroutineScope: CoroutineScope = rememberCoroutineScope()
-    val currentOnQueryChange: (String) -> Unit by rememberUpdatedState(newValue = onQueryChange)
     val currentOnCollapse: () -> Unit by rememberUpdatedState(newValue = onCollapse)
     var isNothingFoundShown: Boolean by remember { mutableStateOf(value = false) }
-    LaunchedEffect(textFieldState) {
-        snapshotFlow { textFieldState.text.toString() }
-            .drop(count = 1)
-            .collect { query: String ->
-                isNothingFoundShown = false
-                currentOnQueryChange(query)
-            }
-    }
+    QueryChangeEffect(
+        textFieldState = textFieldState,
+        onQueryChange = { query: String ->
+            isNothingFoundShown = false
+            onQueryChange(query)
+        }
+    )
     LaunchedEffect(searchBarState) {
         snapshotFlow { searchBarState.currentValue }
             .drop(count = 1)
@@ -105,7 +104,8 @@ fun PlaceSearchBar(
                     isNothingFoundShown = query.isNotBlank()
                 }
             },
-            onBack = { coroutineScope.launch { searchBarState.animateToCollapsed() } }
+            navigationIcon = NavigationIcon.BACK,
+            onNavigationClick = { coroutineScope.launch { searchBarState.animateToCollapsed() } }
         )
     }
     SearchBar(
@@ -118,26 +118,111 @@ fun PlaceSearchBar(
         inputField = inputField,
         colors = SearchBarDefaults.colors(containerColor = VadretTheme.colorScheme.background)
     ) {
-        LazyColumn {
-            if (isNothingFoundShown && suggestions.isEmpty()) {
-                item(key = NOTHING_FOUND_KEY, contentType = NOTE_CONTENT_TYPE) {
-                    SettingsNote(text = stringResource(resource = Res.string.search_nothing_found))
+        PlaceSearchResults(
+            suggestions = suggestions,
+            isNothingFoundShown = isNothingFoundShown,
+            onSuggestionClick = { place: Place ->
+                onSuggestionClick(place)
+                coroutineScope.launch { searchBarState.animateToCollapsed() }
+            }
+        )
+    }
+}
+
+// The same search as an open search bar, for a page that is only there to find a place. It is laid out like the open
+// search bar, but on the page itself, so the page can slide in like a sheet and closes with a cross. Whoever shows the
+// page closes it once a place is picked.
+@Composable
+fun PlaceSearchPage(
+    placeholder: String,
+    suggestions: ImmutableList<Place>,
+    onQueryChange: (String) -> Unit,
+    onSearch: (query: String) -> Unit,
+    onSuggestionClick: (Place) -> Unit,
+    onClose: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val textFieldState: TextFieldState = rememberTextFieldState()
+    val searchBarState: SearchBarState = rememberSearchBarState(initialValue = SearchBarValue.Expanded)
+    val focusRequester: FocusRequester = remember { FocusRequester() }
+    var isNothingFoundShown: Boolean by remember { mutableStateOf(value = false) }
+    QueryChangeEffect(
+        textFieldState = textFieldState,
+        onQueryChange = { query: String ->
+            isNothingFoundShown = false
+            onQueryChange(query)
+        }
+    )
+    LaunchedEffect(focusRequester) {
+        focusRequester.requestFocus()
+    }
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .windowInsetsPadding(insets = SearchBarDefaults.fullScreenWindowInsets)
+    ) {
+        PlaceSearchInputField(
+            modifier = Modifier
+                .fillMaxWidth()
+                .focusRequester(focusRequester = focusRequester),
+            textFieldState = textFieldState,
+            searchBarState = searchBarState,
+            placeholder = placeholder,
+            onSearch = { query: String ->
+                if (suggestions.isNotEmpty()) {
+                    onSearch(query)
+                } else {
+                    isNothingFoundShown = query.isNotBlank()
                 }
+            },
+            navigationIcon = NavigationIcon.CLOSE,
+            onNavigationClick = onClose
+        )
+        HorizontalDivider(color = SearchBarDefaults.colors().dividerColor)
+        PlaceSearchResults(
+            suggestions = suggestions,
+            isNothingFoundShown = isNothingFoundShown,
+            onSuggestionClick = onSuggestionClick
+        )
+    }
+}
+
+@Composable
+private fun QueryChangeEffect(
+    textFieldState: TextFieldState,
+    onQueryChange: (String) -> Unit
+) {
+    val currentOnQueryChange: (String) -> Unit by rememberUpdatedState(newValue = onQueryChange)
+    LaunchedEffect(textFieldState) {
+        snapshotFlow { textFieldState.text.toString() }
+            .drop(count = 1)
+            .collect { query: String -> currentOnQueryChange(query) }
+    }
+}
+
+@Composable
+private fun PlaceSearchResults(
+    suggestions: ImmutableList<Place>,
+    isNothingFoundShown: Boolean,
+    onSuggestionClick: (Place) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    LazyColumn(modifier = modifier) {
+        if (isNothingFoundShown && suggestions.isEmpty()) {
+            item(key = NOTHING_FOUND_KEY, contentType = NOTE_CONTENT_TYPE) {
+                SettingsNote(text = stringResource(resource = Res.string.search_nothing_found))
             }
-            items(
-                items = suggestions,
-                key = { place: Place -> place.locality + place.municipality + place.county },
-                contentType = { SUGGESTION_CONTENT_TYPE }
-            ) { place: Place ->
-                PlaceSuggestionRow(
-                    modifier = Modifier.animateItem(),
-                    place = place,
-                    onClick = {
-                        onSuggestionClick(place)
-                        coroutineScope.launch { searchBarState.animateToCollapsed() }
-                    }
-                )
-            }
+        }
+        items(
+            items = suggestions,
+            key = { place: Place -> place.locality + place.municipality + place.county },
+            contentType = { SUGGESTION_CONTENT_TYPE }
+        ) { place: Place ->
+            PlaceSuggestionRow(
+                modifier = Modifier.animateItem(),
+                place = place,
+                onClick = { onSuggestionClick(place) }
+            )
         }
     }
 }
@@ -148,7 +233,8 @@ private fun PlaceSearchInputField(
     searchBarState: SearchBarState,
     placeholder: String,
     onSearch: (query: String) -> Unit,
-    onBack: () -> Unit,
+    navigationIcon: NavigationIcon,
+    onNavigationClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     SearchBarDefaults.InputField(
@@ -159,10 +245,10 @@ private fun PlaceSearchInputField(
         placeholder = { Text(text = placeholder) },
         leadingIcon = {
             if (searchBarState.currentValue == SearchBarValue.Expanded) {
-                IconButton(onClick = onBack) {
+                IconButton(onClick = onNavigationClick) {
                     Icon(
-                        painter = painterResource(resource = Res.drawable.ic_arrow_back),
-                        contentDescription = stringResource(resource = Res.string.back)
+                        painter = painterResource(resource = navigationIcon.iconResource()),
+                        contentDescription = stringResource(resource = navigationIcon.descriptionResource())
                     )
                 }
             } else {

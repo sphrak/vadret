@@ -149,14 +149,23 @@ private fun WarningStory(
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val mapHeight: Dp = maxWidth / GOLDEN_RATIO
         Column(modifier = Modifier.fillMaxSize()) {
-            WarningAreaMap(
-                mapArea = warning.mapArea,
-                colors = colors,
-                fitTopPadding = statusBarHeight + storyEdgePadding + segmentHeight + storyEdgePadding + LocalMinimumInteractiveComponentSize.current,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(height = mapHeight)
-            )
+            // A chance of northern lights is about the sky over the place rather than an area on a map.
+            if (warning.auroraChance != null) {
+                AuroraSky(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(height = mapHeight)
+                )
+            } else {
+                WarningAreaMap(
+                    mapArea = warning.mapArea,
+                    colors = colors,
+                    fitTopPadding = statusBarHeight + storyEdgePadding + segmentHeight + storyEdgePadding + LocalMinimumInteractiveComponentSize.current,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(height = mapHeight)
+                )
+            }
             WarningLevelBlock(
                 warning = warning,
                 colors = colors

@@ -4,11 +4,14 @@ import io.github.sphrak.either.Either
 import io.github.sphrak.either.extension.asLeft
 import io.github.sphrak.either.extension.asRight
 import io.github.sphrak.either.extension.successOrNull
+import io.github.sphrak.either.map
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.test.runTest
 import se.vadretapp.vadret.aggregatedfeed.model.ForecastWarningRequest
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.followedplace.model.FollowedPlace
+import se.vadretapp.vadret.forecastpreference.model.ForecastPreferences
 import se.vadretapp.vadret.geohash.model.Geohash
 import se.vadretapp.vadret.pushalert.model.InstallationToken
 import se.vadretapp.vadret.pushalert.usecase.DefaultGetForecastWarningRequestTask
@@ -19,9 +22,11 @@ class DefaultGetForecastWarningRequestTaskTest {
 
     private val pushAlertRepository = FakePushAlertRepository(installationToken = InstallationToken(value = "vadret_token"))
     private val observeFollowedPlacesTask = FakeObserveFollowedPlacesTask()
+    private val forecastPreferenceRepository = FakeForecastPreferenceRepository()
     private val getForecastWarningRequestTask = DefaultGetForecastWarningRequestTask(
         pushAlertRepository = pushAlertRepository,
-        observeFollowedPlacesTask = observeFollowedPlacesTask
+        observeFollowedPlacesTask = observeFollowedPlacesTask,
+        forecastPreferenceRepository = forecastPreferenceRepository
     )
 
     @Test
@@ -70,8 +75,41 @@ class DefaultGetForecastWarningRequestTaskTest {
                     geohashes = listOf(
                         Geohash(value = "u6282"),
                         Geohash(value = "u6sce")
-                    )
+                    ),
+                    isAuroraIncluded = true
                 ).asRight<ForecastWarningRequest?>(),
+                actual = getForecastWarningRequestTask()
+            )
+        }
+
+    @Test
+    fun `vadret api is only asked about aurora while the aurora lab is on`() =
+        runTest {
+            observeFollowedPlacesTask.followedPlaces.value = listOf(
+                followedPlace(
+                    latitude = 59.3293,
+                    longitude = 18.0686
+                )
+            ).asRight()
+            val askedWhileOn: Boolean? = getForecastWarningRequestTask().successOrNull?.isAuroraIncluded
+            forecastPreferenceRepository.forecastPreferences.update { stored: Either<Failure, ForecastPreferences> ->
+                stored.map { forecastPreferences: ForecastPreferences -> forecastPreferences.copy(isAuroraEnabled = false) }
+            }
+
+            assertEquals(
+                expected = true to false,
+                actual = askedWhileOn to getForecastWarningRequestTask().successOrNull?.isAuroraIncluded
+            )
+        }
+
+    @Test
+    fun `preferences that cannot be read fail the request`() =
+        runTest {
+            val failure = Failure(errorCode = ErrorCode.STORAGE_FAILED)
+            forecastPreferenceRepository.forecastPreferences.value = failure.asLeft()
+
+            assertEquals<Either<Failure, ForecastWarningRequest?>>(
+                expected = failure.asLeft(),
                 actual = getForecastWarningRequestTask()
             )
         }
@@ -124,7 +162,8 @@ class DefaultGetForecastWarningRequestTaskTest {
                     installationToken = InstallationToken(value = "vadret_token"),
                     syncedCurrentGeohashFailure = failure
                 ),
-                observeFollowedPlacesTask = observeFollowedPlacesTask
+                observeFollowedPlacesTask = observeFollowedPlacesTask,
+                forecastPreferenceRepository = forecastPreferenceRepository
             )
 
             assertEquals<Either<Failure, ForecastWarningRequest?>>(

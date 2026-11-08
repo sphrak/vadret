@@ -219,14 +219,16 @@ private fun LazyListScope.weatherAlerts(
             leadingContent = { SettingsRowIcon(icon = VadretIcons.Alert.Slipperiness) }
         )
     }
-    item(key = AURORA_KEY, contentType = PushAlertsContentType.ROW) {
-        SwitchRow(
-            title = stringResource(resource = Res.string.aurora_alerts),
-            summary = stringResource(resource = Res.string.aurora_alerts_summary),
-            isChecked = state.choices.aurora,
-            onCheckedChange = { isChecked: Boolean -> onEvent(PushAlertsEvent.OnAuroraToggled(isEnabled = isChecked)) },
-            leadingContent = { SettingsRowIcon(icon = VadretIcons.Alert.Aurora) }
-        )
+    if (state.isAuroraShown) {
+        item(key = AURORA_KEY, contentType = PushAlertsContentType.ROW) {
+            SwitchRow(
+                title = stringResource(resource = Res.string.aurora_alerts),
+                summary = stringResource(resource = Res.string.aurora_alerts_summary),
+                isChecked = state.choices.aurora,
+                onCheckedChange = { isChecked: Boolean -> onEvent(PushAlertsEvent.OnAuroraToggled(isEnabled = isChecked)) },
+                leadingContent = { SettingsRowIcon(icon = VadretIcons.Alert.Aurora) }
+            )
+        }
     }
 }
 

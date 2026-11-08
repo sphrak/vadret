@@ -1,5 +1,6 @@
 package se.vadretapp.vadret.pushalert
 
+import io.github.sphrak.either.Either
 import io.github.sphrak.either.extension.asLeft
 import io.github.sphrak.either.extension.asRight
 import kotlinx.coroutines.CompletableDeferred
@@ -135,6 +136,42 @@ class DefaultSyncPushAlertsTaskTest {
             expected = listOf(false, true, true),
             actual = subscribed
         )
+    }
+
+    @Test
+    fun withTheAuroraLabOffAuroraIsNotFollowedAndAuroraAloneIsNothingToFollow() = runTest {
+        val subscribed = listOf(
+            WARNINGS_FROM_YELLOW.copy(aurora = true),
+            PushAlertChoices.NOTHING_CHOSEN.copy(aurora = true)
+        ).map { pushAlertChoices: PushAlertChoices ->
+            val pushAlertRepository = FakePushAlertRepository(choices = pushAlertChoices)
+            syncPushAlertsTask(
+                pushAlertRepository = pushAlertRepository,
+                forecastPreferenceRepository = FakeForecastPreferenceRepository(isAuroraEnabled = false)
+            )()
+            pushAlertRepository.subscriptions.lastOrNull()?.aurora
+        }
+
+        assertEquals(
+            expected = listOf(false, null),
+            actual = subscribed
+        )
+    }
+
+    @Test
+    fun preferencesThatCannotBeReadFailTheSyncAndSyncLater() = runTest {
+        val failure = Failure(errorCode = ErrorCode.STORAGE_FAILED)
+        val pushAlertRepository = FakePushAlertRepository(choices = WARNINGS_FROM_YELLOW)
+        val forecastPreferenceRepository = FakeForecastPreferenceRepository()
+        forecastPreferenceRepository.forecastPreferences.value = failure.asLeft()
+
+        val synced = syncPushAlertsTask(
+            pushAlertRepository = pushAlertRepository,
+            forecastPreferenceRepository = forecastPreferenceRepository
+        )()
+
+        assertEquals<Either<Failure, Unit>>(expected = failure.asLeft(), actual = synced)
+        assertEquals(expected = emptyList(), actual = pushAlertRepository.subscriptions)
     }
 
     @Test
@@ -964,11 +1001,13 @@ private fun syncPushAlertsTask(
     locationRepository: FakeLocationRepository = FakeLocationRepository(),
     favoriteRepository: FakeFavoriteRepository = FakeFavoriteRepository(),
     pollenPreferenceRepository: FakePollenPreferenceRepository = FakePollenPreferenceRepository(),
+    forecastPreferenceRepository: FakeForecastPreferenceRepository = FakeForecastPreferenceRepository(),
     getHourFormatTask: FakeGetHourFormatTask = FakeGetHourFormatTask(),
     getShownLanguageTask: FakeGetShownLanguageTask = FakeGetShownLanguageTask()
 ): DefaultSyncPushAlertsTask = DefaultSyncPushAlertsTask(
     pushAlertRepository = pushAlertRepository,
     pollenPreferenceRepository = pollenPreferenceRepository,
+    forecastPreferenceRepository = forecastPreferenceRepository,
     getHourFormatTask = getHourFormatTask,
     getShownLanguageTask = getShownLanguageTask,
     deviceTokenSource = deviceTokenSource,

@@ -22,6 +22,9 @@ import se.vadretapp.vadret.ui.resources.weather
 internal data object WeatherKey : NavKey
 
 @Serializable
+internal data object PlaceSearchKey : NavKey
+
+@Serializable
 internal data object WarningKey : NavKey
 
 @Serializable
@@ -32,6 +35,9 @@ internal data object WarningPlacesKey : NavKey
 
 @Serializable
 internal data class WarningStoryKey(val warningIdentifiers: List<String>) : NavKey
+
+@Serializable
+internal data class SimulatedWarningStoryKey(val warningIdentifiers: List<String>) : NavKey
 
 @Serializable
 internal data object RadarKey : NavKey

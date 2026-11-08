@@ -1,7 +1,6 @@
 package se.vadretapp.vadret.weatherforecast
 
 import se.vadretapp.vadret.favorite.model.Favorite
-import se.vadretapp.vadret.place.model.Place
 import se.vadretapp.vadret.setting.model.HourFormat
 import se.vadretapp.vadret.weatherforecast.model.ForecastView
 
@@ -28,9 +27,4 @@ sealed interface WeatherForecastEvent {
     data object OnAutomaticLocationClicked : WeatherForecastEvent
     data class OnFavoriteClicked(val favorite: Favorite) : WeatherForecastEvent
     data class OnFavoriteRemoveClicked(val favoriteId: String) : WeatherForecastEvent
-    data object OnAddPlaceClicked : WeatherForecastEvent
-    data object OnSearchDismissed : WeatherForecastEvent
-    data class OnSearchSubmitted(val query: String) : WeatherForecastEvent
-    data class OnSearchQueryChanged(val query: String) : WeatherForecastEvent
-    data class OnSuggestionClicked(val place: Place) : WeatherForecastEvent
 }

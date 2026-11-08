@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.map
 
 private val isHourlyForecastEnabledKey: Preferences.Key<Boolean> = booleanPreferencesKey(name = "is_hourly_forecast_enabled")
 private val isExpandOnceEnabledKey: Preferences.Key<Boolean> = booleanPreferencesKey(name = "is_expand_once_enabled")
+private val isAuroraEnabledKey: Preferences.Key<Boolean> = booleanPreferencesKey(name = "is_aurora_enabled")
 
 internal class DefaultForecastPreferenceLocalDataSource(
     private val dataStore: DataStore<Preferences>
@@ -35,9 +36,16 @@ internal class DefaultForecastPreferenceLocalDataSource(
         }
     }
 
+    override suspend fun setAuroraEnabled(value: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[isAuroraEnabledKey] = value
+        }
+    }
+
     private fun Preferences.toForecastPreferencesEntity(): ForecastPreferencesEntity =
         ForecastPreferencesEntity(
             isHourlyForecastEnabled = this[isHourlyForecastEnabledKey],
-            isExpandOnceEnabled = this[isExpandOnceEnabledKey]
+            isExpandOnceEnabled = this[isExpandOnceEnabledKey],
+            isAuroraEnabled = this[isAuroraEnabledKey]
         )
 }

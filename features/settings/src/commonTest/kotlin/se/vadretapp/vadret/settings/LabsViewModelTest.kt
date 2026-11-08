@@ -13,7 +13,9 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
-import se.vadretapp.vadret.settings.usecase.DefaultObserveHourlyForecastTask
+import se.vadretapp.vadret.settings.model.Labs
+import se.vadretapp.vadret.settings.usecase.DefaultObserveLabsTask
+import se.vadretapp.vadret.settings.usecase.DefaultSetAuroraTask
 import se.vadretapp.vadret.settings.usecase.DefaultSetHourlyForecastTask
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -40,8 +42,9 @@ class LabsViewModelTest {
 
     private fun viewModel(): LabsViewModel {
         val labsViewModel = LabsViewModel(
-            observeHourlyForecastTask = DefaultObserveHourlyForecastTask(forecastPreferenceRepository = forecastPreferenceRepository),
+            observeLabsTask = DefaultObserveLabsTask(forecastPreferenceRepository = forecastPreferenceRepository),
             setHourlyForecastTask = DefaultSetHourlyForecastTask(forecastPreferenceRepository = forecastPreferenceRepository),
+            setAuroraTask = DefaultSetAuroraTask(forecastPreferenceRepository = forecastPreferenceRepository),
             coroutineDispatcher = testDispatcher
         )
         labsViewModel.onEvent(event = LabsEvent.OnStart)
@@ -53,15 +56,38 @@ class LabsViewModelTest {
         testScope.runTest {
             val labsViewModel: LabsViewModel = viewModel()
             advanceUntilIdle()
-            val shown = mutableListOf<Boolean?>(labsViewModel.state.value.isHourlyForecastEnabled)
+            val shown = mutableListOf<Boolean?>(labsViewModel.state.value.labs?.isHourlyForecastEnabled)
 
             listOf(true, false).forEach { isHourlyForecastEnabled: Boolean ->
                 labsViewModel.onEvent(event = LabsEvent.OnHourlyForecastToggled(isHourlyForecastEnabled = isHourlyForecastEnabled))
                 advanceUntilIdle()
-                shown += labsViewModel.state.value.isHourlyForecastEnabled
+                shown += labsViewModel.state.value.labs?.isHourlyForecastEnabled
             }
 
             assertEquals(expected = listOf<Boolean?>(false, true, false), actual = shown)
+        }
+
+    @Test
+    fun `aurora is off until turned on and each toggle is stored and shown without touching the hourly forecast`() =
+        testScope.runTest {
+            val labsViewModel: LabsViewModel = viewModel()
+            advanceUntilIdle()
+            val shown = mutableListOf<Labs?>(labsViewModel.state.value.labs)
+
+            listOf(true, false).forEach { isAuroraEnabled: Boolean ->
+                labsViewModel.onEvent(event = LabsEvent.OnAuroraToggled(isAuroraEnabled = isAuroraEnabled))
+                advanceUntilIdle()
+                shown += labsViewModel.state.value.labs
+            }
+
+            assertEquals(
+                expected = listOf<Labs?>(
+                    Labs(isHourlyForecastEnabled = false, isAuroraEnabled = false),
+                    Labs(isHourlyForecastEnabled = false, isAuroraEnabled = true),
+                    Labs(isHourlyForecastEnabled = false, isAuroraEnabled = false)
+                ),
+                actual = shown
+            )
         }
 
     @Test
@@ -80,7 +106,7 @@ class LabsViewModelTest {
 
             assertEquals(
                 expected = false to false,
-                actual = forecastPreferenceRepository.forecastPreferences.value.successOrNull?.isHourlyForecastEnabled to labsViewModel.state.value.isHourlyForecastEnabled
+                actual = forecastPreferenceRepository.forecastPreferences.value.successOrNull?.isHourlyForecastEnabled to labsViewModel.state.value.labs?.isHourlyForecastEnabled
             )
         }
 
@@ -107,20 +133,33 @@ class LabsViewModelTest {
 
             labsViewModel.onEvent(event = LabsEvent.OnHourlyForecastToggled(isHourlyForecastEnabled = true))
             advanceUntilIdle()
-            val shown: LabsState = labsViewModel.state.value
+            val shownForHourlyForecast: LabsState = labsViewModel.state.value
+            labsViewModel.onEvent(event = LabsEvent.OnFailureDismissed)
+            labsViewModel.onEvent(event = LabsEvent.OnAuroraToggled(isAuroraEnabled = true))
+            advanceUntilIdle()
+            val shownForAurora: LabsState = labsViewModel.state.value
             labsViewModel.onEvent(event = LabsEvent.OnFailureDismissed)
             advanceUntilIdle()
 
+            val storedLabs = Labs(
+                isHourlyForecastEnabled = false,
+                isAuroraEnabled = false
+            )
             assertEquals(
                 expected = listOf(
                     LabsState(
-                        isHourlyForecastEnabled = false,
+                        labs = storedLabs,
                         failure = Failure(errorCode = ErrorCode.STORAGE_FAILED)
                     ),
-                    LabsState(isHourlyForecastEnabled = false)
+                    LabsState(
+                        labs = storedLabs,
+                        failure = Failure(errorCode = ErrorCode.STORAGE_FAILED)
+                    ),
+                    LabsState(labs = storedLabs)
                 ),
                 actual = listOf(
-                    shown,
+                    shownForHourlyForecast,
+                    shownForAurora,
                     labsViewModel.state.value
                 )
             )

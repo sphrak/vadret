@@ -12,6 +12,7 @@ import se.vadretapp.vadret.followedplace.model.FollowedPlace
 import se.vadretapp.vadret.lifecycle.AppStartHook
 import se.vadretapp.vadret.logging.Logger
 import se.vadretapp.vadret.logging.LoggerFactory
+import se.vadretapp.vadret.pushalert.usecase.ObserveAuroraEnabledTask
 import se.vadretapp.vadret.pushalert.usecase.ObservePollenAllergensTask
 import se.vadretapp.vadret.pushalert.usecase.SyncPushAlertsTask
 import se.vadretapp.vadret.setting.model.HourFormat
@@ -24,12 +25,14 @@ internal class PushAlertsAppStartHook(
     private val observeFollowedPlacesTask: ObserveFollowedPlacesTask,
     private val observePollenAllergensTask: ObservePollenAllergensTask,
     private val observeShownLanguageTask: ObserveShownLanguageTask,
-    private val observeHourFormatTask: ObserveHourFormatTask
+    private val observeHourFormatTask: ObserveHourFormatTask,
+    private val observeAuroraEnabledTask: ObserveAuroraEnabledTask
 ) : AppStartHook {
 
-    // The server learns of a place chosen or saved, an allergen picked, or a language or clock chosen, anywhere in the
-    // app or on the phone, not only on the push alert settings, so the notifications it writes follow them. The first
-    // sync waits for all of them, so a change made while it runs is already followed and syncs again.
+    // The server learns of a place chosen or saved, an allergen picked, a language or clock chosen, or the aurora lab
+    // turned on or off, anywhere in the app or on the phone, not only on the push alert settings, so the notifications
+    // it writes follow them. The first sync waits for all of them, so a change made while it runs is already followed
+    // and syncs again.
     override suspend fun onAppStart() {
         combine(
             flow = observeFollowedPlacesTask()
@@ -38,12 +41,14 @@ internal class PushAlertsAppStartHook(
                 }.distinctUntilChanged(),
             flow2 = observePollenAllergensTask().distinctUntilChanged(),
             flow3 = observeShownLanguageTask().distinctUntilChanged(),
-            flow4 = observeHourFormatTask().distinctUntilChanged()
+            flow4 = observeHourFormatTask().distinctUntilChanged(),
+            flow5 = observeAuroraEnabledTask().distinctUntilChanged()
         ) {
                 _: Either<Failure, List<Pair<Double, Double>>>,
                 _: Either<Failure, Set<String>>,
                 _: Either<Failure, Language>,
-                _: Either<Failure, HourFormat>
+                _: Either<Failure, HourFormat>,
+                _: Either<Failure, Boolean>
             ->
         }.collect { sync() }
     }

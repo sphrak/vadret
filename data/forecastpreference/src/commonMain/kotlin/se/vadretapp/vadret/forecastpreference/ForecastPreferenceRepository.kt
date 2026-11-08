@@ -13,6 +13,7 @@ interface ForecastPreferenceRepository {
     fun observeForecastPreferences(): Flow<Either<Failure, ForecastPreferences>>
     suspend fun setHourlyForecastEnabled(isEnabled: Boolean): Either<Failure, Unit>
     suspend fun setExpandOnceEnabled(isEnabled: Boolean): Either<Failure, Unit>
+    suspend fun setAuroraEnabled(isEnabled: Boolean): Either<Failure, Unit>
 }
 
 fun ForecastPreferenceRepository(dataStore: DataStore<Preferences>): ForecastPreferenceRepository =

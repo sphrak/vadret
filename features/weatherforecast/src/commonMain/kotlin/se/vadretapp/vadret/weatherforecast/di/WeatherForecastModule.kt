@@ -5,6 +5,7 @@ import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.factoryOf
 import org.koin.dsl.module
 import se.vadretapp.vadret.weatherforecast.PlaceIslandViewModel
+import se.vadretapp.vadret.weatherforecast.PlaceSearchViewModel
 import se.vadretapp.vadret.weatherforecast.WeatherForecastViewModel
 import se.vadretapp.vadret.weatherforecast.usecase.DefaultGetLocationModeTask
 import se.vadretapp.vadret.weatherforecast.usecase.DefaultObserveForecastPreferencesTask
@@ -21,5 +22,6 @@ val weatherForecastModule: Module = module {
     factoryOf(::DefaultObserveWeatherForecastTask) { bind<ObserveWeatherForecastTask>() }
     factoryOf(::DefaultObserveForecastPreferencesTask) { bind<ObserveForecastPreferencesTask>() }
     factoryOf(::PlaceIslandViewModel)
+    factoryOf(::PlaceSearchViewModel)
     factoryOf(::WeatherForecastViewModel)
 }
