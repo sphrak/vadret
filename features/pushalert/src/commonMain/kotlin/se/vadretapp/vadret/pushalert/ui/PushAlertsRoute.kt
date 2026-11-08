@@ -24,11 +24,10 @@ import se.vadretapp.vadret.pushalert.PushAlertsState
 import se.vadretapp.vadret.pushalert.PushAlertsViewModel
 import se.vadretapp.vadret.pushalert.extension.isNotified
 import se.vadretapp.vadret.pushalert.extension.labelResource
-import se.vadretapp.vadret.pushalert.model.HourFormat
 import se.vadretapp.vadret.pushalert.model.PollenAlertLevel
 import se.vadretapp.vadret.pushalert.model.PushAlertPlace
 import se.vadretapp.vadret.pushalert.model.WarningAlertLevel
-import se.vadretapp.vadret.theme.model.Theme
+import se.vadretapp.vadret.setting.model.Theme
 import se.vadretapp.vadret.ui.ChoiceDialog
 import se.vadretapp.vadret.ui.InfoDialog
 import se.vadretapp.vadret.ui.SettingsNote
@@ -44,12 +43,9 @@ import se.vadretapp.vadret.ui.extension.messageResource
 import se.vadretapp.vadret.ui.resources.Res
 import se.vadretapp.vadret.ui.resources.attestation_refused
 import se.vadretapp.vadret.ui.resources.followed_place_position
-import se.vadretapp.vadret.ui.resources.hour_format
-import se.vadretapp.vadret.ui.resources.ic_schedule
 import se.vadretapp.vadret.ui.resources.lowest_pollen_level
 import se.vadretapp.vadret.ui.resources.notifications_are_off
 import se.vadretapp.vadret.ui.resources.notifications_are_off_text
-import se.vadretapp.vadret.ui.resources.notifications_display
 import se.vadretapp.vadret.ui.resources.notifications_need_a_place
 import se.vadretapp.vadret.ui.resources.notifications_weather
 import se.vadretapp.vadret.ui.resources.pollen
@@ -83,8 +79,6 @@ private const val SLIPPERINESS_KEY = "slipperiness"
 private const val POLLEN_HEADER_KEY = "pollen-header"
 private const val POLLEN_KEY = "pollen"
 private const val POLLEN_LEVEL_KEY = "pollen-level"
-private const val DISPLAY_HEADER_KEY = "display-header"
-private const val HOUR_FORMAT_KEY = "hour-format"
 private const val PLACES_HEADER_KEY = "places-header"
 private const val CHOSEN_PLACE_KEY = "chosen-place"
 private const val SAVED_PLACE_KEY_PREFIX = "place-"
@@ -187,10 +181,6 @@ private fun LazyListScope.pushAlerts(
         state = state,
         onEvent = onEvent
     )
-    display(
-        state = state,
-        onEvent = onEvent
-    )
 }
 
 private fun LazyListScope.weatherAlerts(
@@ -285,23 +275,6 @@ private fun LazyListScope.pollenAlerts(
     }
 }
 
-private fun LazyListScope.display(
-    state: PushAlertsState,
-    onEvent: (PushAlertsEvent) -> Unit
-) {
-    item(key = DISPLAY_HEADER_KEY, contentType = PushAlertsContentType.HEADER) {
-        SettingsSectionHeader(text = stringResource(resource = Res.string.notifications_display))
-    }
-    item(key = HOUR_FORMAT_KEY, contentType = PushAlertsContentType.ROW) {
-        SettingsRow(
-            title = stringResource(resource = Res.string.hour_format),
-            summary = stringResource(resource = state.choices.hourFormat.labelResource()),
-            iconResource = Res.drawable.ic_schedule,
-            onClick = { onEvent(PushAlertsEvent.OnHourFormatRowClicked) }
-        )
-    }
-}
-
 private fun LazyListScope.pushAlertPlaces(
     state: PushAlertsState,
     onEvent: (PushAlertsEvent) -> Unit
@@ -370,17 +343,6 @@ private fun PushAlertsDialogs(
             choiceLabel = { pollenAlertLevel: PollenAlertLevel -> stringResource(resource = pollenAlertLevel.labelResource()) },
             onChoiceSelected = { pollenAlertLevel: PollenAlertLevel -> onEvent(PushAlertsEvent.OnPollenLevelSelected(pollenAlertLevel = pollenAlertLevel)) },
             onDismiss = { onEvent(PushAlertsEvent.OnPollenLevelDialogDismissed) },
-            modifier = modifier
-        )
-    }
-    if (state.isHourFormatDialogVisible) {
-        ChoiceDialog(
-            title = stringResource(resource = Res.string.hour_format),
-            choices = HourFormat.entries,
-            selectedChoice = state.choices.hourFormat,
-            choiceLabel = { hourFormat: HourFormat -> stringResource(resource = hourFormat.labelResource()) },
-            onChoiceSelected = { hourFormat: HourFormat -> onEvent(PushAlertsEvent.OnHourFormatSelected(hourFormat = hourFormat)) },
-            onDismiss = { onEvent(PushAlertsEvent.OnHourFormatDialogDismissed) },
             modifier = modifier
         )
     }

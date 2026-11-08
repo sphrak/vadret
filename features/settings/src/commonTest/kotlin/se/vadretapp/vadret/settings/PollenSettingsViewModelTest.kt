@@ -52,8 +52,7 @@ class PollenSettingsViewModelTest {
     private fun viewModel(): PollenSettingsViewModel {
         val pollenSettingsViewModel = PollenSettingsViewModel(
             getSettingsTask = DefaultGetSettingsTask(
-                themeRepository = FakeThemeRepository(),
-                languageRepository = FakeLanguageRepository(),
+                settingRepository = FakeSettingRepository(),
                 forecastPreferenceRepository = FakeForecastPreferenceRepository(),
                 pollenPreferenceRepository = pollenPreferenceRepository
             ),

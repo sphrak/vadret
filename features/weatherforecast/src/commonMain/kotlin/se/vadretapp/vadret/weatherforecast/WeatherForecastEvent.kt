@@ -2,6 +2,7 @@ package se.vadretapp.vadret.weatherforecast
 
 import se.vadretapp.vadret.favorite.model.Favorite
 import se.vadretapp.vadret.place.model.Place
+import se.vadretapp.vadret.setting.model.HourFormat
 import se.vadretapp.vadret.weatherforecast.model.ForecastView
 
 sealed interface WeatherForecastEvent {
@@ -15,7 +16,10 @@ sealed interface WeatherForecastEvent {
     data class OnPlaceLabelChanged(val label: String) : WeatherForecastEvent
     data object OnPlaceLabelDismissed : WeatherForecastEvent
     data object OnResumed : WeatherForecastEvent
-    data class OnLocaleChanged(val languageTag: String) : WeatherForecastEvent
+    data class OnLocaleChanged(
+        val languageTag: String,
+        val hourFormat: HourFormat
+    ) : WeatherForecastEvent
     data object OnRefresh : WeatherForecastEvent
     data object OnErrorShown : WeatherForecastEvent
     data class OnForecastViewSelected(val forecastView: ForecastView) : WeatherForecastEvent

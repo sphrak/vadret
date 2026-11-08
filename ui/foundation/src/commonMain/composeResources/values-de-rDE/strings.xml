@@ -185,7 +185,6 @@
     <string name="pollen_alerts">Pollenbelastung</string>
     <string name="pollen_alerts_summary">Für die unter Pollen gewählten Pollen</string>
     <string name="pollen_alerts_need_allergens">Schalte zuerst Pollen ein und wähle unter Pollen, gegen welche Pollen du allergisch bist.</string>
-    <string name="notifications_display">Anzeige</string>
     <string name="hour_format">Zeitformat</string>
     <string name="hour_format_24">24 Stunden</string>
     <string name="hour_format_12">12 Stunden</string>

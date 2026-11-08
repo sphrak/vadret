@@ -29,6 +29,7 @@ import se.vadretapp.vadret.followedplace.SelectPlaceTask
 import se.vadretapp.vadret.followedplace.SetLocationModeTask
 import se.vadretapp.vadret.followedplace.model.FavoriteChoice
 import se.vadretapp.vadret.followedplace.model.LocationChoices
+import se.vadretapp.vadret.setting.model.HourFormat
 import se.vadretapp.vadret.testing.FixedClock
 import se.vadretapp.vadret.ui.extension.messageResource
 import se.vadretapp.vadret.ui.format.currentLanguageTag
@@ -267,6 +268,7 @@ class WeatherForecastViewModelTest {
                     null,
                     clock.now.toDayTimeText(
                         now = clock.now,
+                        hourFormat = HourFormat.TWENTY_FOUR_HOUR,
                         timeZone = TimeZone.currentSystemDefault(),
                         languageTag = currentLanguageTag()
                     ),
@@ -364,6 +366,7 @@ class WeatherForecastViewModelTest {
             assertEquals(
                 expected = endsAt.toDayTimeText(
                     now = clock.now,
+                    hourFormat = HourFormat.TWENTY_FOUR_HOUR,
                     timeZone = TimeZone.currentSystemDefault(),
                     languageTag = currentLanguageTag()
                 ),
@@ -632,12 +635,12 @@ class WeatherForecastViewModelTest {
     @Test
     fun `a new language rewrites the day headings of the loaded forecast`() =
         testScope.runTest {
-            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnLocaleChanged(languageTag = "en"))
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnLocaleChanged(languageTag = "en", hourFormat = HourFormat.TWENTY_FOUR_HOUR))
             weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnShown)
             advanceUntilIdle()
             val english: ForecastDay = weatherForecastViewModel.state.value.forecast.days.first()
 
-            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnLocaleChanged(languageTag = "sv-SE"))
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnLocaleChanged(languageTag = "sv-SE", hourFormat = HourFormat.TWENTY_FOUR_HOUR))
             advanceUntilIdle()
             val swedish: ForecastDay = weatherForecastViewModel.state.value.forecast.days.first()
 
@@ -647,11 +650,29 @@ class WeatherForecastViewModelTest {
         }
 
     @Test
+    fun `another clock rewrites the hours of the loaded forecast`() =
+        testScope.runTest {
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnLocaleChanged(languageTag = "en", hourFormat = HourFormat.TWENTY_FOUR_HOUR))
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnShown)
+            advanceUntilIdle()
+            val onTheTwentyFourHourClock: String? = weatherForecastViewModel.state.value.forecast.days.first().hours.firstOrNull()?.timeText
+
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnLocaleChanged(languageTag = "en", hourFormat = HourFormat.TWELVE_HOUR))
+            advanceUntilIdle()
+            val onTheTwelveHourClock: String? = weatherForecastViewModel.state.value.forecast.days.first().hours.firstOrNull()?.timeText
+
+            assertEquals(
+                expected = true to true,
+                actual = (onTheTwentyFourHourClock?.contains(other = "M") == false) to (onTheTwelveHourClock?.endsWith(suffix = "M") == true)
+            )
+        }
+
+    @Test
     fun `a new language before any forecast changes nothing`() =
         testScope.runTest {
             val before: WeatherForecastState = weatherForecastViewModel.state.value
 
-            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnLocaleChanged(languageTag = "sv-SE"))
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnLocaleChanged(languageTag = "sv-SE", hourFormat = HourFormat.TWENTY_FOUR_HOUR))
             advanceUntilIdle()
 
             assertEquals(expected = before, actual = weatherForecastViewModel.state.value)
@@ -815,13 +836,13 @@ class WeatherForecastViewModelTest {
     @Test
     fun `a new language keeps the open days`() =
         testScope.runTest {
-            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnLocaleChanged(languageTag = "en"))
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnLocaleChanged(languageTag = "en", hourFormat = HourFormat.TWENTY_FOUR_HOUR))
             weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnShown)
             advanceUntilIdle()
             weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnDayToggled(dayKey = "coming-day-2026-10-24"))
             advanceUntilIdle()
 
-            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnLocaleChanged(languageTag = "sv-SE"))
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnLocaleChanged(languageTag = "sv-SE", hourFormat = HourFormat.TWENTY_FOUR_HOUR))
             advanceUntilIdle()
 
             assertEquals(

@@ -17,7 +17,7 @@ kotlin {
                 implementation project(':data:developermode')
                 implementation project(':data:favorite')
                 implementation project(':data:forecastpreference')
-                implementation project(':data:language')
+                implementation project(':data:setting')
                 implementation project(':data:library')
                 implementation project(':data:location')
                 implementation project(':data:nominatim')
@@ -25,7 +25,6 @@ kotlin {
                 implementation project(':data:pollen')
                 implementation project(':data:pollenpreference')
                 implementation project(':data:radar')
-                implementation project(':data:theme')
                 implementation project(':data:weatherforecast')
                 implementation project(':data:wind')
 

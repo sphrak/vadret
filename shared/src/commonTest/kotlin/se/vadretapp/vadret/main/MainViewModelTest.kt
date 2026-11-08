@@ -18,10 +18,11 @@ import kotlinx.coroutines.test.setMain
 import se.vadretapp.vadret.aggregatedfeed.model.WarningReference
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
-import se.vadretapp.vadret.language.model.AppLanguage
+import se.vadretapp.vadret.setting.model.AppLanguage
+import se.vadretapp.vadret.setting.model.HourFormat
+import se.vadretapp.vadret.setting.model.Theme
 import se.vadretapp.vadret.testing.LogLine
 import se.vadretapp.vadret.testing.withRecordedLogs
-import se.vadretapp.vadret.theme.model.Theme
 import se.vadretapp.vadret.warning.usecase.GetReferencedWarningIdentifiersTask
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -43,6 +44,13 @@ private class FakeObserveLanguageTask : ObserveLanguageTask {
     override fun invoke(): Flow<Either<Failure, AppLanguage>> = languages
 }
 
+private class FakeObserveHourFormatTask : ObserveHourFormatTask {
+
+    val hourFormats = MutableSharedFlow<Either<Failure, HourFormat>>()
+
+    override fun invoke(): Flow<Either<Failure, HourFormat>> = hourFormats
+}
+
 private class FakeGetReferencedWarningIdentifiersTask : GetReferencedWarningIdentifiersTask {
 
     var result: Either<Failure, List<String>> = listOf("smhi-1-12").asRight()
@@ -57,12 +65,14 @@ class MainViewModelTest {
     private val testScope = TestScope(testDispatcher)
     private val observeThemeTask = FakeObserveThemeTask()
     private val observeLanguageTask = FakeObserveLanguageTask()
+    private val observeHourFormatTask = FakeObserveHourFormatTask()
     private val appStartHook = CountingAppStartHook()
     private val openedWarningReferences = OpenedWarningReferences()
     private val getReferencedWarningIdentifiersTask = FakeGetReferencedWarningIdentifiersTask()
     private val mainViewModel = MainViewModel(
         observeThemeTask = observeThemeTask,
         observeLanguageTask = observeLanguageTask,
+        observeHourFormatTask = observeHourFormatTask,
         appStartHooks = listOf(appStartHook),
         openedWarningReferences = openedWarningReferences,
         getReferencedWarningIdentifiersTask = getReferencedWarningIdentifiersTask,
@@ -130,6 +140,27 @@ class MainViewModelTest {
 
             assertEquals(
                 expected = listOf(null, AppLanguage.SWEDISH, AppLanguage.SYSTEM),
+                actual = seen
+            )
+        }
+
+    @Test
+    fun `the clock is null until started and then follows every change, falling back to 24 hours`() =
+        testScope.runTest {
+            val seen = mutableListOf<HourFormat?>()
+            val job = launch { mainViewModel.hourFormat.collect { hourFormat: HourFormat? -> seen.add(hourFormat) } }
+            advanceUntilIdle()
+
+            mainViewModel.onEvent(event = MainEvent.OnStart)
+            advanceUntilIdle()
+            observeHourFormatTask.hourFormats.emit(value = HourFormat.TWELVE_HOUR.asRight())
+            advanceUntilIdle()
+            observeHourFormatTask.hourFormats.emit(value = Failure(errorCode = ErrorCode.UNKNOWN).asLeft())
+            advanceUntilIdle()
+            job.cancel()
+
+            assertEquals(
+                expected = listOf(null, HourFormat.TWELVE_HOUR, HourFormat.TWENTY_FOUR_HOUR),
                 actual = seen
             )
         }

@@ -11,7 +11,7 @@ import se.vadretapp.vadret.di.LocalKoin
 import se.vadretapp.vadret.di.koinApplication
 import se.vadretapp.vadret.radar.ui.RadarMapHost
 import se.vadretapp.vadret.radar.ui.RadarRoute
-import se.vadretapp.vadret.theme.model.Theme
+import se.vadretapp.vadret.setting.model.Theme
 
 private val radarTab = RadarTab(
     host = { content: @Composable () -> Unit -> RadarMapHost(content = content) },

@@ -106,6 +106,7 @@
     <string name="dark_theme">Dark</string>
     <string name="amoled_theme">Dark (AMOLED)</string>
     <string name="system_theme">Follow system</string>
+    <string name="system_hour_format">Follow system</string>
     <string name="light_no_background_key" translatable="false">Light (No background)</string>
 
     <string name="percent" translatable="false">%</string>
@@ -343,7 +344,6 @@
     <string name="pollen_alerts">Pollen levels</string>
     <string name="pollen_alerts_summary">For the pollen picked under Pollen</string>
     <string name="pollen_alerts_need_allergens">Turn on pollen and pick the pollen you are allergic to under Pollen first.</string>
-    <string name="notifications_display">Display</string>
     <string name="hour_format">Time format</string>
     <string name="hour_format_24">24-hour</string>
     <string name="hour_format_12">12-hour</string>

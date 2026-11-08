@@ -12,19 +12,22 @@ import kotlinx.coroutines.launch
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.followedplace.ObserveLocationChoicesTask
 import se.vadretapp.vadret.followedplace.model.LocationChoices
-import se.vadretapp.vadret.language.model.AppLanguage
+import se.vadretapp.vadret.setting.model.AppLanguage
+import se.vadretapp.vadret.setting.model.HourFormatChoice
+import se.vadretapp.vadret.setting.model.Theme
 import se.vadretapp.vadret.settings.extension.toPlacesSummary
 import se.vadretapp.vadret.settings.usecase.GetSettingsTask
 import se.vadretapp.vadret.settings.usecase.ObserveDeveloperModeTask
+import se.vadretapp.vadret.settings.usecase.SetHourFormatChoiceTask
 import se.vadretapp.vadret.settings.usecase.SetLanguageTask
 import se.vadretapp.vadret.settings.usecase.SetThemeTask
-import se.vadretapp.vadret.theme.model.Theme
 import kotlin.concurrent.atomics.AtomicBoolean
 
 class SettingsViewModel internal constructor(
     private val getSettingsTask: GetSettingsTask,
     private val setThemeTask: SetThemeTask,
     private val setLanguageTask: SetLanguageTask,
+    private val setHourFormatChoiceTask: SetHourFormatChoiceTask,
     private val observeLocationChoicesTask: ObserveLocationChoicesTask,
     private val observeDeveloperModeTask: ObserveDeveloperModeTask,
     private val coroutineDispatcher: CoroutineDispatcher
@@ -44,6 +47,9 @@ class SettingsViewModel internal constructor(
             SettingsEvent.OnLanguageRowClicked -> state.update { state: SettingsState -> state.copy(isLanguageDialogVisible = true) }
             SettingsEvent.OnLanguageDialogDismissed -> state.update { state: SettingsState -> state.copy(isLanguageDialogVisible = false) }
             is SettingsEvent.OnLanguageSelected -> onLanguageSelected(language = event.language)
+            SettingsEvent.OnHourFormatRowClicked -> state.update { state: SettingsState -> state.copy(isHourFormatDialogVisible = true) }
+            SettingsEvent.OnHourFormatDialogDismissed -> state.update { state: SettingsState -> state.copy(isHourFormatDialogVisible = false) }
+            is SettingsEvent.OnHourFormatSelected -> onHourFormatSelected(hourFormatChoice = event.hourFormatChoice)
         }
     }
 
@@ -98,6 +104,16 @@ class SettingsViewModel internal constructor(
         state.update { state: SettingsState -> state.copy(isLanguageDialogVisible = false) }
         viewModelScope.launch(context = coroutineDispatcher) {
             setLanguageTask(language = language).onResult(
+                onError = { _: Failure -> },
+                onSuccess = { loadSettings() }
+            )
+        }
+    }
+
+    private fun onHourFormatSelected(hourFormatChoice: HourFormatChoice) {
+        state.update { state: SettingsState -> state.copy(isHourFormatDialogVisible = false) }
+        viewModelScope.launch(context = coroutineDispatcher) {
+            setHourFormatChoiceTask(hourFormatChoice = hourFormatChoice).onResult(
                 onError = { _: Failure -> },
                 onSuccess = { loadSettings() }
             )

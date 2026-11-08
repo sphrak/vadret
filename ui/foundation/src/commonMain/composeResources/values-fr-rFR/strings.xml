@@ -142,7 +142,6 @@
     <string name="pollen_alerts">Niveaux de pollen</string>
     <string name="pollen_alerts_summary">Pour les pollens choisis sous Pollen</string>
     <string name="pollen_alerts_need_allergens">Activez d\'abord le pollen et choisissez sous Pollen les pollens auxquels vous êtes allergique.</string>
-    <string name="notifications_display">Affichage</string>
     <string name="hour_format">Format de l\'heure</string>
     <string name="hour_format_24">24 heures</string>
     <string name="hour_format_12">12 heures</string>

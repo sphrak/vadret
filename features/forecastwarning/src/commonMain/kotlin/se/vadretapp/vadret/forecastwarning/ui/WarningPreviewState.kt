@@ -19,6 +19,7 @@ import se.vadretapp.vadret.forecastwarning.WarningState
 import se.vadretapp.vadret.forecastwarning.extension.toWarningItem
 import se.vadretapp.vadret.forecastwarning.extension.toWarningItems
 import se.vadretapp.vadret.forecastwarning.model.WarningItem
+import se.vadretapp.vadret.setting.model.HourFormat
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Instant
 
@@ -249,7 +250,8 @@ internal fun warningPreviewState(): WarningState =
         warnings = previewFeeds.toWarningItems(
             now = previewNow,
             timeZone = previewTimeZone,
-            languageTag = PREVIEW_LANGUAGE_TAG
+            languageTag = PREVIEW_LANGUAGE_TAG,
+            hourFormat = HourFormat.TWENTY_FOUR_HOUR
         ),
         isLoading = false
     )
@@ -261,7 +263,8 @@ internal class WarningPreviewParameterProvider : PreviewParameterProvider<Warnin
             aggregatedFeed.toWarningItem(
                 now = previewNow,
                 timeZone = previewTimeZone,
-                languageTag = PREVIEW_LANGUAGE_TAG
+                languageTag = PREVIEW_LANGUAGE_TAG,
+                hourFormat = HourFormat.TWENTY_FOUR_HOUR
             )
         }
 }

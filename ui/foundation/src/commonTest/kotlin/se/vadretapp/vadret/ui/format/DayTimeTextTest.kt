@@ -1,6 +1,7 @@
 package se.vadretapp.vadret.ui.format
 
 import kotlinx.datetime.TimeZone
+import se.vadretapp.vadret.setting.model.HourFormat
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.time.Duration.Companion.days
@@ -29,6 +30,7 @@ class DayTimeTextTest {
     ): String =
         toDayTimeText(
             now = now,
+            hourFormat = HourFormat.TWENTY_FOUR_HOUR,
             timeZone = stockholm,
             languageTag = languageTag
         )

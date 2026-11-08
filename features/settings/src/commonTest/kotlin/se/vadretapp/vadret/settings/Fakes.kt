@@ -22,8 +22,6 @@ import se.vadretapp.vadret.favorite.FavoriteRepository
 import se.vadretapp.vadret.favorite.model.Favorite
 import se.vadretapp.vadret.forecastpreference.ForecastPreferenceRepository
 import se.vadretapp.vadret.forecastpreference.model.ForecastPreferences
-import se.vadretapp.vadret.language.LanguageRepository
-import se.vadretapp.vadret.language.model.AppLanguage
 import se.vadretapp.vadret.library.LibraryRepository
 import se.vadretapp.vadret.library.model.Library
 import se.vadretapp.vadret.location.LocationRepository
@@ -40,8 +38,11 @@ import se.vadretapp.vadret.pollen.model.PollenTypes
 import se.vadretapp.vadret.pollenpreference.PollenPreferenceRepository
 import se.vadretapp.vadret.pollenpreference.model.PollenPreferences
 import se.vadretapp.vadret.pollenseason.ObservePollenInSeasonTask
-import se.vadretapp.vadret.theme.ThemeRepository
-import se.vadretapp.vadret.theme.model.Theme
+import se.vadretapp.vadret.setting.SettingRepository
+import se.vadretapp.vadret.setting.model.AppLanguage
+import se.vadretapp.vadret.setting.model.HourFormat
+import se.vadretapp.vadret.setting.model.HourFormatChoice
+import se.vadretapp.vadret.setting.model.Theme
 import kotlin.concurrent.atomics.AtomicInt
 import kotlin.concurrent.atomics.fetchAndIncrement
 import kotlin.time.Duration
@@ -102,28 +103,33 @@ internal val releaseAppInfo = developerAppInfo.copy(
     isDeveloperBuild = false
 )
 
-internal class FakeLanguageRepository(
-    var language: Either<Failure, AppLanguage> = AppLanguage.SYSTEM.asRight()
-) : LanguageRepository {
+internal class FakeSettingRepository(
+    var theme: Either<Failure, Theme> = Theme.LIGHT.asRight(),
+    var language: Either<Failure, AppLanguage> = AppLanguage.SYSTEM.asRight(),
+    var hourFormatChoice: Either<Failure, HourFormatChoice> = HourFormatChoice.SYSTEM.asRight()
+) : SettingRepository {
+    var themeReads: Int = 0
+    override suspend fun getTheme(): Either<Failure, Theme> {
+        themeReads += 1
+        return theme
+    }
+    override fun observeTheme(): Flow<Either<Failure, Theme>> = emptyFlow()
+    override suspend fun setTheme(theme: Theme): Either<Failure, Unit> {
+        this.theme = theme.asRight()
+        return Unit.asRight()
+    }
     override suspend fun getLanguage(): Either<Failure, AppLanguage> = language
     override fun observeLanguage(): Flow<Either<Failure, AppLanguage>> = emptyFlow()
     override suspend fun setLanguage(language: AppLanguage): Either<Failure, Unit> {
         this.language = language.asRight()
         return Unit.asRight()
     }
-}
-
-internal class FakeThemeRepository(
-    var theme: Either<Failure, Theme> = Theme.LIGHT.asRight()
-) : ThemeRepository {
-    var reads: Int = 0
-    override suspend fun getTheme(): Either<Failure, Theme> {
-        reads += 1
-        return theme
-    }
-    override fun observeTheme(): Flow<Either<Failure, Theme>> = emptyFlow()
-    override suspend fun setTheme(theme: Theme): Either<Failure, Unit> {
-        this.theme = theme.asRight()
+    override suspend fun getShownLanguage(): Either<Failure, AppLanguage> = error("Settings only show the choice")
+    override suspend fun getHourFormatChoice(): Either<Failure, HourFormatChoice> = hourFormatChoice
+    override suspend fun getHourFormat(): Either<Failure, HourFormat> = error("Settings only show the choice")
+    override fun observeHourFormat(): Flow<Either<Failure, HourFormat>> = emptyFlow()
+    override suspend fun setHourFormatChoice(hourFormatChoice: HourFormatChoice): Either<Failure, Unit> {
+        this.hourFormatChoice = hourFormatChoice.asRight()
         return Unit.asRight()
     }
 }

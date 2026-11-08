@@ -19,6 +19,7 @@ import se.vadretapp.vadret.favorite.FavoriteRepository
 import se.vadretapp.vadret.location.LocationRepository
 import se.vadretapp.vadret.logging.Logger
 import se.vadretapp.vadret.logging.LoggerFactory
+import se.vadretapp.vadret.setting.SettingRepository
 import java.io.File
 import java.util.concurrent.TimeUnit
 
@@ -75,6 +76,12 @@ fun androidPlatformModule(
             SeenWarningRepository(
                 context = context,
                 clock = get()
+            )
+        }
+        single<SettingRepository> {
+            SettingRepository(
+                dataStore = get(),
+                context = context
             )
         }
     }

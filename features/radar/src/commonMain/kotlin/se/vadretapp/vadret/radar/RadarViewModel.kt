@@ -62,6 +62,7 @@ import se.vadretapp.vadret.radar.usecase.SetPollenHibernationNoticeShownTask
 import se.vadretapp.vadret.radar.wind.WindField
 import se.vadretapp.vadret.radar.wind.WindFieldRenderer
 import se.vadretapp.vadret.radar.wind.WindPalette
+import se.vadretapp.vadret.setting.model.HourFormat
 import se.vadretapp.vadret.ui.extension.launchReplacing
 import se.vadretapp.vadret.ui.extension.messageResource
 import se.vadretapp.vadret.ui.format.currentLanguageTag
@@ -114,6 +115,7 @@ class RadarViewModel internal constructor(
     private val pollenMap: AtomicReference<PollenMap?> = AtomicReference(value = null)
     private val pollenCloudJob: AtomicReference<Job?> = AtomicReference(value = null)
     private val languageTag: AtomicReference<String> = AtomicReference(value = currentLanguageTag())
+    private val hourFormat: AtomicReference<HourFormat> = AtomicReference(value = HourFormat.TWENTY_FOUR_HOUR)
     private val windPalette: AtomicReference<WindPalette> = AtomicReference(value = WindPalette.DAY)
     private val radar: AtomicReference<Radar?> = AtomicReference(value = null)
     private val windForecast: AtomicReference<WindForecast?> = AtomicReference(value = null)
@@ -126,7 +128,10 @@ class RadarViewModel internal constructor(
         when (event) {
             is RadarEvent.OnStart -> onStart(initialImageUrl = event.initialImageUrl)
             RadarEvent.OnLeft -> stopPlaying()
-            is RadarEvent.OnLocaleChanged -> onLocaleChanged(languageTag = event.languageTag)
+            is RadarEvent.OnLocaleChanged -> onLocaleChanged(
+                languageTag = event.languageTag,
+                hourFormat = event.hourFormat
+            )
             is RadarEvent.OnDarkThemeChanged -> onDarkThemeChanged(isDarkTheme = event.isDarkTheme)
             RadarEvent.OnMapLoaded -> state.update { state: RadarState ->
                 state.copy(isMapLoaded = true)
@@ -314,8 +319,13 @@ class RadarViewModel internal constructor(
         }
     }
 
-    private fun onLocaleChanged(languageTag: String) {
-        if (this.languageTag.exchange(newValue = languageTag) == languageTag) {
+    private fun onLocaleChanged(
+        languageTag: String,
+        hourFormat: HourFormat
+    ) {
+        val isLanguageSame: Boolean = this.languageTag.exchange(newValue = languageTag) == languageTag
+        val isHourFormatSame: Boolean = this.hourFormat.exchange(newValue = hourFormat) == hourFormat
+        if (isLanguageSame && isHourFormatSame) {
             return
         }
         viewModelScope.launch(context = coroutineDispatcher) {
@@ -357,13 +367,15 @@ class RadarViewModel internal constructor(
         toRadarFrames(
             now = clock.now(),
             timeZone = TimeZone.currentSystemDefault(),
-            languageTag = languageTag.load()
+            languageTag = languageTag.load(),
+            hourFormat = hourFormat.load()
         ).toImmutableList()
 
     private fun WindForecast.toTimeFrames(): ImmutableList<WindTimeFrame> =
         toWindTimeFrames(
             timeZone = TimeZone.currentSystemDefault(),
-            languageTag = languageTag.load()
+            languageTag = languageTag.load(),
+            hourFormat = hourFormat.load()
         ).toImmutableList()
 
     private fun loadDeviceLocation() {

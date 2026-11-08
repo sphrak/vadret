@@ -39,7 +39,9 @@ import se.vadretapp.vadret.forecastwarning.WarningStoryEvent
 import se.vadretapp.vadret.forecastwarning.WarningStoryState
 import se.vadretapp.vadret.forecastwarning.WarningStoryViewModel
 import se.vadretapp.vadret.forecastwarning.model.WarningItem
-import se.vadretapp.vadret.theme.model.Theme
+import se.vadretapp.vadret.setting.model.HourFormat
+import se.vadretapp.vadret.setting.model.Theme
+import se.vadretapp.vadret.ui.LocalHourFormat
 import se.vadretapp.vadret.ui.LocalLanguageTag
 import se.vadretapp.vadret.ui.VadretTheme
 import se.vadretapp.vadret.ui.WarningColors
@@ -86,8 +88,14 @@ internal fun WarningStoryScreen(
     previewProgress: Float = STORY_START
 ) {
     val languageTag: String = LocalLanguageTag.current
-    LaunchedEffect(languageTag) {
-        onEvent(WarningStoryEvent.OnLocaleChanged(languageTag = languageTag))
+    val hourFormat: HourFormat = LocalHourFormat.current
+    LaunchedEffect(languageTag, hourFormat) {
+        onEvent(
+            WarningStoryEvent.OnLocaleChanged(
+                languageTag = languageTag,
+                hourFormat = hourFormat
+            )
+        )
     }
     val currentOnDismiss: () -> Unit by rememberUpdatedState(newValue = onDismiss)
     LaunchedEffect(state.isFinished) {

@@ -1,6 +1,5 @@
 package se.vadretapp.vadret.pushalert
 
-import se.vadretapp.vadret.pushalert.model.HourFormat
 import se.vadretapp.vadret.pushalert.model.PollenAlertLevel
 import se.vadretapp.vadret.pushalert.model.PushAlertPlace
 import se.vadretapp.vadret.pushalert.model.WarningAlertLevel
@@ -24,9 +23,6 @@ internal sealed interface PushAlertsEvent {
     data object OnPollenLevelRowClicked : PushAlertsEvent
     data object OnPollenLevelDialogDismissed : PushAlertsEvent
     data class OnPollenLevelSelected(val pollenAlertLevel: PollenAlertLevel) : PushAlertsEvent
-    data object OnHourFormatRowClicked : PushAlertsEvent
-    data object OnHourFormatDialogDismissed : PushAlertsEvent
-    data class OnHourFormatSelected(val hourFormat: HourFormat) : PushAlertsEvent
     data class OnNotificationPermissionResult(val isGranted: Boolean) : PushAlertsEvent
     data object OnNotificationPermissionDialogDismissed : PushAlertsEvent
     data object OnOutsideSwedenDialogDismissed : PushAlertsEvent

@@ -34,12 +34,12 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import se.vadretapp.vadret.changelog.model.Changelog
 import se.vadretapp.vadret.di.koinViewModel
+import se.vadretapp.vadret.setting.model.Theme
 import se.vadretapp.vadret.settings.AboutEvent
 import se.vadretapp.vadret.settings.AboutState
 import se.vadretapp.vadret.settings.AboutViewModel
 import se.vadretapp.vadret.settings.model.AboutRow
 import se.vadretapp.vadret.settings.model.AboutRowAction
-import se.vadretapp.vadret.theme.model.Theme
 import se.vadretapp.vadret.ui.SettingsRow
 import se.vadretapp.vadret.ui.SettingsScaffold
 import se.vadretapp.vadret.ui.ThemePreviewParameterProvider

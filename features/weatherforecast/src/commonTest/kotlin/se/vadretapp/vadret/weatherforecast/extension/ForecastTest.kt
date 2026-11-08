@@ -10,6 +10,7 @@ import se.vadretapp.vadret.icons.ClearSkyNight
 import se.vadretapp.vadret.icons.Overcast
 import se.vadretapp.vadret.icons.VadretIcons
 import se.vadretapp.vadret.icons.VariableCloudiness
+import se.vadretapp.vadret.setting.model.HourFormat
 import se.vadretapp.vadret.ui.resources.Res
 import se.vadretapp.vadret.ui.resources.west
 import se.vadretapp.vadret.ui.resources.wsymb2_overcast
@@ -108,7 +109,8 @@ class ForecastTest {
         ).toWeatherForecast(
             now = now,
             timeZone = stockholm,
-            languageTag = languageTag
+            languageTag = languageTag,
+            hourFormat = HourFormat.TWENTY_FOUR_HOUR
         ).comingDays
 
     @Test

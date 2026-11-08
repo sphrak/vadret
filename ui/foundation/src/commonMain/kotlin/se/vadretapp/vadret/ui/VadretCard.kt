@@ -15,7 +15,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.stringResource
-import se.vadretapp.vadret.theme.model.Theme
+import se.vadretapp.vadret.setting.model.Theme
 import se.vadretapp.vadret.ui.resources.Res
 import se.vadretapp.vadret.ui.resources.app_name
 

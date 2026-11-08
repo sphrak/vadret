@@ -35,6 +35,7 @@ kotlin {
                 implementation project(':data:pollen')
                 implementation project(':data:pollenpreference')
                 implementation project(':data:radar')
+                implementation project(':data:setting')
                 implementation project(':data:wind')
                 implementation project(':domain:pollenseason')
                 implementation project(':ui:icons')

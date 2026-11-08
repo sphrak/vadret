@@ -7,14 +7,12 @@ import se.vadretapp.vadret.developermode.DeveloperModeRepository
 import se.vadretapp.vadret.di.model.AppDirectories
 import se.vadretapp.vadret.di.resources.Res
 import se.vadretapp.vadret.forecastpreference.ForecastPreferenceRepository
-import se.vadretapp.vadret.language.LanguageRepository
 import se.vadretapp.vadret.library.LibraryRepository
 import se.vadretapp.vadret.nominatim.NominatimRepository
 import se.vadretapp.vadret.place.PlaceRepository
 import se.vadretapp.vadret.pollen.PollenRepository
 import se.vadretapp.vadret.pollenpreference.PollenPreferenceRepository
 import se.vadretapp.vadret.radar.RadarRepository
-import se.vadretapp.vadret.theme.ThemeRepository
 import se.vadretapp.vadret.weatherforecast.WeatherForecastRepository
 import se.vadretapp.vadret.wind.WindRepository
 
@@ -50,8 +48,6 @@ val repositoryModule: Module = module {
     }
     single<DeveloperModeRepository> { DeveloperModeRepository(dataStore = get()) }
     single<ForecastPreferenceRepository> { ForecastPreferenceRepository(dataStore = get()) }
-    single<LanguageRepository> { LanguageRepository(dataStore = get()) }
-    single<ThemeRepository> { ThemeRepository(dataStore = get()) }
     single<WeatherForecastRepository> {
         WeatherForecastRepository(
             httpClient = inject(),

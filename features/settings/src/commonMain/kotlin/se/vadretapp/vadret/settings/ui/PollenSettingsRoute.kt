@@ -24,12 +24,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import se.vadretapp.vadret.di.koinViewModel
+import se.vadretapp.vadret.setting.model.Theme
 import se.vadretapp.vadret.settings.PollenSettingsEvent
 import se.vadretapp.vadret.settings.PollenSettingsState
 import se.vadretapp.vadret.settings.PollenSettingsViewModel
 import se.vadretapp.vadret.settings.model.PollenAllergenRow
 import se.vadretapp.vadret.settings.model.PollenGroupRows
-import se.vadretapp.vadret.theme.model.Theme
 import se.vadretapp.vadret.ui.SettingsFootnote
 import se.vadretapp.vadret.ui.SettingsNote
 import se.vadretapp.vadret.ui.SettingsRowDivider

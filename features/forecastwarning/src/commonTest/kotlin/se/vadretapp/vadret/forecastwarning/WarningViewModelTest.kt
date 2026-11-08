@@ -16,6 +16,7 @@ import se.vadretapp.vadret.aggregatedfeed.model.FeedSource
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.forecastwarning.model.WarningItem
+import se.vadretapp.vadret.setting.model.HourFormat
 import se.vadretapp.vadret.testing.FixedClock
 import se.vadretapp.vadret.ui.resources.Res
 import se.vadretapp.vadret.ui.resources.no_network_available
@@ -206,12 +207,12 @@ class WarningViewModelTest {
                     endsAt = Instant.parse(input = "2026-10-24T08:30:00Z") + 48.hours
                 )
             ).atOneFollowedPlace().asRight()
-            warningViewModel.onEvent(event = WarningEvent.OnLocaleChanged(languageTag = "en"))
+            warningViewModel.onEvent(event = WarningEvent.OnLocaleChanged(languageTag = "en", hourFormat = HourFormat.TWENTY_FOUR_HOUR))
             warningViewModel.onEvent(event = WarningEvent.OnStart)
             advanceUntilIdle()
             val englishText: String? = warningViewModel.state.value.warnings.single().endsAtText
 
-            warningViewModel.onEvent(event = WarningEvent.OnLocaleChanged(languageTag = "sv-SE"))
+            warningViewModel.onEvent(event = WarningEvent.OnLocaleChanged(languageTag = "sv-SE", hourFormat = HourFormat.TWENTY_FOUR_HOUR))
             advanceUntilIdle()
             val swedishText: String? = warningViewModel.state.value.warnings.single().endsAtText
 

@@ -13,7 +13,6 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
-import se.vadretapp.vadret.pushalert.model.HourFormat
 import se.vadretapp.vadret.pushalert.model.PollenAlertLevel
 import se.vadretapp.vadret.pushalert.model.PushAlertChoices
 import se.vadretapp.vadret.pushalert.model.PushAlertPlace
@@ -406,53 +405,6 @@ class PushAlertsViewModelTest {
     }
 
     @Test
-    fun theHourFormatIsSavedAndSentEvenWithNothingChosenAndWithoutAskingForNotifications() = runTest(context = testDispatcher) {
-        val savePushAlertChoicesTask = FakeSavePushAlertChoicesTask()
-        val syncPushAlertsTask = FakeSyncPushAlertsTask()
-        val viewModel = startedViewModel(
-            savePushAlertChoicesTask = savePushAlertChoicesTask,
-            syncPushAlertsTask = syncPushAlertsTask,
-            isOutsideSwedenTask = FakeIsOutsideSwedenTask(isOutsideSweden = true)
-        )
-
-        viewModel.onEvent(event = PushAlertsEvent.OnHourFormatRowClicked)
-        advanceUntilIdle()
-        val isDialogShown = viewModel.state.value.isHourFormatDialogVisible
-        viewModel.onEvent(event = PushAlertsEvent.OnHourFormatSelected(hourFormat = HourFormat.TWELVE_HOUR))
-        advanceUntilIdle()
-
-        assertEquals(
-            expected = listOf(true, false, false, false),
-            actual = listOf(
-                isDialogShown,
-                viewModel.state.value.isHourFormatDialogVisible,
-                viewModel.state.value.pendingChoices != null,
-                viewModel.state.value.isOutsideSwedenDialogVisible
-            )
-        )
-        assertEquals(
-            expected = listOf(PushAlertChoices.NOTHING_CHOSEN.copy(hourFormat = HourFormat.TWELVE_HOUR)) to 1,
-            actual = savePushAlertChoicesTask.saved to syncPushAlertsTask.syncs
-        )
-    }
-
-    @Test
-    fun theHourFormatDialogClosesWithoutSavingWhenDismissed() = runTest(context = testDispatcher) {
-        val savePushAlertChoicesTask = FakeSavePushAlertChoicesTask()
-        val viewModel = startedViewModel(savePushAlertChoicesTask = savePushAlertChoicesTask)
-
-        viewModel.onEvent(event = PushAlertsEvent.OnHourFormatRowClicked)
-        advanceUntilIdle()
-        viewModel.onEvent(event = PushAlertsEvent.OnHourFormatDialogDismissed)
-        advanceUntilIdle()
-
-        assertEquals(
-            expected = false to emptyList<PushAlertChoices>(),
-            actual = viewModel.state.value.isHourFormatDialogVisible to savePushAlertChoicesTask.saved
-        )
-    }
-
-    @Test
     fun levelDialogsOpenAndClose() = runTest(context = testDispatcher) {
         val viewModel = startedViewModel(choices = WARNINGS_FROM_YELLOW)
         val seen = mutableListOf<Pair<Boolean, Boolean>>()
@@ -762,7 +714,6 @@ private val WARNINGS_FROM_YELLOW = PushAlertChoices(
     temperatureTrend = false,
     strongWind = false,
     slipperiness = false,
-    hourFormat = HourFormat.TWENTY_FOUR_HOUR,
     isChosenPlaceNotified = true,
     notifiedFavoriteIds = emptySet()
 )

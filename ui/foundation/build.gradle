@@ -13,7 +13,7 @@ kotlin {
                 implementation project(':data:aggregatedfeed')
                 implementation project(':data:common')
                 implementation project(':data:place')
-                implementation project(':data:theme')
+                implementation project(':data:setting')
                 implementation project(':ui:icons')
 
                 implementation libs.coroutines.core

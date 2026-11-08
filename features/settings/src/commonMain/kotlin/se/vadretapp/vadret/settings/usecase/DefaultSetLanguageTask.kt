@@ -2,12 +2,12 @@ package se.vadretapp.vadret.settings.usecase
 
 import io.github.sphrak.either.Either
 import se.vadretapp.vadret.common.Failure
-import se.vadretapp.vadret.language.LanguageRepository
-import se.vadretapp.vadret.language.model.AppLanguage
+import se.vadretapp.vadret.setting.SettingRepository
+import se.vadretapp.vadret.setting.model.AppLanguage
 
 internal class DefaultSetLanguageTask(
-    private val languageRepository: LanguageRepository
+    private val settingRepository: SettingRepository
 ) : SetLanguageTask {
 
-    override suspend fun invoke(language: AppLanguage): Either<Failure, Unit> = languageRepository.setLanguage(language = language)
+    override suspend fun invoke(language: AppLanguage): Either<Failure, Unit> = settingRepository.setLanguage(language = language)
 }

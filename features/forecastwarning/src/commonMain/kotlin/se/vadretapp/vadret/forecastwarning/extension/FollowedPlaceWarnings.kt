@@ -5,6 +5,7 @@ import kotlinx.collections.immutable.toImmutableList
 import kotlinx.datetime.TimeZone
 import se.vadretapp.vadret.followedplace.model.FollowedPlace
 import se.vadretapp.vadret.forecastwarning.model.WarningItem
+import se.vadretapp.vadret.setting.model.HourFormat
 import se.vadretapp.vadret.warning.model.FollowedPlaceWarnings
 import se.vadretapp.vadret.warning.model.PlaceWarning
 import kotlin.time.Instant
@@ -16,7 +17,8 @@ private const val ONE_PLACE = 1
 internal fun FollowedPlaceWarnings.toWarningItems(
     now: Instant,
     timeZone: TimeZone,
-    languageTag: String
+    languageTag: String,
+    hourFormat: HourFormat
 ): ImmutableList<WarningItem> =
     placeWarnings
         .sortedByDescending { placeWarning: PlaceWarning -> placeWarning.aggregatedFeed.publishedAt }
@@ -25,6 +27,7 @@ internal fun FollowedPlaceWarnings.toWarningItems(
                 now = now,
                 timeZone = timeZone,
                 languageTag = languageTag,
+                hourFormat = hourFormat,
                 followedPlaceNames = if (followedPlaces.size > ONE_PLACE) {
                     placeWarning.followedPlaces.placeNames()
                 } else {

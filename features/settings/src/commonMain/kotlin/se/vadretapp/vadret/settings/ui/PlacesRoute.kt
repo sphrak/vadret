@@ -27,11 +27,11 @@ import org.jetbrains.compose.resources.stringResource
 import se.vadretapp.vadret.di.koinViewModel
 import se.vadretapp.vadret.followedplace.model.FavoriteChoice
 import se.vadretapp.vadret.place.model.Place
+import se.vadretapp.vadret.setting.model.Theme
 import se.vadretapp.vadret.settings.PlacesEvent
 import se.vadretapp.vadret.settings.PlacesState
 import se.vadretapp.vadret.settings.PlacesViewModel
 import se.vadretapp.vadret.settings.model.FailureDialog
-import se.vadretapp.vadret.theme.model.Theme
 import se.vadretapp.vadret.ui.InfoDialog
 import se.vadretapp.vadret.ui.LocationPermissionEffect
 import se.vadretapp.vadret.ui.PlaceSearchBar

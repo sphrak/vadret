@@ -14,6 +14,7 @@ import se.vadretapp.vadret.icons.VadretIconGraphic
 import se.vadretapp.vadret.icons.VadretIcons
 import se.vadretapp.vadret.icons.VariableCloudiness
 import se.vadretapp.vadret.icons.VariableCloudinessNight
+import se.vadretapp.vadret.setting.model.HourFormat
 import se.vadretapp.vadret.ui.resources.Res
 import se.vadretapp.vadret.ui.resources.wsymb2_overcast
 import se.vadretapp.vadret.weatherforecast.model.Analysis
@@ -86,7 +87,8 @@ class PlaceForecastTest {
         ).toWeatherForecast(
             now = now,
             timeZone = stockholm,
-            languageTag = languageTag
+            languageTag = languageTag,
+            hourFormat = HourFormat.TWENTY_FOUR_HOUR
         )
 
     private fun currentWeather(forecast: Forecast): CurrentWeather {

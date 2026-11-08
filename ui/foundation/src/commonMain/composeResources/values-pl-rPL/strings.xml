@@ -140,7 +140,6 @@
     <string name="pollen_alerts">Stężenie pyłków</string>
     <string name="pollen_alerts_summary">Dla pyłków wybranych w sekcji Pyłki</string>
     <string name="pollen_alerts_need_allergens">Najpierw włącz pyłki i wybierz w sekcji Pyłki te, na które masz alergię.</string>
-    <string name="notifications_display">Wyświetlanie</string>
     <string name="hour_format">Format godziny</string>
     <string name="hour_format_24">24-godzinny</string>
     <string name="hour_format_12">12-godzinny</string>

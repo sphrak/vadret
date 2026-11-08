@@ -19,6 +19,7 @@ import se.vadretapp.vadret.forecastwarning.model.WarningItem
 import se.vadretapp.vadret.forecastwarning.model.WarningMapArea
 import se.vadretapp.vadret.icons.Slipperiness
 import se.vadretapp.vadret.icons.VadretIcons
+import se.vadretapp.vadret.setting.model.HourFormat
 import se.vadretapp.vadret.ui.model.ElapsedTime
 import se.vadretapp.vadret.ui.resources.Res
 import se.vadretapp.vadret.ui.resources.hours_ago
@@ -109,7 +110,8 @@ class AggregatedFeedTest {
         ).toWarningItem(
             now = now,
             timeZone = stockholm,
-            languageTag = ENGLISH
+            languageTag = ENGLISH,
+            hourFormat = HourFormat.TWENTY_FOUR_HOUR
         )
 
     @Test
@@ -152,7 +154,8 @@ class AggregatedFeedTest {
         ).toWarningItem(
             now = now,
             timeZone = stockholm,
-            languageTag = ENGLISH
+            languageTag = ENGLISH,
+            hourFormat = HourFormat.TWENTY_FOUR_HOUR
         )
 
         assertEquals(expected = Res.string.slipperiness_cause_refreeze, actual = warningItem.headlineResource)
@@ -192,7 +195,8 @@ class AggregatedFeedTest {
         ).toWarningItem(
             now = now,
             timeZone = stockholm,
-            languageTag = ENGLISH
+            languageTag = ENGLISH,
+            hourFormat = HourFormat.TWENTY_FOUR_HOUR
         )
 
         assertEquals(expected = Res.string.slipperiness_high, actual = warningItem.headlineResource)
@@ -393,7 +397,8 @@ class AggregatedFeedTest {
         ).toWarningItems(
             now = now,
             timeZone = stockholm,
-            languageTag = ENGLISH
+            languageTag = ENGLISH,
+            hourFormat = HourFormat.TWENTY_FOUR_HOUR
         )
 
         assertEquals(
@@ -432,7 +437,8 @@ class AggregatedFeedTest {
         ).toWarningItem(
             now = now,
             timeZone = stockholm,
-            languageTag = ENGLISH
+            languageTag = ENGLISH,
+            hourFormat = HourFormat.TWENTY_FOUR_HOUR
         ).mapArea
 
         assertEquals(

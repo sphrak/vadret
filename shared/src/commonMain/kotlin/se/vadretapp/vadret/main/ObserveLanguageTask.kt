@@ -3,7 +3,7 @@ package se.vadretapp.vadret.main
 import io.github.sphrak.either.Either
 import kotlinx.coroutines.flow.Flow
 import se.vadretapp.vadret.common.Failure
-import se.vadretapp.vadret.language.model.AppLanguage
+import se.vadretapp.vadret.setting.model.AppLanguage
 
 internal interface ObserveLanguageTask {
 

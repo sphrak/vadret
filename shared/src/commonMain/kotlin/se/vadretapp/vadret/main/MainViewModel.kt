@@ -13,17 +13,19 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import se.vadretapp.vadret.aggregatedfeed.model.WarningReference
 import se.vadretapp.vadret.common.Failure
-import se.vadretapp.vadret.language.model.AppLanguage
 import se.vadretapp.vadret.lifecycle.AppStartHook
 import se.vadretapp.vadret.logging.Logger
 import se.vadretapp.vadret.logging.LoggerFactory
-import se.vadretapp.vadret.theme.model.Theme
+import se.vadretapp.vadret.setting.model.AppLanguage
+import se.vadretapp.vadret.setting.model.HourFormat
+import se.vadretapp.vadret.setting.model.Theme
 import se.vadretapp.vadret.warning.usecase.GetReferencedWarningIdentifiersTask
 import kotlin.concurrent.atomics.AtomicBoolean
 
 internal class MainViewModel(
     private val observeThemeTask: ObserveThemeTask,
     private val observeLanguageTask: ObserveLanguageTask,
+    private val observeHourFormatTask: ObserveHourFormatTask,
     private val appStartHooks: List<AppStartHook>,
     private val openedWarningReferences: OpenedWarningReferences,
     private val getReferencedWarningIdentifiersTask: GetReferencedWarningIdentifiersTask,
@@ -35,6 +37,9 @@ internal class MainViewModel(
 
     val language: StateFlow<AppLanguage?>
         field = MutableStateFlow<AppLanguage?>(value = null)
+
+    val hourFormat: StateFlow<HourFormat?>
+        field = MutableStateFlow<HourFormat?>(value = null)
 
     private val openedStories: Channel<List<String>> = Channel(capacity = Channel.CONFLATED)
 
@@ -69,6 +74,14 @@ internal class MainViewModel(
                     language.value = result.onResult(
                         onError = { _: Failure -> AppLanguage.SYSTEM },
                         onSuccess = { observedLanguage: AppLanguage -> observedLanguage }
+                    )
+                }
+            }
+            viewModelScope.launch(context = coroutineDispatcher) {
+                observeHourFormatTask().collect { result: Either<Failure, HourFormat> ->
+                    hourFormat.value = result.onResult(
+                        onError = { _: Failure -> HourFormat.TWENTY_FOUR_HOUR },
+                        onSuccess = { observedHourFormat: HourFormat -> observedHourFormat }
                     )
                 }
             }

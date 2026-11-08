@@ -12,7 +12,7 @@ kotlin {
                 implementation project(':core:logging')
                 implementation project(':data:aggregatedfeed')
                 implementation project(':data:common')
-                implementation project(':data:theme')
+                implementation project(':data:setting')
                 implementation project(':domain:followedplace')
                 implementation project(':domain:warning')
                 implementation project(':ui:icons')

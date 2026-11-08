@@ -148,7 +148,6 @@
     <string name="pollen_alerts">Pollennivåer</string>
     <string name="pollen_alerts_summary">For pollen du har valgt under Pollen</string>
     <string name="pollen_alerts_need_allergens">Slå på pollen og velg hvilke pollen du er allergisk mot under Pollen først.</string>
-    <string name="notifications_display">Visning</string>
     <string name="hour_format">Tidsformat</string>
     <string name="hour_format_24">24 timer</string>
     <string name="hour_format_12">12 timer</string>

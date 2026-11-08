@@ -15,15 +15,17 @@ import se.vadretapp.vadret.location.model.Location
 import se.vadretapp.vadret.pollenpreference.model.PollenPreferences
 import se.vadretapp.vadret.pushalert.model.DeviceRegistration
 import se.vadretapp.vadret.pushalert.model.DeviceToken
-import se.vadretapp.vadret.pushalert.model.HourFormat
 import se.vadretapp.vadret.pushalert.model.InstallationToken
 import se.vadretapp.vadret.pushalert.model.PollenAlertLevel
 import se.vadretapp.vadret.pushalert.model.PollenChoice
 import se.vadretapp.vadret.pushalert.model.PushAlertChoices
+import se.vadretapp.vadret.pushalert.model.PushAlertSubscription
 import se.vadretapp.vadret.pushalert.model.WarningAlertLevel
 import se.vadretapp.vadret.pushalert.usecase.DefaultGetCurrentGeohashTask
 import se.vadretapp.vadret.pushalert.usecase.DefaultGetPushAlertGeohashesTask
 import se.vadretapp.vadret.pushalert.usecase.DefaultSyncPushAlertsTask
+import se.vadretapp.vadret.setting.model.AppLanguage
+import se.vadretapp.vadret.setting.model.HourFormat
 import kotlin.io.encoding.Base64
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -191,16 +193,48 @@ class DefaultSyncPushAlertsTaskTest {
     }
 
     @Test
-    fun theSubscriptionSaysHowTheHoursAreWritten() = runTest {
-        val subscribed = HourFormat.entries.map { hourFormat: HourFormat ->
-            val pushAlertRepository = FakePushAlertRepository(choices = WARNINGS_FROM_YELLOW.copy(hourFormat = hourFormat))
-            syncPushAlertsTask(pushAlertRepository = pushAlertRepository)()
-            pushAlertRepository.subscriptions.last()?.hourFormat
+    fun theSubscriptionSaysTheClockAndTheLanguageTheAppShows() = runTest {
+        val subscribed = listOf(
+            HourFormat.TWENTY_FOUR_HOUR to AppLanguage.SYSTEM,
+            HourFormat.TWELVE_HOUR to AppLanguage.POLISH
+        ).map { (hourFormat: HourFormat, language: AppLanguage) ->
+            val pushAlertRepository = FakePushAlertRepository(choices = WARNINGS_FROM_YELLOW)
+            syncPushAlertsTask(
+                pushAlertRepository = pushAlertRepository,
+                settingRepository = FakeSettingRepository(
+                    language = language.asRight(),
+                    hourFormat = hourFormat.asRight()
+                )
+            )()
+            val subscription: PushAlertSubscription? = pushAlertRepository.subscriptions.last()
+            subscription?.hourFormat to subscription?.language
         }
 
         assertEquals(
-            expected = HourFormat.entries,
+            expected = listOf<Pair<HourFormat?, AppLanguage?>>(
+                HourFormat.TWENTY_FOUR_HOUR to AppLanguage.SWEDISH,
+                HourFormat.TWELVE_HOUR to AppLanguage.POLISH
+            ),
             actual = subscribed
+        )
+    }
+
+    @Test
+    fun aClockThatCannotBeReadSubscribesNothingAndIsTriedAgainLater() = runTest {
+        val pushAlertRepository = FakePushAlertRepository(choices = WARNINGS_FROM_YELLOW)
+
+        val synced = syncPushAlertsTask(
+            pushAlertRepository = pushAlertRepository,
+            settingRepository = FakeSettingRepository(hourFormat = STORAGE_FAILED.asLeft())
+        )()
+
+        assertEquals(
+            expected = STORAGE_FAILED.asLeft(),
+            actual = synced
+        )
+        assertEquals(
+            expected = false to true,
+            actual = pushAlertRepository.calls.any { call -> call.startsWith(prefix = "subscribe") } to pushAlertRepository.isSyncPending.value
         )
     }
 
@@ -905,10 +939,12 @@ private fun syncPushAlertsTask(
     sealedMessageKey: FakeSealedMessageKey = FakeSealedMessageKey(),
     locationRepository: FakeLocationRepository = FakeLocationRepository(),
     favoriteRepository: FakeFavoriteRepository = FakeFavoriteRepository(),
-    pollenPreferenceRepository: FakePollenPreferenceRepository = FakePollenPreferenceRepository()
+    pollenPreferenceRepository: FakePollenPreferenceRepository = FakePollenPreferenceRepository(),
+    settingRepository: FakeSettingRepository = FakeSettingRepository()
 ): DefaultSyncPushAlertsTask = DefaultSyncPushAlertsTask(
     pushAlertRepository = pushAlertRepository,
     pollenPreferenceRepository = pollenPreferenceRepository,
+    settingRepository = settingRepository,
     deviceTokenSource = deviceTokenSource,
     notificationPermissionSource = notificationPermissionSource,
     sealedMessageKey = sealedMessageKey,
@@ -930,7 +966,6 @@ private val WARNINGS_FROM_YELLOW = PushAlertChoices(
     temperatureTrend = false,
     strongWind = false,
     slipperiness = false,
-    hourFormat = HourFormat.TWENTY_FOUR_HOUR,
     isChosenPlaceNotified = true,
     notifiedFavoriteIds = emptySet()
 )

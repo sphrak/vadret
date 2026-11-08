@@ -25,7 +25,6 @@ import se.vadretapp.vadret.pushalert.model.AndroidAttestation
 import se.vadretapp.vadret.pushalert.model.Attestation
 import se.vadretapp.vadret.pushalert.model.DeviceRegistration
 import se.vadretapp.vadret.pushalert.model.DeviceToken
-import se.vadretapp.vadret.pushalert.model.HourFormat
 import se.vadretapp.vadret.pushalert.model.InstallationToken
 import se.vadretapp.vadret.pushalert.model.IosAttestation
 import se.vadretapp.vadret.pushalert.model.PollenAlertLevel
@@ -35,6 +34,8 @@ import se.vadretapp.vadret.pushalert.model.PushAlertStateEntity
 import se.vadretapp.vadret.pushalert.model.PushAlertSubscription
 import se.vadretapp.vadret.pushalert.model.WarningAlertLevel
 import se.vadretapp.vadret.pushalert.remote.DefaultPushAlertRemoteDataSource
+import se.vadretapp.vadret.setting.model.AppLanguage
+import se.vadretapp.vadret.setting.model.HourFormat
 import se.vadretapp.vadret.testing.mockHttpClient
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -282,7 +283,8 @@ class DefaultPushAlertRepositoryTest {
                 temperatureTrend = true,
                 strongWind = true,
                 slipperiness = true,
-                hourFormat = HourFormat.TWENTY_FOUR_HOUR
+                hourFormat = HourFormat.TWENTY_FOUR_HOUR,
+                language = AppLanguage.SWEDISH
             )
         )
         pushAlertRepository.replaceSubscription(
@@ -292,7 +294,7 @@ class DefaultPushAlertRepositoryTest {
 
         assertEquals(
             expected = listOf(
-                """PUT /api/v1/subscription Bearer $INSTALLATION_TOKEN {"geohashes":["u6sce","u3chr"],"warning_lowest_level":"YELLOW","pollen":[{"pollen_type_id":"$BIRCH","lowest_level":5}],"temperature_trend":true,"strong_wind":true,"slipperiness":true,"hour_format":"24h"}""",
+                """PUT /api/v1/subscription Bearer $INSTALLATION_TOKEN {"geohashes":["u6sce","u3chr"],"warning_lowest_level":"YELLOW","pollen":[{"pollen_type_id":"$BIRCH","lowest_level":5}],"temperature_trend":true,"strong_wind":true,"slipperiness":true,"hour_format":"24h","language":"sv"}""",
                 "PUT /api/v1/subscription Bearer $INSTALLATION_TOKEN {}"
             ),
             actual = requests
@@ -300,7 +302,7 @@ class DefaultPushAlertRepositoryTest {
     }
 
     @Test
-    fun aSubscriptionWithoutStrongWindSaysSoInsteadOfLeavingItOutAndNamesTheHourFormat() = runTest {
+    fun aSubscriptionWithoutStrongWindSaysSoInsteadOfLeavingItOutNamesTheHourFormatAndLeavesOutAnUnknownLanguage() = runTest {
         repository().replaceSubscription(
             installationToken = InstallationToken(value = INSTALLATION_TOKEN),
             pushAlertSubscription = PushAlertSubscription(
@@ -310,7 +312,8 @@ class DefaultPushAlertRepositoryTest {
                 temperatureTrend = false,
                 strongWind = false,
                 slipperiness = false,
-                hourFormat = HourFormat.TWELVE_HOUR
+                hourFormat = HourFormat.TWELVE_HOUR,
+                language = AppLanguage.SYSTEM
             )
         )
 
@@ -399,7 +402,7 @@ class DefaultPushAlertRepositoryTest {
         repository(pushAlertLocalDataSource = pushAlertLocalDataSource).saveChoices(pushAlertChoices = CHOICES)
 
         assertEquals(
-            expected = """{"choices":{"warning_lowest_level":"ORANGE","pollen_lowest_level":4,"temperature_trend":true,"strong_wind":true,"hour_format":"TWENTY_FOUR_HOUR"}}""",
+            expected = """{"choices":{"warning_lowest_level":"ORANGE","pollen_lowest_level":4,"temperature_trend":true,"strong_wind":true}}""",
             actual = Json.encodeToString(
                 serializer = PushAlertStateEntity.serializer(),
                 value = pushAlertLocalDataSource.state.value
@@ -433,7 +436,7 @@ class DefaultPushAlertRepositoryTest {
         pushAlertRepository.saveChoices(pushAlertChoices = choicesWithPlaces)
 
         assertEquals(
-            expected = """{"choices":{"warning_lowest_level":"ORANGE","pollen_lowest_level":4,"temperature_trend":true,"strong_wind":true,"hour_format":"TWENTY_FOUR_HOUR","is_chosen_place_notified":false,"notified_favorite_ids":["solna","uppsala"]}}""",
+            expected = """{"choices":{"warning_lowest_level":"ORANGE","pollen_lowest_level":4,"temperature_trend":true,"strong_wind":true,"is_chosen_place_notified":false,"notified_favorite_ids":["solna","uppsala"]}}""",
             actual = Json.encodeToString(
                 serializer = PushAlertStateEntity.serializer(),
                 value = pushAlertLocalDataSource.state.value
@@ -466,7 +469,7 @@ class DefaultPushAlertRepositoryTest {
         pushAlertRepository.saveChoices(pushAlertChoices = CHOICES.copy(slipperiness = true))
 
         assertEquals(
-            expected = """{"choices":{"warning_lowest_level":"ORANGE","pollen_lowest_level":4,"temperature_trend":true,"strong_wind":true,"slipperiness":true,"hour_format":"TWENTY_FOUR_HOUR"}}""" to CHOICES.copy(slipperiness = true).asRight(),
+            expected = """{"choices":{"warning_lowest_level":"ORANGE","pollen_lowest_level":4,"temperature_trend":true,"strong_wind":true,"slipperiness":true}}""" to CHOICES.copy(slipperiness = true).asRight(),
             actual = Json.encodeToString(
                 serializer = PushAlertStateEntity.serializer(),
                 value = pushAlertLocalDataSource.state.value
@@ -718,7 +721,6 @@ private val CHOICES = PushAlertChoices(
     temperatureTrend = true,
     strongWind = true,
     slipperiness = false,
-    hourFormat = HourFormat.TWENTY_FOUR_HOUR,
     isChosenPlaceNotified = true,
     notifiedFavoriteIds = emptySet()
 )

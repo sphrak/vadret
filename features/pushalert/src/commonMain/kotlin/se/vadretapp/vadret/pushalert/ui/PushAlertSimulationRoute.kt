@@ -18,7 +18,7 @@ import se.vadretapp.vadret.pushalert.extension.icon
 import se.vadretapp.vadret.pushalert.model.PushAlertMessage
 import se.vadretapp.vadret.pushalert.model.PushAlertType
 import se.vadretapp.vadret.pushalert.simulatedPushAlertMessages
-import se.vadretapp.vadret.theme.model.Theme
+import se.vadretapp.vadret.setting.model.Theme
 import se.vadretapp.vadret.ui.InfoDialog
 import se.vadretapp.vadret.ui.SettingsRow
 import se.vadretapp.vadret.ui.SettingsRowIcon

@@ -26,12 +26,16 @@ import se.vadretapp.vadret.pushalert.model.PollenAlertLevel
 import se.vadretapp.vadret.pushalert.model.PollenChoice
 import se.vadretapp.vadret.pushalert.model.PushAlertChoices
 import se.vadretapp.vadret.pushalert.model.PushAlertSubscription
+import se.vadretapp.vadret.setting.SettingRepository
+import se.vadretapp.vadret.setting.model.AppLanguage
+import se.vadretapp.vadret.setting.model.HourFormat
 import kotlin.io.encoding.Base64
 import kotlin.time.Clock
 
 internal class DefaultSyncPushAlertsTask(
     private val pushAlertRepository: PushAlertRepository,
     private val pollenPreferenceRepository: PollenPreferenceRepository,
+    private val settingRepository: SettingRepository,
     private val deviceTokenSource: DeviceTokenSource,
     private val notificationPermissionSource: NotificationPermissionSource,
     private val sealedMessageKey: SealedMessageKey,
@@ -123,18 +127,23 @@ internal class DefaultSyncPushAlertsTask(
                 forget()
             } else {
                 pollenChoices(pollenLowestLevel = pushAlertChoices.pollenLowestLevel).flatMap { pollenChoices: List<PollenChoice> ->
-                    pushAlertRepository.replaceSubscription(
-                        installationToken = installationToken,
-                        pushAlertSubscription = PushAlertSubscription(
-                            geohashes = geohashes,
-                            warningLowestLevel = pushAlertChoices.warningLowestLevel,
-                            pollenChoices = pollenChoices,
-                            temperatureTrend = pushAlertChoices.temperatureTrend,
-                            strongWind = pushAlertChoices.strongWind,
-                            slipperiness = pushAlertChoices.slipperiness,
-                            hourFormat = pushAlertChoices.hourFormat
-                        )
-                    )
+                    settingRepository.getHourFormat().flatMap { hourFormat: HourFormat ->
+                        settingRepository.getShownLanguage().flatMap { language: AppLanguage ->
+                            pushAlertRepository.replaceSubscription(
+                                installationToken = installationToken,
+                                pushAlertSubscription = PushAlertSubscription(
+                                    geohashes = geohashes,
+                                    warningLowestLevel = pushAlertChoices.warningLowestLevel,
+                                    pollenChoices = pollenChoices,
+                                    temperatureTrend = pushAlertChoices.temperatureTrend,
+                                    strongWind = pushAlertChoices.strongWind,
+                                    slipperiness = pushAlertChoices.slipperiness,
+                                    hourFormat = hourFormat,
+                                    language = language
+                                )
+                            )
+                        }
+                    }
                 }.flatMap { pushAlertRepository.saveSyncedCurrentGeohash(geohash = currentGeohash) }
             }
         }

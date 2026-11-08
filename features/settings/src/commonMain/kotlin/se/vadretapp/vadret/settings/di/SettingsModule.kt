@@ -19,6 +19,7 @@ import se.vadretapp.vadret.settings.usecase.DefaultObserveHourlyForecastTask
 import se.vadretapp.vadret.settings.usecase.DefaultObservePollenTypesTask
 import se.vadretapp.vadret.settings.usecase.DefaultSetEndOfSeasonSimulatedTask
 import se.vadretapp.vadret.settings.usecase.DefaultSetExpandOnceTask
+import se.vadretapp.vadret.settings.usecase.DefaultSetHourFormatChoiceTask
 import se.vadretapp.vadret.settings.usecase.DefaultSetHourlyForecastTask
 import se.vadretapp.vadret.settings.usecase.DefaultSetLanguageTask
 import se.vadretapp.vadret.settings.usecase.DefaultSetPollenAllergenTask
@@ -33,6 +34,7 @@ import se.vadretapp.vadret.settings.usecase.ObserveHourlyForecastTask
 import se.vadretapp.vadret.settings.usecase.ObservePollenTypesTask
 import se.vadretapp.vadret.settings.usecase.SetEndOfSeasonSimulatedTask
 import se.vadretapp.vadret.settings.usecase.SetExpandOnceTask
+import se.vadretapp.vadret.settings.usecase.SetHourFormatChoiceTask
 import se.vadretapp.vadret.settings.usecase.SetHourlyForecastTask
 import se.vadretapp.vadret.settings.usecase.SetLanguageTask
 import se.vadretapp.vadret.settings.usecase.SetPollenAllergenTask
@@ -50,6 +52,7 @@ val settingsModule: Module = module {
     factoryOf(::DefaultSetEndOfSeasonSimulatedTask) { bind<SetEndOfSeasonSimulatedTask>() }
     factoryOf(::DefaultSetExpandOnceTask) { bind<SetExpandOnceTask>() }
     factoryOf(::DefaultSetHourlyForecastTask) { bind<SetHourlyForecastTask>() }
+    factoryOf(::DefaultSetHourFormatChoiceTask) { bind<SetHourFormatChoiceTask>() }
     factoryOf(::DefaultSetLanguageTask) { bind<SetLanguageTask>() }
     factoryOf(::DefaultSetPollenAllergenTask) { bind<SetPollenAllergenTask>() }
     factoryOf(::DefaultSetPollenEnabledTask) { bind<SetPollenEnabledTask>() }

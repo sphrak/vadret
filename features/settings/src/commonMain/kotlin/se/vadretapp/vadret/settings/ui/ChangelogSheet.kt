@@ -26,7 +26,7 @@ import com.mikepenz.markdown.model.MarkdownTypography
 import com.mikepenz.markdown.model.State
 import com.mikepenz.markdown.model.markdownPadding
 import se.vadretapp.vadret.changelog.model.Changelog
-import se.vadretapp.vadret.theme.model.Theme
+import se.vadretapp.vadret.setting.model.Theme
 import se.vadretapp.vadret.ui.ThemePreviewParameterProvider
 import se.vadretapp.vadret.ui.VadretTheme
 

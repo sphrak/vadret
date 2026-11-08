@@ -18,7 +18,7 @@ kotlin {
                 implementation project(':data:location')
                 implementation project(':data:nominatim')
                 implementation project(':data:place')
-                implementation project(':data:theme')
+                implementation project(':data:setting')
                 implementation project(':ui:icons')
                 implementation project(':data:weatherforecast')
                 implementation project(':domain:followedplace')

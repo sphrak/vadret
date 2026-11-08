@@ -13,6 +13,7 @@ import kotlinx.datetime.TimeZone
 import se.vadretapp.vadret.aggregatedfeed.model.AggregatedFeed
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.forecastwarning.extension.toWarningItem
+import se.vadretapp.vadret.setting.model.HourFormat
 import se.vadretapp.vadret.ui.extension.messageResource
 import se.vadretapp.vadret.ui.format.currentLanguageTag
 import se.vadretapp.vadret.ui.resources.Res
@@ -32,13 +33,17 @@ class WarningDetailViewModel internal constructor(
         field = MutableStateFlow(value = WarningDetailState())
 
     private val languageTag: AtomicReference<String> = AtomicReference(value = currentLanguageTag())
+    private val hourFormat: AtomicReference<HourFormat> = AtomicReference(value = HourFormat.TWENTY_FOUR_HOUR)
     private val warning: AtomicReference<AggregatedFeed?> = AtomicReference(value = null)
     private val startedWarningIdentifier: AtomicReference<String?> = AtomicReference(value = null)
 
     internal fun onEvent(event: WarningDetailEvent) {
         when (event) {
             is WarningDetailEvent.OnStart -> onStart(warningIdentifier = event.warningIdentifier)
-            is WarningDetailEvent.OnLocaleChanged -> onLocaleChanged(languageTag = event.languageTag)
+            is WarningDetailEvent.OnLocaleChanged -> onLocaleChanged(
+                languageTag = event.languageTag,
+                hourFormat = event.hourFormat
+            )
         }
     }
 
@@ -59,8 +64,13 @@ class WarningDetailViewModel internal constructor(
         }
     }
 
-    private fun onLocaleChanged(languageTag: String) {
-        if (this.languageTag.exchange(newValue = languageTag) == languageTag) {
+    private fun onLocaleChanged(
+        languageTag: String,
+        hourFormat: HourFormat
+    ) {
+        val isLanguageSame: Boolean = this.languageTag.exchange(newValue = languageTag) == languageTag
+        val isHourFormatSame: Boolean = this.hourFormat.exchange(newValue = hourFormat) == hourFormat
+        if (isLanguageSame && isHourFormatSame) {
             return
         }
         viewModelScope.launch(context = coroutineDispatcher) {
@@ -77,7 +87,8 @@ class WarningDetailViewModel internal constructor(
                 warning = aggregatedFeed?.toWarningItem(
                     now = clock.now(),
                     timeZone = TimeZone.currentSystemDefault(),
-                    languageTag = languageTag.load()
+                    languageTag = languageTag.load(),
+                    hourFormat = hourFormat.load()
                 ),
                 isLoading = false,
                 messageResource = if (aggregatedFeed == null) {

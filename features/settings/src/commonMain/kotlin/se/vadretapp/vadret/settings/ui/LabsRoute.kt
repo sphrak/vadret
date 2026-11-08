@@ -12,10 +12,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.jetbrains.compose.resources.stringResource
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.di.koinViewModel
+import se.vadretapp.vadret.setting.model.Theme
 import se.vadretapp.vadret.settings.LabsEvent
 import se.vadretapp.vadret.settings.LabsState
 import se.vadretapp.vadret.settings.LabsViewModel
-import se.vadretapp.vadret.theme.model.Theme
 import se.vadretapp.vadret.ui.InfoDialog
 import se.vadretapp.vadret.ui.SettingsFootnote
 import se.vadretapp.vadret.ui.SettingsScaffold

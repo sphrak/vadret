@@ -8,7 +8,6 @@ import se.vadretapp.vadret.aggregatedfeed.model.WarningReference
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.geohash.model.Geohash
-import se.vadretapp.vadret.pushalert.model.HourFormat
 import se.vadretapp.vadret.pushalert.model.PollenAlertLevel
 import se.vadretapp.vadret.pushalert.model.PushAlertChoices
 import se.vadretapp.vadret.pushalert.model.PushAlertKind
@@ -302,7 +301,6 @@ private val EVERYTHING_CHOSEN = PushAlertChoices(
     temperatureTrend = true,
     strongWind = true,
     slipperiness = true,
-    hourFormat = HourFormat.TWENTY_FOUR_HOUR,
     isChosenPlaceNotified = true,
     notifiedFavoriteIds = emptySet()
 )

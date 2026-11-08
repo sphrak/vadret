@@ -26,6 +26,8 @@ import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import se.vadretapp.vadret.place.model.Place
+import se.vadretapp.vadret.setting.model.HourFormat
+import se.vadretapp.vadret.ui.LocalHourFormat
 import se.vadretapp.vadret.ui.LocalLanguageTag
 import se.vadretapp.vadret.ui.PlaceSearchBar
 import se.vadretapp.vadret.ui.VadretProgressBar
@@ -59,8 +61,14 @@ internal fun ForecastScaffold(
     modifier: Modifier = Modifier
 ) {
     val languageTag: String = LocalLanguageTag.current
-    LaunchedEffect(languageTag) {
-        onEvent(WeatherForecastEvent.OnLocaleChanged(languageTag = languageTag))
+    val hourFormat: HourFormat = LocalHourFormat.current
+    LaunchedEffect(languageTag, hourFormat) {
+        onEvent(
+            WeatherForecastEvent.OnLocaleChanged(
+                languageTag = languageTag,
+                hourFormat = hourFormat
+            )
+        )
     }
     LifecycleResumeEffect(Unit) {
         onEvent(WeatherForecastEvent.OnResumed)

@@ -18,7 +18,6 @@ import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.pushalert.extension.isNotified
 import se.vadretapp.vadret.pushalert.extension.withNotified
-import se.vadretapp.vadret.pushalert.model.HourFormat
 import se.vadretapp.vadret.pushalert.model.PollenAlertLevel
 import se.vadretapp.vadret.pushalert.model.PushAlertChoices
 import se.vadretapp.vadret.pushalert.model.PushAlertPlace
@@ -169,9 +168,6 @@ internal class PushAlertsViewModel(
                 state.update { state: PushAlertsState -> state.copy(isPollenLevelDialogVisible = false) }
                 choose(pushAlertChoices = state.value.choices.copy(pollenLowestLevel = event.pollenAlertLevel))
             }
-            PushAlertsEvent.OnHourFormatRowClicked -> state.update { state: PushAlertsState -> state.copy(isHourFormatDialogVisible = true) }
-            PushAlertsEvent.OnHourFormatDialogDismissed -> state.update { state: PushAlertsState -> state.copy(isHourFormatDialogVisible = false) }
-            is PushAlertsEvent.OnHourFormatSelected -> onHourFormatSelected(hourFormat = event.hourFormat)
             is PushAlertsEvent.OnNotificationPermissionResult -> onNotificationPermissionResult(isGranted = event.isGranted)
             PushAlertsEvent.OnNotificationPermissionDialogDismissed -> state.update { state: PushAlertsState ->
                 state.copy(isNotificationPermissionDialogVisible = false)
@@ -216,12 +212,6 @@ internal class PushAlertsViewModel(
                 )
             )
         }
-    }
-
-    // How the hours are written turns no alert on, so it is saved even before any alert is chosen or allowed.
-    private fun onHourFormatSelected(hourFormat: HourFormat) {
-        state.update { state: PushAlertsState -> state.copy(isHourFormatDialogVisible = false) }
-        save(pushAlertChoices = state.value.choices.copy(hourFormat = hourFormat))
     }
 
     private suspend fun choose(pushAlertChoices: PushAlertChoices) {

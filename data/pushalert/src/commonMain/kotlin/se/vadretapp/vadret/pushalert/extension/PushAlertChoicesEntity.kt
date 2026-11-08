@@ -1,6 +1,5 @@
 package se.vadretapp.vadret.pushalert.extension
 
-import se.vadretapp.vadret.pushalert.model.HourFormat
 import se.vadretapp.vadret.pushalert.model.PollenAlertLevel
 import se.vadretapp.vadret.pushalert.model.PushAlertChoices
 import se.vadretapp.vadret.pushalert.model.PushAlertChoicesEntity
@@ -12,7 +11,6 @@ internal fun PushAlertChoicesEntity.toPushAlertChoices(): PushAlertChoices = Pus
     temperatureTrend = temperatureTrend,
     strongWind = strongWind,
     slipperiness = slipperiness,
-    hourFormat = HourFormat.entries.firstOrNull { knownHourFormat -> knownHourFormat.name == hourFormat } ?: HourFormat.TWENTY_FOUR_HOUR,
     isChosenPlaceNotified = isChosenPlaceNotified,
     notifiedFavoriteIds = notifiedFavoriteIds.toSet()
 )

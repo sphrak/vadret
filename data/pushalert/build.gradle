@@ -14,6 +14,7 @@ kotlin {
                 implementation project(':core:geohash')
                 implementation project(':core:logging')
                 implementation project(':data:common')
+                implementation project(':data:setting')
 
                 implementation libs.coroutines.core
                 implementation libs.datastore.core

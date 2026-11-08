@@ -5,6 +5,7 @@ import se.vadretapp.vadret.radar.model.Radar
 import se.vadretapp.vadret.radar.model.RadarFrame
 import se.vadretapp.vadret.radar.model.RadarImage
 import se.vadretapp.vadret.radar.model.WindTimeFrame
+import se.vadretapp.vadret.setting.model.HourFormat
 import se.vadretapp.vadret.ui.model.ElapsedTime
 import se.vadretapp.vadret.ui.resources.Res
 import se.vadretapp.vadret.ui.resources.an_hour_ago
@@ -48,7 +49,8 @@ class RadarTest {
             actual = radar.toRadarFrames(
                 now = Instant.parse(input = "2026-10-24T23:10:00Z"),
                 timeZone = stockholm,
-                languageTag = "en"
+                languageTag = "en",
+                hourFormat = HourFormat.TWENTY_FOUR_HOUR
             )
         )
     }
@@ -80,7 +82,38 @@ class RadarTest {
             ),
             actual = windForecast.toWindTimeFrames(
                 timeZone = stockholm,
-                languageTag = "sv-SE"
+                languageTag = "sv-SE",
+                hourFormat = HourFormat.TWENTY_FOUR_HOUR
+            )
+        )
+    }
+
+    @Test
+    fun `wind hours follow the 12 hour clock in the language shown`() {
+        val windForecast = WindForecast(
+            referenceTime = Instant.parse(input = "2026-10-24T12:30:00Z"),
+            grid = WindGrid(
+                columnCount = 1,
+                rowCount = 1,
+                longitudes = listOf(18.0),
+                latitudes = listOf(59.3)
+            ),
+            frames = listOf(
+                WindFrame(
+                    validAt = Instant.parse(input = "2026-10-24T13:00:00Z"),
+                    windSpeeds = listOf(1f),
+                    windFromDirections = listOf(0f)
+                )
+            ),
+            fetchedAt = Instant.parse(input = "2026-10-24T12:40:00Z")
+        )
+
+        assertEquals(
+            expected = listOf(WindTimeFrame(timeText = "3:00 PM", weekday = "Saturday")),
+            actual = windForecast.toWindTimeFrames(
+                timeZone = stockholm,
+                languageTag = "en",
+                hourFormat = HourFormat.TWELVE_HOUR
             )
         )
     }

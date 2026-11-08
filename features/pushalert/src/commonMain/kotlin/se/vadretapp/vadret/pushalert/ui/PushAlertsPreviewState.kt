@@ -1,7 +1,6 @@
 package se.vadretapp.vadret.pushalert.ui
 
 import se.vadretapp.vadret.pushalert.PushAlertsState
-import se.vadretapp.vadret.pushalert.model.HourFormat
 import se.vadretapp.vadret.pushalert.model.PollenAlertLevel
 import se.vadretapp.vadret.pushalert.model.PushAlertChoices
 import se.vadretapp.vadret.pushalert.model.PushAlertPlace
@@ -15,7 +14,6 @@ internal fun pushAlertsPreviewState(): PushAlertsState = PushAlertsState(
         temperatureTrend = true,
         strongWind = false,
         slipperiness = true,
-        hourFormat = HourFormat.TWENTY_FOUR_HOUR,
         isChosenPlaceNotified = true,
         notifiedFavoriteIds = setOf(PREVIEW_UPPSALA_ID)
     ),

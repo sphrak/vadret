@@ -12,7 +12,6 @@ internal data class PushAlertsState(
     val pendingChoices: PushAlertChoices? = null,
     val isWarningLevelDialogVisible: Boolean = false,
     val isPollenLevelDialogVisible: Boolean = false,
-    val isHourFormatDialogVisible: Boolean = false,
     val isNoAllergensDialogVisible: Boolean = false,
     val isLastPlaceDialogVisible: Boolean = false,
     val isNotificationPermissionDialogVisible: Boolean = false,

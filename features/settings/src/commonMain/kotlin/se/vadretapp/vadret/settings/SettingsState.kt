@@ -7,5 +7,6 @@ internal data class SettingsState(
     val placesSummary: RowSummary? = null,
     val isDeveloperRowVisible: Boolean = false,
     val isThemeDialogVisible: Boolean = false,
-    val isLanguageDialogVisible: Boolean = false
+    val isLanguageDialogVisible: Boolean = false,
+    val isHourFormatDialogVisible: Boolean = false
 )

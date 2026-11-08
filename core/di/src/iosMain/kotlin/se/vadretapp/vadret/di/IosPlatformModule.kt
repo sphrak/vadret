@@ -20,6 +20,7 @@ import se.vadretapp.vadret.di.model.AppDirectories
 import se.vadretapp.vadret.di.model.AppInfo
 import se.vadretapp.vadret.favorite.FavoriteRepository
 import se.vadretapp.vadret.location.LocationRepository
+import se.vadretapp.vadret.setting.SettingRepository
 
 private const val TIMEOUT_SECONDS = 10.0
 private const val MEMORY_CACHE_SIZE_BYTES: ULong = 4_194_304uL
@@ -66,6 +67,7 @@ fun iosPlatformModule(appInfo: AppInfo): Module =
                 coroutineDispatcher = get()
             )
         }
+        single<SettingRepository> { SettingRepository(dataStore = get()) }
     }
 
 private fun userDirectory(directory: ULong): Path {

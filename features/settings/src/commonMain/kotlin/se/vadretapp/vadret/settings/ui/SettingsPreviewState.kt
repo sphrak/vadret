@@ -5,8 +5,10 @@ import kotlinx.collections.immutable.toImmutableList
 import se.vadretapp.vadret.changelog.model.Changelog
 import se.vadretapp.vadret.favorite.model.Favorite
 import se.vadretapp.vadret.followedplace.model.FavoriteChoice
-import se.vadretapp.vadret.language.model.AppLanguage
 import se.vadretapp.vadret.library.model.Library
+import se.vadretapp.vadret.setting.model.AppLanguage
+import se.vadretapp.vadret.setting.model.HourFormatChoice
+import se.vadretapp.vadret.setting.model.Theme
 import se.vadretapp.vadret.settings.AboutState
 import se.vadretapp.vadret.settings.DeveloperState
 import se.vadretapp.vadret.settings.LabsState
@@ -21,7 +23,6 @@ import se.vadretapp.vadret.settings.model.PollenAllergenRow
 import se.vadretapp.vadret.settings.model.PollenGroup
 import se.vadretapp.vadret.settings.model.PollenGroupRows
 import se.vadretapp.vadret.settings.model.RowSummary
-import se.vadretapp.vadret.theme.model.Theme
 
 private const val PREVIEW_APP_VERSION = "3.1.0"
 private const val PREVIEW_PLACE_NAME = "Stockholm"
@@ -69,6 +70,7 @@ internal fun settingsPreviewState(theme: Theme): SettingsState =
         settings = Settings(
             theme = theme,
             language = AppLanguage.SYSTEM,
+            hourFormatChoice = HourFormatChoice.SYSTEM,
             isHourlyForecastEnabled = false,
             isExpandOnceEnabled = true,
             isPollenEnabled = true,

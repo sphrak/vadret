@@ -9,7 +9,6 @@ internal fun PushAlertChoices.toPushAlertChoicesEntity(): PushAlertChoicesEntity
     temperatureTrend = temperatureTrend,
     strongWind = strongWind,
     slipperiness = slipperiness,
-    hourFormat = hourFormat.name,
     isChosenPlaceNotified = isChosenPlaceNotified,
     notifiedFavoriteIds = notifiedFavoriteIds.sorted()
 )

@@ -2,16 +2,16 @@ package se.vadretapp.vadret.weatherforecast.extension
 
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.format
-import kotlinx.datetime.format.char
 import kotlinx.datetime.toLocalDateTime
 import se.vadretapp.vadret.followedplace.model.FollowedPlace
+import se.vadretapp.vadret.setting.model.HourFormat
 import se.vadretapp.vadret.ui.format.DateTextFormatter
 import se.vadretapp.vadret.ui.format.DateTextStyle
 import se.vadretapp.vadret.ui.format.toOneDecimalText
+import se.vadretapp.vadret.ui.format.toTimeText
 import se.vadretapp.vadret.weatherforecast.model.Analysis
 import se.vadretapp.vadret.weatherforecast.model.CurrentWeather
 import se.vadretapp.vadret.weatherforecast.model.Forecast
@@ -31,16 +31,11 @@ private const val HOUR_KEY_PREFIX = "hour-"
 
 private val nowHourTolerance: Duration = 1.hours
 
-private val hourFormat = LocalTime.Format {
-    hour()
-    char(value = ':')
-    minute()
-}
-
 internal fun PlaceForecast.toWeatherForecast(
     now: Instant,
     timeZone: TimeZone,
-    languageTag: String
+    languageTag: String,
+    hourFormat: HourFormat
 ): WeatherForecast {
     val first: Forecast = forecasts.firstOrNull() ?: return WeatherForecast()
     val hours: List<Forecast> = analysesOfToday(
@@ -61,11 +56,14 @@ internal fun PlaceForecast.toWeatherForecast(
             nowHourAt = nowHourAt,
             timeZone = timeZone,
             languageTag = languageTag,
+            hourFormat = hourFormat,
             latitude = latitude,
             longitude = longitude
         ).toImmutableList(),
         days = toForecastDays(
             timeZone = timeZone,
+            languageTag = languageTag,
+            hourFormat = hourFormat,
             dateFormatter = DateTextFormatter(
                 dateTextStyle = DateTextStyle.LONG_DATE,
                 languageTag = languageTag,
@@ -111,6 +109,8 @@ private fun PlaceForecast.isDaytime(at: Instant): Boolean =
 
 private fun PlaceForecast.toForecastDays(
     timeZone: TimeZone,
+    languageTag: String,
+    hourFormat: HourFormat,
     dateFormatter: DateTextFormatter,
     weekdayFormatter: DateTextFormatter
 ): List<ForecastDay> =
@@ -128,6 +128,8 @@ private fun PlaceForecast.toForecastDays(
                     .map { forecast: Forecast ->
                         forecast.toForecastHour(
                             timeZone = timeZone,
+                            languageTag = languageTag,
+                            hourFormat = hourFormat,
                             isDaytime = isDaytime(at = forecast.validAt)
                         )
                     }.toImmutableList()
@@ -162,14 +164,17 @@ private fun Forecast.feelsLikeTemperature(): String? {
 
 private fun Forecast.toForecastHour(
     timeZone: TimeZone,
+    languageTag: String,
+    hourFormat: HourFormat,
     isDaytime: Boolean
 ): ForecastHour =
     ForecastHour(
         key = "$HOUR_KEY_PREFIX$validAt",
-        timeText = validAt
-            .toLocalDateTime(timeZone = timeZone)
-            .time
-            .format(format = hourFormat),
+        timeText = validAt.toTimeText(
+            hourFormat = hourFormat,
+            timeZone = timeZone,
+            languageTag = languageTag
+        ),
         temperature = airTemperature,
         feelsLikeTemperature = feelsLikeTemperature(),
         descriptionResource = WeatherForecastUtil.getWsymb2Resource(symbolCode = symbolCode),

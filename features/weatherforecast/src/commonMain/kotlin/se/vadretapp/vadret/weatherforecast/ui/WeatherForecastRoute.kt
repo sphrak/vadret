@@ -11,7 +11,7 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import se.vadretapp.vadret.di.koinViewModel
-import se.vadretapp.vadret.theme.model.Theme
+import se.vadretapp.vadret.setting.model.Theme
 import se.vadretapp.vadret.ui.LocationPermissionEffect
 import se.vadretapp.vadret.ui.ThemePreviewParameterProvider
 import se.vadretapp.vadret.ui.VadretTheme

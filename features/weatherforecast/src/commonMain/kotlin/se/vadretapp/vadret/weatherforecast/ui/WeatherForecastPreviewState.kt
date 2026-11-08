@@ -5,6 +5,7 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.datetime.TimeZone
 import se.vadretapp.vadret.aggregatedfeed.model.FeedSource
 import se.vadretapp.vadret.aggregatedfeed.model.WarningLevel
+import se.vadretapp.vadret.setting.model.HourFormat
 import se.vadretapp.vadret.weatherforecast.WeatherForecastState
 import se.vadretapp.vadret.weatherforecast.extension.toWeatherForecast
 import se.vadretapp.vadret.weatherforecast.extension.withDayToggled
@@ -101,7 +102,8 @@ private fun previewWeatherForecast(): WeatherForecast =
     ).toWeatherForecast(
         now = previewNow,
         timeZone = previewTimeZone,
-        languageTag = PREVIEW_LANGUAGE_TAG
+        languageTag = PREVIEW_LANGUAGE_TAG,
+        hourFormat = HourFormat.TWENTY_FOUR_HOUR
     )
 
 private fun previewAnalyses(): List<Analysis> =

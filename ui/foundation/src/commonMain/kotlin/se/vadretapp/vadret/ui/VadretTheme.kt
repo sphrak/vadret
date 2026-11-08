@@ -3,6 +3,7 @@ package se.vadretapp.vadret.ui
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
@@ -15,7 +16,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import se.vadretapp.vadret.theme.model.Theme
+import se.vadretapp.vadret.setting.model.Theme
 
 private val LocalVadretColors = staticCompositionLocalOf { lightVadretColors }
 private val LocalVadretIsDark = staticCompositionLocalOf { false }
@@ -109,6 +110,8 @@ private val amoledScheme: ColorScheme = darkScheme.copy(
     surfaceContainerHigh = amoledSurfaceContainer
 )
 
+// Screens are drawn straight on the background, outside any Surface, so the content colour is the background's text
+// colour. Material windows such as the open search pick dark or light status bar icons from it.
 @Composable
 fun VadretTheme(
     theme: Theme,
@@ -124,9 +127,13 @@ fun VadretTheme(
         MaterialTheme(
             colorScheme = theme.toColorScheme(isSystemDark = isSystemDark),
             shapes = vadretShapes,
-            typography = vadretTypography,
-            content = content
-        )
+            typography = vadretTypography
+        ) {
+            CompositionLocalProvider(
+                LocalContentColor provides MaterialTheme.colorScheme.onBackground,
+                content = content
+            )
+        }
     }
 }
 

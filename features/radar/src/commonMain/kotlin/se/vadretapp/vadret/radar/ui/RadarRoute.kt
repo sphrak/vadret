@@ -6,6 +6,7 @@ import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -39,6 +40,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.positionInRoot
@@ -61,6 +63,8 @@ import se.vadretapp.vadret.radar.ui.overlay.MapProjection
 import se.vadretapp.vadret.radar.wind.WindAtLocation
 import se.vadretapp.vadret.radar.wind.WindField
 import se.vadretapp.vadret.radar.wind.windAt
+import se.vadretapp.vadret.setting.model.HourFormat
+import se.vadretapp.vadret.ui.LocalHourFormat
 import se.vadretapp.vadret.ui.LocalLanguageTag
 import se.vadretapp.vadret.ui.VadretProgressBar
 import se.vadretapp.vadret.ui.VadretTheme
@@ -117,8 +121,14 @@ internal fun RadarScreen(
 ) {
     val snackbarHostState: SnackbarHostState = remember { SnackbarHostState() }
     val languageTag: String = LocalLanguageTag.current
-    LaunchedEffect(languageTag) {
-        onEvent(RadarEvent.OnLocaleChanged(languageTag = languageTag))
+    val hourFormat: HourFormat = LocalHourFormat.current
+    LaunchedEffect(languageTag, hourFormat) {
+        onEvent(
+            RadarEvent.OnLocaleChanged(
+                languageTag = languageTag,
+                hourFormat = hourFormat
+            )
+        )
     }
     val isDarkTheme: Boolean = VadretTheme.isDark
     LaunchedEffect(isDarkTheme) {
@@ -293,6 +303,15 @@ private fun RadarBottomPanel(
                 .fillMaxWidth()
                 .padding(horizontal = VadretTheme.spacing.medium)
         ) {
+            // The map's credit belongs to the map, so it comes with the map as the loading cover fades away.
+            val attributionAlpha: Float by animateFloatAsState(
+                targetValue = if (state.isInitialLoading) {
+                    0f
+                } else {
+                    1f
+                },
+                animationSpec = tween(durationMillis = COVER_FADE_MILLISECONDS)
+            )
             Box(
                 contentAlignment = Alignment.BottomStart,
                 modifier = Modifier.weight(weight = ATTRIBUTION_WEIGHT)
@@ -302,6 +321,7 @@ private fun RadarBottomPanel(
                     style = VadretTheme.textStyles.attribution,
                     color = VadretTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier
+                        .graphicsLayer { alpha = attributionAlpha }
                         .background(
                             color = VadretTheme.colorScheme.surface.copy(alpha = ATTRIBUTION_BACKGROUND_ALPHA),
                             shape = attributionShape

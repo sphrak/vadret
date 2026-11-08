@@ -1,6 +1,5 @@
 package se.vadretapp.vadret.pushalert
 
-import se.vadretapp.vadret.pushalert.model.HourFormat
 import se.vadretapp.vadret.pushalert.model.PollenAlertLevel
 import se.vadretapp.vadret.pushalert.model.PushAlertChoices
 import se.vadretapp.vadret.pushalert.model.WarningAlertLevel
@@ -17,8 +16,7 @@ class PushAlertChoicesTest {
             "without the temperature" to EVERYTHING.copy(temperatureTrend = false),
             "without strong wind" to EVERYTHING.copy(strongWind = false),
             "without slipperiness" to EVERYTHING.copy(slipperiness = false),
-            "without pollen" to EVERYTHING.copy(pollenLowestLevel = null),
-            "another hour format" to EVERYTHING.copy(hourFormat = HourFormat.TWELVE_HOUR)
+            "without pollen" to EVERYTHING.copy(pollenLowestLevel = null)
         )
         val wider = mapOf(
             "another warning level" to EVERYTHING.copy(warningLowestLevel = WarningAlertLevel.RED),
@@ -62,14 +60,6 @@ class PushAlertChoicesTest {
     }
 
     @Test
-    fun hoursAreWrittenTheTwentyFourHourWayUntilChangedAndTurnNoAlertOn() {
-        assertEquals(
-            expected = HourFormat.TWENTY_FOUR_HOUR to false,
-            actual = PushAlertChoices.NOTHING_CHOSEN.hourFormat to PushAlertChoices.NOTHING_CHOSEN.copy(hourFormat = HourFormat.TWELVE_HOUR).isAnythingChosen()
-        )
-    }
-
-    @Test
     fun anyOneAlertTurnedOnIsEnoughForSomethingToBeChosen() {
         val choices = mapOf(
             "nothing" to PushAlertChoices.NOTHING_CHOSEN,
@@ -102,7 +92,6 @@ private val EVERYTHING = PushAlertChoices(
     temperatureTrend = true,
     strongWind = true,
     slipperiness = true,
-    hourFormat = HourFormat.TWENTY_FOUR_HOUR,
     isChosenPlaceNotified = true,
     notifiedFavoriteIds = emptySet()
 )

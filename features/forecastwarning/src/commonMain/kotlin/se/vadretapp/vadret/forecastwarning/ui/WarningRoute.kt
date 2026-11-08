@@ -36,7 +36,9 @@ import se.vadretapp.vadret.forecastwarning.WarningEvent
 import se.vadretapp.vadret.forecastwarning.WarningState
 import se.vadretapp.vadret.forecastwarning.WarningViewModel
 import se.vadretapp.vadret.forecastwarning.model.WarningItem
-import se.vadretapp.vadret.theme.model.Theme
+import se.vadretapp.vadret.setting.model.HourFormat
+import se.vadretapp.vadret.setting.model.Theme
+import se.vadretapp.vadret.ui.LocalHourFormat
 import se.vadretapp.vadret.ui.LocalLanguageTag
 import se.vadretapp.vadret.ui.ThemePreviewParameterProvider
 import se.vadretapp.vadret.ui.VadretCard
@@ -86,8 +88,14 @@ internal fun WarningScreen(
 ) {
     val snackbarHostState: SnackbarHostState = remember { SnackbarHostState() }
     val languageTag: String = LocalLanguageTag.current
-    LaunchedEffect(languageTag) {
-        onEvent(WarningEvent.OnLocaleChanged(languageTag = languageTag))
+    val hourFormat: HourFormat = LocalHourFormat.current
+    LaunchedEffect(languageTag, hourFormat) {
+        onEvent(
+            WarningEvent.OnLocaleChanged(
+                languageTag = languageTag,
+                hourFormat = hourFormat
+            )
+        )
     }
     LaunchedEffect(Unit) {
         onEvent(WarningEvent.OnStart)

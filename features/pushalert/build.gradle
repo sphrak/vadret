@@ -21,7 +21,7 @@ kotlin {
                 implementation project(':data:location')
                 implementation project(':data:pollenpreference')
                 implementation project(':data:pushalert')
-                implementation project(':data:theme')
+                implementation project(':data:setting')
                 implementation project(':domain:followedplace')
                 implementation project(':domain:warning')
                 implementation project(':ui:icons')

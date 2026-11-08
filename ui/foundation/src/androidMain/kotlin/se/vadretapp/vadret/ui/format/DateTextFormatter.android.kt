@@ -11,6 +11,8 @@ import java.util.TimeZone as JavaTimeZone
 private const val WEEKDAY_PATTERN = "EEEE"
 private const val SHORT_WEEKDAY_PATTERN = "EEE"
 private const val DAY_AND_SHORT_MONTH_PATTERN = "d MMM"
+private const val TWELVE_HOUR_TIME_PATTERN = "h:mm a"
+private const val TWELVE_HOUR_PATTERN = "h a"
 
 actual fun DateTextFormatter(
     dateTextStyle: DateTextStyle,
@@ -23,6 +25,8 @@ actual fun DateTextFormatter(
         DateTextStyle.SHORT_WEEKDAY -> SimpleDateFormat(SHORT_WEEKDAY_PATTERN, locale)
         DateTextStyle.DAY_AND_SHORT_MONTH -> SimpleDateFormat(DAY_AND_SHORT_MONTH_PATTERN, locale)
         DateTextStyle.LONG_DATE -> DateFormat.getDateInstance(DateFormat.LONG, locale)
+        DateTextStyle.TWELVE_HOUR_TIME -> SimpleDateFormat(TWELVE_HOUR_TIME_PATTERN, locale)
+        DateTextStyle.TWELVE_HOUR -> SimpleDateFormat(TWELVE_HOUR_PATTERN, locale)
     }
     dateFormat.timeZone = JavaTimeZone.getTimeZone(timeZone.id)
     return DefaultDateTextFormatter(dateFormat = dateFormat)

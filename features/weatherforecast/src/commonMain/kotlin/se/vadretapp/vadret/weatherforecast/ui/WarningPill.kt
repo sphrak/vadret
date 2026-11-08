@@ -27,7 +27,7 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import se.vadretapp.vadret.aggregatedfeed.model.FeedSource
 import se.vadretapp.vadret.aggregatedfeed.model.WarningLevel
-import se.vadretapp.vadret.theme.model.Theme
+import se.vadretapp.vadret.setting.model.Theme
 import se.vadretapp.vadret.ui.ThemePreviewParameterProvider
 import se.vadretapp.vadret.ui.VadretTheme
 import se.vadretapp.vadret.ui.WarningColors

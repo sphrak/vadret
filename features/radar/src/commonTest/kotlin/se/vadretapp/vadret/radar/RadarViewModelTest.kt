@@ -54,6 +54,7 @@ import se.vadretapp.vadret.radar.wind.WindField
 import se.vadretapp.vadret.radar.wind.WindFieldRenderer
 import se.vadretapp.vadret.radar.wind.WindFieldValues
 import se.vadretapp.vadret.radar.wind.WindPalette
+import se.vadretapp.vadret.setting.model.HourFormat
 import se.vadretapp.vadret.testing.FixedClock
 import se.vadretapp.vadret.ui.resources.Res
 import se.vadretapp.vadret.ui.resources.network_failure
@@ -890,7 +891,7 @@ class RadarViewModelTest {
     fun `choosing pollen loads the map once and shows the strongest type`() =
         testScope.runTest {
             val radarViewModel: RadarViewModel = viewModel()
-            radarViewModel.onEvent(event = RadarEvent.OnLocaleChanged(languageTag = "en"))
+            radarViewModel.onEvent(event = RadarEvent.OnLocaleChanged(languageTag = "en", hourFormat = HourFormat.TWENTY_FOUR_HOUR))
             advanceUntilIdle()
 
             radarViewModel.onEvent(event = RadarEvent.OnLayerSelected(layer = RadarLayer.POLLEN))
@@ -971,11 +972,11 @@ class RadarViewModelTest {
     fun `a new language rewrites the pollen day`() =
         testScope.runTest {
             val radarViewModel: RadarViewModel = viewModel()
-            radarViewModel.onEvent(event = RadarEvent.OnLocaleChanged(languageTag = "en"))
+            radarViewModel.onEvent(event = RadarEvent.OnLocaleChanged(languageTag = "en", hourFormat = HourFormat.TWENTY_FOUR_HOUR))
             radarViewModel.onEvent(event = RadarEvent.OnLayerSelected(layer = RadarLayer.POLLEN))
             advanceUntilIdle()
 
-            radarViewModel.onEvent(event = RadarEvent.OnLocaleChanged(languageTag = "sv-SE"))
+            radarViewModel.onEvent(event = RadarEvent.OnLocaleChanged(languageTag = "sv-SE", hourFormat = HourFormat.TWENTY_FOUR_HOUR))
             advanceUntilIdle()
 
             assertEquals(expected = "Måndag", actual = radarViewModel.state.value.pollenDayText)
@@ -1190,7 +1191,7 @@ class RadarViewModelTest {
     fun `a new language rewrites the weekdays and keeps the chosen frame`() =
         testScope.runTest {
             val radarViewModel: RadarViewModel = viewModel(isStarted = false)
-            radarViewModel.onEvent(event = RadarEvent.OnLocaleChanged(languageTag = "en"))
+            radarViewModel.onEvent(event = RadarEvent.OnLocaleChanged(languageTag = "en", hourFormat = HourFormat.TWENTY_FOUR_HOUR))
             radarViewModel.onEvent(event = RadarEvent.OnStart(initialImageUrl = null))
             advanceUntilIdle()
             radarViewModel.onEvent(event = RadarEvent.OnIndexChanged(index = 1))
@@ -1198,7 +1199,7 @@ class RadarViewModelTest {
             advanceUntilIdle()
             val english: RadarState = radarViewModel.state.value
 
-            radarViewModel.onEvent(event = RadarEvent.OnLocaleChanged(languageTag = "sv-SE"))
+            radarViewModel.onEvent(event = RadarEvent.OnLocaleChanged(languageTag = "sv-SE", hourFormat = HourFormat.TWENTY_FOUR_HOUR))
             advanceUntilIdle()
             val swedish: RadarState = radarViewModel.state.value
 
@@ -1213,12 +1214,12 @@ class RadarViewModelTest {
     fun `the same language again leaves the state alone`() =
         testScope.runTest {
             val radarViewModel: RadarViewModel = viewModel(isStarted = false)
-            radarViewModel.onEvent(event = RadarEvent.OnLocaleChanged(languageTag = "en"))
+            radarViewModel.onEvent(event = RadarEvent.OnLocaleChanged(languageTag = "en", hourFormat = HourFormat.TWENTY_FOUR_HOUR))
             radarViewModel.onEvent(event = RadarEvent.OnStart(initialImageUrl = null))
             advanceUntilIdle()
             val before: RadarState = radarViewModel.state.value
 
-            radarViewModel.onEvent(event = RadarEvent.OnLocaleChanged(languageTag = "en"))
+            radarViewModel.onEvent(event = RadarEvent.OnLocaleChanged(languageTag = "en", hourFormat = HourFormat.TWENTY_FOUR_HOUR))
             advanceUntilIdle()
 
             assertSame(expected = before, actual = radarViewModel.state.value)
@@ -1228,7 +1229,7 @@ class RadarViewModelTest {
     fun `a language chosen before anything loaded is used once it loads`() =
         testScope.runTest {
             val radarViewModel: RadarViewModel = viewModel(isStarted = false)
-            radarViewModel.onEvent(event = RadarEvent.OnLocaleChanged(languageTag = "sv-SE"))
+            radarViewModel.onEvent(event = RadarEvent.OnLocaleChanged(languageTag = "sv-SE", hourFormat = HourFormat.TWENTY_FOUR_HOUR))
             advanceUntilIdle()
             radarViewModel.onEvent(event = RadarEvent.OnStart(initialImageUrl = null))
             advanceUntilIdle()

@@ -6,8 +6,10 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atTime
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
+import se.vadretapp.vadret.setting.model.HourFormat
 import se.vadretapp.vadret.ui.format.DateTextFormatter
 import se.vadretapp.vadret.ui.format.DateTextStyle
+import se.vadretapp.vadret.ui.format.toHourText
 import se.vadretapp.vadret.ui.format.toOneDecimalText
 import se.vadretapp.vadret.weatherforecast.model.ComingDay
 import se.vadretapp.vadret.weatherforecast.model.ComingHour
@@ -28,8 +30,6 @@ private const val FIRST_HOUR_INDEX = 0
 private const val NO_HOUR_INDEX = -1
 private const val MIDPOINT_DIVISOR = 2
 private const val SHOWN_PRECIPITATION = 0.1
-private const val HOUR_DIGITS = 2
-private const val HOUR_PADDING = '0'
 private const val RANGE_START = 0f
 private const val RANGE_END = 1f
 private const val NO_SPAN = 0.0
@@ -55,7 +55,9 @@ private class TemperatureScale(
 
 private class DayFormats(
     val weekdayFormatter: DateTextFormatter,
-    val dateFormatter: DateTextFormatter
+    val dateFormatter: DateTextFormatter,
+    val hourFormat: HourFormat,
+    val languageTag: String
 )
 
 internal fun List<Forecast>.toComingDays(
@@ -63,6 +65,7 @@ internal fun List<Forecast>.toComingDays(
     nowHourAt: Instant?,
     timeZone: TimeZone,
     languageTag: String,
+    hourFormat: HourFormat,
     latitude: Double,
     longitude: Double
 ): List<ComingDay> {
@@ -88,7 +91,9 @@ internal fun List<Forecast>.toComingDays(
             dateTextStyle = DateTextStyle.DAY_AND_SHORT_MONTH,
             languageTag = languageTag,
             timeZone = timeZone
-        )
+        ),
+        hourFormat = hourFormat,
+        languageTag = languageTag
     )
     return summaries.map { daySummary: DaySummary ->
         daySummary.toComingDay(
@@ -200,6 +205,7 @@ private fun DaySummary.toComingDay(
             forecast.toComingHour(
                 isNow = index == nowHourIndex,
                 timeZone = timeZone,
+                dayFormats = dayFormats,
                 isDaytime = SunsetUtil.isSunUp(
                     at = forecast.validAt,
                     latitude = latitude,
@@ -275,20 +281,18 @@ private fun DaySummary.firstShownHourIndex(
 private fun Forecast.toComingHour(
     isNow: Boolean,
     timeZone: TimeZone,
+    dayFormats: DayFormats,
     isDaytime: Boolean,
     temperatureScale: TemperatureScale
 ): ComingHour =
     ComingHour(
         key = "$COMING_HOUR_KEY_PREFIX$validAt",
         isNow = isNow,
-        timeText = validAt
-            .toLocalDateTime(timeZone = timeZone)
-            .hour
-            .toString()
-            .padStart(
-                length = HOUR_DIGITS,
-                padChar = HOUR_PADDING
-            ),
+        timeText = validAt.toHourText(
+            hourFormat = dayFormats.hourFormat,
+            timeZone = timeZone,
+            languageTag = dayFormats.languageTag
+        ),
         icon = WeatherForecastUtil.getWeatherSymbolIcon(
             symbolCode = symbolCode,
             isDaytime = isDaytime

@@ -1,7 +1,7 @@
 package se.vadretapp.vadret.settings.extension
 
 import org.jetbrains.compose.resources.StringResource
-import se.vadretapp.vadret.theme.model.Theme
+import se.vadretapp.vadret.setting.model.Theme
 import se.vadretapp.vadret.ui.resources.Res
 import se.vadretapp.vadret.ui.resources.amoled_theme
 import se.vadretapp.vadret.ui.resources.dark_theme

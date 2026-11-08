@@ -15,6 +15,7 @@ import se.vadretapp.vadret.forecastwarning.model.WarningDetail
 import se.vadretapp.vadret.forecastwarning.model.WarningItem
 import se.vadretapp.vadret.icons.Slipperiness
 import se.vadretapp.vadret.icons.VadretIcons
+import se.vadretapp.vadret.setting.model.HourFormat
 import se.vadretapp.vadret.ui.extension.displayName
 import se.vadretapp.vadret.ui.extension.explanationResource
 import se.vadretapp.vadret.ui.extension.labelResource
@@ -38,14 +39,16 @@ private const val COMMA_WITH_SPACE = ", "
 internal fun List<AggregatedFeed>.toWarningItems(
     now: Instant,
     timeZone: TimeZone,
-    languageTag: String
+    languageTag: String,
+    hourFormat: HourFormat
 ): ImmutableList<WarningItem> =
     sortedByDescending { aggregatedFeed: AggregatedFeed -> aggregatedFeed.publishedAt }
         .map { aggregatedFeed: AggregatedFeed ->
             aggregatedFeed.toWarningItem(
                 now = now,
                 timeZone = timeZone,
-                languageTag = languageTag
+                languageTag = languageTag,
+                hourFormat = hourFormat
             )
         }.toImmutableList()
 
@@ -53,6 +56,7 @@ internal fun AggregatedFeed.toWarningItem(
     now: Instant,
     timeZone: TimeZone,
     languageTag: String,
+    hourFormat: HourFormat,
     followedPlaceNames: String? = null
 ): WarningItem {
     val spacedAreaName: String? = (areaName ?: regionNames())?.withSpacedCommas()
@@ -82,12 +86,14 @@ internal fun AggregatedFeed.toWarningItem(
         startsAtText = startsAt.toDayTimeTextOrNull(
             now = now,
             timeZone = timeZone,
-            languageTag = languageTag
+            languageTag = languageTag,
+            hourFormat = hourFormat
         ),
         endsAtText = endsAt.toDayTimeTextOrNull(
             now = now,
             timeZone = timeZone,
-            languageTag = languageTag
+            languageTag = languageTag,
+            hourFormat = hourFormat
         ),
         details = if (estimatedSlipperiness == null) {
             details
@@ -124,7 +130,8 @@ private fun AggregatedFeed.regionNames(): String? =
 private fun Instant?.toDayTimeTextOrNull(
     now: Instant,
     timeZone: TimeZone,
-    languageTag: String
+    languageTag: String,
+    hourFormat: HourFormat
 ): String? =
     if (this == null) {
         null
@@ -132,7 +139,8 @@ private fun Instant?.toDayTimeTextOrNull(
         toDayTimeText(
             now = now,
             timeZone = timeZone,
-            languageTag = languageTag
+            languageTag = languageTag,
+            hourFormat = hourFormat
         )
     }
 

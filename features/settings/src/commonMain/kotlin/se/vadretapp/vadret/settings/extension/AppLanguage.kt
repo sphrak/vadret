@@ -1,7 +1,7 @@
 package se.vadretapp.vadret.settings.extension
 
 import org.jetbrains.compose.resources.StringResource
-import se.vadretapp.vadret.language.model.AppLanguage
+import se.vadretapp.vadret.setting.model.AppLanguage
 import se.vadretapp.vadret.ui.resources.Res
 import se.vadretapp.vadret.ui.resources.language_danish
 import se.vadretapp.vadret.ui.resources.language_english

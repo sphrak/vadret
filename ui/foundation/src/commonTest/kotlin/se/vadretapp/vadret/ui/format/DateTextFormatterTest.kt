@@ -1,6 +1,7 @@
 package se.vadretapp.vadret.ui.format
 
 import kotlinx.datetime.TimeZone
+import se.vadretapp.vadret.setting.model.HourFormat
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.time.Instant
@@ -54,6 +55,34 @@ class DateTextFormatterTest {
             actual = listOf(
                 format(dateTextStyle = DateTextStyle.LONG_DATE, languageTag = ENGLISH),
                 format(dateTextStyle = DateTextStyle.LONG_DATE, languageTag = SWEDISH)
+            )
+        )
+    }
+
+    @Test
+    fun `a time on the 12 hour clock names the half of the day in the language`() {
+        val afternoonInUtc: Instant = Instant.parse(input = "2026-10-27T13:05:00Z")
+
+        assertEquals(
+            expected = listOf("2:05 PM", "2:05 em", "14:05"),
+            actual = listOf(
+                afternoonInUtc.toTimeText(hourFormat = HourFormat.TWELVE_HOUR, timeZone = stockholm, languageTag = ENGLISH),
+                afternoonInUtc.toTimeText(hourFormat = HourFormat.TWELVE_HOUR, timeZone = stockholm, languageTag = SWEDISH),
+                afternoonInUtc.toTimeText(hourFormat = HourFormat.TWENTY_FOUR_HOUR, timeZone = stockholm, languageTag = SWEDISH)
+            )
+        )
+    }
+
+    @Test
+    fun `an hour alone is two digits on the 24 hour clock and names the half of the day on the 12 hour clock`() {
+        val morningInUtc: Instant = Instant.parse(input = "2026-10-27T08:05:00Z")
+
+        assertEquals(
+            expected = listOf("9 AM", "9 fm", "09"),
+            actual = listOf(
+                morningInUtc.toHourText(hourFormat = HourFormat.TWELVE_HOUR, timeZone = stockholm, languageTag = ENGLISH),
+                morningInUtc.toHourText(hourFormat = HourFormat.TWELVE_HOUR, timeZone = stockholm, languageTag = SWEDISH),
+                morningInUtc.toHourText(hourFormat = HourFormat.TWENTY_FOUR_HOUR, timeZone = stockholm, languageTag = SWEDISH)
             )
         )
     }

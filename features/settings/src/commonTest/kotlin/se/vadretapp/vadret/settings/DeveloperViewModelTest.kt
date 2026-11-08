@@ -28,7 +28,7 @@ class DeveloperViewModelTest {
     private val testScope = TestScope(context = testDispatcher)
     private val forecastPreferenceRepository = FakeForecastPreferenceRepository()
     private val pollenPreferenceRepository = FakePollenPreferenceRepository()
-    private val themeRepository = FakeThemeRepository()
+    private val settingRepository = FakeSettingRepository()
 
     @BeforeTest
     fun setUp() {
@@ -43,8 +43,7 @@ class DeveloperViewModelTest {
     private fun viewModel(): DeveloperViewModel {
         val developerViewModel = DeveloperViewModel(
             getSettingsTask = DefaultGetSettingsTask(
-                themeRepository = themeRepository,
-                languageRepository = FakeLanguageRepository(),
+                settingRepository = settingRepository,
                 forecastPreferenceRepository = forecastPreferenceRepository,
                 pollenPreferenceRepository = pollenPreferenceRepository
             ),
@@ -83,7 +82,7 @@ class DeveloperViewModelTest {
     @Test
     fun `settings that cannot be read show nothing`() =
         testScope.runTest {
-            themeRepository.theme = Failure(errorCode = ErrorCode.STORAGE_FAILED).asLeft()
+            settingRepository.theme = Failure(errorCode = ErrorCode.STORAGE_FAILED).asLeft()
 
             val developerViewModel: DeveloperViewModel = viewModel()
             advanceUntilIdle()
@@ -98,6 +97,6 @@ class DeveloperViewModelTest {
             developerViewModel.onEvent(event = DeveloperEvent.OnStart)
             advanceUntilIdle()
 
-            assertEquals(expected = 1, actual = themeRepository.reads)
+            assertEquals(expected = 1, actual = settingRepository.themeReads)
         }
 }

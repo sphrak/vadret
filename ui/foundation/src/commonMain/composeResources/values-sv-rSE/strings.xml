@@ -126,6 +126,7 @@
     <string name="dark_theme">Mörkt</string>
     <string name="amoled_theme">Mörkt (AMOLED)</string>
     <string name="system_theme">Följ systemet</string>
+    <string name="system_hour_format">Följ systemet</string>
     <string name="widget_select_location_mode">Välj platsläge</string>
     <string name="widget_select_update_interval">Välj uppdateringsinterval</string>
     <string name="widget_select_widget_theme">Välj widget tema</string>
@@ -282,7 +283,6 @@
     <string name="pollen_alerts">Pollenhalter</string>
     <string name="pollen_alerts_summary">För pollen du valt under Pollen</string>
     <string name="pollen_alerts_need_allergens">Slå på pollen och välj vilka pollen du är allergisk mot under Pollen först.</string>
-    <string name="notifications_display">Visning</string>
     <string name="hour_format">Tidsformat</string>
     <string name="hour_format_24">24 timmar</string>
     <string name="hour_format_12">12 timmar</string>

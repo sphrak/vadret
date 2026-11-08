@@ -107,12 +107,14 @@ internal fun WarningAreaMap(
                 .graphicsLayer { alpha = coverAlpha }
                 .background(color = VadretTheme.colorScheme.surfaceContainerHighest)
         )
+        // The map's credit belongs to the map, so it shows as the cover lifts.
         Text(
             text = stringResource(resource = Res.string.openstreetmap_copyright_notice),
             style = VadretTheme.textStyles.attribution,
             color = VadretTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier
                 .align(alignment = Alignment.BottomEnd)
+                .graphicsLayer { alpha = 1f - coverAlpha }
                 .padding(all = VadretTheme.spacing.extraSmall)
                 .background(
                     color = VadretTheme.colorScheme.surface.copy(alpha = ATTRIBUTION_BACKGROUND_ALPHA),

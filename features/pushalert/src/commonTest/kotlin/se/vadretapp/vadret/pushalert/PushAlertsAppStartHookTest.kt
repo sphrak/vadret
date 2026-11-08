@@ -12,7 +12,10 @@ import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.followedplace.model.FollowedPlace
 import se.vadretapp.vadret.logging.LogLevel
+import se.vadretapp.vadret.pushalert.usecase.DefaultObserveNotificationTextSettingsTask
 import se.vadretapp.vadret.pushalert.usecase.DefaultObservePollenAllergensTask
+import se.vadretapp.vadret.setting.model.AppLanguage
+import se.vadretapp.vadret.setting.model.HourFormat
 import se.vadretapp.vadret.testing.withRecordedLogs
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -98,6 +101,31 @@ class PushAlertsAppStartHookTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
+    fun choosingAnotherLanguageOrClockAnywhereInTheAppSyncsAgain() = runTest {
+        val syncPushAlertsTask = FakeSyncPushAlertsTask()
+        val settingRepository = FakeSettingRepository()
+        val hook = launch {
+            pushAlertsAppStartHook(
+                syncPushAlertsTask = syncPushAlertsTask,
+                settingRepository = settingRepository
+            ).onAppStart()
+        }
+        advanceUntilIdle()
+        val syncsAtStart = syncPushAlertsTask.syncs
+
+        settingRepository.language.value = AppLanguage.POLISH.asRight()
+        advanceUntilIdle()
+        settingRepository.hourFormat.value = HourFormat.TWELVE_HOUR.asRight()
+        advanceUntilIdle()
+        settingRepository.hourFormat.value = HourFormat.TWELVE_HOUR.asRight()
+        advanceUntilIdle()
+        hook.cancel()
+
+        assertEquals(expected = 1 to 3, actual = syncsAtStart to syncPushAlertsTask.syncs)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
     fun aPlaceSavedWhileTheFirstSyncRunsSyncsAgain() = runTest {
         val observeFollowedPlacesTask = FakeObserveFollowedPlacesTask()
         val syncPushAlertsTask = FakeSyncPushAlertsTask(
@@ -130,12 +158,14 @@ private fun PushAlertsAppStartHook.startInBackground(scope: TestScope) {
 private fun pushAlertsAppStartHook(
     syncPushAlertsTask: FakeSyncPushAlertsTask = FakeSyncPushAlertsTask(),
     observeFollowedPlacesTask: FakeObserveFollowedPlacesTask = FakeObserveFollowedPlacesTask(),
-    pollenPreferenceRepository: FakePollenPreferenceRepository = FakePollenPreferenceRepository()
+    pollenPreferenceRepository: FakePollenPreferenceRepository = FakePollenPreferenceRepository(),
+    settingRepository: FakeSettingRepository = FakeSettingRepository()
 ): PushAlertsAppStartHook =
     PushAlertsAppStartHook(
         syncPushAlertsTask = syncPushAlertsTask,
         observeFollowedPlacesTask = observeFollowedPlacesTask,
-        observePollenAllergensTask = DefaultObservePollenAllergensTask(pollenPreferenceRepository = pollenPreferenceRepository)
+        observePollenAllergensTask = DefaultObservePollenAllergensTask(pollenPreferenceRepository = pollenPreferenceRepository),
+        observeNotificationTextSettingsTask = DefaultObserveNotificationTextSettingsTask(settingRepository = settingRepository)
     )
 
 private const val BIRCH_ID = "2a2a2a2a-2a2a-4a2a-aa2a-2a313a323236"

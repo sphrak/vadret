@@ -14,11 +14,11 @@ import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import se.vadretapp.vadret.di.koinAll
 import se.vadretapp.vadret.di.koinViewModel
+import se.vadretapp.vadret.setting.model.Theme
 import se.vadretapp.vadret.settings.DeveloperEvent
 import se.vadretapp.vadret.settings.DeveloperState
 import se.vadretapp.vadret.settings.DeveloperViewModel
 import se.vadretapp.vadret.settings.Settings
-import se.vadretapp.vadret.theme.model.Theme
 import se.vadretapp.vadret.ui.DeveloperSettingsSection
 import se.vadretapp.vadret.ui.SettingsRow
 import se.vadretapp.vadret.ui.SettingsRowDivider

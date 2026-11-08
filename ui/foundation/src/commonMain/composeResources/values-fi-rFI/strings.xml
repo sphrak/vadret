@@ -152,7 +152,6 @@
     <string name="pollen_alerts">Siitepölytasot</string>
     <string name="pollen_alerts_summary">Siitepöly-kohdassa valituille siitepölyille</string>
     <string name="pollen_alerts_need_allergens">Ota ensin siitepöly käyttöön ja valitse Siitepöly-kohdassa, mille siitepölyille olet allerginen.</string>
-    <string name="notifications_display">Näyttö</string>
     <string name="hour_format">Aikamuoto</string>
     <string name="hour_format_24">24 tuntia</string>
     <string name="hour_format_12">12 tuntia</string>

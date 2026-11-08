@@ -18,13 +18,14 @@ import se.vadretapp.vadret.di.koinAll
 import se.vadretapp.vadret.di.koinViewModel
 import se.vadretapp.vadret.icons.Pollen
 import se.vadretapp.vadret.icons.VadretIcons
-import se.vadretapp.vadret.language.model.AppLanguage
+import se.vadretapp.vadret.setting.model.AppLanguage
+import se.vadretapp.vadret.setting.model.HourFormatChoice
+import se.vadretapp.vadret.setting.model.Theme
 import se.vadretapp.vadret.settings.Settings
 import se.vadretapp.vadret.settings.SettingsEvent
 import se.vadretapp.vadret.settings.SettingsState
 import se.vadretapp.vadret.settings.SettingsViewModel
 import se.vadretapp.vadret.settings.extension.labelResource
-import se.vadretapp.vadret.theme.model.Theme
 import se.vadretapp.vadret.ui.ChoiceDialog
 import se.vadretapp.vadret.ui.SettingsRow
 import se.vadretapp.vadret.ui.SettingsRowDivider
@@ -35,11 +36,13 @@ import se.vadretapp.vadret.ui.VadretTheme
 import se.vadretapp.vadret.ui.VadretTopAppBar
 import se.vadretapp.vadret.ui.resources.Res
 import se.vadretapp.vadret.ui.resources.developer_settings_title
+import se.vadretapp.vadret.ui.resources.hour_format
 import se.vadretapp.vadret.ui.resources.ic_code
 import se.vadretapp.vadret.ui.resources.ic_dark_mode
 import se.vadretapp.vadret.ui.resources.ic_info
 import se.vadretapp.vadret.ui.resources.ic_language
 import se.vadretapp.vadret.ui.resources.ic_location_on
+import se.vadretapp.vadret.ui.resources.ic_schedule
 import se.vadretapp.vadret.ui.resources.ic_science
 import se.vadretapp.vadret.ui.resources.labs
 import se.vadretapp.vadret.ui.resources.pollen
@@ -55,6 +58,7 @@ private const val POLLEN_KEY = "pollen"
 private const val DISPLAY_DIVIDER_KEY = "display-divider"
 private const val THEME_KEY = "theme"
 private const val LANGUAGE_KEY = "language"
+private const val HOUR_FORMAT_KEY = "hour-format"
 private const val ABOUT_DIVIDER_KEY = "about-divider"
 private const val LABS_KEY = "labs"
 private const val DEVELOPER_KEY = "developer"
@@ -190,6 +194,14 @@ private fun SettingsList(
                     onClick = { onEvent(SettingsEvent.OnLanguageRowClicked) }
                 )
             }
+            item(key = HOUR_FORMAT_KEY, contentType = SettingsContentType.ROW) {
+                SettingsRow(
+                    title = stringResource(resource = Res.string.hour_format),
+                    summary = stringResource(resource = settings.hourFormatChoice.labelResource()),
+                    iconResource = Res.drawable.ic_schedule,
+                    onClick = { onEvent(SettingsEvent.OnHourFormatRowClicked) }
+                )
+            }
         }
         item(key = ABOUT_DIVIDER_KEY, contentType = SettingsContentType.DIVIDER) {
             SettingsRowDivider()
@@ -246,6 +258,17 @@ private fun SettingsDialogs(
             choiceLabel = { language: AppLanguage -> stringResource(resource = language.labelResource()) },
             onChoiceSelected = { language: AppLanguage -> onEvent(SettingsEvent.OnLanguageSelected(language = language)) },
             onDismiss = { onEvent(SettingsEvent.OnLanguageDialogDismissed) },
+            modifier = modifier
+        )
+    }
+    if (state.isHourFormatDialogVisible) {
+        ChoiceDialog(
+            title = stringResource(resource = Res.string.hour_format),
+            choices = HourFormatChoice.entries,
+            selectedChoice = settings.hourFormatChoice,
+            choiceLabel = { hourFormatChoice: HourFormatChoice -> stringResource(resource = hourFormatChoice.labelResource()) },
+            onChoiceSelected = { hourFormatChoice: HourFormatChoice -> onEvent(SettingsEvent.OnHourFormatSelected(hourFormatChoice = hourFormatChoice)) },
+            onDismiss = { onEvent(SettingsEvent.OnHourFormatDialogDismissed) },
             modifier = modifier
         )
     }

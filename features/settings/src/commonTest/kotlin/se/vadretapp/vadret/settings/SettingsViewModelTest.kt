@@ -1,6 +1,7 @@
 package se.vadretapp.vadret.settings
 
 import io.github.sphrak.either.extension.asLeft
+import io.github.sphrak.either.extension.asRight
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -14,13 +15,15 @@ import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.di.model.AppInfo
 import se.vadretapp.vadret.followedplace.ObserveLocationChoicesTask
-import se.vadretapp.vadret.language.model.AppLanguage
+import se.vadretapp.vadret.setting.model.AppLanguage
+import se.vadretapp.vadret.setting.model.HourFormatChoice
+import se.vadretapp.vadret.setting.model.Theme
 import se.vadretapp.vadret.settings.model.RowSummary
 import se.vadretapp.vadret.settings.usecase.DefaultGetSettingsTask
 import se.vadretapp.vadret.settings.usecase.DefaultObserveDeveloperModeTask
+import se.vadretapp.vadret.settings.usecase.DefaultSetHourFormatChoiceTask
 import se.vadretapp.vadret.settings.usecase.DefaultSetLanguageTask
 import se.vadretapp.vadret.settings.usecase.DefaultSetThemeTask
-import se.vadretapp.vadret.theme.model.Theme
 import se.vadretapp.vadret.ui.resources.Res
 import se.vadretapp.vadret.ui.resources.followed_place_position
 import kotlin.test.AfterTest
@@ -34,8 +37,7 @@ class SettingsViewModelTest {
 
     private val testDispatcher: TestDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(context = testDispatcher)
-    private val themeRepository = FakeThemeRepository()
-    private val languageRepository = FakeLanguageRepository()
+    private val settingRepository = FakeSettingRepository()
     private val forecastPreferenceRepository = FakeForecastPreferenceRepository()
     private val pollenPreferenceRepository = FakePollenPreferenceRepository()
     private val locationRepository = FakeLocationRepository()
@@ -55,13 +57,13 @@ class SettingsViewModelTest {
     private fun viewModel(appInfo: AppInfo = releaseAppInfo): SettingsViewModel {
         val settingsViewModel = SettingsViewModel(
             getSettingsTask = DefaultGetSettingsTask(
-                themeRepository = themeRepository,
-                languageRepository = languageRepository,
+                settingRepository = settingRepository,
                 forecastPreferenceRepository = forecastPreferenceRepository,
                 pollenPreferenceRepository = pollenPreferenceRepository
             ),
-            setThemeTask = DefaultSetThemeTask(themeRepository = themeRepository),
-            setLanguageTask = DefaultSetLanguageTask(languageRepository = languageRepository),
+            setThemeTask = DefaultSetThemeTask(settingRepository = settingRepository),
+            setLanguageTask = DefaultSetLanguageTask(settingRepository = settingRepository),
+            setHourFormatChoiceTask = DefaultSetHourFormatChoiceTask(settingRepository = settingRepository),
             observeLocationChoicesTask = ObserveLocationChoicesTask(
                 favoriteRepository = favoriteRepository,
                 locationRepository = locationRepository
@@ -86,6 +88,7 @@ class SettingsViewModelTest {
                 expected = Settings(
                     theme = Theme.LIGHT,
                     language = AppLanguage.SYSTEM,
+                    hourFormatChoice = HourFormatChoice.SYSTEM,
                     isHourlyForecastEnabled = false,
                     isExpandOnceEnabled = true,
                     isPollenEnabled = true,
@@ -99,7 +102,7 @@ class SettingsViewModelTest {
     @Test
     fun `settings that cannot be read are not shown`() =
         testScope.runTest {
-            themeRepository.theme = Failure(errorCode = ErrorCode.STORAGE_FAILED).asLeft()
+            settingRepository.theme = Failure(errorCode = ErrorCode.STORAGE_FAILED).asLeft()
 
             val settingsViewModel: SettingsViewModel = viewModel()
             advanceUntilIdle()
@@ -216,6 +219,49 @@ class SettingsViewModelTest {
             assertEquals(
                 expected = false to AppLanguage.SYSTEM,
                 actual = settingsViewModel.state.value.isLanguageDialogVisible to settingsViewModel.state.value.settings?.language
+            )
+        }
+
+    @Test
+    fun `choosing a clock closes the dialog, stores the choice and shows it`() =
+        testScope.runTest {
+            val settingsViewModel: SettingsViewModel = viewModel()
+            advanceUntilIdle()
+
+            settingsViewModel.onEvent(event = SettingsEvent.OnHourFormatRowClicked)
+            val isOpened: Boolean = settingsViewModel.state.value.isHourFormatDialogVisible
+            settingsViewModel.onEvent(event = SettingsEvent.OnHourFormatSelected(hourFormatChoice = HourFormatChoice.TWELVE_HOUR))
+            advanceUntilIdle()
+
+            assertEquals(
+                expected = listOf(
+                    true,
+                    false,
+                    HourFormatChoice.TWELVE_HOUR,
+                    HourFormatChoice.TWELVE_HOUR.asRight()
+                ),
+                actual = listOf(
+                    isOpened,
+                    settingsViewModel.state.value.isHourFormatDialogVisible,
+                    settingsViewModel.state.value.settings?.hourFormatChoice,
+                    settingRepository.hourFormatChoice
+                )
+            )
+        }
+
+    @Test
+    fun `dismissing the clock dialog keeps the clock of the phone`() =
+        testScope.runTest {
+            val settingsViewModel: SettingsViewModel = viewModel()
+            advanceUntilIdle()
+
+            settingsViewModel.onEvent(event = SettingsEvent.OnHourFormatRowClicked)
+            settingsViewModel.onEvent(event = SettingsEvent.OnHourFormatDialogDismissed)
+            advanceUntilIdle()
+
+            assertEquals(
+                expected = false to HourFormatChoice.SYSTEM,
+                actual = settingsViewModel.state.value.isHourFormatDialogVisible to settingsViewModel.state.value.settings?.hourFormatChoice
             )
         }
 

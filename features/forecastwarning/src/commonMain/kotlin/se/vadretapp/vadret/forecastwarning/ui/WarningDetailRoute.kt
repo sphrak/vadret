@@ -60,7 +60,9 @@ import se.vadretapp.vadret.forecastwarning.WarningDetailEvent
 import se.vadretapp.vadret.forecastwarning.WarningDetailState
 import se.vadretapp.vadret.forecastwarning.WarningDetailViewModel
 import se.vadretapp.vadret.forecastwarning.model.WarningItem
-import se.vadretapp.vadret.theme.model.Theme
+import se.vadretapp.vadret.setting.model.HourFormat
+import se.vadretapp.vadret.setting.model.Theme
+import se.vadretapp.vadret.ui.LocalHourFormat
 import se.vadretapp.vadret.ui.LocalLanguageTag
 import se.vadretapp.vadret.ui.VadretProgressBar
 import se.vadretapp.vadret.ui.VadretTheme
@@ -109,8 +111,14 @@ internal fun WarningDetailScreen(
     modifier: Modifier = Modifier
 ) {
     val languageTag: String = LocalLanguageTag.current
-    LaunchedEffect(languageTag) {
-        onEvent(WarningDetailEvent.OnLocaleChanged(languageTag = languageTag))
+    val hourFormat: HourFormat = LocalHourFormat.current
+    LaunchedEffect(languageTag, hourFormat) {
+        onEvent(
+            WarningDetailEvent.OnLocaleChanged(
+                languageTag = languageTag,
+                hourFormat = hourFormat
+            )
+        )
     }
     BoxWithConstraints(
         modifier = modifier

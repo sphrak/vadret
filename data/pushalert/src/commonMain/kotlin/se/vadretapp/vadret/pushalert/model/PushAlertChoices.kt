@@ -6,7 +6,6 @@ data class PushAlertChoices(
     val temperatureTrend: Boolean,
     val strongWind: Boolean,
     val slipperiness: Boolean,
-    val hourFormat: HourFormat,
     val isChosenPlaceNotified: Boolean,
     val notifiedFavoriteIds: Set<String>
 ) {
@@ -31,7 +30,6 @@ data class PushAlertChoices(
             temperatureTrend = false,
             strongWind = false,
             slipperiness = false,
-            hourFormat = HourFormat.TWENTY_FOUR_HOUR,
             isChosenPlaceNotified = true,
             notifiedFavoriteIds = emptySet()
         )
