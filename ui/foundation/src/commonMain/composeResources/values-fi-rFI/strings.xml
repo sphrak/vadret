@@ -153,7 +153,7 @@
     <string name="aurora_peak_label">Parhaimmillaan</string>
     <string name="aurora_hours_label">Tunti tunnilta</string>
     <string name="aurora_hour_score">%1$d %</string>
-    <string name="aurora_estimate_explanation">Vadret API laskee mahdollisuuden NOAA:n avaruussääennusteesta, SMHI:n pilviennusteesta ja siitä, kuinka pimeää on. Se ei ole SMHI:n ennuste.</string>
+    <string name="aurora_estimate_explanation">Vadret API laskee mahdollisuuden Kiirunan magnetometristä, SMHI:n pilviennusteesta ja siitä, kuinka pimeää on. Se ei ole SMHI:n ennuste.</string>
     <string name="aurora_alerts">Revontulet</string>
     <string name="labs_aurora_summary">Näyttää revontulten mahdollisuuden paikoissasi</string>
     <string name="pollen_alerts">Siitepölytasot</string>

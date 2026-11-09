@@ -286,7 +286,7 @@
     <string name="aurora_peak_label">Som störst</string>
     <string name="aurora_hours_label">Timme för timme</string>
     <string name="aurora_hour_score">%1$d %</string>
-    <string name="aurora_estimate_explanation">Vadret API räknar fram chansen ur NOAA:s rymdväderprognos, SMHI:s molnprognos och hur mörkt det är. Det är ingen prognos från SMHI.</string>
+    <string name="aurora_estimate_explanation">Vadret API räknar fram chansen ur magnetometern i Kiruna, SMHI:s molnprognos och hur mörkt det är. Det är ingen prognos från SMHI.</string>
     <string name="aurora_alerts">Norrsken</string>
     <string name="labs_aurora_summary">Visar chansen för norrsken vid dina platser</string>
     <string name="pollen_alerts">Pollenhalter</string>

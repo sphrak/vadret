@@ -151,7 +151,7 @@
     <string name="aurora_peak_label">Bedst</string>
     <string name="aurora_hours_label">Time for time</string>
     <string name="aurora_hour_score">%1$d %</string>
-    <string name="aurora_estimate_explanation">Vadret API beregner chancen ud fra NOAA\'s rumvejrsprognose, SMHI\'s skyprognose og hvor mørkt det er. Det er ikke en prognose fra SMHI.</string>
+    <string name="aurora_estimate_explanation">Vadret API beregner chancen ud fra magnetometeret i Kiruna, SMHI\'s skyprognose og hvor mørkt det er. Det er ikke en prognose fra SMHI.</string>
     <string name="aurora_alerts">Nordlys</string>
     <string name="labs_aurora_summary">Viser chancen for nordlys ved dine steder</string>
     <string name="pollen_alerts">Pollenniveauer</string>

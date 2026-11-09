@@ -141,7 +141,7 @@
     <string name="aurora_peak_label">Najlepiej</string>
     <string name="aurora_hours_label">Godzina po godzinie</string>
     <string name="aurora_hour_score">%1$d%</string>
-    <string name="aurora_estimate_explanation">Vadret API oblicza szansę na podstawie prognozy pogody kosmicznej NOAA, prognozy zachmurzenia SMHI i tego, jak jest ciemno. To nie jest prognoza SMHI.</string>
+    <string name="aurora_estimate_explanation">Vadret API oblicza szansę na podstawie magnetometru w Kirunie, prognozy zachmurzenia SMHI i tego, jak jest ciemno. To nie jest prognoza SMHI.</string>
     <string name="aurora_alerts">Zorza polarna</string>
     <string name="labs_aurora_summary">Pokazuje szansę na zorzę polarną w twoich miejscach</string>
     <string name="pollen_alerts">Stężenie pyłków</string>

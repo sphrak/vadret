@@ -186,7 +186,7 @@
     <string name="aurora_peak_label">Am besten</string>
     <string name="aurora_hours_label">Stunde für Stunde</string>
     <string name="aurora_hour_score">%1$d %</string>
-    <string name="aurora_estimate_explanation">Vadret API berechnet die Chance aus der Weltraumwettervorhersage der NOAA, der Wolkenvorhersage des SMHI und wie dunkel es ist. Es ist keine Vorhersage des SMHI.</string>
+    <string name="aurora_estimate_explanation">Vadret API berechnet die Chance aus dem Magnetometer in Kiruna, der Wolkenvorhersage des SMHI und wie dunkel es ist. Es ist keine Vorhersage des SMHI.</string>
     <string name="aurora_alerts">Polarlichter</string>
     <string name="labs_aurora_summary">Zeigt die Chance auf Polarlichter an deinen Orten</string>
     <string name="pollen_alerts">Pollenbelastung</string>

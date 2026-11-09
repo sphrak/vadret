@@ -347,7 +347,7 @@
     <string name="aurora_peak_label">At its best</string>
     <string name="aurora_hours_label">Hour by hour</string>
     <string name="aurora_hour_score">%1$d%</string>
-    <string name="aurora_estimate_explanation">Vadret API works out the chance from NOAA\'s space weather forecast, SMHI\'s cloud forecast and how dark the sky is. It is not a forecast from SMHI.</string>
+    <string name="aurora_estimate_explanation">Vadret API works out the chance from the magnetometer in Kiruna, SMHI\'s cloud forecast and how dark the sky is. It is not a forecast from SMHI.</string>
     <string name="aurora_alerts">Northern lights</string>
     <string name="labs_aurora_summary">Shows the chance of northern lights at your places</string>
     <string name="pollen_alerts">Pollen levels</string>

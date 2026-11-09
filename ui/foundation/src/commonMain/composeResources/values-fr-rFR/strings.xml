@@ -143,7 +143,7 @@
     <string name="aurora_peak_label">Au mieux</string>
     <string name="aurora_hours_label">Heure par heure</string>
     <string name="aurora_hour_score">%1$d %</string>
-    <string name="aurora_estimate_explanation">Vadret API calcule la probabilité à partir des prévisions de météo spatiale de la NOAA, des prévisions de nébulosité du SMHI et de l\'obscurité du ciel. Ce n\'est pas une prévision du SMHI.</string>
+    <string name="aurora_estimate_explanation">Vadret API calcule la probabilité à partir du magnétomètre de Kiruna, des prévisions de nébulosité du SMHI et de l\'obscurité du ciel. Ce n\'est pas une prévision du SMHI.</string>
     <string name="aurora_alerts">Aurores boréales</string>
     <string name="labs_aurora_summary">Indique les chances d\'aurores boréales pour vos lieux</string>
     <string name="pollen_alerts">Niveaux de pollen</string>
