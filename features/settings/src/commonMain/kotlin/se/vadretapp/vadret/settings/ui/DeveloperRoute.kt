@@ -134,7 +134,6 @@ private fun DeveloperScreen(
             ) { developerSettingsSection: DeveloperSettingsSection ->
                 SettingsRow(
                     title = stringResource(resource = developerSettingsSection.titleResource),
-                    summary = stringResource(resource = developerSettingsSection.summaryResource),
                     onClick = { onSectionClick(developerSettingsSection.key) }
                 )
             }

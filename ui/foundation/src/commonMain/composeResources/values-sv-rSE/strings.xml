@@ -263,9 +263,7 @@
     <string name="simulate_end_of_season">Simulera säsongsslut på radarn</string>
     <string name="end_of_season_is_simulated">Pollen döljs och radarn visar att pollen gått i ide nästa gång du öppnar den</string>
     <string name="end_of_season_is_not_simulated">Radarn följer den riktiga säsongen</string>
-    <string name="simulate_notifications">Simulera notiser</string>
     <string name="simulated_stories">Storys</string>
-    <string name="simulate_stories">Simulera varningsstorys</string>
     <string name="play_all_stories">Spela alla</string>
     <string name="slipperiness_possible">Möjlig halka</string>
     <string name="slipperiness_high">Stor risk för halka</string>

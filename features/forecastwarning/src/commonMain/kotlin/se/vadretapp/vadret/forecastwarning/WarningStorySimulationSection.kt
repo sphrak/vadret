@@ -6,7 +6,6 @@ import org.jetbrains.compose.resources.StringResource
 import se.vadretapp.vadret.forecastwarning.ui.WarningStorySimulationRoute
 import se.vadretapp.vadret.ui.DeveloperSettingsSection
 import se.vadretapp.vadret.ui.resources.Res
-import se.vadretapp.vadret.ui.resources.simulate_stories
 import se.vadretapp.vadret.ui.resources.simulated_stories
 
 // The stories open where the app opens every story, so whoever shows the developer settings says how to open one.
@@ -17,7 +16,6 @@ internal class WarningStorySimulationSection(
 ) : DeveloperSettingsSection {
     override val key: String = WARNING_STORY_SIMULATION_SECTION_KEY
     override val titleResource: StringResource = Res.string.simulated_stories
-    override val summaryResource: StringResource = Res.string.simulate_stories
 
     @Composable
     override fun Content(

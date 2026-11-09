@@ -117,9 +117,7 @@
     <string name="simulate_end_of_season">Simuler la fin de saison sur le radar</string>
     <string name="end_of_season_is_simulated">Les pollens sont masqués et le radar indique qu\'ils hibernent à la prochaine ouverture</string>
     <string name="end_of_season_is_not_simulated">Le radar suit la vraie saison</string>
-    <string name="simulate_notifications">Simuler des notifications</string>
     <string name="simulated_stories">Stories</string>
-    <string name="simulate_stories">Simuler les stories d\'alerte</string>
     <string name="play_all_stories">Tout lire</string>
     <string name="developer_unlocked">Vous êtes maintenant développeur</string>
     <string name="developer_already_unlocked">Vous êtes déjà développeur</string>

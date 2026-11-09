@@ -23,24 +23,15 @@ import se.vadretapp.vadret.ui.InfoDialog
 import se.vadretapp.vadret.ui.SettingsRow
 import se.vadretapp.vadret.ui.SettingsRowIcon
 import se.vadretapp.vadret.ui.SettingsScaffold
-import se.vadretapp.vadret.ui.SettingsSectionHeader
 import se.vadretapp.vadret.ui.ThemePreviewParameterProvider
 import se.vadretapp.vadret.ui.VadretTheme
 import se.vadretapp.vadret.ui.resources.Res
 import se.vadretapp.vadret.ui.resources.notifications_are_off
 import se.vadretapp.vadret.ui.resources.notifications_are_off_text
 import se.vadretapp.vadret.ui.resources.settings_notifications
-import se.vadretapp.vadret.ui.resources.simulate_notifications
 import kotlin.time.Instant
 
-private const val SIMULATE_HEADER_KEY = "simulate-header"
-
 private val previewNow: Instant = Instant.parse(input = "2026-11-08T18:00:00Z")
-
-private enum class PushAlertSimulationContentType {
-    HEADER,
-    ROW
-}
 
 @Composable
 internal fun PushAlertSimulationRoute(
@@ -69,13 +60,9 @@ private fun PushAlertSimulationScreen(
         onBack = onBack,
         modifier = modifier
     ) {
-        item(key = SIMULATE_HEADER_KEY, contentType = PushAlertSimulationContentType.HEADER) {
-            SettingsSectionHeader(text = stringResource(resource = Res.string.simulate_notifications))
-        }
         items(
             items = state.pushAlertMessages,
-            key = { pushAlertMessage: PushAlertMessage -> pushAlertMessage.title },
-            contentType = { PushAlertSimulationContentType.ROW }
+            key = { pushAlertMessage: PushAlertMessage -> pushAlertMessage.title }
         ) { pushAlertMessage: PushAlertMessage ->
             SettingsRow(
                 title = pushAlertMessage.title,

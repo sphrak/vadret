@@ -8,7 +8,6 @@ import org.jetbrains.compose.resources.StringResource
 interface DeveloperSettingsSection {
     val key: String
     val titleResource: StringResource
-    val summaryResource: StringResource
 
     @Composable
     fun Content(

@@ -160,9 +160,7 @@
     <string name="simulate_end_of_season">Saisonende auf dem Radar simulieren</string>
     <string name="end_of_season_is_simulated">Die Pollen werden ausgeblendet, und der Radar zeigt beim nächsten Öffnen, dass sie Winterschlaf halten</string>
     <string name="end_of_season_is_not_simulated">Der Radar folgt der echten Saison</string>
-    <string name="simulate_notifications">Benachrichtigungen simulieren</string>
     <string name="simulated_stories">Storys</string>
-    <string name="simulate_stories">Warnungs-Storys simulieren</string>
     <string name="play_all_stories">Alle abspielen</string>
     <string name="developer_unlocked">Du bist jetzt Entwickler</string>
     <string name="developer_already_unlocked">Du bist bereits Entwickler</string>

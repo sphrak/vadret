@@ -123,9 +123,7 @@
     <string name="simulate_end_of_season">Simuler sesongslutt på radaren</string>
     <string name="end_of_season_is_simulated">Pollen skjules, og radaren viser at pollen har gått i hi neste gang du åpner den</string>
     <string name="end_of_season_is_not_simulated">Radaren følger den virkelige sesongen</string>
-    <string name="simulate_notifications">Simuler varsler</string>
     <string name="simulated_stories">Historier</string>
-    <string name="simulate_stories">Simuler varselhistorier</string>
     <string name="play_all_stories">Spill av alle</string>
     <string name="developer_unlocked">Du er nå utvikler</string>
     <string name="developer_already_unlocked">Du er allerede utvikler</string>

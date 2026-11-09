@@ -127,9 +127,7 @@
     <string name="simulate_end_of_season">Simuloi kauden loppu tutkassa</string>
     <string name="end_of_season_is_simulated">Siitepöly piilotetaan, ja tutka näyttää seuraavalla avauskerralla, että siitepöly on talviunilla</string>
     <string name="end_of_season_is_not_simulated">Tutka seuraa todellista kautta</string>
-    <string name="simulate_notifications">Simuloi ilmoituksia</string>
     <string name="simulated_stories">Tarinat</string>
-    <string name="simulate_stories">Simuloi varoitustarinoita</string>
     <string name="play_all_stories">Toista kaikki</string>
     <string name="developer_unlocked">Olet nyt kehittäjä</string>
     <string name="developer_already_unlocked">Olet jo kehittäjä</string>
