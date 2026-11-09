@@ -180,7 +180,6 @@
     <string name="slipperiness_estimate_label">Über diese Einschätzung</string>
     <string name="slipperiness_estimate_explanation">Vadret API berechnet das Risiko aus der Vorhersage des SMHI. Es ist keine Warnung des SMHI.</string>
     <string name="slipperiness_alerts">Glätte</string>
-    <string name="slipperiness_alerts_summary">Wenn es in den nächsten 24 Stunden glatt werden kann</string>
     <string name="aurora_possible">Chance auf Polarlichter</string>
     <string name="aurora_high">Gute Chance auf Polarlichter</string>
     <string name="aurora_score">Bis zu %1$d % Chance</string>
@@ -189,7 +188,6 @@
     <string name="aurora_hour_score">%1$d %</string>
     <string name="aurora_estimate_explanation">Vadret API berechnet die Chance aus der Weltraumwettervorhersage der NOAA, der Wolkenvorhersage des SMHI und wie dunkel es ist. Es ist keine Vorhersage des SMHI.</string>
     <string name="aurora_alerts">Polarlichter</string>
-    <string name="aurora_alerts_summary">Wenn in den nächsten 24 Stunden Polarlichter zu sehen sein können</string>
     <string name="labs_aurora_summary">Zeigt die Chance auf Polarlichter an deinen Orten</string>
     <string name="pollen_alerts">Pollenbelastung</string>
     <string name="pollen_alerts_summary">Für die unter Pollen gewählten Pollen</string>

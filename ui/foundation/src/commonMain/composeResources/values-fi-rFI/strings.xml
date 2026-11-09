@@ -147,7 +147,6 @@
     <string name="slipperiness_estimate_label">Tietoa arviosta</string>
     <string name="slipperiness_estimate_explanation">Vadret API laskee riskin SMHI:n ennusteesta. Se ei ole SMHI:n varoitus.</string>
     <string name="slipperiness_alerts">Liukkaus</string>
-    <string name="slipperiness_alerts_summary">Kun seuraavan vuorokauden aikana voi olla liukasta</string>
     <string name="aurora_possible">Revontulia mahdollisesti</string>
     <string name="aurora_high">Hyvä mahdollisuus revontuliin</string>
     <string name="aurora_score">Jopa %1$d % mahdollisuus</string>
@@ -156,7 +155,6 @@
     <string name="aurora_hour_score">%1$d %</string>
     <string name="aurora_estimate_explanation">Vadret API laskee mahdollisuuden NOAA:n avaruussääennusteesta, SMHI:n pilviennusteesta ja siitä, kuinka pimeää on. Se ei ole SMHI:n ennuste.</string>
     <string name="aurora_alerts">Revontulet</string>
-    <string name="aurora_alerts_summary">Kun revontulia voi näkyä seuraavan vuorokauden aikana</string>
     <string name="labs_aurora_summary">Näyttää revontulten mahdollisuuden paikoissasi</string>
     <string name="pollen_alerts">Siitepölytasot</string>
     <string name="pollen_alerts_summary">Siitepöly-kohdassa valituille siitepölyille</string>

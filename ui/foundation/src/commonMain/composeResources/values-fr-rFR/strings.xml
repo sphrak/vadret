@@ -137,7 +137,6 @@
     <string name="slipperiness_estimate_label">À propos de cette estimation</string>
     <string name="slipperiness_estimate_explanation">Vadret API calcule le risque à partir des prévisions du SMHI. Ce n\'est pas une alerte du SMHI.</string>
     <string name="slipperiness_alerts">Chaussée glissante</string>
-    <string name="slipperiness_alerts_summary">Quand la chaussée risque d\'être glissante dans les 24 heures</string>
     <string name="aurora_possible">Aurores boréales possibles</string>
     <string name="aurora_high">Bonnes chances d\'aurores boréales</string>
     <string name="aurora_score">Jusqu\'à %1$d % de chances</string>
@@ -146,7 +145,6 @@
     <string name="aurora_hour_score">%1$d %</string>
     <string name="aurora_estimate_explanation">Vadret API calcule la probabilité à partir des prévisions de météo spatiale de la NOAA, des prévisions de nébulosité du SMHI et de l\'obscurité du ciel. Ce n\'est pas une prévision du SMHI.</string>
     <string name="aurora_alerts">Aurores boréales</string>
-    <string name="aurora_alerts_summary">Quand des aurores boréales peuvent être visibles dans les prochaines 24 heures</string>
     <string name="labs_aurora_summary">Indique les chances d\'aurores boréales pour vos lieux</string>
     <string name="pollen_alerts">Niveaux de pollen</string>
     <string name="pollen_alerts_summary">Pour les pollens choisis sous Pollen</string>
