@@ -233,6 +233,7 @@
     <string name="expand_once_is_enabled">Opening a day closes the day already open</string>
     <string name="expand_once_is_disabled">Several days can be open at the same time</string>
     <string name="today">Today</string>
+    <string name="week_number">Week %1$s</string>
     <string name="expanded">Expanded</string>
     <string name="collapsed">Collapsed</string>
     <string name="temperature">Temperature</string>

@@ -84,6 +84,7 @@
     <string name="forecast_days">Dager</string>
     <string name="forecast_hours">Timer</string>
     <string name="today">I dag</string>
+    <string name="week_number">Uke %1$s</string>
     <string name="expanded">Utvidet</string>
     <string name="collapsed">Skjult</string>
     <string name="temperature">Temperatur</string>

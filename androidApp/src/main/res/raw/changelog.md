@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Week overview card
 - iOS: liquid glass
 - new location dataset
 - 12h/24h format on notifications

@@ -13,6 +13,7 @@ import se.vadretapp.vadret.ui.format.DateTextStyle
 import se.vadretapp.vadret.ui.format.toOneDecimalText
 import se.vadretapp.vadret.ui.format.toTimeText
 import se.vadretapp.vadret.weatherforecast.model.Analysis
+import se.vadretapp.vadret.weatherforecast.model.ComingDay
 import se.vadretapp.vadret.weatherforecast.model.CurrentWeather
 import se.vadretapp.vadret.weatherforecast.model.Forecast
 import se.vadretapp.vadret.weatherforecast.model.ForecastDay
@@ -49,17 +50,19 @@ internal fun PlaceForecast.toWeatherForecast(
     } else {
         null
     }
+    val comingDays: List<ComingDay> = hours.toComingDays(
+        now = now,
+        nowHourAt = nowHourAt,
+        timeZone = timeZone,
+        languageTag = languageTag,
+        hourFormat = hourFormat,
+        latitude = latitude,
+        longitude = longitude
+    )
     return WeatherForecast(
         current = current.toCurrentWeather(isDaytime = isDaytime(at = current.validAt)),
-        comingDays = hours.toComingDays(
-            now = now,
-            nowHourAt = nowHourAt,
-            timeZone = timeZone,
-            languageTag = languageTag,
-            hourFormat = hourFormat,
-            latitude = latitude,
-            longitude = longitude
-        ).toImmutableList(),
+        comingWeek = comingDays.toComingWeek(),
+        comingDays = comingDays.toImmutableList(),
         days = toForecastDays(
             timeZone = timeZone,
             languageTag = languageTag,

@@ -173,6 +173,7 @@
     <string name="forecast_days">Dagar</string>
     <string name="forecast_hours">Timmar</string>
     <string name="today">Idag</string>
+    <string name="week_number">Vecka %1$s</string>
     <string name="expanded">Utfälld</string>
     <string name="collapsed">Infälld</string>
     <string name="temperature">Temperatur</string>

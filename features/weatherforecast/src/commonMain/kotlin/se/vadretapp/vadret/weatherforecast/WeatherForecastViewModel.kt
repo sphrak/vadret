@@ -43,6 +43,7 @@ import se.vadretapp.vadret.weatherforecast.extension.localityFor
 import se.vadretapp.vadret.weatherforecast.extension.toLatestWarning
 import se.vadretapp.vadret.weatherforecast.extension.toWeatherForecast
 import se.vadretapp.vadret.weatherforecast.extension.withComingDays
+import se.vadretapp.vadret.weatherforecast.extension.withDayExpanded
 import se.vadretapp.vadret.weatherforecast.extension.withDayToggled
 import se.vadretapp.vadret.weatherforecast.extension.withForecast
 import se.vadretapp.vadret.weatherforecast.extension.withNameTaken
@@ -138,6 +139,10 @@ class WeatherForecastViewModel internal constructor(
                 state.withForecastView(forecastView = event.forecastView)
             }
             is WeatherForecastEvent.OnDayToggled -> onDayToggled(dayKey = event.dayKey)
+            is WeatherForecastEvent.OnWeekDayClicked -> onWeekDayClicked(dayKey = event.dayKey)
+            WeatherForecastEvent.OnDayShown -> state.update { state: WeatherForecastState ->
+                state.copy(dayKeyToShow = null)
+            }
             is WeatherForecastEvent.OnLocationPermissionResult -> onLocationPermissionResult(isGranted = event.isGranted)
             WeatherForecastEvent.OnAutomaticLocationClicked -> state.update { state: WeatherForecastState ->
                 state.copy(isLocationPermissionRequested = true)
@@ -155,6 +160,22 @@ class WeatherForecastViewModel internal constructor(
                         dayKey = dayKey,
                         isExpandOnceEnabled = isExpandOnceEnabled.load()
                     )
+                )
+            }
+        }
+    }
+
+    private fun onWeekDayClicked(dayKey: String) {
+        viewModelScope.launch(context = coroutineDispatcher) {
+            state.update { state: WeatherForecastState ->
+                state.withComingDays(
+                    comingDays = state.forecast.comingDays.withDayExpanded(
+                        dayKey = dayKey,
+                        isExpandOnceEnabled = isExpandOnceEnabled.load()
+                    )
+                ).copy(
+                    forecastView = ForecastView.DAYS,
+                    dayKeyToShow = dayKey
                 )
             }
         }

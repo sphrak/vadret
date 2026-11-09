@@ -38,11 +38,13 @@ import se.vadretapp.vadret.ui.resources.ic_info
 import se.vadretapp.vadret.ui.resources.showing_saved_forecast
 import se.vadretapp.vadret.weatherforecast.WeatherForecastEvent
 import se.vadretapp.vadret.weatherforecast.WeatherForecastState
+import se.vadretapp.vadret.weatherforecast.model.ComingWeek
 import se.vadretapp.vadret.weatherforecast.model.CurrentWeather
 import se.vadretapp.vadret.weatherforecast.model.ForecastView
 import se.vadretapp.vadret.weatherforecast.model.LatestWarning
 
 private const val CURRENT_WEATHER_KEY = "current-weather"
+private const val COMING_WEEK_KEY = "coming-week"
 private const val FORECAST_VIEW_KEY = "forecast-view"
 private const val FORECAST_CONTENT_KEY = "forecast-content"
 
@@ -197,6 +199,21 @@ private fun LazyListScope.forecast(
     if (state.forecast.days.isEmpty()) {
         return
     }
+    val comingWeek: ComingWeek? = state.forecast.comingWeek
+    if (comingWeek != null) {
+        item(
+            key = COMING_WEEK_KEY,
+            contentType = COMING_WEEK_KEY
+        ) {
+            ComingWeekCard(
+                modifier = Modifier.animateItem(),
+                comingWeek = comingWeek,
+                onDayClick = { dayKey: String ->
+                    onEvent(WeatherForecastEvent.OnWeekDayClicked(dayKey = dayKey))
+                }
+            )
+        }
+    }
     if (state.isHourlyForecastEnabled) {
         item(
             key = FORECAST_VIEW_KEY,
@@ -219,6 +236,7 @@ private fun LazyListScope.forecast(
             modifier = Modifier.animateItem(),
             forecastView = state.forecastView,
             forecast = state.forecast,
+            dayKeyToShow = state.dayKeyToShow,
             onEvent = onEvent
         )
     }

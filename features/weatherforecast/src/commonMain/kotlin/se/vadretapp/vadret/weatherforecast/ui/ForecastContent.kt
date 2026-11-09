@@ -42,6 +42,7 @@ private val slideSpec: TweenSpec<IntOffset> = tween(
 internal fun ForecastContent(
     forecastView: ForecastView,
     forecast: WeatherForecast,
+    dayKeyToShow: String?,
     onEvent: (WeatherForecastEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -74,6 +75,7 @@ internal fun ForecastContent(
         when (shownForecastView) {
             ForecastView.DAYS -> ComingDaysContent(
                 comingDays = forecast.comingDays,
+                dayKeyToShow = dayKeyToShow,
                 onEvent = onEvent
             )
             ForecastView.HOURS -> ForecastDaysContent(forecastDays = forecast.days)
@@ -84,6 +86,7 @@ internal fun ForecastContent(
 @Composable
 private fun ComingDaysContent(
     comingDays: ImmutableList<ComingDay>,
+    dayKeyToShow: String?,
     onEvent: (WeatherForecastEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -97,9 +100,11 @@ private fun ComingDaysContent(
         // ComingDaysHeader(dayCount = comingDays.size)
         ComingDaysCard(
             comingDays = comingDays,
+            dayKeyToShow = dayKeyToShow,
             onDayToggled = { dayKey: String ->
                 onEvent(WeatherForecastEvent.OnDayToggled(dayKey = dayKey))
-            }
+            },
+            onDayShown = { onEvent(WeatherForecastEvent.OnDayShown) }
         )
     }
 }

@@ -41,6 +41,8 @@ import se.vadretapp.vadret.weatherforecast.model.ForecastDay
 import se.vadretapp.vadret.weatherforecast.model.ForecastView
 import se.vadretapp.vadret.weatherforecast.model.LatestWarning
 import se.vadretapp.vadret.weatherforecast.model.PlaceNaming
+import se.vadretapp.vadret.weatherforecast.model.WeatherForecast
+import se.vadretapp.vadret.weatherforecast.model.WeekDay
 import se.vadretapp.vadret.weatherforecast.usecase.DefaultGetLocationModeTask
 import se.vadretapp.vadret.weatherforecast.usecase.DefaultObserveForecastPreferencesTask
 import se.vadretapp.vadret.weatherforecast.usecase.DefaultObservePlaceForecastTask
@@ -688,6 +690,69 @@ class WeatherForecastViewModelTest {
             advanceUntilIdle()
 
             assertEquals(expected = listOf(true, true), actual = expansion())
+        }
+
+    @Test
+    fun `a day clicked in the week opens in the days view until it has been shown`() =
+        testScope.runTest {
+            weatherForecastRepository.forecasts = listOf(
+                noon,
+                noon.copy(
+                    validAt = noon.validAt + 1.days,
+                    intervalStartedAt = noon.intervalStartedAt + 1.days
+                )
+            ).asRight()
+            forecastPreferenceRepository.setHourlyForecastEnabled(isEnabled = true)
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnShown)
+            advanceUntilIdle()
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnDayToggled(dayKey = "coming-day-2026-10-24"))
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnForecastViewSelected(forecastView = ForecastView.HOURS))
+            advanceUntilIdle()
+
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnWeekDayClicked(dayKey = "coming-day-2026-10-25"))
+            advanceUntilIdle()
+            val clicked: WeatherForecastState = weatherForecastViewModel.state.value
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnDayShown)
+            advanceUntilIdle()
+
+            assertEquals(expected = listOf(false, true), actual = clicked.forecast.comingDays.map { comingDay: ComingDay -> comingDay.isExpanded })
+            assertEquals(expected = ForecastView.DAYS, actual = clicked.forecastView)
+            assertEquals(expected = "coming-day-2026-10-25", actual = clicked.dayKeyToShow)
+            assertEquals(expected = listOf(false, true) to null, actual = expansion() to weatherForecastViewModel.state.value.dayKeyToShow)
+        }
+
+    @Test
+    fun `a day clicked in the week stays open when it already was`() =
+        testScope.runTest {
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnShown)
+            advanceUntilIdle()
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnDayToggled(dayKey = "coming-day-2026-10-24"))
+            advanceUntilIdle()
+
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnWeekDayClicked(dayKey = "coming-day-2026-10-24"))
+            advanceUntilIdle()
+
+            assertEquals(expected = listOf(true), actual = expansion())
+        }
+
+    @Test
+    fun `the week is made from the coming days of the one fetched forecast`() =
+        testScope.runTest {
+            weatherForecastRepository.forecasts = listOf(
+                noon,
+                noon.copy(
+                    validAt = noon.validAt + 1.days,
+                    intervalStartedAt = noon.intervalStartedAt + 1.days
+                )
+            ).asRight()
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnShown)
+            advanceUntilIdle()
+
+            val forecast: WeatherForecast = weatherForecastViewModel.state.value.forecast
+            assertEquals(
+                expected = listOf("coming-day-2026-10-24", "coming-day-2026-10-25") to 1,
+                actual = forecast.comingWeek?.days?.map { weekDay: WeekDay -> weekDay.dayKey } to weatherForecastRepository.requestedCoordinates.size
+            )
         }
 
     @Test

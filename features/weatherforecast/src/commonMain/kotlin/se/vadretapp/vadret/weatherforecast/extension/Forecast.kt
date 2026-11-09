@@ -180,6 +180,7 @@ private fun DaySummary.toComingDay(
     }
     return ComingDay(
         key = "$COMING_DAY_KEY_PREFIX$date",
+        date = date,
         isToday = isToday,
         weekdayText = dayFormats.weekdayFormatter
             .format(instant = midday)

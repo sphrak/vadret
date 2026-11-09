@@ -1,7 +1,9 @@
 package se.vadretapp.vadret.weatherforecast.ui
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Transition
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -12,18 +14,27 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -59,6 +70,7 @@ private const val PRECIPITATION_MAX_LINES = 2
 private const val FIRST_DAY_INDEX = 0
 private const val EXPANDED_STATE_LAYER_ALPHA = 0.04f
 private const val NO_STATE_LAYER_ALPHA = 0f
+private const val NO_WIDTH = 0f
 
 private val headerInset = 4.dp
 private val cardShape = RoundedCornerShape(size = 21.dp)
@@ -105,7 +117,9 @@ internal fun ComingDaysHeader(
 @Composable
 internal fun ComingDaysCard(
     comingDays: ImmutableList<ComingDay>,
+    dayKeyToShow: String?,
     onDayToggled: (String) -> Unit,
+    onDayShown: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     VadretCard(
@@ -122,7 +136,9 @@ internal fun ComingDaysCard(
                 }
                 ComingDayItem(
                     comingDay = comingDay,
+                    isShown = comingDay.key == dayKeyToShow,
                     onDayToggled = onDayToggled,
+                    onShown = onDayShown,
                     edgeTopPadding = cardVerticalPadding.onlyOnEdge(isEdge = index == FIRST_DAY_INDEX),
                     edgeBottomPadding = cardVerticalPadding.onlyOnEdge(isEdge = index == comingDays.lastIndex)
                 )
@@ -134,14 +150,19 @@ internal fun ComingDaysCard(
 @Composable
 private fun ComingDayItem(
     comingDay: ComingDay,
+    isShown: Boolean,
     onDayToggled: (String) -> Unit,
+    onShown: () -> Unit,
     edgeTopPadding: Dp,
     edgeBottomPadding: Dp,
     modifier: Modifier = Modifier
 ) {
+    val bringIntoViewRequester: BringIntoViewRequester = remember { BringIntoViewRequester() }
+    val expansion: Transition<Boolean> = updateTransition(targetState = comingDay.isExpanded)
     Column(
         modifier = modifier
             .fillMaxWidth()
+            .bringIntoViewRequester(bringIntoViewRequester = bringIntoViewRequester)
             .padding(bottom = edgeBottomPadding)
     ) {
         ComingDayRow(
@@ -149,12 +170,44 @@ private fun ComingDayItem(
             edgeTopPadding = edgeTopPadding,
             onClick = { onDayToggled(comingDay.key) }
         )
-        AnimatedVisibility(visible = comingDay.isExpanded) {
+        expansion.AnimatedVisibility(visible = { isExpanded: Boolean -> isExpanded }) {
             ComingHourStrip(
                 hours = comingDay.hours,
                 firstShownHourIndex = comingDay.firstShownHourIndex,
                 modifier = Modifier.padding(bottom = hoursBottomPadding)
             )
+        }
+    }
+    // The day is scrolled to once its hours are open, so the scroll can reach a last day that only fits after it grew.
+    if (isShown && expansion.currentState && !expansion.isRunning) {
+        ShowDayEffect(
+            bringIntoViewRequester = bringIntoViewRequester,
+            onShown = onShown
+        )
+    }
+}
+
+// An area as tall as the window from the day's top never fits below it, so the list lines the day up with its top.
+@Composable
+private fun ShowDayEffect(
+    bringIntoViewRequester: BringIntoViewRequester,
+    onShown: () -> Unit
+) {
+    val windowHeight: Int = LocalWindowInfo.current.containerSize.height
+    val currentOnShown: () -> Unit by rememberUpdatedState(newValue = onShown)
+    LaunchedEffect(bringIntoViewRequester) {
+        try {
+            bringIntoViewRequester.bringIntoView(
+                rect = Rect(
+                    offset = Offset.Zero,
+                    size = Size(
+                        width = NO_WIDTH,
+                        height = windowHeight.toFloat()
+                    )
+                )
+            )
+        } finally {
+            currentOnShown()
         }
     }
 }
@@ -291,7 +344,9 @@ private fun ComingDaysCardPreview(
     VadretTheme(theme = theme) {
         ComingDaysCard(
             comingDays = comingDaysPreview(),
+            dayKeyToShow = null,
             onDayToggled = {},
+            onDayShown = {},
             modifier = Modifier
                 .background(color = VadretTheme.colorScheme.background)
                 .padding(all = VadretTheme.spacing.medium)

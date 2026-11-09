@@ -12,6 +12,7 @@ import se.vadretapp.vadret.weatherforecast.extension.withDayToggled
 import se.vadretapp.vadret.weatherforecast.model.Analysis
 import se.vadretapp.vadret.weatherforecast.model.ComingDay
 import se.vadretapp.vadret.weatherforecast.model.ComingHour
+import se.vadretapp.vadret.weatherforecast.model.ComingWeek
 import se.vadretapp.vadret.weatherforecast.model.CurrentWeather
 import se.vadretapp.vadret.weatherforecast.model.Forecast
 import se.vadretapp.vadret.weatherforecast.model.LatestWarning
@@ -83,6 +84,8 @@ internal fun weatherForecastPreviewState(): WeatherForecastState {
 }
 
 internal fun currentWeatherPreview(): CurrentWeather = checkNotNull(value = previewWeatherForecast().current)
+
+internal fun comingWeekPreview(): ComingWeek = checkNotNull(value = previewWeatherForecast().comingWeek)
 
 internal fun comingDaysPreview(): ImmutableList<ComingDay> = weatherForecastPreviewState().forecast.comingDays
 

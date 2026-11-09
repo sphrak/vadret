@@ -73,6 +73,7 @@
     <string name="forecast_days">Dni</string>
     <string name="forecast_hours">Godziny</string>
     <string name="today">Dzisiaj</string>
+    <string name="week_number">Tydzień %1$s</string>
     <string name="expanded">Rozwinięte</string>
     <string name="collapsed">Zwinięte</string>
     <string name="temperature">Temperatura</string>

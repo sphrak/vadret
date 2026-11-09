@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
+import kotlinx.datetime.LocalDate
 import se.vadretapp.vadret.aggregatedfeed.model.AggregatedFeed
 import se.vadretapp.vadret.aggregatedfeed.model.FeedArea
 import se.vadretapp.vadret.aggregatedfeed.model.FeedSource
@@ -108,10 +109,16 @@ internal val morning = Analysis(
 
 internal fun comingDay(
     dayKey: String,
+    date: LocalDate = LocalDate(
+        year = 2026,
+        month = 11,
+        day = 16
+    ),
     isExpanded: Boolean = false
 ): ComingDay =
     ComingDay(
         key = dayKey,
+        date = date,
         isToday = false,
         weekdayText = "Mon",
         dateText = "16 Nov",

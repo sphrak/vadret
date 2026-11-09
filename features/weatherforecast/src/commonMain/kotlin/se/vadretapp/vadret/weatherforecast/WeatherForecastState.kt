@@ -24,6 +24,7 @@ data class WeatherForecastState(
     val isLocationPermissionRequested: Boolean = false,
     val latestWarning: LatestWarning? = null,
     val forecastView: ForecastView = ForecastView.DAYS,
+    val dayKeyToShow: String? = null,
     val isHourlyForecastEnabled: Boolean = false,
     val isPlaceSaved: Boolean = false,
     val placeNaming: PlaceNaming? = null,

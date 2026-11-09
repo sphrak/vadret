@@ -78,6 +78,7 @@
     <string name="forecast_days">Jours</string>
     <string name="forecast_hours">Heures</string>
     <string name="today">Aujourd\'hui</string>
+    <string name="week_number">Semaine %1$s</string>
     <string name="expanded">Développé</string>
     <string name="collapsed">Réduit</string>
     <string name="temperature">Température</string>

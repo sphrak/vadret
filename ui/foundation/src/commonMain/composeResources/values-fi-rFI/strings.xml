@@ -88,6 +88,7 @@
     <string name="forecast_days">Päivät</string>
     <string name="forecast_hours">Tunnit</string>
     <string name="today">Tänään</string>
+    <string name="week_number">Viikko %1$s</string>
     <string name="expanded">Laajennettu</string>
     <string name="collapsed">Pienennetty</string>
     <string name="temperature">Lämpötila</string>

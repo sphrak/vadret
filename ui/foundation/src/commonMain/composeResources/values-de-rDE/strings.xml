@@ -122,6 +122,7 @@
     <string name="forecast_days">Tage</string>
     <string name="forecast_hours">Stunden</string>
     <string name="today">Heute</string>
+    <string name="week_number">KW %1$s</string>
     <string name="expanded">Aufgeklappt</string>
     <string name="collapsed">Zugeklappt</string>
     <string name="temperature">Temperatur</string>
