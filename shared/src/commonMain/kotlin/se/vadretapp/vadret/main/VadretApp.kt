@@ -25,7 +25,6 @@ import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDe
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
-import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberDecoratedNavEntries
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
@@ -36,15 +35,11 @@ import kotlinx.collections.immutable.toImmutableList
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import se.vadretapp.vadret.di.koinAll
-import se.vadretapp.vadret.forecastwarning.ui.SimulatedWarningStoryRoute
-import se.vadretapp.vadret.forecastwarning.ui.WarningDetailRoute
 import se.vadretapp.vadret.forecastwarning.ui.WarningMapHost
-import se.vadretapp.vadret.forecastwarning.ui.WarningRoute
-import se.vadretapp.vadret.forecastwarning.ui.WarningStoryRoute
-import se.vadretapp.vadret.forecastwarning.warningStorySimulationSection
 import se.vadretapp.vadret.main.navigation.PlaceForecastKey
 import se.vadretapp.vadret.main.navigation.PlaceSearchKey
 import se.vadretapp.vadret.main.navigation.RadarKey
+import se.vadretapp.vadret.main.navigation.ScreenKind
 import se.vadretapp.vadret.main.navigation.SettingsAboutKey
 import se.vadretapp.vadret.main.navigation.SettingsDeveloperKey
 import se.vadretapp.vadret.main.navigation.SettingsDeveloperSectionKey
@@ -57,37 +52,22 @@ import se.vadretapp.vadret.main.navigation.SettingsSectionKey
 import se.vadretapp.vadret.main.navigation.SimulatedWarningStoryKey
 import se.vadretapp.vadret.main.navigation.TabNavigation
 import se.vadretapp.vadret.main.navigation.TopLevelDestination
+import se.vadretapp.vadret.main.navigation.VadretKey
 import se.vadretapp.vadret.main.navigation.VadretNavigationBar
 import se.vadretapp.vadret.main.navigation.WarningDetailKey
 import se.vadretapp.vadret.main.navigation.WarningKey
 import se.vadretapp.vadret.main.navigation.WarningPlacesKey
 import se.vadretapp.vadret.main.navigation.WarningStoryKey
 import se.vadretapp.vadret.main.navigation.WeatherKey
-import se.vadretapp.vadret.main.navigation.close
-import se.vadretapp.vadret.main.navigation.closePlaceForecast
 import se.vadretapp.vadret.main.navigation.currentTabKey
 import se.vadretapp.vadret.main.navigation.goBack
 import se.vadretapp.vadret.main.navigation.navigationBarPadding
-import se.vadretapp.vadret.main.navigation.open
-import se.vadretapp.vadret.main.navigation.openPlaceForecast
-import se.vadretapp.vadret.main.navigation.openWeatherTab
+import se.vadretapp.vadret.main.navigation.screenKind
 import se.vadretapp.vadret.main.navigation.selectTab
 import se.vadretapp.vadret.main.navigation.shownEntries
-import se.vadretapp.vadret.settings.ui.AboutRoute
-import se.vadretapp.vadret.settings.ui.DeveloperRoute
-import se.vadretapp.vadret.settings.ui.LabsRoute
-import se.vadretapp.vadret.settings.ui.LicensesRoute
-import se.vadretapp.vadret.settings.ui.PlacesRoute
-import se.vadretapp.vadret.settings.ui.PollenSettingsRoute
-import se.vadretapp.vadret.settings.ui.SettingsRoute
 import se.vadretapp.vadret.ui.DeveloperSettingsSection
 import se.vadretapp.vadret.ui.SettingsSection
 import se.vadretapp.vadret.ui.VadretTheme
-import se.vadretapp.vadret.ui.model.NavigationIcon
-import se.vadretapp.vadret.weatherforecast.ui.PlaceForecastRoute
-import se.vadretapp.vadret.weatherforecast.ui.PlaceIslandRoute
-import se.vadretapp.vadret.weatherforecast.ui.PlaceSearchRoute
-import se.vadretapp.vadret.weatherforecast.ui.WeatherForecastRoute
 
 private val navigationConfiguration: SavedStateConfiguration = SavedStateConfiguration {
     serializersModule = SerializersModule {
@@ -198,169 +178,27 @@ internal fun VadretApp(
 ) {
     val tabPadding: PaddingValues = navigationBarPadding()
     val settingsSections: List<SettingsSection> = koinAll()
-    val settingsSectionsByKey: Map<String, SettingsSection> = remember(settingsSections) {
-        settingsSections.associateBy { settingsSection: SettingsSection -> settingsSection.key }
-    }
     val koinDeveloperSettingsSections: List<DeveloperSettingsSection> = koinAll()
     val developerSettingsSections: List<DeveloperSettingsSection> = remember(koinDeveloperSettingsSections, tabNavigation) {
-        koinDeveloperSettingsSections + warningStorySimulationSection(
-            onStoryClick = { warningIdentifiers: List<String> ->
-                tabNavigation.open(key = SimulatedWarningStoryKey(warningIdentifiers = warningIdentifiers))
-            }
-        )
+        koinDeveloperSettingsSections.withWarningStorySimulation(appNavigator = tabNavigation)
     }
-    val developerSettingsSectionsByKey: Map<String, DeveloperSettingsSection> = remember(developerSettingsSections) {
-        developerSettingsSections.associateBy { developerSettingsSection: DeveloperSettingsSection -> developerSettingsSection.key }
-    }
-    val tabEntryProvider: (NavKey) -> NavEntry<NavKey> = entryProvider {
-        entry<WeatherKey> {
-            TabPage(paddingValues = tabPadding) {
-                WeatherForecastRoute(
-                    onWarningClick = { warningIdentifiers: List<String> ->
-                        tabNavigation.open(key = WarningStoryKey(warningIdentifiers = warningIdentifiers))
-                    },
-                    onAddPlaceClick = { tabNavigation.open(key = PlaceSearchKey) }
-                )
-            }
-        }
-        entry<PlaceSearchKey>(metadata = storyTransitions) {
-            SheetPage {
-                PlaceSearchRoute(onClose = { tabNavigation.close(key = PlaceSearchKey) })
-            }
-        }
-        entry<PlaceForecastKey>(metadata = detailTransitions) { placeForecastKey: PlaceForecastKey ->
-            TabPage(paddingValues = tabPadding) {
-                PlaceForecastRoute(
-                    latitude = placeForecastKey.latitude,
-                    longitude = placeForecastKey.longitude,
-                    onClose = { tabNavigation.closePlaceForecast(placeForecastKey = placeForecastKey) },
-                    onWarningClick = { warningIdentifiers: List<String> ->
-                        tabNavigation.open(key = WarningStoryKey(warningIdentifiers = warningIdentifiers))
-                    }
-                )
-            }
-        }
-        entry<WarningKey> {
-            TabPage(paddingValues = tabPadding) {
-                WarningRoute(
-                    onWarningClick = { warningIdentifier: String ->
-                        tabNavigation.open(key = WarningDetailKey(warningIdentifier = warningIdentifier))
-                    },
-                    onFollowedPlacesClick = { tabNavigation.open(key = WarningPlacesKey) }
-                )
-            }
-        }
-        entry<WarningPlacesKey>(metadata = storyTransitions) {
-            SheetPage {
-                PlacesRoute(
-                    onBack = { tabNavigation.close(key = WarningPlacesKey) },
-                    navigationIcon = NavigationIcon.CLOSE
-                )
-            }
-        }
-        entry<WarningDetailKey>(metadata = detailTransitions) { warningDetailKey: WarningDetailKey ->
-            TabPage(paddingValues = tabPadding) {
-                WarningDetailRoute(
-                    warningIdentifier = warningDetailKey.warningIdentifier,
-                    onBack = { tabNavigation.close(key = warningDetailKey) }
-                )
-            }
-        }
-        entry<WarningStoryKey>(metadata = storyTransitions) { warningStoryKey: WarningStoryKey ->
-            WarningStoryRoute(
-                warningIdentifiers = warningStoryKey.warningIdentifiers,
-                onDismiss = { tabNavigation.close(key = warningStoryKey) }
-            )
-        }
-        entry<SimulatedWarningStoryKey>(metadata = storyTransitions) { simulatedWarningStoryKey: SimulatedWarningStoryKey ->
-            SimulatedWarningStoryRoute(
-                warningIdentifiers = simulatedWarningStoryKey.warningIdentifiers,
-                onDismiss = { tabNavigation.close(key = simulatedWarningStoryKey) }
-            )
-        }
-        if (radarTab != null) {
-            entry<RadarKey> {
-                TabPage(paddingValues = tabPadding) {
-                    radarTab.content { latitude: Double, longitude: Double, onDismiss: () -> Unit ->
-                        PlaceIslandRoute(
-                            latitude = latitude,
-                            longitude = longitude,
-                            onDismiss = onDismiss,
-                            onOpenForecast = {
-                                tabNavigation.openPlaceForecast(
-                                    placeForecastKey = PlaceForecastKey(
-                                        latitude = latitude,
-                                        longitude = longitude
-                                    )
-                                )
-                            },
-                            onOpenChosenLocation = {
-                                onDismiss()
-                                tabNavigation.openWeatherTab()
-                            }
-                        )
-                    }
-                }
-            }
-        }
-        entry<SettingsKey> {
-            TabPage(paddingValues = tabPadding) {
-                SettingsRoute(
-                    onPlacesClick = { tabNavigation.open(key = SettingsPlacesKey) },
-                    onSectionClick = { sectionKey: String -> tabNavigation.open(key = SettingsSectionKey(sectionKey = sectionKey)) },
-                    onPollenClick = { tabNavigation.open(key = SettingsPollenKey) },
-                    onLabsClick = { tabNavigation.open(key = SettingsLabsKey) },
-                    onDeveloperClick = { tabNavigation.open(key = SettingsDeveloperKey) },
-                    onAboutClick = { tabNavigation.open(key = SettingsAboutKey) },
-                    settingsSections = settingsSections
-                )
-            }
-        }
-        entry<SettingsPlacesKey>(metadata = detailTransitions) {
-            TabPage(paddingValues = tabPadding) {
-                PlacesRoute(onBack = { tabNavigation.close(key = SettingsPlacesKey) })
-            }
-        }
-        entry<SettingsSectionKey>(metadata = detailTransitions) { settingsSectionKey: SettingsSectionKey ->
-            TabPage(paddingValues = tabPadding) {
-                settingsSectionsByKey[settingsSectionKey.sectionKey]?.Content(onBack = { tabNavigation.close(key = settingsSectionKey) })
-            }
-        }
-        entry<SettingsPollenKey>(metadata = detailTransitions) {
-            TabPage(paddingValues = tabPadding) {
-                PollenSettingsRoute(onBack = { tabNavigation.close(key = SettingsPollenKey) })
-            }
-        }
-        entry<SettingsLabsKey>(metadata = detailTransitions) {
-            TabPage(paddingValues = tabPadding) {
-                LabsRoute(onBack = { tabNavigation.close(key = SettingsLabsKey) })
-            }
-        }
-        entry<SettingsAboutKey>(metadata = detailTransitions) {
-            TabPage(paddingValues = tabPadding) {
-                AboutRoute(
-                    onLicensesClick = { tabNavigation.open(key = SettingsLicensesKey) },
-                    onBack = { tabNavigation.close(key = SettingsAboutKey) }
-                )
-            }
-        }
-        entry<SettingsLicensesKey>(metadata = detailTransitions) {
-            TabPage(paddingValues = tabPadding) {
-                LicensesRoute(onBack = { tabNavigation.close(key = SettingsLicensesKey) })
-            }
-        }
-        entry<SettingsDeveloperKey>(metadata = detailTransitions) {
-            TabPage(paddingValues = tabPadding) {
-                DeveloperRoute(
-                    onSectionClick = { sectionKey: String -> tabNavigation.open(key = SettingsDeveloperSectionKey(sectionKey = sectionKey)) },
-                    onBack = { tabNavigation.close(key = SettingsDeveloperKey) },
+    val tabEntryProvider: (NavKey) -> NavEntry<NavKey> = { navKey: NavKey ->
+        val key: VadretKey = navKey as VadretKey
+        NavEntry(
+            key = navKey,
+            metadata = key.screenKind.transitions()
+        ) {
+            ComposePage(
+                screenKind = key.screenKind,
+                tabPadding = tabPadding
+            ) {
+                ScreenContent(
+                    key = key,
+                    appNavigator = tabNavigation,
+                    radarTab = radarTab,
+                    settingsSections = settingsSections,
                     developerSettingsSections = developerSettingsSections
                 )
-            }
-        }
-        entry<SettingsDeveloperSectionKey>(metadata = detailTransitions) { settingsDeveloperSectionKey: SettingsDeveloperSectionKey ->
-            TabPage(paddingValues = tabPadding) {
-                developerSettingsSectionsByKey[settingsDeveloperSectionKey.sectionKey]?.Content(onBack = { tabNavigation.close(key = settingsDeveloperSectionKey) })
             }
         }
     }
@@ -398,6 +236,29 @@ internal fun VadretApp(
                     modifier = Modifier.fillMaxSize()
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun ComposePage(
+    screenKind: ScreenKind,
+    tabPadding: PaddingValues,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    when (screenKind) {
+        ScreenKind.TAB, ScreenKind.DETAIL, ScreenKind.DETAIL_WITH_OWN_HEADER -> TabPage(
+            paddingValues = tabPadding,
+            modifier = modifier,
+            content = content
+        )
+        ScreenKind.SHEET -> SheetPage(
+            modifier = modifier,
+            content = content
+        )
+        ScreenKind.STORY -> Box(modifier = modifier) {
+            content()
         }
     }
 }
@@ -453,6 +314,13 @@ private fun instantTransition(): ContentTransform = EnterTransition.None togethe
 private fun slideDown(): ContentTransform = EnterTransition.None togetherWith slideOutVertically(targetOffsetY = { height: Int -> height })
 
 private fun slideOutToEnd(): ContentTransform = EnterTransition.None togetherWith slideOutHorizontally(targetOffsetX = { width: Int -> width })
+
+private fun ScreenKind.transitions(): Map<String, Any> =
+    when (this) {
+        ScreenKind.TAB -> emptyMap()
+        ScreenKind.DETAIL, ScreenKind.DETAIL_WITH_OWN_HEADER -> detailTransitions
+        ScreenKind.SHEET, ScreenKind.STORY -> storyTransitions
+    }
 
 private val storyTransitions: Map<String, Any> =
     NavDisplay.transitionSpec {

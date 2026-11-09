@@ -19,12 +19,18 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.ZeroCornerSize
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -40,6 +46,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
@@ -93,11 +100,15 @@ private const val DOCK_FADE_MILLISECONDS = 250
 private const val ATTRIBUTION_BACKGROUND_ALPHA = 0.85f
 private const val ATTRIBUTION_WEIGHT = 1f
 
+private val bottomBarInsets: WindowInsets
+    @Composable get() = WindowInsets.systemBars.only(sides = WindowInsetsSides.Bottom)
+
 @Composable
 fun RadarRoute(
     placeIsland: @Composable (latitude: Double, longitude: Double, onDismiss: () -> Unit) -> Unit,
     modifier: Modifier = Modifier,
     initialImageUrl: String? = null,
+    isDockFloating: Boolean = false,
     viewModel: RadarViewModel = koinViewModel()
 ) {
     val state: RadarState by viewModel.state.collectAsStateWithLifecycle()
@@ -108,6 +119,7 @@ fun RadarRoute(
         state = state,
         onEvent = viewModel::onEvent,
         placeIsland = placeIsland,
+        isDockFloating = isDockFloating,
         modifier = modifier
     )
 }
@@ -117,6 +129,7 @@ internal fun RadarScreen(
     state: RadarState,
     onEvent: (RadarEvent) -> Unit,
     placeIsland: @Composable (latitude: Double, longitude: Double, onDismiss: () -> Unit) -> Unit,
+    isDockFloating: Boolean,
     modifier: Modifier = Modifier
 ) {
     val snackbarHostState: SnackbarHostState = remember { SnackbarHostState() }
@@ -232,6 +245,7 @@ internal fun RadarScreen(
         RadarBottomPanel(
             state = state,
             onEvent = onEvent,
+            isDockFloating = isDockFloating,
             onDockHeightChanged = { height: Int -> dockHeight = height },
             pegman = {
                 PegmanButton(
@@ -268,7 +282,9 @@ internal fun RadarScreen(
         )
         SnackbarHost(
             hostState = snackbarHostState,
-            modifier = Modifier.align(alignment = Alignment.BottomCenter)
+            modifier = Modifier
+                .align(alignment = Alignment.BottomCenter)
+                .windowInsetsPadding(insets = bottomBarInsets)
         )
     }
 }
@@ -277,6 +293,7 @@ internal fun RadarScreen(
 private fun RadarBottomPanel(
     state: RadarState,
     onEvent: (RadarEvent) -> Unit,
+    isDockFloating: Boolean,
     onDockHeightChanged: (Int) -> Unit,
     pegman: @Composable () -> Unit,
     placeIsland: @Composable (Location) -> Unit,
@@ -341,13 +358,7 @@ private fun RadarBottomPanel(
             modifier = Modifier.fillMaxWidth()
         ) { location: Location? ->
             if (location != null) {
-                Box(
-                    modifier = dockModifier.padding(
-                        start = VadretTheme.spacing.medium,
-                        end = VadretTheme.spacing.medium,
-                        bottom = VadretTheme.spacing.medium
-                    )
-                ) {
+                Box(modifier = dockModifier.islandPadding()) {
                     placeIsland(location)
                 }
             } else {
@@ -356,11 +367,25 @@ private fun RadarBottomPanel(
                     enter = dockEnterTransition(isMotionEnabled = isMotionEnabled),
                     exit = ExitTransition.None
                 ) {
-                    RadarDock(
-                        state = state,
-                        onEvent = onEvent,
-                        modifier = dockModifier
-                    )
+                    if (isDockFloating) {
+                        Box(modifier = dockModifier.islandPadding()) {
+                            RadarDock(
+                                state = state,
+                                shape = VadretTheme.shapes.large,
+                                onEvent = onEvent
+                            )
+                        }
+                    } else {
+                        RadarDock(
+                            state = state,
+                            shape = VadretTheme.shapes.large.copy(
+                                bottomStart = ZeroCornerSize,
+                                bottomEnd = ZeroCornerSize
+                            ),
+                            onEvent = onEvent,
+                            modifier = dockModifier
+                        )
+                    }
                 }
             }
         }
@@ -370,6 +395,7 @@ private fun RadarBottomPanel(
 @Composable
 private fun RadarDock(
     state: RadarState,
+    shape: Shape,
     onEvent: (RadarEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -380,6 +406,7 @@ private fun RadarDock(
             selectedPollenId = state.selectedPollenId,
             dayText = state.pollenDayText,
             dateText = state.pollenDateText,
+            shape = shape,
             onPollenTypeSelected = { pollenId: String -> onEvent(RadarEvent.OnPollenTypeSelected(pollenId = pollenId)) },
             modifier = modifier
         )
@@ -388,12 +415,21 @@ private fun RadarDock(
             layer = state.layer,
             timeline = timeline,
             isPlaying = state.isPlaying,
+            shape = shape,
             onPlayClick = { onEvent(RadarEvent.OnPlayButtonClicked) },
             onIndexChange = { index: Int -> onEvent(RadarEvent.OnIndexChanged(index = index)) },
             modifier = modifier
         )
     }
 }
+
+@Composable
+private fun Modifier.islandPadding(): Modifier =
+    windowInsetsPadding(insets = bottomBarInsets).padding(
+        start = VadretTheme.spacing.medium,
+        end = VadretTheme.spacing.medium,
+        bottom = VadretTheme.spacing.medium
+    )
 
 private fun dockEnterTransition(isMotionEnabled: Boolean): EnterTransition =
     if (isMotionEnabled) {

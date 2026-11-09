@@ -18,65 +18,67 @@ import se.vadretapp.vadret.ui.resources.settings
 import se.vadretapp.vadret.ui.resources.warnings
 import se.vadretapp.vadret.ui.resources.weather
 
-@Serializable
-internal data object WeatherKey : NavKey
+internal sealed interface VadretKey : NavKey
 
 @Serializable
-internal data object PlaceSearchKey : NavKey
+internal data object WeatherKey : VadretKey
 
 @Serializable
-internal data object WarningKey : NavKey
+internal data object PlaceSearchKey : VadretKey
 
 @Serializable
-internal data class WarningDetailKey(val warningIdentifier: String) : NavKey
+internal data object WarningKey : VadretKey
 
 @Serializable
-internal data object WarningPlacesKey : NavKey
+internal data class WarningDetailKey(val warningIdentifier: String) : VadretKey
 
 @Serializable
-internal data class WarningStoryKey(val warningIdentifiers: List<String>) : NavKey
+internal data object WarningPlacesKey : VadretKey
 
 @Serializable
-internal data class SimulatedWarningStoryKey(val warningIdentifiers: List<String>) : NavKey
+internal data class WarningStoryKey(val warningIdentifiers: List<String>) : VadretKey
 
 @Serializable
-internal data object RadarKey : NavKey
+internal data class SimulatedWarningStoryKey(val warningIdentifiers: List<String>) : VadretKey
+
+@Serializable
+internal data object RadarKey : VadretKey
 
 @Serializable
 internal data class PlaceForecastKey(
     val latitude: Double,
     val longitude: Double
-) : NavKey
+) : VadretKey
 
 @Serializable
-internal data object SettingsKey : NavKey
+internal data object SettingsKey : VadretKey
 
 @Serializable
-internal data object SettingsPlacesKey : NavKey
+internal data object SettingsPlacesKey : VadretKey
 
 @Serializable
-internal data class SettingsSectionKey(val sectionKey: String) : NavKey
+internal data class SettingsSectionKey(val sectionKey: String) : VadretKey
 
 @Serializable
-internal data object SettingsPollenKey : NavKey
+internal data object SettingsPollenKey : VadretKey
 
 @Serializable
-internal data object SettingsLabsKey : NavKey
+internal data object SettingsLabsKey : VadretKey
 
 @Serializable
-internal data object SettingsAboutKey : NavKey
+internal data object SettingsAboutKey : VadretKey
 
 @Serializable
-internal data object SettingsLicensesKey : NavKey
+internal data object SettingsLicensesKey : VadretKey
 
 @Serializable
-internal data object SettingsDeveloperKey : NavKey
+internal data object SettingsDeveloperKey : VadretKey
 
 @Serializable
-internal data class SettingsDeveloperSectionKey(val sectionKey: String) : NavKey
+internal data class SettingsDeveloperSectionKey(val sectionKey: String) : VadretKey
 
 internal enum class TopLevelDestination(
-    val key: NavKey,
+    val key: VadretKey,
     val iconResource: DrawableResource,
     val selectedIconResource: DrawableResource,
     val labelResource: StringResource

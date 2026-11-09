@@ -234,6 +234,8 @@
     <string name="settings_language">Språk</string>
     <string name="settings_hourly_forecast">Timme för timme</string>
     <string name="settings_hourly_forecast_summary">Visa prognosen per timme</string>
+    <string name="settings_native_navigation">Liquid Glass</string>
+    <string name="settings_native_navigation_summary">Använd flikfältet och navigeringen i iOS. Gäller från nästa gång Vädret startar.</string>
     <string name="settings_about">Om Vädret</string>
     <string name="places_follow_position">Följ min position</string>
     <string name="places_follow_position_summary">Vädret uppdateras när du flyttar dig</string>

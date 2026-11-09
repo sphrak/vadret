@@ -37,4 +37,7 @@ internal class FailingSettingLocalDataSource(
     override suspend fun getHourFormatChoice(): String? = throw exception
     override fun observeHourFormatChoice(): Flow<String?> = flow { throw exception }
     override suspend fun setHourFormatChoice(value: String) = throw exception
+    override suspend fun getNativeNavigationEnabled(): Boolean? = throw exception
+    override fun observeNativeNavigationEnabled(): Flow<Boolean?> = flow { throw exception }
+    override suspend fun setNativeNavigationEnabled(value: Boolean) = throw exception
 }

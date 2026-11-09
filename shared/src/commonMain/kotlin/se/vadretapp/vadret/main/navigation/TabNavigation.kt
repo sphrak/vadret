@@ -10,7 +10,41 @@ private const val ROOT_SIZE = 1
 internal class TabNavigation(
     val tabHistory: NavBackStack<NavKey>,
     val tabBackStacks: Map<NavKey, NavBackStack<NavKey>>
-)
+) : AppNavigator {
+
+    // A second tap while a screen slides in would stack it twice, so a screen already on top is not opened again.
+    override fun open(key: VadretKey) {
+        val currentBackStack: NavBackStack<NavKey> = tabBackStacks.getValue(key = currentTabKey)
+        if (currentBackStack.last() != key) {
+            currentBackStack.add(element = key)
+        }
+    }
+
+    override fun close(key: VadretKey) {
+        val currentBackStack: NavBackStack<NavKey> = tabBackStacks.getValue(key = currentTabKey)
+        if (currentBackStack.last() == key && currentBackStack.size > ROOT_SIZE) {
+            currentBackStack.removeAt(index = currentBackStack.lastIndex)
+        }
+    }
+
+    override fun openPlaceForecast(placeForecastKey: PlaceForecastKey) {
+        openOnTab(
+            tabKey = WeatherKey,
+            key = placeForecastKey
+        )
+    }
+
+    // A place forecast is only opened from the map, so leaving it returns there.
+    override fun closePlaceForecast(placeForecastKey: PlaceForecastKey) {
+        close(key = placeForecastKey)
+        selectTab(tabKey = RadarKey)
+    }
+
+    override fun openWeatherTab() {
+        selectTab(tabKey = WeatherKey)
+        tabBackStacks.getValue(key = WeatherKey).popToRoot()
+    }
+}
 
 internal val TabNavigation.currentTabKey: NavKey
     get() = tabHistory.last()
@@ -30,14 +64,6 @@ internal fun TabNavigation.selectTab(tabKey: NavKey) {
     }
 }
 
-// A second tap while a screen slides in would stack it twice, so a screen already on top is not opened again.
-internal fun TabNavigation.open(key: NavKey) {
-    val currentBackStack: NavBackStack<NavKey> = tabBackStacks.getValue(key = currentTabKey)
-    if (currentBackStack.last() != key) {
-        currentBackStack.add(element = key)
-    }
-}
-
 // A screen opened from another tab is shown right on top of its own tab, whatever that tab showed before.
 private fun TabNavigation.openOnTab(
     tabKey: NavKey,
@@ -47,24 +73,6 @@ private fun TabNavigation.openOnTab(
     val tabBackStack: NavBackStack<NavKey> = tabBackStacks.getValue(key = tabKey)
     tabBackStack.popToRoot()
     tabBackStack.add(element = key)
-}
-
-internal fun TabNavigation.openPlaceForecast(placeForecastKey: PlaceForecastKey) {
-    openOnTab(
-        tabKey = WeatherKey,
-        key = placeForecastKey
-    )
-}
-
-internal fun TabNavigation.openWeatherTab() {
-    selectTab(tabKey = WeatherKey)
-    tabBackStacks.getValue(key = WeatherKey).popToRoot()
-}
-
-// A place forecast is only opened from the map, so leaving it returns there.
-internal fun TabNavigation.closePlaceForecast(placeForecastKey: PlaceForecastKey) {
-    close(key = placeForecastKey)
-    selectTab(tabKey = RadarKey)
 }
 
 // A place forecast returns to the map it was opened from, so the map lies right beneath it, where a back gesture
@@ -79,13 +87,6 @@ internal fun <T> TabNavigation.shownEntries(tabEntries: Map<NavKey, List<T>>): L
             entries
         }
     }
-
-internal fun TabNavigation.close(key: NavKey) {
-    val currentBackStack: NavBackStack<NavKey> = tabBackStacks.getValue(key = currentTabKey)
-    if (currentBackStack.last() == key && currentBackStack.size > ROOT_SIZE) {
-        currentBackStack.removeAt(index = currentBackStack.lastIndex)
-    }
-}
 
 internal fun TabNavigation.goBack() {
     val currentBackStack: NavBackStack<NavKey> = tabBackStacks.getValue(key = currentTabKey)

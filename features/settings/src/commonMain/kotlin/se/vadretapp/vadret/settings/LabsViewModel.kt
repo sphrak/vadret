@@ -15,14 +15,18 @@ import kotlinx.coroutines.sync.withLock
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.settings.model.Labs
 import se.vadretapp.vadret.settings.usecase.ObserveLabsTask
+import se.vadretapp.vadret.settings.usecase.ObserveNativeNavigationTask
 import se.vadretapp.vadret.settings.usecase.SetAuroraTask
 import se.vadretapp.vadret.settings.usecase.SetHourlyForecastTask
+import se.vadretapp.vadret.settings.usecase.SetNativeNavigationTask
 import kotlin.concurrent.atomics.AtomicBoolean
 
 class LabsViewModel internal constructor(
     private val observeLabsTask: ObserveLabsTask,
     private val setHourlyForecastTask: SetHourlyForecastTask,
     private val setAuroraTask: SetAuroraTask,
+    private val observeNativeNavigationTask: ObserveNativeNavigationTask,
+    private val setNativeNavigationTask: SetNativeNavigationTask,
     private val coroutineDispatcher: CoroutineDispatcher
 ) : ViewModel() {
 
@@ -37,6 +41,7 @@ class LabsViewModel internal constructor(
             LabsEvent.OnStart -> onStart()
             is LabsEvent.OnHourlyForecastToggled -> store { setHourlyForecastTask(isHourlyForecastEnabled = event.isHourlyForecastEnabled) }
             is LabsEvent.OnAuroraToggled -> store { setAuroraTask(isAuroraEnabled = event.isAuroraEnabled) }
+            is LabsEvent.OnNativeNavigationToggled -> store { setNativeNavigationTask(isNativeNavigationEnabled = event.isNativeNavigationEnabled) }
             LabsEvent.OnFailureDismissed -> state.update { state: LabsState -> state.copy(failure = null) }
         }
     }
@@ -44,6 +49,7 @@ class LabsViewModel internal constructor(
     private fun onStart() {
         if (isStarted.compareAndSet(expectedValue = false, newValue = true)) {
             viewModelScope.launch(context = coroutineDispatcher) { observeLabs() }
+            viewModelScope.launch(context = coroutineDispatcher) { observeNativeNavigation() }
         }
     }
 
@@ -54,6 +60,17 @@ class LabsViewModel internal constructor(
                 onError = { failure: Failure -> showFailure(failure = failure) },
                 onSuccess = { storedLabs: Labs ->
                     state.update { state: LabsState -> state.copy(labs = storedLabs) }
+                }
+            )
+        }
+    }
+
+    private suspend fun observeNativeNavigation() {
+        observeNativeNavigationTask().collect { nativeNavigation: Either<Failure, Boolean> ->
+            nativeNavigation.onResult(
+                onError = { failure: Failure -> showFailure(failure = failure) },
+                onSuccess = { isNativeNavigationEnabled: Boolean ->
+                    state.update { state: LabsState -> state.copy(isNativeNavigationEnabled = isNativeNavigationEnabled) }
                 }
             )
         }

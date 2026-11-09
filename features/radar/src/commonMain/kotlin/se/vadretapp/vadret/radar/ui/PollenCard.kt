@@ -9,6 +9,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Shape
 import kotlinx.collections.immutable.ImmutableList
 import se.vadretapp.vadret.pollen.model.PollenType
 import se.vadretapp.vadret.radar.model.RadarLayer
@@ -22,10 +23,14 @@ internal fun PollenCard(
     selectedPollenId: String?,
     dayText: String?,
     dateText: String?,
+    shape: Shape,
     onPollenTypeSelected: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    TimelineCardSurface(modifier = modifier) {
+    TimelineCardSurface(
+        shape = shape,
+        modifier = modifier
+    ) {
         if (dayText != null && dateText != null) {
             Row(modifier = Modifier.fillMaxWidth()) {
                 Text(

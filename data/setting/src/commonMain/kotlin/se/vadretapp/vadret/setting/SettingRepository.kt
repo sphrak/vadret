@@ -22,6 +22,9 @@ interface SettingRepository {
     suspend fun getHourFormatChoice(): Either<Failure, HourFormatChoice>
     fun observeHourFormatChoice(): Flow<Either<Failure, HourFormatChoice>>
     suspend fun setHourFormatChoice(hourFormatChoice: HourFormatChoice): Either<Failure, Unit>
+    suspend fun isNativeNavigationEnabled(): Either<Failure, Boolean>
+    fun observeNativeNavigationEnabled(): Flow<Either<Failure, Boolean>>
+    suspend fun setNativeNavigationEnabled(isEnabled: Boolean): Either<Failure, Unit>
     fun getSystemSettings(): Either<Failure, SystemSettings>
     fun observeSystemSettings(): Flow<Either<Failure, SystemSettings>>
 }

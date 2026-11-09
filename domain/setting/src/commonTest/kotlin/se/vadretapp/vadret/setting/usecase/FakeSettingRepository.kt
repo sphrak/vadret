@@ -33,6 +33,9 @@ internal class FakeSettingRepository(
     override suspend fun getHourFormatChoice(): Either<Failure, HourFormatChoice> = hourFormatChoice.value
     override fun observeHourFormatChoice(): Flow<Either<Failure, HourFormatChoice>> = hourFormatChoice
     override suspend fun setHourFormatChoice(hourFormatChoice: HourFormatChoice): Either<Failure, Unit> = error("The tasks never change the clock")
+    override suspend fun isNativeNavigationEnabled(): Either<Failure, Boolean> = error("The tasks never read the navigation")
+    override fun observeNativeNavigationEnabled(): Flow<Either<Failure, Boolean>> = error("The tasks never read the navigation")
+    override suspend fun setNativeNavigationEnabled(isEnabled: Boolean): Either<Failure, Unit> = error("The tasks never change the navigation")
     override fun getSystemSettings(): Either<Failure, SystemSettings> = systemSettings.value
     override fun observeSystemSettings(): Flow<Either<Failure, SystemSettings>> = systemSettings
 }

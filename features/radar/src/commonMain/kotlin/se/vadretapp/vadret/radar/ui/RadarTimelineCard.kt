@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.ZeroCornerSize
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -20,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.dp
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -103,11 +103,15 @@ internal fun RadarTimelineCard(
     layer: RadarLayer,
     timeline: RadarTimeline,
     isPlaying: Boolean,
+    shape: Shape,
     onPlayClick: () -> Unit,
     onIndexChange: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    TimelineCardSurface(modifier = modifier) {
+    TimelineCardSurface(
+        shape = shape,
+        modifier = modifier
+    ) {
         Row(
             horizontalArrangement = Arrangement.spacedBy(space = cardSectionSpacing),
             verticalAlignment = Alignment.CenterVertically
@@ -128,14 +132,12 @@ internal fun RadarTimelineCard(
 
 @Composable
 internal fun TimelineCardSurface(
+    shape: Shape,
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
 ) {
     Surface(
-        shape = VadretTheme.shapes.large.copy(
-            bottomStart = ZeroCornerSize,
-            bottomEnd = ZeroCornerSize
-        ),
+        shape = shape,
         color = VadretTheme.colorScheme.surface,
         shadowElevation = cardElevation,
         modifier = modifier.fillMaxWidth()

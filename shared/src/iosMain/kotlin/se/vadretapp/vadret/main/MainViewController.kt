@@ -5,7 +5,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.uikit.LocalUIViewController
 import androidx.compose.ui.window.ComposeUIViewController
-import platform.UIKit.UIUserInterfaceStyle
 import platform.UIKit.UIViewController
 import se.vadretapp.vadret.di.LocalKoin
 import se.vadretapp.vadret.di.koinApplication
@@ -13,7 +12,7 @@ import se.vadretapp.vadret.radar.ui.RadarMapHost
 import se.vadretapp.vadret.radar.ui.RadarRoute
 import se.vadretapp.vadret.setting.model.Theme
 
-private val radarTab = RadarTab(
+private val radarTab: RadarTab = RadarTab(
     host = { content: @Composable () -> Unit -> RadarMapHost(content = content) },
     content = { placeIsland: @Composable (latitude: Double, longitude: Double, onDismiss: () -> Unit) -> Unit ->
         RadarRoute(placeIsland = placeIsland)
@@ -37,13 +36,3 @@ private fun InterfaceStyleEffect(theme: Theme) {
         viewController.overrideUserInterfaceStyle = theme.toInterfaceStyle()
     }
 }
-
-// Following the system leaves the style unset, since an override would also hide the system's own switches
-// from the app.
-private fun Theme.toInterfaceStyle(): UIUserInterfaceStyle =
-    when (this) {
-        Theme.LIGHT -> UIUserInterfaceStyle.UIUserInterfaceStyleLight
-        Theme.DARK -> UIUserInterfaceStyle.UIUserInterfaceStyleDark
-        Theme.AMOLED -> UIUserInterfaceStyle.UIUserInterfaceStyleDark
-        Theme.SYSTEM -> UIUserInterfaceStyle.UIUserInterfaceStyleUnspecified
-    }

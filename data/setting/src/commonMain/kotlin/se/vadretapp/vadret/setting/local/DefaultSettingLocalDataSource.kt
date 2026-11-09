@@ -2,6 +2,7 @@ package se.vadretapp.vadret.setting.local
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
@@ -12,6 +13,7 @@ import kotlinx.coroutines.flow.map
 private val themeKey: Preferences.Key<String> = stringPreferencesKey(name = "theme")
 private val languageKey: Preferences.Key<String> = stringPreferencesKey(name = "language")
 private val hourFormatKey: Preferences.Key<String> = stringPreferencesKey(name = "hour_format")
+private val nativeNavigationKey: Preferences.Key<Boolean> = booleanPreferencesKey(name = "native_navigation")
 
 internal class DefaultSettingLocalDataSource(
     private val dataStore: DataStore<Preferences>
@@ -44,16 +46,25 @@ internal class DefaultSettingLocalDataSource(
         value = value
     )
 
-    private suspend fun get(key: Preferences.Key<String>): String? = dataStore.data.first()[key]
+    override suspend fun getNativeNavigationEnabled(): Boolean? = get(key = nativeNavigationKey)
 
-    private fun observe(key: Preferences.Key<String>): Flow<String?> =
+    override fun observeNativeNavigationEnabled(): Flow<Boolean?> = observe(key = nativeNavigationKey)
+
+    override suspend fun setNativeNavigationEnabled(value: Boolean) = set(
+        key = nativeNavigationKey,
+        value = value
+    )
+
+    private suspend fun <T> get(key: Preferences.Key<T>): T? = dataStore.data.first()[key]
+
+    private fun <T> observe(key: Preferences.Key<T>): Flow<T?> =
         dataStore.data
             .map { preferences: Preferences -> preferences[key] }
             .distinctUntilChanged()
 
-    private suspend fun set(
-        key: Preferences.Key<String>,
-        value: String
+    private suspend fun <T> set(
+        key: Preferences.Key<T>,
+        value: T
     ) {
         dataStore.edit { preferences ->
             preferences[key] = value

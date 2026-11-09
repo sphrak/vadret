@@ -12,4 +12,7 @@ internal interface SettingLocalDataSource {
     suspend fun getHourFormatChoice(): String?
     fun observeHourFormatChoice(): Flow<String?>
     suspend fun setHourFormatChoice(value: String)
+    suspend fun getNativeNavigationEnabled(): Boolean?
+    fun observeNativeNavigationEnabled(): Flow<Boolean?>
+    suspend fun setNativeNavigationEnabled(value: Boolean)
 }

@@ -23,6 +23,7 @@ import se.vadretapp.vadret.settings.usecase.DefaultSetExpandOnceTask
 import se.vadretapp.vadret.settings.usecase.DefaultSetHourFormatChoiceTask
 import se.vadretapp.vadret.settings.usecase.DefaultSetHourlyForecastTask
 import se.vadretapp.vadret.settings.usecase.DefaultSetLanguageTask
+import se.vadretapp.vadret.settings.usecase.DefaultSetNativeNavigationTask
 import se.vadretapp.vadret.settings.usecase.DefaultSetPollenAllergenTask
 import se.vadretapp.vadret.settings.usecase.DefaultSetPollenEnabledTask
 import se.vadretapp.vadret.settings.usecase.DefaultSetThemeTask
@@ -32,6 +33,7 @@ import se.vadretapp.vadret.settings.usecase.GetLibrariesTask
 import se.vadretapp.vadret.settings.usecase.GetSettingsTask
 import se.vadretapp.vadret.settings.usecase.ObserveDeveloperModeTask
 import se.vadretapp.vadret.settings.usecase.ObserveLabsTask
+import se.vadretapp.vadret.settings.usecase.ObserveNativeNavigationTask
 import se.vadretapp.vadret.settings.usecase.ObservePollenTypesTask
 import se.vadretapp.vadret.settings.usecase.SetAuroraTask
 import se.vadretapp.vadret.settings.usecase.SetEndOfSeasonSimulatedTask
@@ -39,6 +41,7 @@ import se.vadretapp.vadret.settings.usecase.SetExpandOnceTask
 import se.vadretapp.vadret.settings.usecase.SetHourFormatChoiceTask
 import se.vadretapp.vadret.settings.usecase.SetHourlyForecastTask
 import se.vadretapp.vadret.settings.usecase.SetLanguageTask
+import se.vadretapp.vadret.settings.usecase.SetNativeNavigationTask
 import se.vadretapp.vadret.settings.usecase.SetPollenAllergenTask
 import se.vadretapp.vadret.settings.usecase.SetPollenEnabledTask
 import se.vadretapp.vadret.settings.usecase.SetThemeTask
@@ -51,11 +54,13 @@ val settingsModule: Module = module {
     factoryOf(::DefaultGetSettingsTask) { bind<GetSettingsTask>() }
     factoryOf(::DefaultObserveDeveloperModeTask) { bind<ObserveDeveloperModeTask>() }
     factoryOf(::DefaultObserveLabsTask) { bind<ObserveLabsTask>() }
+    factory<ObserveNativeNavigationTask> { ObserveNativeNavigationTask(settingRepository = get()) }
     factoryOf(::DefaultSetAuroraTask) { bind<SetAuroraTask>() }
     factoryOf(::DefaultSetEndOfSeasonSimulatedTask) { bind<SetEndOfSeasonSimulatedTask>() }
     factoryOf(::DefaultSetExpandOnceTask) { bind<SetExpandOnceTask>() }
     factoryOf(::DefaultSetHourlyForecastTask) { bind<SetHourlyForecastTask>() }
     factoryOf(::DefaultSetHourFormatChoiceTask) { bind<SetHourFormatChoiceTask>() }
+    factoryOf(::DefaultSetNativeNavigationTask) { bind<SetNativeNavigationTask>() }
     factoryOf(::DefaultSetLanguageTask) { bind<SetLanguageTask>() }
     factoryOf(::DefaultSetPollenAllergenTask) { bind<SetPollenAllergenTask>() }
     factoryOf(::DefaultSetPollenEnabledTask) { bind<SetPollenEnabledTask>() }

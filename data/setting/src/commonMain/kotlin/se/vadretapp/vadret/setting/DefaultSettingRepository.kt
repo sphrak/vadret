@@ -23,6 +23,8 @@ import se.vadretapp.vadret.setting.model.SystemSettings
 import se.vadretapp.vadret.setting.model.SystemSettingsEntity
 import se.vadretapp.vadret.setting.model.Theme
 
+private const val IS_NATIVE_NAVIGATION_ENABLED_BY_DEFAULT = false
+
 internal class DefaultSettingRepository(
     private val settingLocalDataSource: SettingLocalDataSource,
     private val systemSettingLocalDataSource: SystemSettingLocalDataSource
@@ -67,6 +69,20 @@ internal class DefaultSettingRepository(
         either { settingLocalDataSource.setHourFormatChoice(value = hourFormatChoice.toPreferenceValue()) }
             .catch { exception: Exception -> exception.toFailure() }
 
+    override suspend fun isNativeNavigationEnabled(): Either<Failure, Boolean> =
+        either { settingLocalDataSource.getNativeNavigationEnabled().isNativeNavigationEnabled() }
+            .catch { exception: Exception -> exception.toFailure() }
+
+    override fun observeNativeNavigationEnabled(): Flow<Either<Failure, Boolean>> =
+        settingLocalDataSource
+            .observeNativeNavigationEnabled()
+            .map<Boolean?, Either<Failure, Boolean>> { value: Boolean? -> value.isNativeNavigationEnabled().asRight() }
+            .catchToFailure()
+
+    override suspend fun setNativeNavigationEnabled(isEnabled: Boolean): Either<Failure, Unit> =
+        either { settingLocalDataSource.setNativeNavigationEnabled(value = isEnabled) }
+            .catch { exception: Exception -> exception.toFailure() }
+
     override fun getSystemSettings(): Either<Failure, SystemSettings> =
         either { systemSettingLocalDataSource.getSystemSettings().toSystemSettings() }
             .catch { exception: Exception -> exception.toFailure() }
@@ -77,6 +93,8 @@ internal class DefaultSettingRepository(
             .map<SystemSettingsEntity, Either<Failure, SystemSettings>> { systemSettingsEntity: SystemSettingsEntity ->
                 systemSettingsEntity.toSystemSettings().asRight()
             }.catchToFailure()
+
+    private fun Boolean?.isNativeNavigationEnabled(): Boolean = this ?: IS_NATIVE_NAVIGATION_ENABLED_BY_DEFAULT
 
     private fun <T> Flow<String?>.toSetting(parse: (String?) -> T): Flow<Either<Failure, T>> =
         map<String?, Either<Failure, T>> { value: String? -> parse(value).asRight() }.catchToFailure()

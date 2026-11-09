@@ -130,6 +130,18 @@ internal class FakeSettingRepository(
         this.hourFormatChoice = hourFormatChoice.asRight()
         return Unit.asRight()
     }
+    val nativeNavigation: MutableStateFlow<Either<Failure, Boolean>> = MutableStateFlow(value = false.asRight())
+    var nativeNavigationWriteFailure: Failure? = null
+    override suspend fun isNativeNavigationEnabled(): Either<Failure, Boolean> = nativeNavigation.value
+    override fun observeNativeNavigationEnabled(): Flow<Either<Failure, Boolean>> = nativeNavigation
+    override suspend fun setNativeNavigationEnabled(isEnabled: Boolean): Either<Failure, Unit> {
+        val writeFailure: Failure? = nativeNavigationWriteFailure
+        if (writeFailure != null) {
+            return writeFailure.asLeft()
+        }
+        nativeNavigation.value = isEnabled.asRight()
+        return Unit.asRight()
+    }
     override fun getSystemSettings(): Either<Failure, SystemSettings> = error("Settings only show the choices")
     override fun observeSystemSettings(): Flow<Either<Failure, SystemSettings>> = error("Settings only show the choices")
 }

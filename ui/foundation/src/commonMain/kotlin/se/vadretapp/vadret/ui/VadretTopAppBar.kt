@@ -28,6 +28,9 @@ fun VadretTopAppBar(
     navigationIcon: NavigationIcon = NavigationIcon.BACK,
     actions: @Composable RowScope.() -> Unit = {}
 ) {
+    if (LocalNativeNavigationBar.current) {
+        return
+    }
     TopAppBar(
         title = {
             Text(

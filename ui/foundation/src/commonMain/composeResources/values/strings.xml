@@ -303,6 +303,8 @@
     <string name="settings_language">Language</string>
     <string name="settings_hourly_forecast">Hour by hour</string>
     <string name="settings_hourly_forecast_summary">Show the forecast by the hour</string>
+    <string name="settings_native_navigation">Liquid Glass</string>
+    <string name="settings_native_navigation_summary">Use the tab bar and navigation of iOS. Takes effect the next time Vädret starts.</string>
     <string name="settings_about">About Vädret</string>
     <string name="places_follow_position">Follow my position</string>
     <string name="places_follow_position_summary">Vädret updates as you move</string>

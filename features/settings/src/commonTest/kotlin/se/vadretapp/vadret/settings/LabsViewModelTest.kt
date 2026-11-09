@@ -15,8 +15,12 @@ import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.settings.model.Labs
 import se.vadretapp.vadret.settings.usecase.DefaultObserveLabsTask
+import se.vadretapp.vadret.settings.usecase.DefaultObserveNativeNavigationTask
 import se.vadretapp.vadret.settings.usecase.DefaultSetAuroraTask
 import se.vadretapp.vadret.settings.usecase.DefaultSetHourlyForecastTask
+import se.vadretapp.vadret.settings.usecase.DefaultSetNativeNavigationTask
+import se.vadretapp.vadret.settings.usecase.ObserveNativeNavigationTask
+import se.vadretapp.vadret.settings.usecase.UnavailableObserveNativeNavigationTask
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -29,6 +33,7 @@ class LabsViewModelTest {
     private val testDispatcher: TestDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(context = testDispatcher)
     private val forecastPreferenceRepository = FakeForecastPreferenceRepository()
+    private val settingRepository = FakeSettingRepository()
 
     @BeforeTest
     fun setUp() {
@@ -40,11 +45,15 @@ class LabsViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun viewModel(): LabsViewModel {
+    private fun viewModel(
+        observeNativeNavigationTask: ObserveNativeNavigationTask = DefaultObserveNativeNavigationTask(settingRepository = settingRepository)
+    ): LabsViewModel {
         val labsViewModel = LabsViewModel(
             observeLabsTask = DefaultObserveLabsTask(forecastPreferenceRepository = forecastPreferenceRepository),
             setHourlyForecastTask = DefaultSetHourlyForecastTask(forecastPreferenceRepository = forecastPreferenceRepository),
             setAuroraTask = DefaultSetAuroraTask(forecastPreferenceRepository = forecastPreferenceRepository),
+            observeNativeNavigationTask = observeNativeNavigationTask,
+            setNativeNavigationTask = DefaultSetNativeNavigationTask(settingRepository = settingRepository),
             coroutineDispatcher = testDispatcher
         )
         labsViewModel.onEvent(event = LabsEvent.OnStart)
@@ -111,7 +120,7 @@ class LabsViewModelTest {
         }
 
     @Test
-    fun `a setting that cannot be read shows no switch but says why`() =
+    fun `an hourly forecast setting that cannot be read shows no switch for it but says why`() =
         testScope.runTest {
             forecastPreferenceRepository.forecastPreferences.value = Failure(errorCode = ErrorCode.STORAGE_FAILED).asLeft()
 
@@ -119,7 +128,76 @@ class LabsViewModelTest {
             advanceUntilIdle()
 
             assertEquals(
-                expected = LabsState(failure = Failure(errorCode = ErrorCode.STORAGE_FAILED)),
+                expected = LabsState(
+                    isNativeNavigationEnabled = false,
+                    failure = Failure(errorCode = ErrorCode.STORAGE_FAILED)
+                ),
+                actual = labsViewModel.state.value
+            )
+        }
+
+    @Test
+    fun `turning native navigation on and off is stored and shown`() =
+        testScope.runTest {
+            val labsViewModel: LabsViewModel = viewModel()
+            advanceUntilIdle()
+            val shown = mutableListOf<Boolean?>(labsViewModel.state.value.isNativeNavigationEnabled)
+
+            listOf(true, false).forEach { isNativeNavigationEnabled: Boolean ->
+                labsViewModel.onEvent(event = LabsEvent.OnNativeNavigationToggled(isNativeNavigationEnabled = isNativeNavigationEnabled))
+                advanceUntilIdle()
+                shown += labsViewModel.state.value.isNativeNavigationEnabled
+            }
+
+            assertEquals(expected = listOf<Boolean?>(false, true, false), actual = shown)
+            assertEquals(expected = false, actual = settingRepository.nativeNavigation.value.successOrNull)
+        }
+
+    @Test
+    fun `a platform without native navigation shows no switch for it`() =
+        testScope.runTest {
+            val labsViewModel: LabsViewModel = viewModel(observeNativeNavigationTask = UnavailableObserveNativeNavigationTask())
+            advanceUntilIdle()
+
+            assertEquals(
+                expected = LabsState(labs = Labs(isHourlyForecastEnabled = false, isAuroraEnabled = false)),
+                actual = labsViewModel.state.value
+            )
+        }
+
+    @Test
+    fun `a native navigation choice that cannot be read shows no switch for it but says why`() =
+        testScope.runTest {
+            settingRepository.nativeNavigation.value = Failure(errorCode = ErrorCode.STORAGE_FAILED).asLeft()
+
+            val labsViewModel: LabsViewModel = viewModel()
+            advanceUntilIdle()
+
+            assertEquals(
+                expected = LabsState(
+                    labs = Labs(isHourlyForecastEnabled = false, isAuroraEnabled = false),
+                    failure = Failure(errorCode = ErrorCode.STORAGE_FAILED)
+                ),
+                actual = labsViewModel.state.value
+            )
+        }
+
+    @Test
+    fun `a native navigation toggle that cannot be stored keeps the switch as it was and says why`() =
+        testScope.runTest {
+            settingRepository.nativeNavigationWriteFailure = Failure(errorCode = ErrorCode.STORAGE_FAILED)
+            val labsViewModel: LabsViewModel = viewModel()
+            advanceUntilIdle()
+
+            labsViewModel.onEvent(event = LabsEvent.OnNativeNavigationToggled(isNativeNavigationEnabled = true))
+            advanceUntilIdle()
+
+            assertEquals(
+                expected = LabsState(
+                    labs = Labs(isHourlyForecastEnabled = false, isAuroraEnabled = false),
+                    isNativeNavigationEnabled = false,
+                    failure = Failure(errorCode = ErrorCode.STORAGE_FAILED)
+                ),
                 actual = labsViewModel.state.value
             )
         }
@@ -149,13 +227,18 @@ class LabsViewModelTest {
                 expected = listOf(
                     LabsState(
                         labs = storedLabs,
+                        isNativeNavigationEnabled = false,
                         failure = Failure(errorCode = ErrorCode.STORAGE_FAILED)
                     ),
                     LabsState(
                         labs = storedLabs,
+                        isNativeNavigationEnabled = false,
                         failure = Failure(errorCode = ErrorCode.STORAGE_FAILED)
                     ),
-                    LabsState(labs = storedLabs)
+                    LabsState(
+                        labs = storedLabs,
+                        isNativeNavigationEnabled = false
+                    )
                 ),
                 actual = listOf(
                     shownForHourlyForecast,
