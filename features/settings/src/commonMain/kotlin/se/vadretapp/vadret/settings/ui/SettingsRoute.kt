@@ -28,7 +28,6 @@ import se.vadretapp.vadret.settings.SettingsViewModel
 import se.vadretapp.vadret.settings.extension.labelResource
 import se.vadretapp.vadret.ui.ChoiceDialog
 import se.vadretapp.vadret.ui.SettingsRow
-import se.vadretapp.vadret.ui.SettingsRowDivider
 import se.vadretapp.vadret.ui.SettingsRowIcon
 import se.vadretapp.vadret.ui.SettingsRowSeparator
 import se.vadretapp.vadret.ui.SettingsSection
@@ -56,18 +55,15 @@ import se.vadretapp.vadret.ui.resources.theme
 
 private const val PLACES_KEY = "places"
 private const val POLLEN_KEY = "pollen"
-private const val DISPLAY_DIVIDER_KEY = "display-divider"
 private const val THEME_KEY = "theme"
 private const val LANGUAGE_KEY = "language"
 private const val HOUR_FORMAT_KEY = "hour-format"
-private const val ABOUT_DIVIDER_KEY = "about-divider"
 private const val LABS_KEY = "labs"
 private const val DEVELOPER_KEY = "developer"
 private const val ABOUT_KEY = "about"
 
 private enum class SettingsContentType {
-    ROW,
-    DIVIDER
+    ROW
 }
 
 @Composable
@@ -173,16 +169,15 @@ private fun SettingsList(
             }
         }
         item(key = POLLEN_KEY, contentType = SettingsContentType.ROW) {
-            SettingsRow(
-                title = stringResource(resource = Res.string.pollen),
-                onClick = onPollenClick,
-                leadingContent = { SettingsRowIcon(icon = VadretIcons.Alert.Pollen) }
-            )
+            SeparatedRow {
+                SettingsRow(
+                    title = stringResource(resource = Res.string.pollen),
+                    onClick = onPollenClick,
+                    leadingContent = { SettingsRowIcon(icon = VadretIcons.Alert.Pollen) }
+                )
+            }
         }
         if (settings != null) {
-            item(key = DISPLAY_DIVIDER_KEY, contentType = SettingsContentType.DIVIDER) {
-                SettingsRowDivider()
-            }
             item(key = THEME_KEY, contentType = SettingsContentType.ROW) {
                 SeparatedRow {
                     SettingsRow(
@@ -204,16 +199,15 @@ private fun SettingsList(
                 }
             }
             item(key = HOUR_FORMAT_KEY, contentType = SettingsContentType.ROW) {
-                SettingsRow(
-                    title = stringResource(resource = Res.string.hour_format),
-                    summary = stringResource(resource = settings.hourFormatChoice.labelResource()),
-                    iconResource = Res.drawable.ic_schedule,
-                    onClick = { onEvent(SettingsEvent.OnHourFormatRowClicked) }
-                )
+                SeparatedRow {
+                    SettingsRow(
+                        title = stringResource(resource = Res.string.hour_format),
+                        summary = stringResource(resource = settings.hourFormatChoice.labelResource()),
+                        iconResource = Res.drawable.ic_schedule,
+                        onClick = { onEvent(SettingsEvent.OnHourFormatRowClicked) }
+                    )
+                }
             }
-        }
-        item(key = ABOUT_DIVIDER_KEY, contentType = SettingsContentType.DIVIDER) {
-            SettingsRowDivider()
         }
         item(key = LABS_KEY, contentType = SettingsContentType.ROW) {
             SeparatedRow {
@@ -245,7 +239,7 @@ private fun SettingsList(
     }
 }
 
-// A row followed by another row of its group, so a line under its text sets it apart from the next.
+// A row followed by another row, so a line under its text sets it apart from the next while the icons stay one unbroken column.
 @Composable
 private fun SeparatedRow(
     modifier: Modifier = Modifier,
