@@ -1,28 +1,29 @@
 package se.vadretapp.vadret.forecastwarning.ui
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.collections.immutable.ImmutableList
@@ -33,6 +34,9 @@ import se.vadretapp.vadret.forecastwarning.model.WarningDetail
 import se.vadretapp.vadret.forecastwarning.model.WarningItem
 import se.vadretapp.vadret.icons.VadretIcon
 import se.vadretapp.vadret.icons.VadretIconGraphic
+import se.vadretapp.vadret.ui.HourChartSlice
+import se.vadretapp.vadret.ui.HourColumn
+import se.vadretapp.vadret.ui.HourLabel
 import se.vadretapp.vadret.ui.VadretTheme
 import se.vadretapp.vadret.ui.WarningColors
 import se.vadretapp.vadret.ui.elapsedTimeText
@@ -58,11 +62,11 @@ private val factLabelSpacing = 3.dp
 private val dividerWidth = 1.dp
 private val iconSpacing = 16.dp
 private val levelIconSize = 48.dp
-private val hourSpacing = 12.dp
-private val hourBarWidth = 16.dp
-private val hourBarMaxHeight = 48.dp
-private val hourBarShape = RoundedCornerShape(size = 2.dp)
-private const val MAXIMUM_SCORE = 100f
+private val hourLabelVerticalPadding = 4.dp
+private val auroraChartHeight = 64.dp
+private val auroraLineTop = 20.dp
+private val auroraLineRange = 36.dp
+private const val AURORA_HOUR_CONTENT_TYPE = "aurora-hour"
 private const val DIVIDER_ALPHA = 0.2f
 private const val OPAQUE = 1f
 private const val EXPANDED = 0f
@@ -216,6 +220,7 @@ private fun WarningDetailFact(
         is WarningDetail.Hourly -> HourlyFact(
             label = stringResource(resource = warningDetail.labelResource),
             auroraHourItems = warningDetail.auroraHourItems,
+            firstShownHourIndex = warningDetail.firstShownHourIndex,
             modifier = modifier
         )
     }
@@ -225,8 +230,10 @@ private fun WarningDetailFact(
 private fun HourlyFact(
     label: String,
     auroraHourItems: ImmutableList<AuroraHourItem>,
+    firstShownHourIndex: Int,
     modifier: Modifier = Modifier
 ) {
+    val textMeasurer: TextMeasurer = rememberTextMeasurer()
     Column(
         verticalArrangement = Arrangement.spacedBy(space = factLabelSpacing),
         modifier = modifier.padding(bottom = factSpacing)
@@ -236,56 +243,60 @@ private fun HourlyFact(
             style = VadretTheme.textStyles.listItem.copy(fontWeight = FontWeight.Bold),
             color = VadretTheme.colorScheme.onSurface
         )
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(space = hourSpacing),
-            modifier = Modifier.horizontalScroll(state = rememberScrollState())
+        LazyRow(
+            state = rememberLazyListState(initialFirstVisibleItemIndex = firstShownHourIndex),
+            modifier = Modifier.fillMaxWidth()
         ) {
-            auroraHourItems.forEach { auroraHourItem: AuroraHourItem ->
-                AuroraHour(auroraHourItem = auroraHourItem)
+            itemsIndexed(
+                items = auroraHourItems,
+                key = { _: Int, auroraHourItem: AuroraHourItem -> auroraHourItem.key },
+                contentType = { _: Int, _: AuroraHourItem -> AURORA_HOUR_CONTENT_TYPE }
+            ) { index: Int, _: AuroraHourItem ->
+                AuroraHourColumn(
+                    auroraHourItems = auroraHourItems,
+                    index = index,
+                    textMeasurer = textMeasurer
+                )
             }
         }
     }
 }
 
 @Composable
-private fun AuroraHour(
-    auroraHourItem: AuroraHourItem,
+private fun AuroraHourColumn(
+    auroraHourItems: ImmutableList<AuroraHourItem>,
+    index: Int,
+    textMeasurer: TextMeasurer,
     modifier: Modifier = Modifier
 ) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(space = factLabelSpacing),
+    val auroraHourItem: AuroraHourItem = auroraHourItems[index]
+    val scoreText: String = stringResource(
+        resource = Res.string.aurora_hour_score,
+        auroraHourItem.score
+    )
+    HourColumn(
+        isNow = auroraHourItem.isNow,
         modifier = modifier
     ) {
-        Text(
-            text = stringResource(
-                resource = Res.string.aurora_hour_score,
-                auroraHourItem.score
-            ),
-            style = VadretTheme.textStyles.listItem,
-            color = VadretTheme.colorScheme.onSurface
+        HourLabel(
+            timeText = auroraHourItem.hourText,
+            isNow = auroraHourItem.isNow,
+            modifier = Modifier.padding(vertical = hourLabelVerticalPadding)
         )
-        Box(
-            contentAlignment = Alignment.BottomCenter,
-            modifier = Modifier.size(
-                width = hourBarWidth,
-                height = hourBarMaxHeight
-            )
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight(fraction = auroraHourItem.score / MAXIMUM_SCORE)
-                    .background(
-                        color = VadretTheme.colorScheme.primary,
-                        shape = hourBarShape
-                    )
-            )
-        }
-        Text(
-            text = auroraHourItem.hourText,
-            style = VadretTheme.textStyles.listItem,
-            color = VadretTheme.colorScheme.onSurfaceVariant
+        HourChartSlice(
+            hours = auroraHourItems,
+            index = index,
+            level = { shownHour: AuroraHourItem -> shownHour.level },
+            lineColor = VadretTheme.colorScheme.primary,
+            lineTop = auroraLineTop,
+            lineRange = auroraLineRange,
+            labelText = scoreText,
+            labelStyle = VadretTheme.textStyles.detailLabelStrong,
+            labelColor = VadretTheme.colorScheme.onSurface,
+            textMeasurer = textMeasurer,
+            modifier = Modifier
+                .height(height = auroraChartHeight)
+                .semantics { contentDescription = scoreText }
         )
     }
 }

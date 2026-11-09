@@ -179,6 +179,7 @@ class WarningStoryViewModel internal constructor(
                         hourFormat = shownTextLocale.hourFormat
                     ).withAuroraHours(
                         auroraHours = shownAuroraHours[aggregatedFeed.identifier].orEmpty(),
+                        now = clock.now(),
                         timeZone = TimeZone.currentSystemDefault(),
                         languageTag = shownTextLocale.languageTag,
                         hourFormat = shownTextLocale.hourFormat

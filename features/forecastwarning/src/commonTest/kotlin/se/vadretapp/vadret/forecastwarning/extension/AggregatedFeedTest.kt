@@ -264,6 +264,7 @@ class AggregatedFeedTest {
                     score = 72
                 )
             ),
+            now = now,
             timeZone = stockholm,
             languageTag = ENGLISH,
             hourFormat = HourFormat.TWENTY_FOUR_HOUR
@@ -275,14 +276,21 @@ class AggregatedFeedTest {
                     labelResource = Res.string.aurora_hours_label,
                     auroraHourItems = persistentListOf(
                         AuroraHourItem(
+                            key = "aurora-hour-2026-10-26T20:00:00Z",
+                            isNow = false,
                             hourText = "21",
-                            score = 55
+                            score = 55,
+                            level = 0.55f
                         ),
                         AuroraHourItem(
+                            key = "aurora-hour-2026-10-26T21:00:00Z",
+                            isNow = false,
                             hourText = "22",
-                            score = 72
+                            score = 72,
+                            level = 0.72f
                         )
-                    )
+                    ),
+                    firstShownHourIndex = 0
                 ),
                 WarningDetail.Explained(
                     labelResource = Res.string.slipperiness_estimate_label,
@@ -290,6 +298,44 @@ class AggregatedFeedTest {
                 )
             ),
             actual = warningItem.details
+        )
+    }
+
+    @Test
+    fun `during an aurora night the current hour is marked now and shown first`() {
+        val warningItem: WarningItem = aggregatedFeed(
+            identifier = "vadret-aurora-u6sce-2026-10-26-HIGH",
+            source = FeedSource.VADRET_API
+        ).copy(aurora = AURORA).toWarningItem(
+            now = now,
+            timeZone = stockholm,
+            languageTag = ENGLISH,
+            hourFormat = HourFormat.TWENTY_FOUR_HOUR
+        ).withAuroraHours(
+            auroraHours = listOf(
+                AuroraHour(
+                    time = Instant.parse(input = "2026-10-26T20:00:00Z"),
+                    score = 55
+                ),
+                AuroraHour(
+                    time = Instant.parse(input = "2026-10-26T21:00:00Z"),
+                    score = 72
+                ),
+                AuroraHour(
+                    time = Instant.parse(input = "2026-10-26T22:00:00Z"),
+                    score = 64
+                )
+            ),
+            now = Instant.parse(input = "2026-10-26T21:59:59Z"),
+            timeZone = stockholm,
+            languageTag = ENGLISH,
+            hourFormat = HourFormat.TWENTY_FOUR_HOUR
+        )
+
+        val hourly: WarningDetail.Hourly = warningItem.details.first() as WarningDetail.Hourly
+        assertEquals(
+            expected = listOf(false, true, false) to 1,
+            actual = hourly.auroraHourItems.map { auroraHourItem: AuroraHourItem -> auroraHourItem.isNow } to hourly.firstShownHourIndex
         )
     }
 

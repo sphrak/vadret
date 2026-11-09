@@ -1,4 +1,4 @@
-package se.vadretapp.vadret.weatherforecast.ui
+package se.vadretapp.vadret.ui
 
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,7 +24,6 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.collections.immutable.ImmutableList
-import se.vadretapp.vadret.weatherforecast.model.ComingHour
 
 private const val FIRST_INDEX = 0
 private const val FULL_LEVEL = 1f
@@ -40,10 +39,10 @@ private val labelCenterAbovePoint = 11.dp
 private val arrowSize = 12.dp
 private val arrowSpacing = 1.dp
 
-private class SlicePoints(
-    private val hours: ImmutableList<ComingHour>,
+private class SlicePoints<T>(
+    private val hours: ImmutableList<T>,
     private val index: Int,
-    private val level: (ComingHour) -> Float,
+    private val level: (T) -> Float,
     private val columnWidth: Float,
     private val lineTop: Float,
     private val lineRange: Float
@@ -64,10 +63,10 @@ private class SlicePoints(
 }
 
 @Composable
-internal fun HourChartSlice(
-    hours: ImmutableList<ComingHour>,
+fun <T> HourChartSlice(
+    hours: ImmutableList<T>,
     index: Int,
-    level: (ComingHour) -> Float,
+    level: (T) -> Float,
     lineColor: Color,
     lineTop: Dp,
     lineRange: Dp,
@@ -165,7 +164,7 @@ internal fun HourChartSlice(
     )
 }
 
-private fun SlicePoints.line(): Path {
+private fun SlicePoints<*>.line(): Path {
     val path = Path()
     path.moveTo(
         x = x(pointIndex = firstIndex),
@@ -184,7 +183,7 @@ private fun SlicePoints.line(): Path {
     return path
 }
 
-private fun SlicePoints.area(
+private fun SlicePoints<*>.area(
     line: Path,
     bottom: Float
 ): Path {

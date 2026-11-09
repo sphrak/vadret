@@ -26,6 +26,7 @@ internal sealed interface WarningDetail {
 
     data class Hourly(
         val labelResource: StringResource,
-        val auroraHourItems: ImmutableList<AuroraHourItem>
+        val auroraHourItems: ImmutableList<AuroraHourItem>,
+        val firstShownHourIndex: Int
     ) : WarningDetail
 }

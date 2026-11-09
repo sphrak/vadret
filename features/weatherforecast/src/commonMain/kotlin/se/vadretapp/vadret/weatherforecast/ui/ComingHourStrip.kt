@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -33,24 +32,24 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import se.vadretapp.vadret.icons.VadretIcon
 import se.vadretapp.vadret.setting.model.Theme
+import se.vadretapp.vadret.ui.HourChartSlice
+import se.vadretapp.vadret.ui.HourColumn
+import se.vadretapp.vadret.ui.HourLabel
 import se.vadretapp.vadret.ui.ThemePreviewParameterProvider
 import se.vadretapp.vadret.ui.VadretTheme
+import se.vadretapp.vadret.ui.hourColumnBottomPadding
 import se.vadretapp.vadret.ui.resources.Res
 import se.vadretapp.vadret.ui.resources.degree
 import se.vadretapp.vadret.ui.resources.ic_north
 import se.vadretapp.vadret.ui.resources.m_s
-import se.vadretapp.vadret.ui.resources.now
 import se.vadretapp.vadret.ui.resources.temperature
 import se.vadretapp.vadret.ui.resources.wind_in_meters_per_second
 import se.vadretapp.vadret.weatherforecast.model.ComingHour
 
 private const val HOUR_CONTENT_TYPE = "coming-hour"
 private const val SINGLE_LINE = 1
-private val hourColumnWidth = 46.dp
 private val hourCellContentSpacing = 5.dp
 private val hourCellVerticalPadding = 4.dp
-private val nowHourCornerRadius = 12.dp
-private val nowHourShape = RoundedCornerShape(size = nowHourCornerRadius)
 private val hourIconSize = 22.dp
 private val temperatureLegendSpacing = 6.dp
 private val temperatureChartHeight = 64.dp
@@ -118,20 +117,9 @@ private fun ComingHourColumn(
     val comingHour: ComingHour = hours[index]
     val temperatureText = "${comingHour.temperatureText}${stringResource(resource = Res.string.degree)}"
     val windDescription = "${stringResource(resource = comingHour.windDirectionResource)} ${comingHour.windSpeedText} ${stringResource(resource = Res.string.m_s)}"
-    val highlightColor: Color = if (comingHour.isNow) {
-        VadretTheme.colorScheme.secondaryContainer
-    } else {
-        Color.Transparent
-    }
-    Column(
+    HourColumn(
+        isNow = comingHour.isNow,
         modifier = modifier
-            .width(width = hourColumnWidth)
-            .background(
-                color = highlightColor,
-                shape = nowHourShape
-            )
-            .padding(bottom = nowHourCornerRadius)
-            .semantics(mergeDescendants = true) {}
     ) {
         ComingHourCell(comingHour = comingHour)
         HourChartSlice(
@@ -183,21 +171,10 @@ private fun ComingHourCell(
             .fillMaxWidth()
             .padding(vertical = hourCellVerticalPadding)
     ) {
-        if (comingHour.isNow) {
-            Text(
-                text = stringResource(resource = Res.string.now),
-                style = VadretTheme.textStyles.labelStrong,
-                color = VadretTheme.colorScheme.onSurface,
-                maxLines = SINGLE_LINE
-            )
-        } else {
-            Text(
-                text = comingHour.timeText,
-                style = VadretTheme.textStyles.label,
-                color = VadretTheme.colorScheme.onSurfaceVariant,
-                maxLines = SINGLE_LINE
-            )
-        }
+        HourLabel(
+            timeText = comingHour.timeText,
+            isNow = comingHour.isNow
+        )
         VadretIcon(
             icon = comingHour.icon,
             contentDescription = stringResource(resource = comingHour.descriptionResource),
@@ -229,7 +206,7 @@ private fun ChartLegends(
             title = stringResource(resource = Res.string.wind_in_meters_per_second),
             color = windColor
         )
-        Spacer(modifier = Modifier.height(height = windChartHeight + nowHourCornerRadius))
+        Spacer(modifier = Modifier.height(height = windChartHeight + hourColumnBottomPadding))
     }
 }
 

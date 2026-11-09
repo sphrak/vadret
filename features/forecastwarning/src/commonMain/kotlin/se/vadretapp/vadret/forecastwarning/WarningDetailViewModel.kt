@@ -129,6 +129,7 @@ class WarningDetailViewModel internal constructor(
                         hourFormat = shownTextLocale.hourFormat
                     )?.withAuroraHours(
                         auroraHours = auroraHours.load(),
+                        now = clock.now(),
                         timeZone = TimeZone.currentSystemDefault(),
                         languageTag = shownTextLocale.languageTag,
                         hourFormat = shownTextLocale.hourFormat
