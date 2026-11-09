@@ -1,5 +1,6 @@
 package se.vadretapp.vadret.weatherforecast
 
+import io.github.sphrak.either.Either
 import io.github.sphrak.either.extension.asLeft
 import io.github.sphrak.either.extension.asRight
 import kotlinx.collections.immutable.persistentListOf
@@ -36,6 +37,7 @@ import se.vadretapp.vadret.ui.resources.data_not_available_at_this_location
 import se.vadretapp.vadret.ui.resources.unhandled_error
 import se.vadretapp.vadret.warning.model.WarningPlace
 import se.vadretapp.vadret.weatherforecast.model.ComingDay
+import se.vadretapp.vadret.weatherforecast.model.DayToShow
 import se.vadretapp.vadret.weatherforecast.model.Forecast
 import se.vadretapp.vadret.weatherforecast.model.ForecastDay
 import se.vadretapp.vadret.weatherforecast.model.ForecastView
@@ -693,15 +695,9 @@ class WeatherForecastViewModelTest {
         }
 
     @Test
-    fun `a day clicked in the week opens in the days view until it has been shown`() =
+    fun `a day clicked in the week is scrolled to in the days view before it opens`() =
         testScope.runTest {
-            weatherForecastRepository.forecasts = listOf(
-                noon,
-                noon.copy(
-                    validAt = noon.validAt + 1.days,
-                    intervalStartedAt = noon.intervalStartedAt + 1.days
-                )
-            ).asRight()
+            weatherForecastRepository.forecasts = twoDays()
             forecastPreferenceRepository.setHourlyForecastEnabled(isEnabled = true)
             weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnShown)
             advanceUntilIdle()
@@ -711,14 +707,83 @@ class WeatherForecastViewModelTest {
 
             weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnWeekDayClicked(dayKey = "coming-day-2026-10-25"))
             advanceUntilIdle()
+
             val clicked: WeatherForecastState = weatherForecastViewModel.state.value
-            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnDayShown)
+            assertEquals(expected = listOf(false, false), actual = expansion())
+            assertEquals(expected = ForecastView.DAYS, actual = clicked.forecastView)
+            assertEquals(
+                expected = DayToShow(
+                    dayKey = "coming-day-2026-10-25",
+                    isScrolledTo = false
+                ),
+                actual = clicked.dayToShow
+            )
+        }
+
+    @Test
+    fun `a day scrolled to opens and is let go once shown`() =
+        testScope.runTest {
+            weatherForecastRepository.forecasts = twoDays()
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnShown)
+            advanceUntilIdle()
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnWeekDayClicked(dayKey = "coming-day-2026-10-25"))
             advanceUntilIdle()
 
-            assertEquals(expected = listOf(false, true), actual = clicked.forecast.comingDays.map { comingDay: ComingDay -> comingDay.isExpanded })
-            assertEquals(expected = ForecastView.DAYS, actual = clicked.forecastView)
-            assertEquals(expected = "coming-day-2026-10-25", actual = clicked.dayKeyToShow)
-            assertEquals(expected = listOf(false, true) to null, actual = expansion() to weatherForecastViewModel.state.value.dayKeyToShow)
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnDayScrolledTo(dayKey = "coming-day-2026-10-25"))
+            advanceUntilIdle()
+            val scrolledTo: WeatherForecastState = weatherForecastViewModel.state.value
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnDayShown(dayKey = "coming-day-2026-10-25"))
+            advanceUntilIdle()
+
+            assertEquals(
+                expected = DayToShow(
+                    dayKey = "coming-day-2026-10-25",
+                    isScrolledTo = true
+                ),
+                actual = scrolledTo.dayToShow
+            )
+            assertEquals(expected = listOf(false, true), actual = expansion())
+            assertEquals(expected = null, actual = weatherForecastViewModel.state.value.dayToShow)
+        }
+
+    @Test
+    fun `with expand once off a day clicked in the week leaves the open days open`() =
+        testScope.runTest {
+            weatherForecastRepository.forecasts = twoDays()
+            forecastPreferenceRepository.setExpandOnceEnabled(isEnabled = false)
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnShown)
+            advanceUntilIdle()
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnDayToggled(dayKey = "coming-day-2026-10-24"))
+            advanceUntilIdle()
+
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnWeekDayClicked(dayKey = "coming-day-2026-10-25"))
+            advanceUntilIdle()
+            val clicked: List<Boolean> = expansion()
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnDayScrolledTo(dayKey = "coming-day-2026-10-25"))
+            advanceUntilIdle()
+
+            assertEquals(
+                expected = listOf(true, false) to listOf(true, true),
+                actual = clicked to expansion()
+            )
+        }
+
+    @Test
+    fun `a late answer for a day clicked before another changes nothing`() =
+        testScope.runTest {
+            weatherForecastRepository.forecasts = twoDays()
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnShown)
+            advanceUntilIdle()
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnWeekDayClicked(dayKey = "coming-day-2026-10-24"))
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnWeekDayClicked(dayKey = "coming-day-2026-10-25"))
+            advanceUntilIdle()
+            val clicked: WeatherForecastState = weatherForecastViewModel.state.value
+
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnDayScrolledTo(dayKey = "coming-day-2026-10-24"))
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnDayShown(dayKey = "coming-day-2026-10-24"))
+            advanceUntilIdle()
+
+            assertEquals(expected = clicked, actual = weatherForecastViewModel.state.value)
         }
 
     @Test
@@ -731,20 +796,20 @@ class WeatherForecastViewModelTest {
 
             weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnWeekDayClicked(dayKey = "coming-day-2026-10-24"))
             advanceUntilIdle()
+            val clicked: List<Boolean> = expansion()
+            weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnDayScrolledTo(dayKey = "coming-day-2026-10-24"))
+            advanceUntilIdle()
 
-            assertEquals(expected = listOf(true), actual = expansion())
+            assertEquals(
+                expected = listOf(true) to listOf(true),
+                actual = clicked to expansion()
+            )
         }
 
     @Test
     fun `the week is made from the coming days of the one fetched forecast`() =
         testScope.runTest {
-            weatherForecastRepository.forecasts = listOf(
-                noon,
-                noon.copy(
-                    validAt = noon.validAt + 1.days,
-                    intervalStartedAt = noon.intervalStartedAt + 1.days
-                )
-            ).asRight()
+            weatherForecastRepository.forecasts = twoDays()
             weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnShown)
             advanceUntilIdle()
 
@@ -1051,6 +1116,15 @@ class WeatherForecastViewModelTest {
             )
         )
     }
+
+    private fun twoDays(): Either<Failure, List<Forecast>> =
+        listOf(
+            noon,
+            noon.copy(
+                validAt = noon.validAt + 1.days,
+                intervalStartedAt = noon.intervalStartedAt + 1.days
+            )
+        ).asRight()
 
     private fun expansion(): List<Boolean> =
         weatherForecastViewModel.state.value.forecast.comingDays.map { comingDay: ComingDay ->

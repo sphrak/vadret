@@ -24,7 +24,8 @@ sealed interface WeatherForecastEvent {
     data class OnForecastViewSelected(val forecastView: ForecastView) : WeatherForecastEvent
     data class OnDayToggled(val dayKey: String) : WeatherForecastEvent
     data class OnWeekDayClicked(val dayKey: String) : WeatherForecastEvent
-    data object OnDayShown : WeatherForecastEvent
+    data class OnDayScrolledTo(val dayKey: String) : WeatherForecastEvent
+    data class OnDayShown(val dayKey: String) : WeatherForecastEvent
     data class OnLocationPermissionResult(val isGranted: Boolean) : WeatherForecastEvent
     data object OnAutomaticLocationClicked : WeatherForecastEvent
     data class OnFavoriteClicked(val favorite: Favorite) : WeatherForecastEvent

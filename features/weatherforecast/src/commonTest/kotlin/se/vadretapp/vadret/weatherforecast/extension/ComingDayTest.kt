@@ -133,6 +133,36 @@ class ComingDayTest {
     }
 
     @Test
+    fun `a day clicked in the week closes the others first only with expand once`() {
+        val bothOpen: List<ComingDay> = listOf(
+            monday.copy(isExpanded = true),
+            tuesday.copy(isExpanded = true)
+        )
+
+        assertEquals(
+            expected = listOf(false, true) to listOf(true, true),
+            actual = bothOpen.withOtherDaysClosed(
+                dayKey = tuesday.key,
+                isExpandOnceEnabled = true
+            ).expansion() to bothOpen.withOtherDaysClosed(
+                dayKey = tuesday.key,
+                isExpandOnceEnabled = false
+            ).expansion()
+        )
+    }
+
+    @Test
+    fun `closing the others leaves a closed clicked day closed`() {
+        assertEquals(
+            expected = listOf(false, false),
+            actual = listOf(monday.copy(isExpanded = true), tuesday).withOtherDaysClosed(
+                dayKey = tuesday.key,
+                isExpandOnceEnabled = true
+            ).expansion()
+        )
+    }
+
+    @Test
     fun `the week holds the first seven coming days`() {
         val comingWeek: ComingWeek? = comingDays(
             firstDate = LocalDate(

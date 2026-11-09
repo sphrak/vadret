@@ -24,8 +24,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -34,6 +37,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
@@ -42,6 +47,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.collections.immutable.ImmutableList
@@ -50,6 +56,7 @@ import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import se.vadretapp.vadret.icons.VadretIcon
 import se.vadretapp.vadret.setting.model.Theme
+import se.vadretapp.vadret.ui.LocalScrollBottomInset
 import se.vadretapp.vadret.ui.ThemePreviewParameterProvider
 import se.vadretapp.vadret.ui.VadretCard
 import se.vadretapp.vadret.ui.VadretTheme
@@ -62,6 +69,7 @@ import se.vadretapp.vadret.ui.resources.ic_expand_more
 import se.vadretapp.vadret.ui.resources.millimeter
 import se.vadretapp.vadret.ui.resources.today
 import se.vadretapp.vadret.weatherforecast.model.ComingDay
+import se.vadretapp.vadret.weatherforecast.model.DayToShow
 
 private const val COLLAPSED_DEGREES = 0f
 private const val EXPANDED_DEGREES = 180f
@@ -71,6 +79,7 @@ private const val FIRST_DAY_INDEX = 0
 private const val EXPANDED_STATE_LAYER_ALPHA = 0.04f
 private const val NO_STATE_LAYER_ALPHA = 0f
 private const val NO_WIDTH = 0f
+private const val NO_HEIGHT = 0
 
 private val headerInset = 4.dp
 private val cardShape = RoundedCornerShape(size = 21.dp)
@@ -117,11 +126,20 @@ internal fun ComingDaysHeader(
 @Composable
 internal fun ComingDaysCard(
     comingDays: ImmutableList<ComingDay>,
-    dayKeyToShow: String?,
+    dayToShow: DayToShow?,
+    isInPlace: Boolean,
     onDayToggled: (String) -> Unit,
-    onDayShown: () -> Unit,
+    onDayScrolledTo: (String) -> Unit,
+    onDayShown: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val expansions: List<Transition<Boolean>> = comingDays.map { comingDay: ComingDay ->
+        key(comingDay.key) {
+            updateTransition(targetState = comingDay.isExpanded)
+        }
+    }
+    // A day is only scrolled to or opened while nothing moves, so each step starts where the last one came to rest.
+    val isSettled: Boolean = isInPlace && expansions.all { expansion: Transition<Boolean> -> expansion.isSettled() }
     VadretCard(
         modifier = modifier,
         shape = cardShape
@@ -136,9 +154,12 @@ internal fun ComingDaysCard(
                 }
                 ComingDayItem(
                     comingDay = comingDay,
-                    isShown = comingDay.key == dayKeyToShow,
+                    expansion = expansions[index],
+                    dayToShow = dayToShow,
+                    isSettled = isSettled,
                     onDayToggled = onDayToggled,
-                    onShown = onDayShown,
+                    onDayScrolledTo = onDayScrolledTo,
+                    onDayShown = onDayShown,
                     edgeTopPadding = cardVerticalPadding.onlyOnEdge(isEdge = index == FIRST_DAY_INDEX),
                     edgeBottomPadding = cardVerticalPadding.onlyOnEdge(isEdge = index == comingDays.lastIndex)
                 )
@@ -150,19 +171,23 @@ internal fun ComingDaysCard(
 @Composable
 private fun ComingDayItem(
     comingDay: ComingDay,
-    isShown: Boolean,
+    expansion: Transition<Boolean>,
+    dayToShow: DayToShow?,
+    isSettled: Boolean,
     onDayToggled: (String) -> Unit,
-    onShown: () -> Unit,
+    onDayScrolledTo: (String) -> Unit,
+    onDayShown: (String) -> Unit,
     edgeTopPadding: Dp,
     edgeBottomPadding: Dp,
     modifier: Modifier = Modifier
 ) {
     val bringIntoViewRequester: BringIntoViewRequester = remember { BringIntoViewRequester() }
-    val expansion: Transition<Boolean> = updateTransition(targetState = comingDay.isExpanded)
+    var dayHeight: Int by remember { mutableIntStateOf(value = NO_HEIGHT) }
     Column(
         modifier = modifier
             .fillMaxWidth()
             .bringIntoViewRequester(bringIntoViewRequester = bringIntoViewRequester)
+            .onSizeChanged { size: IntSize -> dayHeight = size.height }
             .padding(bottom = edgeBottomPadding)
     ) {
         ComingDayRow(
@@ -178,23 +203,33 @@ private fun ComingDayItem(
             )
         }
     }
-    // The day is scrolled to once its hours are open, so the scroll can reach a last day that only fits after it grew.
-    if (isShown && expansion.currentState && !expansion.isRunning) {
-        ShowDayEffect(
-            bringIntoViewRequester = bringIntoViewRequester,
-            onShown = onShown
-        )
+    if (isSettled && dayToShow != null && dayToShow.dayKey == comingDay.key) {
+        if (dayToShow.isScrolledTo) {
+            RevealDayEffect(
+                bringIntoViewRequester = bringIntoViewRequester,
+                dayHeight = { dayHeight },
+                onRevealed = { onDayShown(comingDay.key) }
+            )
+        } else {
+            ScrollToDayEffect(
+                bringIntoViewRequester = bringIntoViewRequester,
+                onScrolled = { onDayScrolledTo(comingDay.key) }
+            )
+        }
     }
 }
 
+private fun Transition<Boolean>.isSettled(): Boolean = currentState == targetState && !isRunning
+
 // An area as tall as the window from the day's top never fits below it, so the list lines the day up with its top.
+// A scroll stopped short, by the end of the list or a finger, still counts as done so the day opens anyway.
 @Composable
-private fun ShowDayEffect(
+private fun ScrollToDayEffect(
     bringIntoViewRequester: BringIntoViewRequester,
-    onShown: () -> Unit
+    onScrolled: () -> Unit
 ) {
     val windowHeight: Int = LocalWindowInfo.current.containerSize.height
-    val currentOnShown: () -> Unit by rememberUpdatedState(newValue = onShown)
+    val currentOnScrolled: () -> Unit by rememberUpdatedState(newValue = onScrolled)
     LaunchedEffect(bringIntoViewRequester) {
         try {
             bringIntoViewRequester.bringIntoView(
@@ -207,7 +242,35 @@ private fun ShowDayEffect(
                 )
             )
         } finally {
-            currentOnShown()
+            currentOnScrolled()
+        }
+    }
+}
+
+// Opening a day near the end of the list can push its hours below the edge or under the bar drawn over the list, so only then is the list moved.
+@Composable
+private fun RevealDayEffect(
+    bringIntoViewRequester: BringIntoViewRequester,
+    dayHeight: () -> Int,
+    onRevealed: () -> Unit
+) {
+    val bottomInset: Float = with(receiver = LocalDensity.current) {
+        LocalScrollBottomInset.current.toPx()
+    }
+    val currentOnRevealed: () -> Unit by rememberUpdatedState(newValue = onRevealed)
+    LaunchedEffect(bringIntoViewRequester) {
+        try {
+            bringIntoViewRequester.bringIntoView(
+                rect = Rect(
+                    offset = Offset.Zero,
+                    size = Size(
+                        width = NO_WIDTH,
+                        height = dayHeight() + bottomInset
+                    )
+                )
+            )
+        } finally {
+            currentOnRevealed()
         }
     }
 }
@@ -344,8 +407,10 @@ private fun ComingDaysCardPreview(
     VadretTheme(theme = theme) {
         ComingDaysCard(
             comingDays = comingDaysPreview(),
-            dayKeyToShow = null,
+            dayToShow = null,
+            isInPlace = true,
             onDayToggled = {},
+            onDayScrolledTo = {},
             onDayShown = {},
             modifier = Modifier
                 .background(color = VadretTheme.colorScheme.background)

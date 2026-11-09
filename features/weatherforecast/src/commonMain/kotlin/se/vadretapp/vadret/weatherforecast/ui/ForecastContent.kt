@@ -1,6 +1,7 @@
 package se.vadretapp.vadret.weatherforecast.ui
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.EnterExitState
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.TweenSpec
@@ -21,6 +22,7 @@ import kotlinx.collections.immutable.ImmutableList
 import se.vadretapp.vadret.ui.VadretTheme
 import se.vadretapp.vadret.weatherforecast.WeatherForecastEvent
 import se.vadretapp.vadret.weatherforecast.model.ComingDay
+import se.vadretapp.vadret.weatherforecast.model.DayToShow
 import se.vadretapp.vadret.weatherforecast.model.ForecastDay
 import se.vadretapp.vadret.weatherforecast.model.ForecastView
 import se.vadretapp.vadret.weatherforecast.model.WeatherForecast
@@ -42,7 +44,7 @@ private val slideSpec: TweenSpec<IntOffset> = tween(
 internal fun ForecastContent(
     forecastView: ForecastView,
     forecast: WeatherForecast,
-    dayKeyToShow: String?,
+    dayToShow: DayToShow?,
     onEvent: (WeatherForecastEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -75,7 +77,8 @@ internal fun ForecastContent(
         when (shownForecastView) {
             ForecastView.DAYS -> ComingDaysContent(
                 comingDays = forecast.comingDays,
-                dayKeyToShow = dayKeyToShow,
+                dayToShow = dayToShow,
+                isInPlace = transition.currentState == EnterExitState.Visible && transition.targetState == EnterExitState.Visible,
                 onEvent = onEvent
             )
             ForecastView.HOURS -> ForecastDaysContent(forecastDays = forecast.days)
@@ -86,7 +89,8 @@ internal fun ForecastContent(
 @Composable
 private fun ComingDaysContent(
     comingDays: ImmutableList<ComingDay>,
-    dayKeyToShow: String?,
+    dayToShow: DayToShow?,
+    isInPlace: Boolean,
     onEvent: (WeatherForecastEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -100,11 +104,17 @@ private fun ComingDaysContent(
         // ComingDaysHeader(dayCount = comingDays.size)
         ComingDaysCard(
             comingDays = comingDays,
-            dayKeyToShow = dayKeyToShow,
+            dayToShow = dayToShow,
+            isInPlace = isInPlace,
             onDayToggled = { dayKey: String ->
                 onEvent(WeatherForecastEvent.OnDayToggled(dayKey = dayKey))
             },
-            onDayShown = { onEvent(WeatherForecastEvent.OnDayShown) }
+            onDayScrolledTo = { dayKey: String ->
+                onEvent(WeatherForecastEvent.OnDayScrolledTo(dayKey = dayKey))
+            },
+            onDayShown = { dayKey: String ->
+                onEvent(WeatherForecastEvent.OnDayShown(dayKey = dayKey))
+            }
         )
     }
 }

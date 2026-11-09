@@ -47,7 +47,9 @@ import se.vadretapp.vadret.weatherforecast.extension.withDayExpanded
 import se.vadretapp.vadret.weatherforecast.extension.withDayToggled
 import se.vadretapp.vadret.weatherforecast.extension.withForecast
 import se.vadretapp.vadret.weatherforecast.extension.withNameTaken
+import se.vadretapp.vadret.weatherforecast.extension.withOtherDaysClosed
 import se.vadretapp.vadret.weatherforecast.extension.withoutName
+import se.vadretapp.vadret.weatherforecast.model.DayToShow
 import se.vadretapp.vadret.weatherforecast.model.ForecastView
 import se.vadretapp.vadret.weatherforecast.model.PlaceForecast
 import se.vadretapp.vadret.weatherforecast.model.PlaceNaming
@@ -140,9 +142,8 @@ class WeatherForecastViewModel internal constructor(
             }
             is WeatherForecastEvent.OnDayToggled -> onDayToggled(dayKey = event.dayKey)
             is WeatherForecastEvent.OnWeekDayClicked -> onWeekDayClicked(dayKey = event.dayKey)
-            WeatherForecastEvent.OnDayShown -> state.update { state: WeatherForecastState ->
-                state.copy(dayKeyToShow = null)
-            }
+            is WeatherForecastEvent.OnDayScrolledTo -> onDayScrolledTo(dayKey = event.dayKey)
+            is WeatherForecastEvent.OnDayShown -> onDayShown(dayKey = event.dayKey)
             is WeatherForecastEvent.OnLocationPermissionResult -> onLocationPermissionResult(isGranted = event.isGranted)
             WeatherForecastEvent.OnAutomaticLocationClicked -> state.update { state: WeatherForecastState ->
                 state.copy(isLocationPermissionRequested = true)
@@ -169,14 +170,50 @@ class WeatherForecastViewModel internal constructor(
         viewModelScope.launch(context = coroutineDispatcher) {
             state.update { state: WeatherForecastState ->
                 state.withComingDays(
-                    comingDays = state.forecast.comingDays.withDayExpanded(
+                    comingDays = state.forecast.comingDays.withOtherDaysClosed(
                         dayKey = dayKey,
                         isExpandOnceEnabled = isExpandOnceEnabled.load()
                     )
                 ).copy(
                     forecastView = ForecastView.DAYS,
-                    dayKeyToShow = dayKey
+                    dayToShow = DayToShow(
+                        dayKey = dayKey,
+                        isScrolledTo = false
+                    )
                 )
+            }
+        }
+    }
+
+    // A late answer for a day no longer being shown, such as one clicked before another, is ignored.
+    private fun onDayScrolledTo(dayKey: String) {
+        viewModelScope.launch(context = coroutineDispatcher) {
+            state.update { state: WeatherForecastState ->
+                if (state.dayToShow?.dayKey == dayKey) {
+                    state.withComingDays(
+                        comingDays = state.forecast.comingDays.withDayExpanded(
+                            dayKey = dayKey,
+                            isExpandOnceEnabled = isExpandOnceEnabled.load()
+                        )
+                    ).copy(
+                        dayToShow = DayToShow(
+                            dayKey = dayKey,
+                            isScrolledTo = true
+                        )
+                    )
+                } else {
+                    state
+                }
+            }
+        }
+    }
+
+    private fun onDayShown(dayKey: String) {
+        state.update { state: WeatherForecastState ->
+            if (state.dayToShow?.dayKey == dayKey) {
+                state.copy(dayToShow = null)
+            } else {
+                state
             }
         }
     }

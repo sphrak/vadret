@@ -236,7 +236,7 @@ private fun LazyListScope.forecast(
             modifier = Modifier.animateItem(),
             forecastView = state.forecastView,
             forecast = state.forecast,
-            dayKeyToShow = state.dayKeyToShow,
+            dayToShow = state.dayToShow,
             onEvent = onEvent
         )
     }
