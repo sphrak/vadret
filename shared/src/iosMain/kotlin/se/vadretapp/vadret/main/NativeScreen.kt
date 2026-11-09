@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.systemBars
@@ -13,19 +14,24 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CoroutineScope
 import org.jetbrains.compose.resources.ResourceEnvironment
 import org.jetbrains.compose.resources.rememberResourceEnvironment
 import se.vadretapp.vadret.di.koinAll
 import se.vadretapp.vadret.forecastwarning.ui.WarningMapHost
+import se.vadretapp.vadret.main.navigation.PlaceForecastKey
 import se.vadretapp.vadret.main.navigation.RadarKey
 import se.vadretapp.vadret.main.navigation.ScreenKind
 import se.vadretapp.vadret.main.navigation.VadretKey
+import se.vadretapp.vadret.main.navigation.WeatherKey
 import se.vadretapp.vadret.main.navigation.screenKind
 import se.vadretapp.vadret.radar.ui.RadarMapHost
 import se.vadretapp.vadret.radar.ui.RadarRoute
 import se.vadretapp.vadret.ui.DeveloperSettingsSection
 import se.vadretapp.vadret.ui.LocalNativeNavigationBar
+import se.vadretapp.vadret.ui.LocalScrollBottomInset
 import se.vadretapp.vadret.ui.SettingsSection
 import se.vadretapp.vadret.ui.VadretTheme
 
@@ -35,6 +41,8 @@ private val noInsets: WindowInsets = WindowInsets(
     right = 0,
     bottom = 0
 )
+
+private val noScrollBottomInset: Dp = 0.dp
 
 private val floatingRadarTab: RadarTab = RadarTab(
     host = { content: @Composable () -> Unit -> RadarMapHost(content = content) },
@@ -70,7 +78,15 @@ internal fun NativeScreen(
         )
     }
     val screenKind: ScreenKind = key.screenKind
-    CompositionLocalProvider(LocalNativeNavigationBar provides screenKind.isNativeNavigationBarShown()) {
+    val scrollBottomInset: Dp = if (key.isDrawnUnderTabBar()) {
+        WindowInsets.systemBars.only(sides = WindowInsetsSides.Bottom).asPaddingValues().calculateBottomPadding()
+    } else {
+        noScrollBottomInset
+    }
+    CompositionLocalProvider(
+        LocalNativeNavigationBar provides screenKind.isNativeNavigationBarShown(),
+        LocalScrollBottomInset provides scrollBottomInset
+    ) {
         Box(
             modifier = modifier
                 .fillMaxSize()
@@ -110,9 +126,12 @@ private fun ScreenKind.isNativeNavigationBarShown(): Boolean =
         ScreenKind.TAB, ScreenKind.DETAIL_WITH_OWN_HEADER, ScreenKind.STORY -> false
     }
 
+private fun VadretKey.isDrawnUnderTabBar(): Boolean =
+    this == WeatherKey || this is PlaceForecastKey
+
 @Composable
 private fun VadretKey.coveredInsets(): WindowInsets =
-    if (this == RadarKey) {
+    if (this == RadarKey || isDrawnUnderTabBar()) {
         noInsets
     } else {
         screenKind.coveredInsets()

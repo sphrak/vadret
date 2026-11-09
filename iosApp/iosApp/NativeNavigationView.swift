@@ -176,6 +176,7 @@ struct TabContentView: View {
                 appCoordinator: appCoordinator
             )
             .ignoresSafeArea()
+            .background(TabBarShadow())
             .navigationTitle(appCoordinator.title(tab: tab))
             .toolbarVisibility(.hidden, for: .navigationBar)
             .navigationDestination(for: RouteWrapper.self) { wrapper in

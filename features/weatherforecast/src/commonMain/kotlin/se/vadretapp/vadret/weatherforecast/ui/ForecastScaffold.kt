@@ -20,6 +20,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import org.jetbrains.compose.resources.StringResource
@@ -28,6 +29,7 @@ import org.jetbrains.compose.resources.stringResource
 import se.vadretapp.vadret.setting.model.HourFormat
 import se.vadretapp.vadret.ui.LocalHourFormat
 import se.vadretapp.vadret.ui.LocalLanguageTag
+import se.vadretapp.vadret.ui.LocalScrollBottomInset
 import se.vadretapp.vadret.ui.VadretProgressBar
 import se.vadretapp.vadret.ui.VadretPullToRefreshBox
 import se.vadretapp.vadret.ui.VadretTheme
@@ -82,10 +84,16 @@ internal fun ForecastScaffold(
     }
 
     val currentWeather: CurrentWeather? = state.forecast.current
+    val scrollBottomInset: Dp = LocalScrollBottomInset.current
     Scaffold(
         modifier = modifier,
         topBar = topBar,
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+        snackbarHost = {
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.padding(bottom = scrollBottomInset)
+            )
+        },
         containerColor = VadretTheme.colorScheme.background,
         contentWindowInsets = WindowInsets()
     ) { innerPadding: PaddingValues ->
@@ -101,7 +109,7 @@ internal fun ForecastScaffold(
                 contentPadding = PaddingValues(
                     start = contentHorizontalPadding,
                     end = contentHorizontalPadding,
-                    bottom = contentBottomPadding
+                    bottom = contentBottomPadding + scrollBottomInset
                 ),
                 verticalArrangement = Arrangement.spacedBy(space = contentSpacing)
             ) {

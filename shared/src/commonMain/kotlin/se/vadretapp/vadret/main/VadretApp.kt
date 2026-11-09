@@ -176,7 +176,6 @@ internal fun VadretApp(
     radarTab: RadarTab?,
     modifier: Modifier = Modifier
 ) {
-    val tabPadding: PaddingValues = navigationBarPadding()
     val settingsSections: List<SettingsSection> = koinAll()
     val koinDeveloperSettingsSections: List<DeveloperSettingsSection> = koinAll()
     val developerSettingsSections: List<DeveloperSettingsSection> = remember(koinDeveloperSettingsSections, tabNavigation) {
@@ -188,10 +187,7 @@ internal fun VadretApp(
             key = navKey,
             metadata = key.screenKind.transitions()
         ) {
-            ComposePage(
-                screenKind = key.screenKind,
-                tabPadding = tabPadding
-            ) {
+            ComposePage(screenKind = key.screenKind) {
                 ScreenContent(
                     key = key,
                     appNavigator = tabNavigation,
@@ -243,13 +239,12 @@ internal fun VadretApp(
 @Composable
 private fun ComposePage(
     screenKind: ScreenKind,
-    tabPadding: PaddingValues,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
     when (screenKind) {
         ScreenKind.TAB, ScreenKind.DETAIL, ScreenKind.DETAIL_WITH_OWN_HEADER -> TabPage(
-            paddingValues = tabPadding,
+            paddingValues = navigationBarPadding(),
             modifier = modifier,
             content = content
         )
