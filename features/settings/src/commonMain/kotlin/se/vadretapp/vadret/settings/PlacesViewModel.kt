@@ -1,5 +1,6 @@
 package se.vadretapp.vadret.settings
 
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.sphrak.either.Either
@@ -33,6 +34,7 @@ import kotlin.time.Duration.Companion.milliseconds
 
 private val searchDebounce: Duration = 70.milliseconds
 
+@Immutable
 class PlacesViewModel internal constructor(
     private val observeLocationChoicesTask: ObserveLocationChoicesTask,
     private val setLocationModeTask: SetLocationModeTask,

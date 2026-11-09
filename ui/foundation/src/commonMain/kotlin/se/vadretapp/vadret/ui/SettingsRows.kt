@@ -1,10 +1,13 @@
 package se.vadretapp.vadret.ui
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
@@ -15,6 +18,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.Dp
@@ -152,13 +156,13 @@ internal fun rowSupportingContent(summary: String?): (@Composable () -> Unit)? =
         null
     }
 
-// The screen colour shows through, so rows sit on the background like the rest of the screen. A row that is on looks
-// like any other row, since its switch already shows that it is on.
 @Composable
-internal fun settingsRowColors(): ListItemColors {
+internal fun settingsRowColors(
+    containerColor: Color = Color.Transparent
+): ListItemColors {
     val defaultColors: ListItemColors = ListItemDefaults.colors()
     return ListItemDefaults.colors(
-        containerColor = Color.Transparent,
+        containerColor = containerColor,
         selectedContainerColor = Color.Transparent,
         selectedContentColor = defaultColors.contentColor,
         selectedLeadingContentColor = defaultColors.leadingContentColor,
@@ -168,7 +172,6 @@ internal fun settingsRowColors(): ListItemColors {
     )
 }
 
-// Rows span the screen edge to edge, so a press fills the whole row instead of rounding into a card.
 @Composable
 internal fun settingsRowShapes(): ListItemShapes =
     ListItemDefaults.shapes(
@@ -186,7 +189,11 @@ fun SettingsNote(
     modifier: Modifier = Modifier
 ) {
     ListItem(
-        modifier = modifier.settingsRowHeight(),
+        modifier = modifier
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .border(BorderStroke(0.5.dp, VadretTheme.colorScheme.outline), RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(16.dp))
+            .settingsRowHeight(),
         leadingContent = {
             Icon(
                 painter = painterResource(resource = Res.drawable.ic_info),
@@ -194,7 +201,7 @@ fun SettingsNote(
                 modifier = Modifier.settingsRowIconPadding()
             )
         },
-        colors = settingsRowColors(),
+        colors = settingsRowColors(VadretTheme.colorScheme.secondaryContainer),
         contentPadding = settingsRowContentPadding
     ) {
         Text(text = text)

@@ -111,7 +111,10 @@ private fun PlacesScreen(
         navigationIcon = navigationIcon,
         modifier = modifier
     ) {
-        item(key = SEARCH_KEY, contentType = PlacesContentType.SEARCH) {
+        item(
+            key = SEARCH_KEY,
+            contentType = PlacesContentType.SEARCH
+        ) {
             PlaceSearchBar(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -127,7 +130,10 @@ private fun PlacesScreen(
                 onCollapse = { onEvent(PlacesEvent.OnSearchCleared) }
             )
         }
-        item(key = FOLLOW_POSITION_KEY, contentType = PlacesContentType.ROW) {
+        item(
+            key = FOLLOW_POSITION_KEY,
+            contentType = PlacesContentType.ROW
+        ) {
             SwitchRow(
                 title = stringResource(resource = Res.string.places_follow_position),
                 summary = stringResource(resource = Res.string.places_follow_position_summary),
@@ -135,7 +141,10 @@ private fun PlacesScreen(
                 onCheckedChange = { isChecked: Boolean -> onEvent(PlacesEvent.OnFollowPositionToggled(isFollowingPosition = isChecked)) }
             )
         }
-        item(key = MINE_HEADER_KEY, contentType = PlacesContentType.HEADER) {
+        item(
+            key = MINE_HEADER_KEY,
+            contentType = PlacesContentType.HEADER
+        ) {
             SettingsSectionHeader(text = stringResource(resource = Res.string.places_mine))
         }
         items(
@@ -148,7 +157,10 @@ private fun PlacesScreen(
                 onEvent = onEvent
             )
         }
-        item(key = NOTE_KEY, contentType = PlacesContentType.NOTE) {
+        item(
+            key = NOTE_KEY,
+            contentType = PlacesContentType.NOTE
+        ) {
             SettingsNote(text = stringResource(resource = Res.string.places_note))
         }
     }
