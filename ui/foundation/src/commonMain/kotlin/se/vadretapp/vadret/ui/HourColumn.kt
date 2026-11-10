@@ -34,7 +34,6 @@ fun HourColumn(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
 ) {
-
     val isNowTransition = updateTransition(isNow)
     val highlightColor: Color by isNowTransition.animateColor {
         if (it) {

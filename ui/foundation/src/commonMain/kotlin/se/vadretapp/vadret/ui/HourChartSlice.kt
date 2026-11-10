@@ -48,8 +48,8 @@ private class SlicePoints<T>(
     private val lineRange: Float
 ) {
 
-    val firstIndex: Int = index - 1
-    val lastIndex: Int = index + 1
+    val firstIndex: Int = (index - 1).shown()
+    val lastIndex: Int = (index + 1).shown()
 
     fun x(pointIndex: Int): Float = (pointIndex - index) * columnWidth + columnWidth / HALF_DIVISOR
 

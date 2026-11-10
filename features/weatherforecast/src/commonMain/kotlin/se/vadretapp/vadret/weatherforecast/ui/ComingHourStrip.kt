@@ -2,11 +2,8 @@ package se.vadretapp.vadret.weatherforecast.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -14,11 +11,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -26,6 +24,7 @@ import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.collections.immutable.ImmutableList
 import org.jetbrains.compose.resources.painterResource
@@ -37,34 +36,30 @@ import se.vadretapp.vadret.ui.HourColumn
 import se.vadretapp.vadret.ui.HourLabel
 import se.vadretapp.vadret.ui.ThemePreviewParameterProvider
 import se.vadretapp.vadret.ui.VadretTheme
-import se.vadretapp.vadret.ui.hourColumnBottomPadding
 import se.vadretapp.vadret.ui.resources.Res
 import se.vadretapp.vadret.ui.resources.degree
 import se.vadretapp.vadret.ui.resources.ic_north
 import se.vadretapp.vadret.ui.resources.m_s
-import se.vadretapp.vadret.ui.resources.temperature
-import se.vadretapp.vadret.ui.resources.wind_in_meters_per_second
 import se.vadretapp.vadret.weatherforecast.model.ComingHour
 
 private const val HOUR_CONTENT_TYPE = "coming-hour"
 private const val SINGLE_LINE = 1
+private const val FIRST_HOUR_INDEX = 0
+private const val HALF_DIVISOR = 2f
+private const val FULL_LEVEL = 1f
 private val hourCellContentSpacing = 5.dp
 private val hourCellVerticalPadding = 4.dp
 private val hourIconSize = 22.dp
-private val temperatureLegendSpacing = 6.dp
+private val temperatureChartSpacing = 6.dp
 private val temperatureChartHeight = 64.dp
 private val temperatureLineTop = 20.dp
 private val temperatureLineRange = 36.dp
-private val windLegendSpacing = 8.dp
+private val windChartSpacing = 8.dp
 private val windChartHeight = 52.dp
 private val windLineTop = 22.dp
 private val windLineRange = 26.dp
-private val legendHeight = 18.dp
-private val legendHorizontalPadding = 4.dp
-private val legendSpacing = 6.dp
-private val legendSwatchWidth = 12.dp
-private val legendSwatchHeight = 3.dp
-private val legendSwatchShape = RoundedCornerShape(size = 2.dp)
+private val dotRadius = 3.dp
+private val dotRingRadius = 5.dp
 
 @Composable
 internal fun ComingHourStrip(
@@ -75,33 +70,24 @@ internal fun ComingHourStrip(
     val textMeasurer: TextMeasurer = rememberTextMeasurer()
     val temperatureColor: Color = VadretTheme.colors.temperatureWarm
     val windColor: Color = VadretTheme.colorScheme.primary
-    Box(modifier = modifier.fillMaxWidth()) {
-        LazyRow(
-            state = rememberLazyListState(initialFirstVisibleItemIndex = firstShownHourIndex),
-            contentPadding = PaddingValues(16.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            itemsIndexed(
-                items = hours,
-                key = { _: Int, comingHour: ComingHour -> comingHour.key },
-                contentType = { _: Int, _: ComingHour -> HOUR_CONTENT_TYPE }
-            ) { index: Int, _: ComingHour ->
-                ComingHourColumn(
-                    hours = hours,
-                    index = index,
-                    textMeasurer = textMeasurer,
-                    temperatureColor = temperatureColor,
-                    windColor = windColor
-                )
-            }
+    LazyRow(
+        state = rememberLazyListState(initialFirstVisibleItemIndex = firstShownHourIndex),
+        contentPadding = PaddingValues(16.dp),
+        modifier = modifier.fillMaxWidth()
+    ) {
+        itemsIndexed(
+            items = hours,
+            key = { _: Int, comingHour: ComingHour -> comingHour.key },
+            contentType = { _: Int, _: ComingHour -> HOUR_CONTENT_TYPE }
+        ) { index: Int, _: ComingHour ->
+            ComingHourColumn(
+                hours = hours,
+                index = index,
+                textMeasurer = textMeasurer,
+                temperatureColor = temperatureColor,
+                windColor = windColor
+            )
         }
-        ChartLegends(
-            temperatureColor = temperatureColor,
-            windColor = windColor,
-            modifier = Modifier
-                .align(alignment = Alignment.BottomStart)
-                .padding(start = 16.dp)
-        )
     }
 }
 
@@ -117,6 +103,11 @@ private fun ComingHourColumn(
     val comingHour: ComingHour = hours[index]
     val temperatureText = "${comingHour.temperatureText}${stringResource(resource = Res.string.degree)}"
     val windDescription = "${stringResource(resource = comingHour.windDirectionResource)} ${comingHour.windSpeedText} ${stringResource(resource = Res.string.m_s)}"
+    val dotRingColor: Color = if (comingHour.isNow) {
+        VadretTheme.colorScheme.secondaryContainer
+    } else {
+        VadretTheme.colorScheme.surface
+    }
     HourColumn(
         isNow = comingHour.isNow,
         modifier = modifier
@@ -134,9 +125,22 @@ private fun ComingHourColumn(
             labelColor = VadretTheme.colorScheme.onSurface,
             textMeasurer = textMeasurer,
             modifier = Modifier
-                .padding(top = temperatureLegendSpacing + legendHeight)
+                .padding(top = temperatureChartSpacing)
                 .height(height = temperatureChartHeight)
                 .semantics { contentDescription = temperatureText }
+                .then(
+                    other = if (index == FIRST_HOUR_INDEX) {
+                        Modifier.startDot(
+                            level = comingHour.temperatureLevel,
+                            lineTop = temperatureLineTop,
+                            lineRange = temperatureLineRange,
+                            color = temperatureColor,
+                            ringColor = dotRingColor
+                        )
+                    } else {
+                        Modifier
+                    }
+                )
         )
         HourChartSlice(
             hours = hours,
@@ -152,12 +156,50 @@ private fun ComingHourColumn(
             arrow = painterResource(resource = Res.drawable.ic_north),
             arrowRotation = comingHour.windArrowRotation,
             modifier = Modifier
-                .padding(top = windLegendSpacing + legendHeight)
+                .padding(top = windChartSpacing)
                 .height(height = windChartHeight)
                 .semantics { contentDescription = windDescription }
+                .then(
+                    other = if (index == FIRST_HOUR_INDEX) {
+                        Modifier.startDot(
+                            level = comingHour.windLevel,
+                            lineTop = windLineTop,
+                            lineRange = windLineRange,
+                            color = windColor,
+                            ringColor = dotRingColor
+                        )
+                    } else {
+                        Modifier
+                    }
+                )
         )
     }
 }
+
+private fun Modifier.startDot(
+    level: Float,
+    lineTop: Dp,
+    lineRange: Dp,
+    color: Color,
+    ringColor: Color
+): Modifier =
+    drawWithContent {
+        drawContent()
+        val center = Offset(
+            x = size.width / HALF_DIVISOR,
+            y = lineTop.toPx() + (FULL_LEVEL - level) * lineRange.toPx()
+        )
+        drawCircle(
+            color = ringColor,
+            radius = dotRingRadius.toPx(),
+            center = center
+        )
+        drawCircle(
+            color = color,
+            radius = dotRadius.toPx(),
+            center = center
+        )
+    }
 
 @Composable
 private fun ComingHourCell(
@@ -190,58 +232,6 @@ private fun ComingHourCell(
     }
 }
 
-@Composable
-private fun ChartLegends(
-    temperatureColor: Color,
-    windColor: Color,
-    modifier: Modifier = Modifier
-) {
-    Column(modifier = modifier) {
-        ChartLegend(
-            title = stringResource(resource = Res.string.temperature),
-            color = temperatureColor
-        )
-        Spacer(modifier = Modifier.height(height = temperatureChartHeight + windLegendSpacing))
-        ChartLegend(
-            title = stringResource(resource = Res.string.wind_in_meters_per_second),
-            color = windColor
-        )
-        Spacer(modifier = Modifier.height(height = windChartHeight + hourColumnBottomPadding))
-    }
-}
-
-@Composable
-private fun ChartLegend(
-    title: String,
-    color: Color,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier
-            .height(height = legendHeight),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(space = legendSpacing)
-    ) {
-        Box(
-            modifier = Modifier
-                .size(
-                    width = legendSwatchWidth,
-                    height = legendSwatchHeight
-                )
-                .background(
-                    color = color,
-                    shape = legendSwatchShape
-                )
-        )
-        Text(
-            text = title,
-            style = VadretTheme.textStyles.label,
-            color = VadretTheme.colorScheme.onSurfaceVariant,
-            maxLines = SINGLE_LINE
-        )
-    }
-}
-
 @Preview
 @Composable
 private fun ComingHourColumnPreview(
@@ -257,6 +247,20 @@ private fun ComingHourColumnPreview(
             modifier = Modifier
                 .background(color = VadretTheme.colorScheme.surface)
                 .padding(all = VadretTheme.spacing.medium)
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun ComingHourStripStartPreview(
+    @PreviewParameter(provider = ThemePreviewParameterProvider::class) theme: Theme
+) {
+    VadretTheme(theme = theme) {
+        ComingHourStrip(
+            modifier = Modifier.background(color = VadretTheme.colorScheme.surface),
+            hours = comingHoursPreview(),
+            firstShownHourIndex = FIRST_HOUR_INDEX
         )
     }
 }
