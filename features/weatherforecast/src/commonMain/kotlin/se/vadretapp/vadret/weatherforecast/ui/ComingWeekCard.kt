@@ -152,8 +152,8 @@ private fun ComingWeekHeader(
             .padding(
                 start = headerHorizontalPadding,
                 end = headerHorizontalPadding,
-                bottom = 8.dp,
-                top = 0.dp
+                bottom = 12.dp,
+                top = 8.dp
             ),
         horizontalArrangement = Arrangement.spacedBy(
             space = headerSpacing,
