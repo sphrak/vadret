@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -21,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
@@ -39,7 +39,6 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.collections.immutable.ImmutableList
@@ -48,12 +47,15 @@ import se.vadretapp.vadret.icons.VadretIcon
 import se.vadretapp.vadret.setting.model.Theme
 import se.vadretapp.vadret.ui.ThemePreviewParameterProvider
 import se.vadretapp.vadret.ui.VadretCard
+import se.vadretapp.vadret.ui.VadretColors
 import se.vadretapp.vadret.ui.VadretTheme
 import se.vadretapp.vadret.ui.resources.Res
 import se.vadretapp.vadret.ui.resources.degree
 import se.vadretapp.vadret.ui.resources.today
 import se.vadretapp.vadret.ui.resources.week_number
 import se.vadretapp.vadret.weatherforecast.model.ComingWeek
+import se.vadretapp.vadret.weatherforecast.model.TemperatureShade
+import se.vadretapp.vadret.weatherforecast.model.TemperatureShadeStop
 import se.vadretapp.vadret.weatherforecast.model.WeekDay
 import se.vadretapp.vadret.weatherforecast.ui.ComingWeekCard.OuterShape
 
@@ -62,7 +64,7 @@ private const val FIRST_INDEX = 0
 private const val FULL_LEVEL = 1f
 private const val HALF_DIVISOR = 2f
 private const val SMOOTHING_DIVISOR = 6f
-private const val BAND_ALPHA = 0.12f
+private const val BAND_ALPHA = 0.14f
 private const val LOW_LINE_ALPHA = 0.45f
 private const val DAY_WEIGHT = 1f
 
@@ -124,6 +126,7 @@ internal fun ComingWeekCard(
                     key(weekDay.dayKey) {
                         WeekDayColumn(
                             modifier = Modifier.weight(weight = DAY_WEIGHT),
+                            shadeStops = comingWeek.shadeStops,
                             shape = ComingWeekCard.InnerShape,
                             days = comingWeek.days,
                             index = index,
@@ -179,11 +182,12 @@ private fun ComingWeekHeader(
 
 @Composable
 private fun WeekDayColumn(
+    shadeStops: ImmutableList<TemperatureShadeStop>,
     days: ImmutableList<WeekDay>,
     index: Int,
     textMeasurer: TextMeasurer,
     onClick: () -> Unit,
-    shape: Shape ,
+    shape: Shape,
     modifier: Modifier = Modifier
 ) {
     val weekDay: WeekDay = days[index]
@@ -222,6 +226,7 @@ private fun WeekDayColumn(
             maxLines = SINGLE_LINE
         )
         WeekTemperatureSlice(
+            shadeStops = shadeStops,
             days = days,
             index = index,
             textMeasurer = textMeasurer,
@@ -256,9 +261,9 @@ private fun WeekdayLabel(
     }
 }
 
-// Each day draws its own slice of the week's curves, so the whole day column stays one tap target.
 @Composable
 private fun WeekTemperatureSlice(
+    shadeStops: ImmutableList<TemperatureShadeStop>,
     days: ImmutableList<WeekDay>,
     index: Int,
     textMeasurer: TextMeasurer,
@@ -269,7 +274,7 @@ private fun WeekTemperatureSlice(
     val degree: String = stringResource(resource = Res.string.degree)
     val highText = "${weekDay.highTemperatureText}$degree"
     val lowText = "${weekDay.lowTemperatureText}$degree"
-    val lineColor: Color = VadretTheme.colors.temperatureWarm
+    val colors: VadretColors = VadretTheme.colors
     val highTextStyle: TextStyle = VadretTheme.textStyles.detailLabelStrong
     val highTextColor: Color = VadretTheme.colorScheme.onSurface
     val lowTextStyle: TextStyle = VadretTheme.textStyles.detailLabel
@@ -299,6 +304,11 @@ private fun WeekTemperatureSlice(
                     highPoints = highPoints,
                     lowPoints = lowPoints
                 )
+                val shading: Brush = shadeStops.shading(
+                    lineTopPixels = lineTop.toPx(),
+                    lineRangePixels = lineRange.toPx(),
+                    colors = colors
+                )
                 val highStroke = Stroke(
                     width = highLineWidth.toPx(),
                     cap = StrokeCap.Round,
@@ -325,28 +335,30 @@ private fun WeekTemperatureSlice(
                     clipRect {
                         drawPath(
                             path = lines.band,
-                            color = lineColor.copy(alpha = BAND_ALPHA)
+                            brush = shading,
+                            alpha = BAND_ALPHA
                         )
                         drawPath(
                             path = lines.low,
-                            color = lineColor.copy(alpha = LOW_LINE_ALPHA),
+                            brush = shading,
+                            alpha = LOW_LINE_ALPHA,
                             style = lowStroke
                         )
                         drawPath(
                             path = lines.high,
-                            color = lineColor,
+                            brush = shading,
                             style = highStroke
                         )
                     }
                     if (weekDay.isToday) {
                         drawTodayDot(
                             center = highPoint,
-                            color = lineColor,
+                            shading = shading,
                             ringColor = ringColor
                         )
                         drawTodayDot(
                             center = lowPoint,
-                            color = lineColor,
+                            shading = shading,
                             ringColor = ringColor
                         )
                     }
@@ -381,13 +393,63 @@ private fun ImmutableList<WeekDay>.points(
     mapIndexed { pointIndex: Int, weekDay: WeekDay ->
         Offset(
             x = (pointIndex - shownIndex) * columnWidth + columnWidth / HALF_DIVISOR,
-            y = lineTopPixels + (FULL_LEVEL - level(weekDay)) * lineRangePixels
+            y = lineY(
+                level = level(weekDay),
+                lineTopPixels = lineTopPixels,
+                lineRangePixels = lineRangePixels
+            )
         )
+    }
+
+private fun lineY(
+    level: Float,
+    lineTopPixels: Float,
+    lineRangePixels: Float
+): Float = lineTopPixels + (FULL_LEVEL - level) * lineRangePixels
+
+private fun ImmutableList<TemperatureShadeStop>.shading(
+    lineTopPixels: Float,
+    lineRangePixels: Float,
+    colors: VadretColors
+): Brush {
+    val warmestY: Float = lineY(
+        level = first().level,
+        lineTopPixels = lineTopPixels,
+        lineRangePixels = lineRangePixels
+    )
+    val coldestY: Float = lineY(
+        level = last().level,
+        lineTopPixels = lineTopPixels,
+        lineRangePixels = lineRangePixels
+    )
+    val colorStops: Array<Pair<Float, Color>> = map { shadeStop: TemperatureShadeStop ->
+        val shadeY: Float = lineY(
+            level = shadeStop.level,
+            lineTopPixels = lineTopPixels,
+            lineRangePixels = lineRangePixels
+        )
+        (shadeY - warmestY) / (coldestY - warmestY) to shadeStop.shade.color(colors = colors)
+    }.toTypedArray()
+    return Brush.verticalGradient(
+        colorStops = colorStops,
+        startY = warmestY,
+        endY = coldestY
+    )
+}
+
+private fun TemperatureShade.color(colors: VadretColors): Color =
+    when (this) {
+        TemperatureShade.WARM -> colors.temperatureWarm
+        TemperatureShade.ZERO -> colors.temperatureZero
+        TemperatureShade.MINUS_FIVE -> colors.temperatureMinusFive
+        TemperatureShade.MINUS_TEN -> colors.temperatureMinusTen
+        TemperatureShade.MINUS_FIFTEEN -> colors.temperatureMinusFifteen
+        TemperatureShade.MINUS_TWENTY -> colors.temperatureMinusTwenty
     }
 
 private fun DrawScope.drawTodayDot(
     center: Offset,
-    color: Color,
+    shading: Brush,
     ringColor: Color
 ) {
     drawCircle(
@@ -396,7 +458,7 @@ private fun DrawScope.drawTodayDot(
         center = center
     )
     drawCircle(
-        color = color,
+        brush = shading,
         radius = dotRadius.toPx(),
         center = center
     )

@@ -13,6 +13,11 @@ data class VadretColors(
     val temperatureCool: Color = Color(color = 0xFF7F8EEE),
     val temperatureMild: Color = Color(color = 0xFFA58AD8),
     val temperatureWarm: Color = Color(color = 0xFFE8A35A),
+    val temperatureZero: Color = Color(color = 0xFF5AA9D6),
+    val temperatureMinusFive: Color = Color(color = 0xFF3F7FD0),
+    val temperatureMinusTen: Color = Color(color = 0xFF3F51B5),
+    val temperatureMinusFifteen: Color = Color(color = 0xFF2C3A8F),
+    val temperatureMinusTwenty: Color = Color(color = 0xFF1F2D52),
     val warningMessage: Color = Color(color = 0xFFDFE3F3),
     val onWarningMessage: Color = Color(color = 0xFF263056),
     val warningYellow: Color = Color(color = 0xFFFFE27A),
@@ -37,6 +42,12 @@ data class VadretColors(
 private val darkWarningMessage = Color(color = 0xFF283154)
 private val onDarkWarningMessage = Color(color = 0xFFCDD5F5)
 
+private val darkTemperatureZero = Color(color = 0xFF8FC4EA)
+private val darkTemperatureMinusFive = Color(color = 0xFF74A8F0)
+private val darkTemperatureMinusTen = Color(color = 0xFF6F8FE6)
+private val darkTemperatureMinusFifteen = Color(color = 0xFF6577DC)
+private val darkTemperatureMinusTwenty = Color(color = 0xFF5B62CC)
+
 internal val lightVadretColors: VadretColors = VadretColors(
     divider = Color(color = 0xFFEEF0F4),
     icon = Color(color = 0xFF4A4F5E),
@@ -47,6 +58,11 @@ internal val darkVadretColors: VadretColors = VadretColors(
     divider = Color(color = 0xFF262933),
     icon = Color(color = 0xFFC4C8D4),
     precipitation = Color(color = 0xFF7FB0FF),
+    temperatureZero = darkTemperatureZero,
+    temperatureMinusFive = darkTemperatureMinusFive,
+    temperatureMinusTen = darkTemperatureMinusTen,
+    temperatureMinusFifteen = darkTemperatureMinusFifteen,
+    temperatureMinusTwenty = darkTemperatureMinusTwenty,
     warningMessage = darkWarningMessage,
     onWarningMessage = onDarkWarningMessage
 )
@@ -55,6 +71,11 @@ internal val amoledVadretColors: VadretColors = VadretColors(
     divider = Color(color = 0xFF1E1E1E),
     icon = Color(color = 0xFFC4C8D4),
     precipitation = Color(color = 0xFF7FB0FF),
+    temperatureZero = darkTemperatureZero,
+    temperatureMinusFive = darkTemperatureMinusFive,
+    temperatureMinusTen = darkTemperatureMinusTen,
+    temperatureMinusFifteen = darkTemperatureMinusFifteen,
+    temperatureMinusTwenty = darkTemperatureMinusTwenty,
     warningMessage = darkWarningMessage,
     onWarningMessage = onDarkWarningMessage
 )

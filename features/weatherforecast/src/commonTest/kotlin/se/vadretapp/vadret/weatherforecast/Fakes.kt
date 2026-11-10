@@ -127,6 +127,8 @@ internal fun comingDay(
         precipitationText = null,
         lowTemperatureText = "1",
         highTemperatureText = "5",
+        lowTemperature = 1.0,
+        highTemperature = 5.0,
         temperatureRangeStart = 0f,
         temperatureRangeEnd = 1f,
         hours = persistentListOf(),

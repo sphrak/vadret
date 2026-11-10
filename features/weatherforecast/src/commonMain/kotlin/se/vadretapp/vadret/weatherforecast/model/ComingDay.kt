@@ -16,6 +16,8 @@ data class ComingDay(
     val precipitationText: String?,
     val lowTemperatureText: String,
     val highTemperatureText: String,
+    val lowTemperature: Double,
+    val highTemperature: Double,
     val temperatureRangeStart: Float,
     val temperatureRangeEnd: Float,
     val hours: ImmutableList<ComingHour>,

@@ -194,6 +194,8 @@ private fun DaySummary.toComingDay(
         precipitationText = precipitationAmount.toPrecipitationText(),
         lowTemperatureText = lowTemperature.roundToInt().toString(),
         highTemperatureText = highTemperature.roundToInt().toString(),
+        lowTemperature = lowTemperature,
+        highTemperature = highTemperature,
         temperatureRangeStart = temperatureScale.fractionOf(
             temperature = lowTemperature,
             fallback = RANGE_START

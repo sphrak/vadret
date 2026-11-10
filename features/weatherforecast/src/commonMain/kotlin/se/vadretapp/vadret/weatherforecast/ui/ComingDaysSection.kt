@@ -138,7 +138,6 @@ internal fun ComingDaysCard(
             updateTransition(targetState = comingDay.isExpanded)
         }
     }
-    // A day is only scrolled to or opened while nothing moves, so each step starts where the last one came to rest.
     val isSettled: Boolean = isInPlace && expansions.all { expansion: Transition<Boolean> -> expansion.isSettled() }
     VadretCard(
         modifier = modifier,
@@ -221,8 +220,6 @@ private fun ComingDayItem(
 
 private fun Transition<Boolean>.isSettled(): Boolean = currentState == targetState && !isRunning
 
-// An area as tall as the window from the day's top never fits below it, so the list lines the day up with its top.
-// A scroll stopped short, by the end of the list or a finger, still counts as done so the day opens anyway.
 @Composable
 private fun ScrollToDayEffect(
     bringIntoViewRequester: BringIntoViewRequester,
@@ -247,7 +244,6 @@ private fun ScrollToDayEffect(
     }
 }
 
-// Opening a day near the end of the list can push its hours below the edge or under the bar drawn over the list, so only then is the list moved.
 @Composable
 private fun RevealDayEffect(
     bringIntoViewRequester: BringIntoViewRequester,

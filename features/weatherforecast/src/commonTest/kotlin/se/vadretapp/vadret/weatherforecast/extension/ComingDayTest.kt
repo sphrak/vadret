@@ -7,6 +7,8 @@ import kotlinx.datetime.plus
 import se.vadretapp.vadret.weatherforecast.comingDay
 import se.vadretapp.vadret.weatherforecast.model.ComingDay
 import se.vadretapp.vadret.weatherforecast.model.ComingWeek
+import se.vadretapp.vadret.weatherforecast.model.TemperatureShade
+import se.vadretapp.vadret.weatherforecast.model.TemperatureShadeStop
 import se.vadretapp.vadret.weatherforecast.model.WeekDay
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -268,8 +270,8 @@ class ComingDayTest {
                     month = 11,
                     day = 9
                 ),
-                temperatureRangeStart = 0.2f,
-                temperatureRangeEnd = 0.4f
+                lowTemperature = 2.0,
+                highTemperature = 4.0
             ),
             weekComingDay(
                 date = LocalDate(
@@ -277,8 +279,8 @@ class ComingDayTest {
                     month = 11,
                     day = 10
                 ),
-                temperatureRangeStart = 0.3f,
-                temperatureRangeEnd = 0.6f
+                lowTemperature = 3.0,
+                highTemperature = 6.0
             )
         ).toComingWeek()
 
@@ -298,8 +300,8 @@ class ComingDayTest {
                     month = 11,
                     day = 9
                 ),
-                temperatureRangeStart = 0.5f,
-                temperatureRangeEnd = 0.5f
+                lowTemperature = 5.0,
+                highTemperature = 5.0
             ),
             weekComingDay(
                 date = LocalDate(
@@ -307,14 +309,47 @@ class ComingDayTest {
                     month = 11,
                     day = 10
                 ),
-                temperatureRangeStart = 0.5f,
-                temperatureRangeEnd = 0.5f
+                lowTemperature = 5.0,
+                highTemperature = 5.0
             )
         ).toComingWeek()
 
         assertLevels(
             expected = listOf(0f to 1f, 0f to 1f),
             actual = comingWeek?.days.orEmpty()
+        )
+    }
+
+    @Test
+    fun `the shades sit at their temperatures on the scale of the week`() {
+        assertShadeLevels(
+            expected = listOf(-0.25f, -0.5f, -1.75f, -3f, -4.25f, -5.5f),
+            actual = twoDayWeek(
+                lowTemperature = 2.0,
+                highTemperature = 6.0
+            )
+        )
+    }
+
+    @Test
+    fun `a cold week reaches into the blue shades`() {
+        assertShadeLevels(
+            expected = listOf(2.2f, 2f, 1f, 0f, -1f, -2f),
+            actual = twoDayWeek(
+                lowTemperature = -10.0,
+                highTemperature = -5.0
+            )
+        )
+    }
+
+    @Test
+    fun `a week of one unchanging temperature is shaded by it`() {
+        assertShadeLevels(
+            expected = listOf(1.5f, 0.5f, -4.5f, -9.5f, -14.5f, -19.5f),
+            actual = twoDayWeek(
+                lowTemperature = 0.0,
+                highTemperature = 0.0
+            )
         )
     }
 
@@ -343,16 +378,59 @@ class ComingDayTest {
 
     private fun weekComingDay(
         date: LocalDate,
-        temperatureRangeStart: Float,
-        temperatureRangeEnd: Float
+        lowTemperature: Double,
+        highTemperature: Double
     ): ComingDay =
         comingDay(
             dayKey = "coming-day-$date",
             date = date
         ).copy(
-            temperatureRangeStart = temperatureRangeStart,
-            temperatureRangeEnd = temperatureRangeEnd
+            lowTemperature = lowTemperature,
+            highTemperature = highTemperature
         )
+
+    private fun twoDayWeek(
+        lowTemperature: Double,
+        highTemperature: Double
+    ): ComingWeek? =
+        listOf(
+            weekComingDay(
+                date = LocalDate(
+                    year = 2026,
+                    month = 11,
+                    day = 9
+                ),
+                lowTemperature = lowTemperature,
+                highTemperature = highTemperature
+            ),
+            weekComingDay(
+                date = LocalDate(
+                    year = 2026,
+                    month = 11,
+                    day = 10
+                ),
+                lowTemperature = lowTemperature,
+                highTemperature = highTemperature
+            )
+        ).toComingWeek()
+
+    private fun assertShadeLevels(
+        expected: List<Float>,
+        actual: ComingWeek?
+    ) {
+        val shadeStops: List<TemperatureShadeStop> = actual?.shadeStops.orEmpty()
+        assertEquals(
+            expected = TemperatureShade.entries.toList(),
+            actual = shadeStops.map { shadeStop: TemperatureShadeStop -> shadeStop.shade }
+        )
+        expected.zip(other = shadeStops).forEach { (expectedLevel: Float, shadeStop: TemperatureShadeStop) ->
+            assertEquals(
+                expected = expectedLevel,
+                actual = shadeStop.level,
+                absoluteTolerance = LEVEL_TOLERANCE
+            )
+        }
+    }
 
     private fun assertLevels(
         expected: List<Pair<Float, Float>>,

@@ -185,7 +185,6 @@ class WeatherForecastViewModel internal constructor(
         }
     }
 
-    // A late answer for a day no longer being shown, such as one clicked before another, is ignored.
     private fun onDayScrolledTo(dayKey: String) {
         viewModelScope.launch(context = coroutineDispatcher) {
             state.update { state: WeatherForecastState ->
