@@ -74,8 +74,10 @@ internal fun ComingHourStrip(
     val windColor: Color = VadretTheme.colorScheme.primary
     LazyRow(
         state = rememberLazyListState(initialFirstVisibleItemIndex = firstShownHourIndex),
-        contentPadding = PaddingValues(all = ComingDayCard.OuterPadding),
-        modifier = modifier.fillMaxWidth()
+        contentPadding = PaddingValues(vertical = ComingDayCard.OuterPadding),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = ComingDayCard.OuterPadding)
     ) {
         itemsIndexed(
             items = hours,

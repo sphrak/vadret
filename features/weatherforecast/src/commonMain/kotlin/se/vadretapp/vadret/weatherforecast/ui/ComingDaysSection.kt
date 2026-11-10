@@ -175,6 +175,7 @@ internal fun ComingDaysCard(
     Column(modifier = modifier.fillMaxWidth()) {
         comingDays.forEachIndexed { index: Int, comingDay: ComingDay ->
             val separationAbove: Float = separations.separationAbove(index = index)
+            val separationBelow: Float = separations.separationBelow(index = index)
             ComingDayItem(
                 modifier = Modifier.padding(
                     top = dayGap(
@@ -186,14 +187,14 @@ internal fun ComingDaysCard(
                 expansion = expansions[index],
                 isFirst = index == FIRST_DAY_INDEX,
                 separationAbove = separationAbove,
-                separationBelow = separations.separationBelow(index = index),
+                separationBelow = separationBelow,
                 dayToShow = dayToShow,
                 isSettled = isSettled,
                 onDayToggled = onDayToggled,
                 onDayScrolledTo = onDayScrolledTo,
                 onDayShown = onDayShown,
-                edgeTopPadding = cardVerticalPadding.onlyOnEdge(isEdge = index == FIRST_DAY_INDEX),
-                edgeBottomPadding = cardVerticalPadding.onlyOnEdge(isEdge = index == comingDays.lastIndex)
+                edgeTopPadding = cardVerticalPadding * separationAbove,
+                edgeBottomPadding = cardVerticalPadding * separationBelow * (FULL_SEPARATION - separations[index])
             )
         }
     }
@@ -570,10 +571,3 @@ private fun ComingDaysCardPreview(
         )
     }
 }
-
-private fun Dp.onlyOnEdge(isEdge: Boolean): Dp =
-    if (isEdge) {
-        this
-    } else {
-        noEdgePadding
-    }
