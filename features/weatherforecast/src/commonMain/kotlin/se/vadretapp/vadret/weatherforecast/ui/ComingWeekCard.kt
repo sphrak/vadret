@@ -57,7 +57,7 @@ import se.vadretapp.vadret.weatherforecast.model.ComingWeek
 import se.vadretapp.vadret.weatherforecast.model.TemperatureShade
 import se.vadretapp.vadret.weatherforecast.model.TemperatureShadeStop
 import se.vadretapp.vadret.weatherforecast.model.WeekDay
-import se.vadretapp.vadret.weatherforecast.ui.ComingWeekCard.OuterShape
+import se.vadretapp.vadret.weatherforecast.ui.ComingWeekCardDefaults.OuterShape
 
 private const val SINGLE_LINE = 1
 private const val FIRST_INDEX = 0
@@ -68,14 +68,9 @@ private const val BAND_ALPHA = 0.14f
 private const val LOW_LINE_ALPHA = 0.45f
 private const val DAY_WEIGHT = 1f
 
-private val cardShape = RoundedCornerShape(size = 21.dp)
-private val cardVerticalPadding = 13.dp
 private val headerMinHeight = 34.dp
 private val headerHorizontalPadding = 20.dp
-private val headerVerticalPadding = 4.dp
 private val headerSpacing = 13.dp
-private val daysHorizontalPadding = 10.dp
-private val todayShape = RoundedCornerShape(size = 12.dp)
 private val dayTopPadding = 8.dp
 private val dayContentSpacing = 5.dp
 private val dayIconSize = 22.dp
@@ -99,7 +94,7 @@ private class WeekChartLines(
     val band: Path
 )
 
-object ComingWeekCard {
+object ComingWeekCardDefaults {
     val OuterPadding = 12.dp
     private val InnerRadius = 16.dp
     private val OuterRadius = OuterPadding + InnerRadius
@@ -119,15 +114,15 @@ internal fun ComingWeekCard(
         modifier = modifier,
         shape = OuterShape
     ) {
-        Column(modifier = Modifier.padding(vertical = ComingWeekCard.OuterPadding)) {
+        Column(modifier = Modifier.padding(vertical = ComingWeekCardDefaults.OuterPadding)) {
             ComingWeekHeader(comingWeek = comingWeek)
-            Row(modifier = Modifier.padding(horizontal = ComingWeekCard.OuterPadding)) {
+            Row(modifier = Modifier.padding(horizontal = ComingWeekCardDefaults.OuterPadding)) {
                 comingWeek.days.forEachIndexed { index: Int, weekDay: WeekDay ->
                     key(weekDay.dayKey) {
                         WeekDayColumn(
                             modifier = Modifier.weight(weight = DAY_WEIGHT),
                             shadeStops = comingWeek.shadeStops,
-                            shape = ComingWeekCard.InnerShape,
+                            shape = ComingWeekCardDefaults.InnerShape,
                             days = comingWeek.days,
                             index = index,
                             textMeasurer = textMeasurer,

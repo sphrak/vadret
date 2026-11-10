@@ -39,6 +39,11 @@ fun WeatherForecastRoute(
     )
 }
 
+object WeatherForecastDefaults {
+    val OuterRadius = 16.dp
+
+}
+
 @Composable
 internal fun WeatherForecastScreen(
     state: WeatherForecastState,

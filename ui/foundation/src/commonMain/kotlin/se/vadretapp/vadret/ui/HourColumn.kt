@@ -14,6 +14,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -32,6 +33,7 @@ val hourColumnBottomPadding: Dp = nowHourCornerRadius
 fun HourColumn(
     isNow: Boolean,
     modifier: Modifier = Modifier,
+    shape: Shape = nowHourShape,
     content: @Composable ColumnScope.() -> Unit
 ) {
     val isNowTransition = updateTransition(isNow)
@@ -49,7 +51,7 @@ fun HourColumn(
             .width(width = hourColumnWidth)
             .background(
                 color = highlightColor,
-                shape = nowHourShape
+                shape = shape
             )
             .padding(bottom = hourColumnBottomPadding)
             .semantics(mergeDescendants = true) {},

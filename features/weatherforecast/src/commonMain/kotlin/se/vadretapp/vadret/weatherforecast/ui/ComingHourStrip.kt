@@ -44,6 +44,8 @@ import se.vadretapp.vadret.weatherforecast.model.ComingHour
 
 private const val HOUR_CONTENT_TYPE = "coming-hour"
 private const val SINGLE_LINE = 1
+private const val SHOWN_HOUR_COUNT = 7
+private const val FULL_WIDTH = 1f
 private const val FIRST_HOUR_INDEX = 0
 private const val HALF_DIVISOR = 2f
 private const val FULL_LEVEL = 1f
@@ -72,7 +74,7 @@ internal fun ComingHourStrip(
     val windColor: Color = VadretTheme.colorScheme.primary
     LazyRow(
         state = rememberLazyListState(initialFirstVisibleItemIndex = firstShownHourIndex),
-        contentPadding = PaddingValues(16.dp),
+        contentPadding = PaddingValues(all = ComingDayCard.OuterPadding),
         modifier = modifier.fillMaxWidth()
     ) {
         itemsIndexed(
@@ -81,6 +83,7 @@ internal fun ComingHourStrip(
             contentType = { _: Int, _: ComingHour -> HOUR_CONTENT_TYPE }
         ) { index: Int, _: ComingHour ->
             ComingHourColumn(
+                modifier = Modifier.fillParentMaxWidth(fraction = FULL_WIDTH / SHOWN_HOUR_COUNT),
                 hours = hours,
                 index = index,
                 textMeasurer = textMeasurer,
@@ -109,8 +112,9 @@ private fun ComingHourColumn(
         VadretTheme.colorScheme.surface
     }
     HourColumn(
+        modifier = modifier,
         isNow = comingHour.isNow,
-        modifier = modifier
+        shape = ComingDayCard.InnerShape
     ) {
         ComingHourCell(comingHour = comingHour)
         HourChartSlice(

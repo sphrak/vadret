@@ -50,7 +50,10 @@ private const val FORECAST_CONTENT_KEY = "forecast-content"
 
 private val contentHorizontalPadding = 13.dp
 private val contentBottomPadding = 21.dp
-private val contentSpacing = 13.dp
+
+internal object ForecastCards {
+    val Spacing = 13.dp
+}
 
 @Composable
 internal fun ForecastScaffold(
@@ -113,7 +116,7 @@ internal fun ForecastScaffold(
                     end = contentHorizontalPadding,
                     bottom = contentBottomPadding + scrollBottomInset
                 ),
-                verticalArrangement = Arrangement.spacedBy(space = contentSpacing)
+                verticalArrangement = Arrangement.spacedBy(space = ForecastCards.Spacing)
             ) {
                 if (currentWeather != null) {
                     item(
@@ -150,7 +153,7 @@ private fun CurrentWeather(
     modifier: Modifier = Modifier
 ) {
     Column(
-        verticalArrangement = Arrangement.spacedBy(space = contentSpacing),
+        verticalArrangement = Arrangement.spacedBy(space = ForecastCards.Spacing),
         modifier = modifier
     ) {
         if (outdatedForecastTimeText != null) {

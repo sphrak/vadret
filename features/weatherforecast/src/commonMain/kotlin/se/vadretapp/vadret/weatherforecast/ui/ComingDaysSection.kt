@@ -2,6 +2,7 @@ package se.vadretapp.vadret.weatherforecast.ui
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Transition
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.updateTransition
 import androidx.compose.animation.expandVertically
@@ -33,12 +34,19 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.ClipOp
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.drawOutline
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
@@ -60,7 +68,6 @@ import se.vadretapp.vadret.icons.VadretIcon
 import se.vadretapp.vadret.setting.model.Theme
 import se.vadretapp.vadret.ui.LocalScrollBottomInset
 import se.vadretapp.vadret.ui.ThemePreviewParameterProvider
-import se.vadretapp.vadret.ui.VadretCard
 import se.vadretapp.vadret.ui.VadretTheme
 import se.vadretapp.vadret.ui.resources.Res
 import se.vadretapp.vadret.ui.resources.collapsed
@@ -72,6 +79,7 @@ import se.vadretapp.vadret.ui.resources.millimeter
 import se.vadretapp.vadret.ui.resources.today
 import se.vadretapp.vadret.weatherforecast.model.ComingDay
 import se.vadretapp.vadret.weatherforecast.model.DayToShow
+import kotlin.math.max
 
 private const val COLLAPSED_DEGREES = 0f
 private const val EXPANDED_DEGREES = 180f
@@ -82,9 +90,13 @@ private const val EXPANDED_STATE_LAYER_ALPHA = 0.04f
 private const val NO_STATE_LAYER_ALPHA = 0f
 private const val NO_WIDTH = 0f
 private const val NO_HEIGHT = 0
+private const val FULL_SEPARATION = 1f
+private const val NO_SEPARATION = 0f
+private const val CLIPPED_STROKE_FACTOR = 2f
+private const val NO_OFFSET = 0f
 
 private val headerInset = 4.dp
-private val cardShape = RoundedCornerShape(size = 21.dp)
+private val cardBorderWidth = 1.dp
 private val cardVerticalPadding = 10.5.dp
 private val dayRowMinHeight = 55.dp
 private val dayRowHorizontalPadding = 21.dp
@@ -96,13 +108,20 @@ private val dayPrecipitationWidth = 42.dp
 private val dayTemperatureWidth = 34.dp
 private val chevronSize = 21.dp
 private val dividerHorizontalPadding = 21.dp
-private val hoursBottomPadding = 2.dp
 private val noEdgePadding = 0.dp
 private const val RANGE_BAR_WEIGHT = 1f
 private val dayNameAutoSize = TextAutoSize.StepBased(
     minFontSize = 11.sp,
     maxFontSize = 16.sp
 )
+
+internal object ComingDayCard {
+    val OuterPadding = 12.dp
+    private val InnerRadius = 16.dp
+    val OuterRadius = OuterPadding + InnerRadius
+
+    val InnerShape = RoundedCornerShape(InnerRadius)
+}
 
 @Composable
 internal fun ComingDaysHeader(
@@ -141,30 +160,145 @@ internal fun ComingDaysCard(
         }
     }
     val isSettled: Boolean = isInPlace && expansions.all { expansion: Transition<Boolean> -> expansion.isSettled() }
-    VadretCard(
-        modifier = modifier,
-        shape = cardShape
-    ) {
-        Column {
-            comingDays.forEachIndexed { index: Int, comingDay: ComingDay ->
-                if (index > 0) {
-                    HorizontalDivider(
-                        color = VadretTheme.colors.divider,
-                        modifier = Modifier.padding(horizontal = dividerHorizontalPadding)
-                    )
+    val separations: List<Float> = comingDays.mapIndexed { index: Int, comingDay: ComingDay ->
+        key(comingDay.key) {
+            val separation: Float by expansions[index].animateFloat { isExpanded: Boolean ->
+                if (isExpanded) {
+                    FULL_SEPARATION
+                } else {
+                    NO_SEPARATION
                 }
-                ComingDayItem(
-                    comingDay = comingDay,
-                    expansion = expansions[index],
-                    dayToShow = dayToShow,
-                    isSettled = isSettled,
-                    onDayToggled = onDayToggled,
-                    onDayScrolledTo = onDayScrolledTo,
-                    onDayShown = onDayShown,
-                    edgeTopPadding = cardVerticalPadding.onlyOnEdge(isEdge = index == FIRST_DAY_INDEX),
-                    edgeBottomPadding = cardVerticalPadding.onlyOnEdge(isEdge = index == comingDays.lastIndex)
+            }
+            separation
+        }
+    }
+    Column(modifier = modifier.fillMaxWidth()) {
+        comingDays.forEachIndexed { index: Int, comingDay: ComingDay ->
+            val separationAbove: Float = separations.separationAbove(index = index)
+            ComingDayItem(
+                modifier = Modifier.padding(
+                    top = dayGap(
+                        index = index,
+                        separationAbove = separationAbove
+                    )
+                ),
+                comingDay = comingDay,
+                expansion = expansions[index],
+                isFirst = index == FIRST_DAY_INDEX,
+                separationAbove = separationAbove,
+                separationBelow = separations.separationBelow(index = index),
+                dayToShow = dayToShow,
+                isSettled = isSettled,
+                onDayToggled = onDayToggled,
+                onDayScrolledTo = onDayScrolledTo,
+                onDayShown = onDayShown,
+                edgeTopPadding = cardVerticalPadding.onlyOnEdge(isEdge = index == FIRST_DAY_INDEX),
+                edgeBottomPadding = cardVerticalPadding.onlyOnEdge(isEdge = index == comingDays.lastIndex)
+            )
+        }
+    }
+}
+
+private fun List<Float>.separationAbove(index: Int): Float =
+    if (index == FIRST_DAY_INDEX) {
+        FULL_SEPARATION
+    } else {
+        max(
+            a = this[index],
+            b = this[index - 1]
+        )
+    }
+
+private fun List<Float>.separationBelow(index: Int): Float =
+    if (index == lastIndex) {
+        FULL_SEPARATION
+    } else {
+        max(
+            a = this[index],
+            b = this[index + 1]
+        )
+    }
+
+private fun dayGap(
+    index: Int,
+    separationAbove: Float
+): Dp =
+    if (index == FIRST_DAY_INDEX) {
+        noEdgePadding
+    } else {
+        ForecastCards.Spacing * separationAbove
+    }
+
+private fun Modifier.daySegment(
+    separationAbove: Float,
+    separationBelow: Float,
+    color: Color,
+    borderColor: Color
+): Modifier {
+    val shape = RoundedCornerShape(
+        topStart = ComingDayCard.OuterRadius * separationAbove,
+        topEnd = ComingDayCard.OuterRadius * separationAbove,
+        bottomStart = ComingDayCard.OuterRadius * separationBelow,
+        bottomEnd = ComingDayCard.OuterRadius * separationBelow
+    )
+    return clip(shape = shape).drawBehind {
+        val outline: Outline = shape.createOutline(
+            size = size,
+            layoutDirection = layoutDirection,
+            density = this
+        )
+        val borderWidth: Float = cardBorderWidth.toPx()
+        val border = Stroke(width = borderWidth * CLIPPED_STROKE_FACTOR)
+        drawOutline(
+            outline = outline,
+            color = color
+        )
+        clipRect(
+            left = borderWidth,
+            top = NO_OFFSET,
+            right = size.width - borderWidth,
+            bottom = borderWidth,
+            clipOp = ClipOp.Difference
+        ) {
+            clipRect(
+                left = borderWidth,
+                top = size.height - borderWidth,
+                right = size.width - borderWidth,
+                bottom = size.height,
+                clipOp = ClipOp.Difference
+            ) {
+                drawOutline(
+                    outline = outline,
+                    color = borderColor,
+                    style = border
                 )
             }
+        }
+        clipRect(
+            left = borderWidth,
+            top = NO_OFFSET,
+            right = size.width - borderWidth,
+            bottom = borderWidth
+        ) {
+            drawOutline(
+                outline = outline,
+                color = borderColor,
+                alpha = separationAbove,
+                style = border
+            )
+        }
+        clipRect(
+            left = borderWidth,
+            top = size.height - borderWidth,
+            right = size.width - borderWidth,
+            bottom = size.height
+        ) {
+            drawOutline(
+                outline = outline,
+                color = borderColor,
+                alpha = separationBelow,
+                style = border
+            )
         }
     }
 }
@@ -173,6 +307,9 @@ internal fun ComingDaysCard(
 private fun ComingDayItem(
     comingDay: ComingDay,
     expansion: Transition<Boolean>,
+    isFirst: Boolean,
+    separationAbove: Float,
+    separationBelow: Float,
     dayToShow: DayToShow?,
     isSettled: Boolean,
     onDayToggled: (String) -> Unit,
@@ -187,10 +324,24 @@ private fun ComingDayItem(
     Column(
         modifier = modifier
             .fillMaxWidth()
+            .daySegment(
+                separationAbove = separationAbove,
+                separationBelow = separationBelow,
+                color = VadretTheme.colorScheme.surface,
+                borderColor = VadretTheme.colorScheme.outlineVariant
+            )
             .bringIntoViewRequester(bringIntoViewRequester = bringIntoViewRequester)
             .onSizeChanged { size: IntSize -> dayHeight = size.height }
             .padding(bottom = edgeBottomPadding)
     ) {
+        if (!isFirst) {
+            HorizontalDivider(
+                modifier = Modifier
+                    .padding(horizontal = dividerHorizontalPadding)
+                    .graphicsLayer { alpha = FULL_SEPARATION - separationAbove },
+                color = VadretTheme.colors.divider
+            )
+        }
         ComingDayRow(
             comingDay = comingDay,
             edgeTopPadding = edgeTopPadding,
@@ -203,8 +354,7 @@ private fun ComingDayItem(
         ) {
             ComingHourStrip(
                 hours = comingDay.hours,
-                firstShownHourIndex = comingDay.firstShownHourIndex,
-                modifier = Modifier.padding(bottom = hoursBottomPadding)
+                firstShownHourIndex = comingDay.firstShownHourIndex
             )
         }
     }
