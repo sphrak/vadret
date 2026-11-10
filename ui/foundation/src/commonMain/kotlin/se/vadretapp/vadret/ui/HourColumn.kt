@@ -1,5 +1,7 @@
 package se.vadretapp.vadret.ui
 
+import androidx.compose.animation.animateColor
+import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -8,6 +10,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -31,11 +34,16 @@ fun HourColumn(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    val highlightColor: Color = if (isNow) {
-        VadretTheme.colorScheme.secondaryContainer
-    } else {
-        Color.Transparent
+
+    val isNowTransition = updateTransition(isNow)
+    val highlightColor: Color by isNowTransition.animateColor {
+        if (it) {
+            VadretTheme.colorScheme.secondaryContainer
+        } else {
+            Color.Transparent
+        }
     }
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
