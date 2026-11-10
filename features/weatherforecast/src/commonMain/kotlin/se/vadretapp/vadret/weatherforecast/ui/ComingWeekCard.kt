@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -22,6 +23,7 @@ import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -37,6 +39,7 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.collections.immutable.ImmutableList
@@ -52,6 +55,7 @@ import se.vadretapp.vadret.ui.resources.today
 import se.vadretapp.vadret.ui.resources.week_number
 import se.vadretapp.vadret.weatherforecast.model.ComingWeek
 import se.vadretapp.vadret.weatherforecast.model.WeekDay
+import se.vadretapp.vadret.weatherforecast.ui.ComingWeekCard.OuterShape
 
 private const val SINGLE_LINE = 1
 private const val FIRST_INDEX = 0
@@ -93,6 +97,15 @@ private class WeekChartLines(
     val band: Path
 )
 
+object ComingWeekCard {
+    val OuterPadding = 12.dp
+    private val InnerRadius = 16.dp
+    private val OuterRadius = OuterPadding + InnerRadius
+
+    val OuterShape = RoundedCornerShape(OuterRadius)
+    val InnerShape = RoundedCornerShape(InnerRadius)
+}
+
 @Composable
 internal fun ComingWeekCard(
     comingWeek: ComingWeek,
@@ -102,15 +115,16 @@ internal fun ComingWeekCard(
     val textMeasurer: TextMeasurer = rememberTextMeasurer()
     VadretCard(
         modifier = modifier,
-        shape = cardShape
+        shape = OuterShape
     ) {
-        Column(modifier = Modifier.padding(vertical = cardVerticalPadding)) {
+        Column(modifier = Modifier.padding(vertical = ComingWeekCard.OuterPadding)) {
             ComingWeekHeader(comingWeek = comingWeek)
-            Row(modifier = Modifier.padding(horizontal = daysHorizontalPadding)) {
+            Row(modifier = Modifier.padding(horizontal = ComingWeekCard.OuterPadding)) {
                 comingWeek.days.forEachIndexed { index: Int, weekDay: WeekDay ->
                     key(weekDay.dayKey) {
                         WeekDayColumn(
                             modifier = Modifier.weight(weight = DAY_WEIGHT),
+                            shape = ComingWeekCard.InnerShape,
                             days = comingWeek.days,
                             index = index,
                             textMeasurer = textMeasurer,
@@ -169,6 +183,7 @@ private fun WeekDayColumn(
     index: Int,
     textMeasurer: TextMeasurer,
     onClick: () -> Unit,
+    shape: Shape ,
     modifier: Modifier = Modifier
 ) {
     val weekDay: WeekDay = days[index]
@@ -181,7 +196,7 @@ private fun WeekDayColumn(
         modifier = modifier
             .background(
                 color = highlightColor,
-                shape = todayShape
+                shape = shape
             )
             .clickable(
                 interactionSource = null,
