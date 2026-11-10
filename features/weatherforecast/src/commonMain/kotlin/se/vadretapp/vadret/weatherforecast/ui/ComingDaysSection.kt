@@ -4,6 +4,8 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Transition
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.updateTransition
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -194,7 +196,11 @@ private fun ComingDayItem(
             edgeTopPadding = edgeTopPadding,
             onClick = { onDayToggled(comingDay.key) }
         )
-        expansion.AnimatedVisibility(visible = { isExpanded: Boolean -> isExpanded }) {
+        expansion.AnimatedVisibility(
+            visible = { isExpanded: Boolean -> isExpanded },
+            enter = expandVertically(expandFrom = Alignment.Top),
+            exit = shrinkVertically(shrinkTowards = Alignment.Top)
+        ) {
             ComingHourStrip(
                 hours = comingDay.hours,
                 firstShownHourIndex = comingDay.firstShownHourIndex,
