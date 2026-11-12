@@ -178,8 +178,6 @@
     <string name="slipperiness_cause_freezing_rain_explanation">Regen oder Nieselregen kann auf kaltem Boden zu Eis gefrieren.</string>
     <string name="slipperiness_cause_refreeze_explanation">Nasser Boden kann gefrieren, wenn die Temperatur sinkt.</string>
     <string name="slipperiness_cause_snow_explanation">Schnee oder Schneeregen kann Straßen und Gehwege glatt machen.</string>
-    <string name="slipperiness_estimate_label">Über diese Einschätzung</string>
-    <string name="slipperiness_estimate_explanation">Vadret API berechnet das Risiko aus der Vorhersage des SMHI. Es ist keine Warnung des SMHI.</string>
     <string name="slipperiness_alerts">Glätte</string>
     <string name="aurora_possible">Chance auf Polarlichter</string>
     <string name="aurora_high">Gute Chance auf Polarlichter</string>
@@ -187,7 +185,6 @@
     <string name="aurora_peak_label">Am besten</string>
     <string name="aurora_hours_label">Stunde für Stunde</string>
     <string name="aurora_hour_score">%1$d %</string>
-    <string name="aurora_estimate_explanation">Vadret API berechnet die Chance aus dem Magnetometer in Kiruna, der Wolkenvorhersage des SMHI und wie dunkel es ist. Es ist keine Vorhersage des SMHI.</string>
     <string name="aurora_alerts">Polarlichter</string>
     <string name="daily_forecast_alerts">Wetter heute</string>
     <string name="labs_aurora_summary">Zeigt die Chance auf Polarlichter an deinen Orten</string>

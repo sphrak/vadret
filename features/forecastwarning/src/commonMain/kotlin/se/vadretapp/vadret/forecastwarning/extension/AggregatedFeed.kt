@@ -26,11 +26,8 @@ import se.vadretapp.vadret.ui.extension.nameResource
 import se.vadretapp.vadret.ui.extension.toElapsedTime
 import se.vadretapp.vadret.ui.format.toDayTimeText
 import se.vadretapp.vadret.ui.resources.Res
-import se.vadretapp.vadret.ui.resources.aurora_estimate_explanation
 import se.vadretapp.vadret.ui.resources.aurora_peak_label
 import se.vadretapp.vadret.ui.resources.aurora_score
-import se.vadretapp.vadret.ui.resources.slipperiness_estimate_explanation
-import se.vadretapp.vadret.ui.resources.slipperiness_estimate_label
 import se.vadretapp.vadret.ui.resources.warning_detail_advice
 import se.vadretapp.vadret.ui.resources.warning_detail_comment
 import se.vadretapp.vadret.ui.resources.warning_detail_description
@@ -125,7 +122,11 @@ internal fun AggregatedFeed.toWarningItem(
                     .filterNot { feedDetail: FeedDetail -> feedDetail.repeatsArea(spacedAreaName = spacedAreaName) }
                     .map { feedDetail: FeedDetail -> feedDetail.toWarningDetail() }
         }.toImmutableList(),
-        mapArea = area.toWarningMapArea(),
+        mapArea = when (source) {
+            FeedSource.VADRET_API -> area.toEnclosingCircle()
+            FeedSource.SMHI,
+            FeedSource.KRISINFORMATION -> area
+        }.toWarningMapArea(),
         followedPlaceNames = followedPlaceNames
     )
 }
@@ -138,10 +139,7 @@ private fun Slipperiness.toWarningDetails(): List<WarningDetail> =
             labelResource = slipperinessCause.nameResource(),
             textResource = slipperinessCause.explanationResource()
         )
-    } + WarningDetail.Explained(
-        labelResource = Res.string.slipperiness_estimate_label,
-        textResource = Res.string.slipperiness_estimate_explanation
-    )
+    }
 
 private fun Aurora.toWarningDetails(
     now: Instant,
@@ -155,19 +153,14 @@ private fun Aurora.toWarningDetails(
         languageTag = languageTag,
         hourFormat = hourFormat
     )
-    val estimate = WarningDetail.Explained(
-        labelResource = Res.string.slipperiness_estimate_label,
-        textResource = Res.string.aurora_estimate_explanation
-    )
     return if (peakAtText == null) {
-        listOf(estimate)
+        emptyList()
     } else {
         listOf(
             WarningDetail.Labelled(
                 labelResource = Res.string.aurora_peak_label,
                 text = peakAtText
-            ),
-            estimate
+            )
         )
     }
 }

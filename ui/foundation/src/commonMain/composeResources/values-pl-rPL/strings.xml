@@ -133,8 +133,6 @@
     <string name="slipperiness_cause_freezing_rain_explanation">Deszcz lub mżawka mogą zamarzać po zetknięciu z zimnym podłożem.</string>
     <string name="slipperiness_cause_refreeze_explanation">Mokre podłoże może zamarznąć, gdy temperatura spada.</string>
     <string name="slipperiness_cause_snow_explanation">Śnieg lub deszcz ze śniegiem mogą sprawić, że drogi i chodniki będą śliskie.</string>
-    <string name="slipperiness_estimate_label">O tej ocenie</string>
-    <string name="slipperiness_estimate_explanation">Vadret API wylicza ryzyko na podstawie prognozy SMHI. To nie jest ostrzeżenie SMHI.</string>
     <string name="slipperiness_alerts">Śliskość</string>
     <string name="aurora_possible">Możliwa zorza polarna</string>
     <string name="aurora_high">Duża szansa na zorzę polarną</string>
@@ -142,7 +140,6 @@
     <string name="aurora_peak_label">Najlepiej</string>
     <string name="aurora_hours_label">Godzina po godzinie</string>
     <string name="aurora_hour_score">%1$d%</string>
-    <string name="aurora_estimate_explanation">Vadret API oblicza szansę na podstawie magnetometru w Kirunie, prognozy zachmurzenia SMHI i tego, jak jest ciemno. To nie jest prognoza SMHI.</string>
     <string name="aurora_alerts">Zorza polarna</string>
     <string name="daily_forecast_alerts">Pogoda na dziś</string>
     <string name="labs_aurora_summary">Pokazuje szansę na zorzę polarną w twoich miejscach</string>

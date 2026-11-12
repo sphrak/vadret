@@ -135,8 +135,6 @@
     <string name="slipperiness_cause_freezing_rain_explanation">La pluie ou la bruine peut geler en touchant un sol froid.</string>
     <string name="slipperiness_cause_refreeze_explanation">Un sol mouillé peut geler quand la température baisse.</string>
     <string name="slipperiness_cause_snow_explanation">La neige ou la neige fondue peut rendre routes et trottoirs glissants.</string>
-    <string name="slipperiness_estimate_label">À propos de cette estimation</string>
-    <string name="slipperiness_estimate_explanation">Vadret API calcule le risque à partir des prévisions du SMHI. Ce n'est pas une alerte du SMHI.</string>
     <string name="slipperiness_alerts">Chaussée glissante</string>
     <string name="aurora_possible">Aurores boréales possibles</string>
     <string name="aurora_high">Bonnes chances d'aurores boréales</string>
@@ -144,7 +142,6 @@
     <string name="aurora_peak_label">Au mieux</string>
     <string name="aurora_hours_label">Heure par heure</string>
     <string name="aurora_hour_score">%1$d %</string>
-    <string name="aurora_estimate_explanation">Vadret API calcule la probabilité à partir du magnétomètre de Kiruna, des prévisions de nébulosité du SMHI et de l'obscurité du ciel. Ce n'est pas une prévision du SMHI.</string>
     <string name="aurora_alerts">Aurores boréales</string>
     <string name="daily_forecast_alerts">Météo du jour</string>
     <string name="labs_aurora_summary">Indique les chances d'aurores boréales pour vos lieux</string>

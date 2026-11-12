@@ -12,6 +12,10 @@ import se.vadretapp.vadret.aggregatedfeed.model.GeoPolygon
 import se.vadretapp.vadret.aggregatedfeed.model.GeoPosition
 import se.vadretapp.vadret.forecastwarning.model.MapBounds
 import se.vadretapp.vadret.forecastwarning.model.WarningMapArea
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.hypot
+import kotlin.math.sin
 
 private const val TYPE = "type"
 private const val GEOMETRY = "geometry"
@@ -24,6 +28,9 @@ private const val POLYGON = "Polygon"
 private const val LINE_STRING = "LineString"
 private const val POINT = "Point"
 private const val MINIMUM_LINE_SIZE = 2
+private const val CIRCLE_POINT_COUNT = 64
+private const val HALF_TURN_DEGREES = 180.0
+private const val FULL_TURN_RADIANS = 2 * PI
 
 private val swedenBounds = MapBounds(
     west = 10.9,
@@ -31,6 +38,40 @@ private val swedenBounds = MapBounds(
     east = 24.2,
     north = 69.1
 )
+
+internal fun FeedArea.toEnclosingCircle(): FeedArea {
+    val positions: List<GeoPosition> = polygons.flatMap { geoPolygon: GeoPolygon -> geoPolygon.outline }
+    if (positions.isEmpty()) {
+        return this
+    }
+    val south: Double = positions.minOf { geoPosition: GeoPosition -> geoPosition.latitude }
+    val north: Double = positions.maxOf { geoPosition: GeoPosition -> geoPosition.latitude }
+    val west: Double = positions.minOf { geoPosition: GeoPosition -> geoPosition.longitude }
+    val east: Double = positions.maxOf { geoPosition: GeoPosition -> geoPosition.longitude }
+    val center = GeoPosition(
+        latitude = (south + north) / 2,
+        longitude = (west + east) / 2
+    )
+    val longitudeScale: Double = cos(x = center.latitude * PI / HALF_TURN_DEGREES)
+    val latitudeRadius: Double = hypot(
+        x = (north - south) / 2,
+        y = (east - west) / 2 * longitudeScale
+    )
+    return copy(
+        polygons = listOf(
+            GeoPolygon(
+                outline = (0..CIRCLE_POINT_COUNT).map { pointIndex: Int ->
+                    val angle: Double = FULL_TURN_RADIANS * (pointIndex % CIRCLE_POINT_COUNT) / CIRCLE_POINT_COUNT
+                    GeoPosition(
+                        latitude = center.latitude + latitudeRadius * sin(x = angle),
+                        longitude = center.longitude + latitudeRadius / longitudeScale * cos(x = angle)
+                    )
+                },
+                holes = emptyList()
+            )
+        )
+    )
+}
 
 internal fun FeedArea.toWarningMapArea(): WarningMapArea {
     val positions: List<GeoPosition> = polygons.flatMap { geoPolygon: GeoPolygon -> geoPolygon.outline } +

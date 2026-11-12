@@ -145,8 +145,6 @@
     <string name="slipperiness_cause_freezing_rain_explanation">Sade tai tihku voi jäätyä, kun se osuu kylmään maahan.</string>
     <string name="slipperiness_cause_refreeze_explanation">Märkä maa voi jäätyä, kun lämpötila laskee.</string>
     <string name="slipperiness_cause_snow_explanation">Lumi tai räntä voi tehdä teistä ja jalkakäytävistä liukkaita.</string>
-    <string name="slipperiness_estimate_label">Tietoa arviosta</string>
-    <string name="slipperiness_estimate_explanation">Vadret API laskee riskin SMHI:n ennusteesta. Se ei ole SMHI:n varoitus.</string>
     <string name="slipperiness_alerts">Liukkaus</string>
     <string name="aurora_possible">Revontulia mahdollisesti</string>
     <string name="aurora_high">Hyvä mahdollisuus revontuliin</string>
@@ -154,7 +152,6 @@
     <string name="aurora_peak_label">Parhaimmillaan</string>
     <string name="aurora_hours_label">Tunti tunnilta</string>
     <string name="aurora_hour_score">%1$d %</string>
-    <string name="aurora_estimate_explanation">Vadret API laskee mahdollisuuden Kiirunan magnetometristä, SMHI:n pilviennusteesta ja siitä, kuinka pimeää on. Se ei ole SMHI:n ennuste.</string>
     <string name="aurora_alerts">Revontulet</string>
     <string name="daily_forecast_alerts">Päivän sää</string>
     <string name="labs_aurora_summary">Näyttää revontulten mahdollisuuden paikoissasi</string>

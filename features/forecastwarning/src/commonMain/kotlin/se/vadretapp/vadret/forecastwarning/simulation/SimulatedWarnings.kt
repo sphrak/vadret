@@ -65,10 +65,10 @@ internal fun simulatedWarnings(now: Instant): List<AggregatedFeed> =
             startsAt = now + 3.hours,
             endsAt = now + 10.hours,
             area = rectangleArea(
-                south = 59.2,
-                west = 17.8,
-                north = 59.5,
-                east = 18.3
+                south = 59.326171875,
+                west = 18.0615234375,
+                north = 59.3701171875,
+                east = 18.10546875
             ),
             slipperiness = Slipperiness(
                 risk = SlipperinessRisk.HIGH,

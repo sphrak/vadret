@@ -10,7 +10,7 @@ import se.vadretapp.vadret.ui.resources.ic_warning
 
 private const val KRISINFORMATION_NAME = "Krisinformation"
 private const val SMHI_NAME = "SMHI"
-private const val VADRET_API_NAME = "Vadret API"
+private const val VADRET_API_NAME = "Vadretapp.se"
 
 fun FeedSource.displayName(): String =
     when (this) {

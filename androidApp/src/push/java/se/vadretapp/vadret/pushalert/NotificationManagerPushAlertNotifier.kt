@@ -194,7 +194,7 @@ internal class NotificationManagerPushAlertNotifier(
         notificationChannel(
             pushAlertKind = PushAlertKind.DAILY,
             nameResource = R.string.push_alert_channel_daily,
-            importance = NotificationManagerCompat.IMPORTANCE_LOW
+            importance = NotificationManagerCompat.IMPORTANCE_MIN
         )
     )
 

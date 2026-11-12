@@ -45,6 +45,7 @@ import se.vadretapp.vadret.forecastwarning.ui.map.WarningMapLayers
 import se.vadretapp.vadret.ui.VadretTheme
 import se.vadretapp.vadret.ui.WarningColors
 
+private const val EXACT_TOLERANCE = 0f
 private const val FILL_LAYER_ID = "vadret-warning-fill"
 private const val BAND_LAYER_ID = "vadret-warning-band"
 private const val LINE_LAYER_ID = "vadret-warning-line"
@@ -158,7 +159,10 @@ private fun WarningAreaLayers(
     geoJson: String,
     colors: WarningColors
 ) {
-    val source: GeoJsonSource = rememberGeoJsonSource(data = GeoJsonData.JsonString(json = geoJson))
+    val source: GeoJsonSource = rememberGeoJsonSource(
+        data = GeoJsonData.JsonString(json = geoJson),
+        block = { tolerance = EXACT_TOLERANCE }
+    )
     Anchor.Above(predicate = { layerSummary: LayerSummary -> layerSummary.type != SYMBOL_LAYER_TYPE }) {
         FillLayer(
             id = FILL_LAYER_ID,

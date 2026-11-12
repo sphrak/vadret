@@ -29,7 +29,6 @@ import se.vadretapp.vadret.icons.VadretIcons
 import se.vadretapp.vadret.setting.model.HourFormat
 import se.vadretapp.vadret.ui.model.ElapsedTime
 import se.vadretapp.vadret.ui.resources.Res
-import se.vadretapp.vadret.ui.resources.aurora_estimate_explanation
 import se.vadretapp.vadret.ui.resources.aurora_hours_label
 import se.vadretapp.vadret.ui.resources.aurora_peak_label
 import se.vadretapp.vadret.ui.resources.aurora_score
@@ -38,8 +37,6 @@ import se.vadretapp.vadret.ui.resources.slipperiness_cause_frost
 import se.vadretapp.vadret.ui.resources.slipperiness_cause_frost_explanation
 import se.vadretapp.vadret.ui.resources.slipperiness_cause_refreeze
 import se.vadretapp.vadret.ui.resources.slipperiness_cause_refreeze_explanation
-import se.vadretapp.vadret.ui.resources.slipperiness_estimate_explanation
-import se.vadretapp.vadret.ui.resources.slipperiness_estimate_label
 import se.vadretapp.vadret.ui.resources.slipperiness_high
 import se.vadretapp.vadret.ui.resources.warning_detail_advice
 import se.vadretapp.vadret.ui.resources.warning_detail_comment
@@ -162,7 +159,7 @@ class AggregatedFeedTest {
     }
 
     @Test
-    fun `a vadret api estimate is headed by its strongest cause and explains each cause and itself`() {
+    fun `a vadret api estimate is headed by its strongest cause and explains each cause`() {
         val warningItem: WarningItem = aggregatedFeed(
             identifier = "vadret-slipperiness-u6sce-2026-10-26-HIGH",
             headline = "",
@@ -188,7 +185,7 @@ class AggregatedFeedTest {
         assertEquals(expected = VadretIcons.Alert.Slipperiness, actual = warningItem.icon)
         assertEquals(expected = SlipperinessRisk.HIGH, actual = warningItem.slipperinessRisk)
         assertEquals(expected = null, actual = warningItem.warningLevel)
-        assertEquals(expected = "Vadret API", actual = warningItem.byline)
+        assertEquals(expected = "Vadretapp.se", actual = warningItem.byline)
         assertEquals(
             expected = listOf<WarningDetail>(
                 WarningDetail.Explained(
@@ -198,10 +195,6 @@ class AggregatedFeedTest {
                 WarningDetail.Explained(
                     labelResource = Res.string.slipperiness_cause_frost,
                     textResource = Res.string.slipperiness_cause_frost_explanation
-                ),
-                WarningDetail.Explained(
-                    labelResource = Res.string.slipperiness_estimate_label,
-                    textResource = Res.string.slipperiness_estimate_explanation
                 )
             ),
             actual = warningItem.details
@@ -209,7 +202,7 @@ class AggregatedFeedTest {
     }
 
     @Test
-    fun `a vadret api aurora is headed by its score and tells when it is at its best and what it is`() {
+    fun `a vadret api aurora is headed by its score and tells when it is at its best`() {
         val warningItem: WarningItem = aggregatedFeed(
             identifier = "vadret-aurora-u6sce-2026-10-26-HIGH",
             headline = "",
@@ -233,10 +226,6 @@ class AggregatedFeedTest {
                 WarningDetail.Labelled(
                     labelResource = Res.string.aurora_peak_label,
                     text = "22:00"
-                ),
-                WarningDetail.Explained(
-                    labelResource = Res.string.slipperiness_estimate_label,
-                    textResource = Res.string.aurora_estimate_explanation
                 )
             ),
             actual = warningItem.details
@@ -244,7 +233,7 @@ class AggregatedFeedTest {
     }
 
     @Test
-    fun `a vadret api aurora without a peak only explains itself and its hours come first once they are got`() {
+    fun `a vadret api aurora without a peak shows only its hours once they are got`() {
         val warningItem: WarningItem = aggregatedFeed(
             identifier = "vadret-aurora-u6sce-2026-10-26-HIGH",
             source = FeedSource.VADRET_API
@@ -290,10 +279,6 @@ class AggregatedFeedTest {
                         )
                     ),
                     firstShownHourIndex = 0
-                ),
-                WarningDetail.Explained(
-                    labelResource = Res.string.slipperiness_estimate_label,
-                    textResource = Res.string.aurora_estimate_explanation
                 )
             ),
             actual = warningItem.details

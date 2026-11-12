@@ -141,8 +141,6 @@
     <string name="slipperiness_cause_freezing_rain_explanation">Regn eller yr kan fryse til is når det treffer kald bakke.</string>
     <string name="slipperiness_cause_refreeze_explanation">Våt bakke kan fryse når temperaturen synker.</string>
     <string name="slipperiness_cause_snow_explanation">Snø eller sludd kan gjøre veier og fortau glatte.</string>
-    <string name="slipperiness_estimate_label">Om vurderingen</string>
-    <string name="slipperiness_estimate_explanation">Vadret API regner ut risikoen fra SMHIs prognose. Det er ikke et farevarsel fra SMHI.</string>
     <string name="slipperiness_alerts">Glatt føre</string>
     <string name="aurora_possible">Sjanse for nordlys</string>
     <string name="aurora_high">Stor sjanse for nordlys</string>
@@ -150,7 +148,6 @@
     <string name="aurora_peak_label">Best</string>
     <string name="aurora_hours_label">Time for time</string>
     <string name="aurora_hour_score">%1$d %</string>
-    <string name="aurora_estimate_explanation">Vadret API regner ut sjansen fra magnetometeret i Kiruna, SMHIs skyvarsel og hvor mørkt det er. Det er ikke et varsel fra SMHI.</string>
     <string name="aurora_alerts">Nordlys</string>
     <string name="daily_forecast_alerts">Dagens vær</string>
     <string name="labs_aurora_summary">Viser sjansen for nordlys ved stedene dine</string>

@@ -114,38 +114,38 @@ internal fun simulatedPushAlertMessages(now: Instant): ImmutableList<PushAlertMe
         )
     ),
     simulatedDailyMessage(
-        title = "Klart, 2° till 9° - Stockholm",
-        body = "Uppehåll hela dagen. Vindstyrka 4 m/s.",
+        title = "4° i Stockholm",
+        body = "Klart, 2° till 9°. Uppehåll hela dagen. Vindstyrka 4 m/s.",
         pushAlertType = PushAlertType.DAILY_CLEAR
     ),
     simulatedDailyMessage(
-        title = "Halvklart, 3° till 8° - Stockholm",
-        body = "Uppehåll hela dagen. Vindstyrka 6 m/s.",
+        title = "6° i Stockholm",
+        body = "Halvklart, 3° till 8°. Uppehåll hela dagen. Vindstyrka 6 m/s.",
         pushAlertType = PushAlertType.DAILY_PARTLY_CLOUDY
     ),
     simulatedDailyMessage(
-        title = "Molnigt, 4° till 6° - Stockholm",
-        body = "Uppehåll hela dagen. Vindstyrka 5 m/s.",
+        title = "5° i Stockholm",
+        body = "Molnigt, 4° till 6°. Uppehåll hela dagen. Vindstyrka 5 m/s.",
         pushAlertType = PushAlertType.DAILY_CLOUDY
     ),
     simulatedDailyMessage(
-        title = "Molnigt, 2° till 7° - Stockholm",
-        body = "Regn från kl. 14:00, upp till 3 mm. Vindstyrka 8 m/s.",
+        title = "3° i Stockholm",
+        body = "Molnigt, 2° till 7°. Regn från kl. 14:00, upp till 3 mm. Vindstyrka 8 m/s.",
         pushAlertType = PushAlertType.DAILY_RAIN
     ),
     simulatedDailyMessage(
-        title = "Molnigt, -4° till -1° - Stockholm",
-        body = "Snöfall från kl. 09:00, upp till 5 mm. Vindstyrka 6 m/s.",
+        title = "-2° i Stockholm",
+        body = "Molnigt, -4° till -1°. Snöfall från kl. 09:00, upp till 5 mm. Vindstyrka 6 m/s.",
         pushAlertType = PushAlertType.DAILY_SNOW
     ),
     simulatedDailyMessage(
-        title = "Molnigt, 0° till 2° - Stockholm",
-        body = "Snöblandat regn från kl. 11:00, upp till 4 mm. Vindstyrka 7 m/s.",
+        title = "1° i Stockholm",
+        body = "Molnigt, 0° till 2°. Snöblandat regn från kl. 11:00, upp till 4 mm. Vindstyrka 7 m/s.",
         pushAlertType = PushAlertType.DAILY_SLEET
     ),
     simulatedDailyMessage(
-        title = "Halvklart, 14° till 24° - Stockholm",
-        body = "Åska från kl. 16:00, upp till 12 mm. Vindstyrka 9 m/s.",
+        title = "19° i Stockholm",
+        body = "Halvklart, 14° till 24°. Åska från kl. 16:00, upp till 12 mm. Vindstyrka 9 m/s.",
         pushAlertType = PushAlertType.DAILY_THUNDER
     )
 )

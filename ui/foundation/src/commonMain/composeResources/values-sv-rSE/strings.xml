@@ -278,8 +278,6 @@
     <string name="slipperiness_cause_freezing_rain_explanation">Regn eller duggregn kan frysa till is när det landar på kall mark.</string>
     <string name="slipperiness_cause_refreeze_explanation">Våt mark kan frysa när temperaturen sjunker.</string>
     <string name="slipperiness_cause_snow_explanation">Snö eller snöblandat regn kan göra vägar och trottoarer hala.</string>
-    <string name="slipperiness_estimate_label">Om bedömningen</string>
-    <string name="slipperiness_estimate_explanation">Vadret API räknar fram risken ur SMHI:s prognos. Det är ingen varning från SMHI.</string>
     <string name="slipperiness_alerts">Halka</string>
     <string name="aurora_possible">Chans för norrsken</string>
     <string name="aurora_high">Stor chans för norrsken</string>
@@ -287,7 +285,6 @@
     <string name="aurora_peak_label">Som störst</string>
     <string name="aurora_hours_label">Timme för timme</string>
     <string name="aurora_hour_score">%1$d %</string>
-    <string name="aurora_estimate_explanation">Vadret API räknar fram chansen ur magnetometern i Kiruna, SMHI:s molnprognos och hur mörkt det är. Det är ingen prognos från SMHI.</string>
     <string name="aurora_alerts">Norrsken</string>
     <string name="daily_forecast_alerts">Dagens väder</string>
     <string name="labs_aurora_summary">Visar chansen för norrsken vid dina platser</string>

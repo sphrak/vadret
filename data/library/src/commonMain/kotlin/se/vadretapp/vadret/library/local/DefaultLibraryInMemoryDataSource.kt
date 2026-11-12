@@ -61,7 +61,7 @@ internal class DefaultLibraryInMemoryDataSource : LibraryInMemoryDataSource {
         Library(
             author = "SMHI Open Data Meteorological Forecasts",
             title = "SMHI Open Data API",
-            description = "SMHI's open data: the forecast, the weather analysis, radar images and weather warnings. The Vadret API turns the forecast into a slipperiness risk and a chance of northern lights.",
+            description = "SMHI's open data: the forecast, the weather analysis, radar images and weather warnings. Vadretapp.se turns the forecast into a slipperiness risk and a chance of northern lights.",
             projectUrl = "https://opendata.smhi.se/",
             sourceUrl = null,
             licenseUrl = "https://www.smhi.se/data/om-smhis-data/villkor-for-anvandning",
@@ -88,7 +88,7 @@ internal class DefaultLibraryInMemoryDataSource : LibraryInMemoryDataSource {
         Library(
             author = "Kiruna Atmospheric and Geophysical Observatory, Swedish Institute of Space Physics",
             title = "Kiruna magnetometer",
-            description = "Magnetometer data from Kiruna, turned into a K index and a chance of northern lights by the Vadret API.",
+            description = "Magnetometer data from Kiruna, turned into a K index and a chance of northern lights by Vadretapp.se.",
             projectUrl = "https://www2.irf.se/mag",
             sourceUrl = "https://www2.irf.se/maggraphs/rt1hour_secondary.txt",
             licenseUrl = "https://creativecommons.org/licenses/by/4.0/",
