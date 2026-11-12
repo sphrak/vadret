@@ -1,7 +1,7 @@
 [versions]
 agp = "9.4.1"
 r8 = "9.5.29"
-kotlin = "2.5.0-Beta2"
+kotlin = "2.5.0-RC"
 ksp = "2.3.12"
 
 android-compileSdk = "37"
