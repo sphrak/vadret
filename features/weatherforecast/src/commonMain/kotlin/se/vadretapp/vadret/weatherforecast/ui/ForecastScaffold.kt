@@ -49,7 +49,6 @@ private const val FORECAST_VIEW_KEY = "forecast-view"
 private const val FORECAST_CONTENT_KEY = "forecast-content"
 
 private val contentHorizontalPadding = 13.dp
-private val contentBottomPadding = 21.dp
 
 internal object ForecastCards {
     val Spacing = 13.dp
@@ -57,11 +56,11 @@ internal object ForecastCards {
 
 @Composable
 internal fun ForecastScaffold(
-    state: WeatherForecastState,
+    modifier: Modifier = Modifier,
+    topBar: @Composable () -> Unit,
     onEvent: (WeatherForecastEvent) -> Unit,
     onWarningClick: (List<String>) -> Unit,
-    topBar: @Composable () -> Unit,
-    modifier: Modifier = Modifier
+    state: WeatherForecastState
 ) {
     val languageTag: String = LocalLanguageTag.current
     val hourFormat: HourFormat = LocalHourFormat.current
@@ -111,11 +110,7 @@ internal fun ForecastScaffold(
         ) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(
-                    start = contentHorizontalPadding,
-                    end = contentHorizontalPadding,
-                    bottom = contentBottomPadding + scrollBottomInset
-                ),
+                contentPadding = PaddingValues(contentHorizontalPadding),
                 verticalArrangement = Arrangement.spacedBy(space = ForecastCards.Spacing)
             ) {
                 if (currentWeather != null) {

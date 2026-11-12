@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -114,9 +113,15 @@ internal fun ComingWeekCard(
         modifier = modifier,
         shape = OuterShape
     ) {
-        Column(modifier = Modifier.padding(vertical = ComingWeekCardDefaults.OuterPadding)) {
+        Column(
+            modifier = Modifier.padding(
+                ComingWeekCardDefaults.OuterPadding
+            )
+        ) {
+            Spacer(Modifier.height(10.dp))
             ComingWeekHeader(comingWeek = comingWeek)
-            Row(modifier = Modifier.padding(horizontal = ComingWeekCardDefaults.OuterPadding)) {
+            Spacer(Modifier.height(10.dp))
+            Row {
                 comingWeek.days.forEachIndexed { index: Int, weekDay: WeekDay ->
                     key(weekDay.dayKey) {
                         WeekDayColumn(
@@ -141,19 +146,7 @@ private fun ComingWeekHeader(
     modifier: Modifier = Modifier
 ) {
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .heightIn(min = headerMinHeight)
-            .padding(
-                start = headerHorizontalPadding,
-                end = headerHorizontalPadding,
-                bottom = 12.dp,
-                top = 8.dp
-            ),
-        horizontalArrangement = Arrangement.spacedBy(
-            space = headerSpacing,
-            alignment = Alignment.Start
-        ),
+        modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
@@ -203,7 +196,7 @@ private fun WeekDayColumn(
                 role = Role.Button,
                 onClick = onClick
             )
-            .padding(top = dayTopPadding),
+            .padding(top = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(space = dayContentSpacing)
     ) {

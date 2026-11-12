@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Transition
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.updateTransition
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
@@ -454,7 +455,8 @@ private fun ComingDayRow(
             EXPANDED_STATE_LAYER_ALPHA
         } else {
             NO_STATE_LAYER_ALPHA
-        }
+        },
+        animationSpec = tween(200)
     )
 
     Row(

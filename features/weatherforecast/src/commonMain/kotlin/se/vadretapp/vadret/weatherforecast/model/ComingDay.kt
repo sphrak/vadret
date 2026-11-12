@@ -1,10 +1,12 @@
 package se.vadretapp.vadret.weatherforecast.model
 
+import androidx.compose.runtime.Immutable
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.StringResource
 import se.vadretapp.vadret.icons.VadretIconGraphic
 
+@Immutable
 data class ComingDay(
     val key: String,
     val date: LocalDate,

@@ -1,6 +1,5 @@
 package se.vadretapp.vadret.weatherforecast.ui
 
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -30,12 +29,13 @@ fun WeatherForecastRoute(
     viewModel: WeatherForecastViewModel = koinViewModel()
 ) {
     val state: WeatherForecastState by viewModel.state.collectAsStateWithLifecycle()
+
     WeatherForecastScreen(
+        modifier = modifier,
         state = state,
         onEvent = viewModel::onEvent,
         onWarningClick = onWarningClick,
-        onAddPlaceClick = onAddPlaceClick,
-        modifier = modifier
+        onAddPlaceClick = onAddPlaceClick
     )
 }
 
@@ -50,21 +50,23 @@ internal fun WeatherForecastScreen(
     LaunchedEffect(Unit) {
         onEvent(WeatherForecastEvent.OnShown)
     }
+
     LocationPermissionEffect(
         isRequested = state.isLocationPermissionRequested,
         onResult = { isGranted: Boolean ->
             onEvent(WeatherForecastEvent.OnLocationPermissionResult(isGranted = isGranted))
         }
     )
+
     ForecastScaffold(
-        state = state,
+        modifier = modifier,
         onEvent = onEvent,
+        state = state,
         onWarningClick = onWarningClick,
         topBar = {
             VadretTopAppBar(
                 actions = {
                     LocationPicker(
-                        modifier = Modifier.padding(end = locationEndPadding),
                         localityName = state.localityName,
                         locationChoices = state.locationChoices,
                         onEvent = onEvent,
@@ -72,8 +74,7 @@ internal fun WeatherForecastScreen(
                     )
                 }
             )
-        },
-        modifier = modifier
+        }
     )
 }
 
