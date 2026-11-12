@@ -1,12 +1,19 @@
 package se.vadretapp.vadret.pushalert
 
 import se.vadretapp.vadret.icons.Aurora
+import se.vadretapp.vadret.icons.ClearSky
+import se.vadretapp.vadret.icons.CloudySky
 import se.vadretapp.vadret.icons.Colder
+import se.vadretapp.vadret.icons.HalfClearSky
 import se.vadretapp.vadret.icons.HardWind
 import se.vadretapp.vadret.icons.Hurricane
+import se.vadretapp.vadret.icons.ModerateRain
+import se.vadretapp.vadret.icons.ModerateSleet
+import se.vadretapp.vadret.icons.ModerateSnowfall
 import se.vadretapp.vadret.icons.Pollen
 import se.vadretapp.vadret.icons.Slipperiness
 import se.vadretapp.vadret.icons.Storm
+import se.vadretapp.vadret.icons.Thunderstorm
 import se.vadretapp.vadret.icons.VadretIcons
 import se.vadretapp.vadret.icons.Warmer
 import se.vadretapp.vadret.icons.Warning
@@ -28,7 +35,14 @@ class PushAlertTypeIconTest {
                 VadretIcons.Alert.Storm,
                 VadretIcons.Alert.Hurricane,
                 VadretIcons.Alert.Slipperiness,
-                VadretIcons.Alert.Aurora
+                VadretIcons.Alert.Aurora,
+                VadretIcons.Weather.ClearSky,
+                VadretIcons.Weather.HalfClearSky,
+                VadretIcons.Weather.CloudySky,
+                VadretIcons.Weather.ModerateRain,
+                VadretIcons.Weather.ModerateSnowfall,
+                VadretIcons.Weather.ModerateSleet,
+                VadretIcons.Weather.Thunderstorm
             ),
             actual = PushAlertType.entries.map { pushAlertType: PushAlertType -> pushAlertType.icon() }
         )

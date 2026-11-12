@@ -7,20 +7,21 @@ import se.vadretapp.vadret.geohash.model.Geohash
 import se.vadretapp.vadret.location.model.LocationPreference
 import se.vadretapp.vadret.pushalert.model.PushAlertPlace
 
-internal fun LocationPreference.toPushAlertPlaces(favorites: List<Favorite>): List<PushAlertPlace> {
-    val chosenPlaceName: String? = if (isAutomatic) {
-        null
-    } else {
-        storedLocation.locality
-    }
-    return listOf(PushAlertPlace.ChosenPlace(name = chosenPlaceName)) +
+internal fun LocationPreference.toPushAlertPlaces(favorites: List<Favorite>): List<PushAlertPlace> =
+    listOf(PushAlertPlace.ChosenPlace(name = chosenPlaceName())) +
         notifiableFavorites(favorites = favorites).map { favorite: Favorite ->
             PushAlertPlace.SavedPlace(
                 favoriteId = favorite.favoriteId,
                 name = favorite.locality
             )
         }
-}
+
+internal fun LocationPreference.chosenPlaceName(): String? =
+    if (isAutomatic) {
+        null
+    } else {
+        storedLocation.locality
+    }
 
 internal fun LocationPreference.notifiableFavorites(favorites: List<Favorite>): List<Favorite> {
     val chosenFavorite: Favorite? = chosenFavorite(favorites = favorites)

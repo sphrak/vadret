@@ -18,7 +18,6 @@ internal fun WarningItem.withAuroraHours(
     auroraHours: List<AuroraHour>,
     now: Instant,
     timeZone: TimeZone,
-    languageTag: String,
     hourFormat: HourFormat
 ): WarningItem =
     if (auroraHours.isEmpty()) {
@@ -30,8 +29,7 @@ internal fun WarningItem.withAuroraHours(
                 isNow = now >= auroraHour.time && now < auroraHour.time + ONE_HOUR,
                 hourText = auroraHour.time.toHourText(
                     hourFormat = hourFormat,
-                    timeZone = timeZone,
-                    languageTag = languageTag
+                    timeZone = timeZone
                 ),
                 score = auroraHour.score,
                 level = auroraHour.score / MAXIMUM_SCORE

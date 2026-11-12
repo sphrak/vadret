@@ -6,4 +6,5 @@
     <string name="push_alert_channel_wind">Hård vind</string>
     <string name="push_alert_channel_slipperiness">Halka</string>
     <string name="push_alert_channel_aurora">Norrsken</string>
+    <string name="push_alert_channel_daily">Dagens väder</string>
 </resources>

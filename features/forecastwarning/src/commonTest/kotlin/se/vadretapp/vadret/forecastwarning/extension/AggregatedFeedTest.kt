@@ -266,7 +266,6 @@ class AggregatedFeedTest {
             ),
             now = now,
             timeZone = stockholm,
-            languageTag = ENGLISH,
             hourFormat = HourFormat.TWENTY_FOUR_HOUR
         )
 
@@ -328,7 +327,6 @@ class AggregatedFeedTest {
             ),
             now = Instant.parse(input = "2026-10-26T21:59:59Z"),
             timeZone = stockholm,
-            languageTag = ENGLISH,
             hourFormat = HourFormat.TWENTY_FOUR_HOUR
         )
 

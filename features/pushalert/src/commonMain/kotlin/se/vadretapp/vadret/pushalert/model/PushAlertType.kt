@@ -9,5 +9,12 @@ enum class PushAlertType {
     STORM,
     HURRICANE,
     SLIPPERINESS,
-    AURORA
+    AURORA,
+    DAILY_CLEAR,
+    DAILY_PARTLY_CLOUDY,
+    DAILY_CLOUDY,
+    DAILY_RAIN,
+    DAILY_SNOW,
+    DAILY_SLEET,
+    DAILY_THUNDER
 }

@@ -27,6 +27,7 @@ import se.vadretapp.vadret.pushalert.model.DeviceRegistration
 import se.vadretapp.vadret.pushalert.model.DeviceToken
 import se.vadretapp.vadret.pushalert.model.InstallationToken
 import se.vadretapp.vadret.pushalert.model.IosAttestation
+import se.vadretapp.vadret.pushalert.model.PlaceName
 import se.vadretapp.vadret.pushalert.model.PollenAlertLevel
 import se.vadretapp.vadret.pushalert.model.PollenChoice
 import se.vadretapp.vadret.pushalert.model.PushAlertChoices
@@ -278,6 +279,11 @@ class DefaultPushAlertRepositoryTest {
                     Geohash(value = "u6sce"),
                     Geohash(value = "u3chr")
                 ),
+                placeNames = mapOf(
+                    Geohash(value = "u6sce") to null,
+                    Geohash(value = "u3chr") to PlaceName(value = "Malmö")
+                ),
+                dailyGeohash = Geohash(value = "u6sce"),
                 warningLowestLevel = WarningAlertLevel.YELLOW,
                 pollenChoices = listOf(PollenChoice(pollenTypeId = BIRCH, lowestLevel = PollenAlertLevel.HIGH)),
                 temperatureTrend = true,
@@ -295,7 +301,7 @@ class DefaultPushAlertRepositoryTest {
 
         assertEquals(
             expected = listOf(
-                """PUT /api/v1/subscription Bearer $INSTALLATION_TOKEN {"geohashes":["u6sce","u3chr"],"warning_lowest_level":"YELLOW","pollen":[{"pollen_type_id":"$BIRCH","lowest_level":5}],"temperature_trend":true,"strong_wind":true,"slipperiness":true,"aurora":true,"hour_format":"24h","language":"sv"}""",
+                """PUT /api/v1/subscription Bearer $INSTALLATION_TOKEN {"geohashes":["u6sce","u3chr"],"place_names":{"u6sce":null,"u3chr":"Malmö"},"daily_geohash":"u6sce","warning_lowest_level":"YELLOW","pollen":[{"pollen_type_id":"$BIRCH","lowest_level":5}],"temperature_trend":true,"strong_wind":true,"slipperiness":true,"aurora":true,"hour_format":"24h","language":"sv"}""",
                 "PUT /api/v1/subscription Bearer $INSTALLATION_TOKEN {}"
             ),
             actual = requests
@@ -308,6 +314,8 @@ class DefaultPushAlertRepositoryTest {
             installationToken = InstallationToken(value = INSTALLATION_TOKEN),
             pushAlertSubscription = PushAlertSubscription(
                 geohashes = listOf(Geohash(value = "u6sce")),
+                placeNames = mapOf(Geohash(value = "u6sce") to PlaceName(value = "Stockholm")),
+                dailyGeohash = null,
                 warningLowestLevel = null,
                 pollenChoices = emptyList(),
                 temperatureTrend = false,
@@ -320,7 +328,7 @@ class DefaultPushAlertRepositoryTest {
         )
 
         assertEquals(
-            expected = listOf("""PUT /api/v1/subscription Bearer $INSTALLATION_TOKEN {"geohashes":["u6sce"],"pollen":[],"temperature_trend":false,"strong_wind":false,"slipperiness":false,"aurora":false,"hour_format":"12h","language":"pl"}"""),
+            expected = listOf("""PUT /api/v1/subscription Bearer $INSTALLATION_TOKEN {"geohashes":["u6sce"],"place_names":{"u6sce":"Stockholm"},"pollen":[],"temperature_trend":false,"strong_wind":false,"slipperiness":false,"aurora":false,"hour_format":"12h","language":"pl"}"""),
             actual = requests
         )
     }
@@ -334,6 +342,8 @@ class DefaultPushAlertRepositoryTest {
                 installationToken = InstallationToken(value = INSTALLATION_TOKEN),
                 pushAlertSubscription = PushAlertSubscription(
                     geohashes = listOf(Geohash(value = "u6sce")),
+                    placeNames = mapOf(Geohash(value = "u6sce") to null),
+                    dailyGeohash = null,
                     warningLowestLevel = null,
                     pollenChoices = emptyList(),
                     temperatureTrend = false,
@@ -767,6 +777,7 @@ private val CHOICES = PushAlertChoices(
     strongWind = true,
     slipperiness = false,
     aurora = false,
+    dailyForecast = null,
     isChosenPlaceNotified = true,
     notifiedFavoriteIds = emptySet()
 )

@@ -115,7 +115,7 @@ class ForecastTest {
         ).comingDays
 
     @Test
-    fun `the hours of the coming days follow the 12 hour clock in the language shown`() {
+    fun `the hours of the coming days follow the 12 hour clock with AM and PM whatever the language`() {
         val forecasts: List<Forecast> = listOf(
             forecast(validAt = localTime(day = 10, hour = 11)),
             forecast(validAt = localTime(day = 10, hour = 12)),
@@ -124,7 +124,7 @@ class ForecastTest {
         )
 
         assertEquals(
-            expected = listOf("6 AM", "12 PM") to listOf("6 fm", "12 em"),
+            expected = listOf("6 AM", "12 PM") to listOf("6 AM", "12 PM"),
             actual = listOf("en", "sv-SE").map { languageTag: String ->
                 comingDays(
                     forecasts = forecasts,

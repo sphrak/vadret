@@ -14,6 +14,8 @@ internal fun PushAlertSubscription?.toSubscriptionDto(): SubscriptionDto =
     } else {
         SubscriptionDto(
             geohashes = geohashes.map { geohash -> geohash.value },
+            placeNames = placeNames.entries.associate { (geohash, placeName) -> geohash.value to placeName?.value },
+            dailyGeohash = dailyGeohash?.value,
             warningLowestLevel = warningLowestLevel?.name,
             pollen = pollenChoices.map { pollenChoice ->
                 PollenSubscriptionDto(

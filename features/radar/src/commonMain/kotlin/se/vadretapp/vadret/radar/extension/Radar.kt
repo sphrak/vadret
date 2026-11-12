@@ -25,8 +25,7 @@ internal fun Radar.toRadarFrames(
             imageUrl = radarImage.imageUrl,
             timeText = radarImage.validAt.toTimeText(
                 hourFormat = hourFormat,
-                timeZone = timeZone,
-                languageTag = languageTag
+                timeZone = timeZone
             ),
             weekday = weekdayFormatter.format(instant = radarImage.validAt),
             elapsedTime = radarImage.validAt.toElapsedTime(now = now)

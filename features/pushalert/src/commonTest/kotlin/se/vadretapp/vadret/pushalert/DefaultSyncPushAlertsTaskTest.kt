@@ -23,7 +23,7 @@ import se.vadretapp.vadret.pushalert.model.PushAlertChoices
 import se.vadretapp.vadret.pushalert.model.PushAlertSubscription
 import se.vadretapp.vadret.pushalert.model.WarningAlertLevel
 import se.vadretapp.vadret.pushalert.usecase.DefaultGetCurrentGeohashTask
-import se.vadretapp.vadret.pushalert.usecase.DefaultGetPushAlertGeohashesTask
+import se.vadretapp.vadret.pushalert.usecase.DefaultGetPushAlertPlaceNamesTask
 import se.vadretapp.vadret.pushalert.usecase.DefaultSyncPushAlertsTask
 import se.vadretapp.vadret.setting.model.HourFormat
 import se.vadretapp.vadret.setting.model.Language
@@ -1014,7 +1014,7 @@ private fun syncPushAlertsTask(
     notificationPermissionSource = notificationPermissionSource,
     sealedMessageKey = sealedMessageKey,
     getCurrentGeohashTask = DefaultGetCurrentGeohashTask(getChosenPlaceTask = FakeGetChosenPlaceTask(locationRepository = locationRepository)),
-    getPushAlertGeohashesTask = DefaultGetPushAlertGeohashesTask(
+    getPushAlertPlaceNamesTask = DefaultGetPushAlertPlaceNamesTask(
         favoriteRepository = favoriteRepository,
         locationRepository = locationRepository
     ),
@@ -1032,6 +1032,7 @@ private val WARNINGS_FROM_YELLOW = PushAlertChoices(
     strongWind = false,
     slipperiness = false,
     aurora = false,
+    dailyForecast = null,
     isChosenPlaceNotified = true,
     notifiedFavoriteIds = emptySet()
 )

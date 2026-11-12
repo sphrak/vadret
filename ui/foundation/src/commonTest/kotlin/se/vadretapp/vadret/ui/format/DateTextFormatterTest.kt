@@ -60,15 +60,14 @@ class DateTextFormatterTest {
     }
 
     @Test
-    fun `a time on the 12 hour clock names the half of the day in the language`() {
+    fun `a time on the 12 hour clock names the half of the day AM or PM`() {
         val afternoonInUtc: Instant = Instant.parse(input = "2026-10-27T13:05:00Z")
 
         assertEquals(
-            expected = listOf("2:05 PM", "2:05 em", "14:05"),
+            expected = listOf("2:05 PM", "14:05"),
             actual = listOf(
-                afternoonInUtc.toTimeText(hourFormat = HourFormat.TWELVE_HOUR, timeZone = stockholm, languageTag = ENGLISH),
-                afternoonInUtc.toTimeText(hourFormat = HourFormat.TWELVE_HOUR, timeZone = stockholm, languageTag = SWEDISH),
-                afternoonInUtc.toTimeText(hourFormat = HourFormat.TWENTY_FOUR_HOUR, timeZone = stockholm, languageTag = SWEDISH)
+                afternoonInUtc.toTimeText(hourFormat = HourFormat.TWELVE_HOUR, timeZone = stockholm),
+                afternoonInUtc.toTimeText(hourFormat = HourFormat.TWENTY_FOUR_HOUR, timeZone = stockholm)
             )
         )
     }
@@ -78,11 +77,10 @@ class DateTextFormatterTest {
         val morningInUtc: Instant = Instant.parse(input = "2026-10-27T08:05:00Z")
 
         assertEquals(
-            expected = listOf("9 AM", "9 fm", "09"),
+            expected = listOf("9 AM", "09"),
             actual = listOf(
-                morningInUtc.toHourText(hourFormat = HourFormat.TWELVE_HOUR, timeZone = stockholm, languageTag = ENGLISH),
-                morningInUtc.toHourText(hourFormat = HourFormat.TWELVE_HOUR, timeZone = stockholm, languageTag = SWEDISH),
-                morningInUtc.toHourText(hourFormat = HourFormat.TWENTY_FOUR_HOUR, timeZone = stockholm, languageTag = SWEDISH)
+                morningInUtc.toHourText(hourFormat = HourFormat.TWELVE_HOUR, timeZone = stockholm),
+                morningInUtc.toHourText(hourFormat = HourFormat.TWENTY_FOUR_HOUR, timeZone = stockholm)
             )
         )
     }
@@ -97,23 +95,19 @@ class DateTextFormatterTest {
             actual = listOf(
                 midnightInUtc.toTimeText(
                     hourFormat = HourFormat.TWELVE_HOUR,
-                    timeZone = stockholm,
-                    languageTag = ENGLISH
+                    timeZone = stockholm
                 ),
                 midnightInUtc.toHourText(
                     hourFormat = HourFormat.TWELVE_HOUR,
-                    timeZone = stockholm,
-                    languageTag = ENGLISH
+                    timeZone = stockholm
                 ),
                 noonInUtc.toTimeText(
                     hourFormat = HourFormat.TWELVE_HOUR,
-                    timeZone = stockholm,
-                    languageTag = ENGLISH
+                    timeZone = stockholm
                 ),
                 noonInUtc.toHourText(
                     hourFormat = HourFormat.TWELVE_HOUR,
-                    timeZone = stockholm,
-                    languageTag = ENGLISH
+                    timeZone = stockholm
                 )
             )
         )

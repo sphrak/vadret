@@ -268,13 +268,13 @@
     <string name="end_of_season_is_not_simulated">Radarn följer den riktiga säsongen</string>
     <string name="simulated_stories">Storys</string>
     <string name="play_all_stories">Spela alla</string>
-    <string name="slipperiness_possible">Möjlig halka</string>
+    <string name="slipperiness_possible">Risk för halka</string>
     <string name="slipperiness_high">Stor risk för halka</string>
-    <string name="slipperiness_cause_frost">Rimfrost</string>
+    <string name="slipperiness_cause_frost">Frost</string>
     <string name="slipperiness_cause_freezing_rain">Underkylt regn</string>
     <string name="slipperiness_cause_refreeze">Återfrysning</string>
-    <string name="slipperiness_cause_snow">Snö</string>
-    <string name="slipperiness_cause_frost_explanation">Klar och lugn himmel kan kyla marken under noll, så att fukt fryser till rimfrost.</string>
+    <string name="slipperiness_cause_snow">Snöfall</string>
+    <string name="slipperiness_cause_frost_explanation">Klar och lugn himmel kan kyla marken under noll, så att fukt fryser till frost.</string>
     <string name="slipperiness_cause_freezing_rain_explanation">Regn eller duggregn kan frysa till is när det landar på kall mark.</string>
     <string name="slipperiness_cause_refreeze_explanation">Våt mark kan frysa när temperaturen sjunker.</string>
     <string name="slipperiness_cause_snow_explanation">Snö eller snöblandat regn kan göra vägar och trottoarer hala.</string>
@@ -289,6 +289,7 @@
     <string name="aurora_hour_score">%1$d %</string>
     <string name="aurora_estimate_explanation">Vadret API räknar fram chansen ur magnetometern i Kiruna, SMHI:s molnprognos och hur mörkt det är. Det är ingen prognos från SMHI.</string>
     <string name="aurora_alerts">Norrsken</string>
+    <string name="daily_forecast_alerts">Dagens väder</string>
     <string name="labs_aurora_summary">Visar chansen för norrsken vid dina platser</string>
     <string name="pollen_alerts">Pollenhalter</string>
     <string name="pollen_alerts_summary">För pollen du valt under Pollen</string>

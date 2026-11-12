@@ -181,7 +181,6 @@ class WarningStoryViewModel internal constructor(
                         auroraHours = shownAuroraHours[aggregatedFeed.identifier].orEmpty(),
                         now = clock.now(),
                         timeZone = TimeZone.currentSystemDefault(),
-                        languageTag = shownTextLocale.languageTag,
                         hourFormat = shownTextLocale.hourFormat
                     ).withStoryDetails()
             }.toImmutableList()

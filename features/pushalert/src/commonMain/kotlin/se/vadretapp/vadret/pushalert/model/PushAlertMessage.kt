@@ -8,6 +8,7 @@ data class PushAlertMessage(
     val kind: PushAlertKind,
     val pushAlertType: PushAlertType?,
     val notificationId: String?,
+    val day: String?,
     val cell: String?,
     val warningReference: WarningReference?
 )

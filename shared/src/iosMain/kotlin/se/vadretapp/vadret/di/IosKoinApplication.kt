@@ -7,7 +7,6 @@ import se.vadretapp.vadret.di.model.AppInfo
 import se.vadretapp.vadret.logging.LogLevel
 import se.vadretapp.vadret.logging.LoggerFactory
 import se.vadretapp.vadret.logging.nsLogSink
-import se.vadretapp.vadret.pushalert.di.iosPushAlertPlaceNameModule
 import se.vadretapp.vadret.pushalert.di.pushAlertModule
 import se.vadretapp.vadret.radar.di.iosRadarModule
 import se.vadretapp.vadret.radar.di.radarModule
@@ -34,8 +33,7 @@ internal val koinApplication: KoinApplication by lazy {
                 radarModule,
                 iosRadarModule,
                 pushAlertModule,
-                iosPushAlertModule(appGroup = appGroup()),
-                iosPushAlertPlaceNameModule
+                iosPushAlertModule(appGroup = appGroup())
             )
         )
     }

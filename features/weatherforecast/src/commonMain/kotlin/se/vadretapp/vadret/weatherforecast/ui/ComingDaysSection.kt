@@ -100,7 +100,6 @@ private val headerInset = 4.dp
 private val cardBorderWidth = 1.dp
 private val cardVerticalPadding = 10.5.dp
 private val dayRowMinHeight = 55.dp
-private val dayRowHorizontalPadding = 21.dp
 private val dayRowSpacing = 8.dp
 private val dayNameWidth = 55.dp
 private val dayNameSpacing = 2.dp
@@ -108,7 +107,6 @@ private val dayIconSize = 34.dp
 private val dayPrecipitationWidth = 42.dp
 private val dayTemperatureWidth = 34.dp
 private val chevronSize = 21.dp
-private val dividerHorizontalPadding = 21.dp
 private val noEdgePadding = 0.dp
 private const val RANGE_BAR_WEIGHT = 1f
 private val dayNameAutoSize = TextAutoSize.StepBased(
@@ -117,9 +115,9 @@ private val dayNameAutoSize = TextAutoSize.StepBased(
 )
 
 internal object ComingDayCard {
-    val OuterPadding = 12.dp
-    private val InnerRadius = 16.dp
-    val OuterRadius = OuterPadding + InnerRadius
+    val OuterRadius = 28.dp
+    val Inset = 16.dp
+    private val InnerRadius = OuterRadius - Inset
 
     val InnerShape = RoundedCornerShape(InnerRadius)
 }
@@ -339,7 +337,7 @@ private fun ComingDayItem(
         if (!isFirst) {
             HorizontalDivider(
                 modifier = Modifier
-                    .padding(horizontal = dividerHorizontalPadding)
+                    .padding(horizontal = ComingDayCard.Inset)
                     .graphicsLayer { alpha = FULL_SEPARATION - separationAbove },
                 color = VadretTheme.colors.divider
             )
@@ -476,7 +474,7 @@ private fun ComingDayRow(
             .semantics { stateDescription = expansionDescription }
             .padding(top = edgeTopPadding)
             .heightIn(min = dayRowMinHeight)
-            .padding(horizontal = dayRowHorizontalPadding),
+            .padding(horizontal = ComingDayCard.Inset),
         horizontalArrangement = Arrangement.spacedBy(space = dayRowSpacing),
         verticalAlignment = Alignment.CenterVertically
     ) {

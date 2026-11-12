@@ -15,6 +15,7 @@ internal fun pushAlertsPreviewState(): PushAlertsState = PushAlertsState(
         strongWind = false,
         slipperiness = true,
         aurora = true,
+        dailyForecast = true,
         isChosenPlaceNotified = true,
         notifiedFavoriteIds = setOf(PREVIEW_UPPSALA_ID)
     ),

@@ -144,6 +144,7 @@
     <string name="aurora_hour_score">%1$d%</string>
     <string name="aurora_estimate_explanation">Vadret API oblicza szansę na podstawie magnetometru w Kirunie, prognozy zachmurzenia SMHI i tego, jak jest ciemno. To nie jest prognoza SMHI.</string>
     <string name="aurora_alerts">Zorza polarna</string>
+    <string name="daily_forecast_alerts">Pogoda na dziś</string>
     <string name="labs_aurora_summary">Pokazuje szansę na zorzę polarną w twoich miejscach</string>
     <string name="pollen_alerts">Stężenie pyłków</string>
     <string name="pollen_alerts_summary">Dla pyłków wybranych w sekcji Pyłki</string>

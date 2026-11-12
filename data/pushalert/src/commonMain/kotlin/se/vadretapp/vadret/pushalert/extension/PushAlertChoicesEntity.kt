@@ -12,6 +12,7 @@ internal fun PushAlertChoicesEntity.toPushAlertChoices(): PushAlertChoices = Pus
     strongWind = strongWind,
     slipperiness = slipperiness,
     aurora = aurora,
+    dailyForecast = dailyForecast,
     isChosenPlaceNotified = isChosenPlaceNotified,
     notifiedFavoriteIds = notifiedFavoriteIds.toSet()
 )

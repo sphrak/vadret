@@ -21,8 +21,7 @@ internal fun WindForecast.toWindTimeFrames(
         WindTimeFrame(
             timeText = windFrame.validAt.toTimeText(
                 hourFormat = hourFormat,
-                timeZone = timeZone,
-                languageTag = languageTag
+                timeZone = timeZone
             ),
             weekday = weekdayFormatter.format(instant = windFrame.validAt)
         )

@@ -65,7 +65,6 @@ internal fun PlaceForecast.toWeatherForecast(
         comingDays = comingDays.toImmutableList(),
         days = toForecastDays(
             timeZone = timeZone,
-            languageTag = languageTag,
             hourFormat = hourFormat,
             dateFormatter = DateTextFormatter(
                 dateTextStyle = DateTextStyle.LONG_DATE,
@@ -112,7 +111,6 @@ private fun PlaceForecast.isDaytime(at: Instant): Boolean =
 
 private fun PlaceForecast.toForecastDays(
     timeZone: TimeZone,
-    languageTag: String,
     hourFormat: HourFormat,
     dateFormatter: DateTextFormatter,
     weekdayFormatter: DateTextFormatter
@@ -131,7 +129,6 @@ private fun PlaceForecast.toForecastDays(
                     .map { forecast: Forecast ->
                         forecast.toForecastHour(
                             timeZone = timeZone,
-                            languageTag = languageTag,
                             hourFormat = hourFormat,
                             isDaytime = isDaytime(at = forecast.validAt)
                         )
@@ -167,7 +164,6 @@ private fun Forecast.feelsLikeTemperature(): String? {
 
 private fun Forecast.toForecastHour(
     timeZone: TimeZone,
-    languageTag: String,
     hourFormat: HourFormat,
     isDaytime: Boolean
 ): ForecastHour =
@@ -175,8 +171,7 @@ private fun Forecast.toForecastHour(
         key = "$HOUR_KEY_PREFIX$validAt",
         timeText = validAt.toTimeText(
             hourFormat = hourFormat,
-            timeZone = timeZone,
-            languageTag = languageTag
+            timeZone = timeZone
         ),
         temperature = airTemperature,
         feelsLikeTemperature = feelsLikeTemperature(),

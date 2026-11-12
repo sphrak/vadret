@@ -189,6 +189,7 @@
     <string name="aurora_hour_score">%1$d %</string>
     <string name="aurora_estimate_explanation">Vadret API berechnet die Chance aus dem Magnetometer in Kiruna, der Wolkenvorhersage des SMHI und wie dunkel es ist. Es ist keine Vorhersage des SMHI.</string>
     <string name="aurora_alerts">Polarlichter</string>
+    <string name="daily_forecast_alerts">Wetter heute</string>
     <string name="labs_aurora_summary">Zeigt die Chance auf Polarlichter an deinen Orten</string>
     <string name="pollen_alerts">Pollenbelastung</string>
     <string name="pollen_alerts_summary">Für die unter Pollen gewählten Pollen</string>

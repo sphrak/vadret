@@ -14,7 +14,6 @@ import se.vadretapp.vadret.pushalert.model.PushAlertKind
 import se.vadretapp.vadret.pushalert.model.PushAlertMessage
 import se.vadretapp.vadret.pushalert.model.PushAlertType
 import se.vadretapp.vadret.pushalert.model.WarningAlertLevel
-import se.vadretapp.vadret.pushalert.usecase.DefaultAddPlaceNameTask
 import se.vadretapp.vadret.pushalert.usecase.DefaultOpenPushAlertTask
 import kotlin.io.encoding.Base64
 import kotlin.test.Test
@@ -31,6 +30,7 @@ class DefaultOpenPushAlertTaskTest {
                     kind = PushAlertKind.WARNING,
                     pushAlertType = null,
                     notificationId = "n-1",
+                    day = null,
                     cell = null,
                     warningReference = null
                 ).asRight(),
@@ -40,6 +40,7 @@ class DefaultOpenPushAlertTaskTest {
                     kind = PushAlertKind.POLLEN,
                     pushAlertType = null,
                     notificationId = null,
+                    day = null,
                     cell = null,
                     warningReference = null
                 ).asRight(),
@@ -49,6 +50,7 @@ class DefaultOpenPushAlertTaskTest {
                     kind = PushAlertKind.TEMPERATURE,
                     pushAlertType = null,
                     notificationId = "n-3",
+                    day = null,
                     cell = null,
                     warningReference = null
                 ).asRight(),
@@ -106,16 +108,13 @@ class DefaultOpenPushAlertTaskTest {
     }
 
     @Test
-    fun aWindOrTemperatureAlertForASavedPlaceIsNamedAfterItAndOtherKindsAreNot() = runTest {
-        val openPushAlert = openPushAlert(
-            pushAlertChoices = EVERYTHING_CHOSEN,
-            favoriteRepository = FakeFavoriteRepository(favorites = listOf(MALMO_FAVORITE))
-        )
+    fun everyTitleIsShownAsTheServerWroteIt() = runTest {
+        val openPushAlert = openPushAlert(pushAlertChoices = EVERYTHING_CHOSEN)
 
         assertEquals(
             expected = listOf(
                 "Storm i dag - Malmö",
-                "Varmare - Malmö",
+                "Varmare",
                 "Gul varning: Skåne län",
                 "Björkpollen i Malmö"
             ).map { title -> title.asRight() },
@@ -157,19 +156,17 @@ class DefaultOpenPushAlertTaskTest {
     }
 
     @Test
-    fun aSlipperinessAlertRefersToItsStoryAndIsNamedAfterTheSavedPlaceInItsCell() = runTest {
-        val openPushAlert = openPushAlert(
-            pushAlertChoices = PushAlertChoices.NOTHING_CHOSEN.copy(slipperiness = true),
-            favoriteRepository = FakeFavoriteRepository(favorites = listOf(MALMO_FAVORITE))
-        )
+    fun aSlipperinessAlertRefersToItsStory() = runTest {
+        val openPushAlert = openPushAlert(pushAlertChoices = PushAlertChoices.NOTHING_CHOSEN.copy(slipperiness = true))
 
         assertEquals(
             expected = PushAlertMessage(
-                title = "Möjlig halka i natt - Malmö",
-                body = "Rimfrost, ungefär kl. 23-06.",
+                title = "Risk för halka i natt - Malmö",
+                body = "Frost i natt runt kl. 01:00.",
                 kind = PushAlertKind.SLIPPERINESS,
                 pushAlertType = PushAlertType.SLIPPERINESS,
                 notificationId = "n-7",
+                day = "2026-11-08",
                 cell = "u3chr",
                 warningReference = WarningReference.Slipperiness(
                     geohash = Geohash(value = "u3chr"),
@@ -181,19 +178,17 @@ class DefaultOpenPushAlertTaskTest {
     }
 
     @Test
-    fun anAuroraAlertRefersToItsStoryAndIsNamedAfterTheSavedPlaceInItsCell() = runTest {
-        val openPushAlert = openPushAlert(
-            pushAlertChoices = PushAlertChoices.NOTHING_CHOSEN.copy(aurora = true),
-            favoriteRepository = FakeFavoriteRepository(favorites = listOf(MALMO_FAVORITE))
-        )
+    fun anAuroraAlertRefersToItsStory() = runTest {
+        val openPushAlert = openPushAlert(pushAlertChoices = PushAlertChoices.NOTHING_CHOSEN.copy(aurora = true))
 
         assertEquals(
             expected = PushAlertMessage(
-                title = "Chans för norrsken i kväll - Malmö",
-                body = "Som störst runt kl. 22, ungefär kl. 20-01.",
+                title = "Stor chans för norrsken i kväll - Malmö",
+                body = "Norrsken kan förekomma mellan 20:00-01:00. Störst chans kl. 22:00.",
                 kind = PushAlertKind.AURORA,
                 pushAlertType = PushAlertType.AURORA,
                 notificationId = "n-9",
+                day = "2026-11-08",
                 cell = "u3chr",
                 warningReference = WarningReference.Aurora(
                     geohash = Geohash(value = "u3chr"),
@@ -216,11 +211,12 @@ class DefaultOpenPushAlertTaskTest {
     fun aCellFromTheServerIsKeptWithTheAlert() = runTest {
         assertEquals(
             expected = PushAlertMessage(
-                title = "Storm i dag",
+                title = "Storm i dag - Malmö",
                 body = "Upp till 25 m/s i medelvind.",
                 kind = PushAlertKind.WIND,
                 pushAlertType = null,
                 notificationId = "n-5",
+                day = null,
                 cell = "u3ch",
                 warningReference = null
             ).asRight(),
@@ -232,11 +228,7 @@ class DefaultOpenPushAlertTaskTest {
     fun choicesThatCannotBeReadDropTheAlert() = runTest {
         val openPushAlert = DefaultOpenPushAlertTask(
             sealedMessageKey = FAKE_SEALED_MESSAGE_KEY,
-            pushAlertRepository = FakePushAlertRepository(choicesFailure = Failure(errorCode = ErrorCode.STORAGE_FAILED)),
-            addPlaceNameTask = DefaultAddPlaceNameTask(
-                favoriteRepository = FakeFavoriteRepository(),
-                pushAlertRepository = FakePushAlertRepository()
-            )
+            pushAlertRepository = FakePushAlertRepository(choicesFailure = Failure(errorCode = ErrorCode.STORAGE_FAILED))
         )
 
         assertEquals(
@@ -248,22 +240,12 @@ class DefaultOpenPushAlertTaskTest {
 
 private fun openPushAlert(
     pushAlertChoices: PushAlertChoices,
-    favoriteRepository: FakeFavoriteRepository = FakeFavoriteRepository(),
     sealedMessageKey: FakeSealedMessageKey = FAKE_SEALED_MESSAGE_KEY
-): DefaultOpenPushAlertTask {
-    val pushAlertRepository = FakePushAlertRepository(
-        choices = pushAlertChoices,
-        syncedCurrentGeohash = Geohash(value = "u6sce")
-    )
-    return DefaultOpenPushAlertTask(
+): DefaultOpenPushAlertTask =
+    DefaultOpenPushAlertTask(
         sealedMessageKey = sealedMessageKey,
-        pushAlertRepository = pushAlertRepository,
-        addPlaceNameTask = DefaultAddPlaceNameTask(
-            favoriteRepository = favoriteRepository,
-            pushAlertRepository = pushAlertRepository
-        )
+        pushAlertRepository = FakePushAlertRepository(choices = pushAlertChoices)
     )
-}
 
 private val SEALED_WARNING = byteArrayOf(1, 2, 3)
 private val SEALED_WITHOUT_BODY = byteArrayOf(4, 5, 6)
@@ -309,13 +291,13 @@ private val FAKE_SEALED_MESSAGE_KEY = FakeSealedMessageKey(
         SEALED_WARNING.toList() to """{"title":"Gul varning: Stockholms län","body":"Kuling","data":{"kind":"warning","notification_id":"n-1"}}""".encodeToByteArray(),
         SEALED_POLLEN.toList() to """{"title":"Björkpollen","body":"Höga halter","data":{"kind":"pollen"}}""".encodeToByteArray(),
         SEALED_TEMPERATURE.toList() to """{"title":"Kallare","body":"3° kallare i morgon","data":{"kind":"temperature","notification_id":"n-3"}}""".encodeToByteArray(),
-        SEALED_WIND.toList() to """{"title":"Hård vind i morgon","body":"Upp till 16 m/s i medelvind, 24 m/s i byarna.","data":{"kind":"wind","notification_id":"n-4","day":"2026-11-02"}}""".encodeToByteArray(),
-        SEALED_WIND_IN_MALMO.toList() to """{"title":"Storm i dag","body":"Upp till 25 m/s i medelvind.","data":{"kind":"wind","notification_id":"n-5","cell":"u3ch"}}""".encodeToByteArray(),
+        SEALED_WIND.toList() to """{"title":"Hård vind i morgon","body":"Upp till 16 m/s i medelvind runt kl. 14:00, 24 m/s i byarna.","data":{"kind":"wind","notification_id":"n-4","day":"2026-11-02"}}""".encodeToByteArray(),
+        SEALED_WIND_IN_MALMO.toList() to """{"title":"Storm i dag - Malmö","body":"Upp till 25 m/s i medelvind.","data":{"kind":"wind","notification_id":"n-5","cell":"u3ch"}}""".encodeToByteArray(),
         SEALED_TEMPERATURE_IN_MALMO.toList() to """{"title":"Varmare","body":"3° varmare i morgon","data":{"kind":"temperature","notification_id":"n-6","cell":"u3ch"}}""".encodeToByteArray(),
         SEALED_WARNING_WITH_CELL.toList() to """{"title":"Gul varning: Skåne län","body":"Kuling","data":{"kind":"warning","cell":"u3ch"}}""".encodeToByteArray(),
         SEALED_POLLEN_WITH_CELL.toList() to """{"title":"Björkpollen i Malmö","body":"Höga halter","data":{"kind":"pollen","cell":"u3ch"}}""".encodeToByteArray(),
-        SEALED_SLIPPERINESS.toList() to """{"title":"Möjlig halka i natt","body":"Rimfrost, ungefär kl. 23-06.","data":{"kind":"slipperiness","alert_type":"slipperiness","notification_id":"n-7","cell":"u3chr","day":"2026-11-08","slipperiness_level":"POSSIBLE"}}""".encodeToByteArray(),
-        SEALED_AURORA.toList() to """{"title":"Chans för norrsken i kväll","body":"Som störst runt kl. 22, ungefär kl. 20-01.","data":{"kind":"aurora","alert_type":"aurora","notification_id":"n-9","cell":"u3chr","day":"2026-11-08","aurora_level":"POSSIBLE"}}""".encodeToByteArray(),
+        SEALED_SLIPPERINESS.toList() to """{"title":"Risk för halka i natt - Malmö","body":"Frost i natt runt kl. 01:00.","data":{"kind":"slipperiness","alert_type":"slipperiness","notification_id":"n-7","cell":"u3chr","day":"2026-11-08","slipperiness_level":"POSSIBLE"}}""".encodeToByteArray(),
+        SEALED_AURORA.toList() to """{"title":"Stor chans för norrsken i kväll - Malmö","body":"Norrsken kan förekomma mellan 20:00-01:00. Störst chans kl. 22:00.","data":{"kind":"aurora","alert_type":"aurora","notification_id":"n-9","cell":"u3chr","day":"2026-11-08","aurora_level":"POSSIBLE"}}""".encodeToByteArray(),
         SEALED_WARNING_WITH_AREA.toList() to """{"title":"Gul varning: Skåne län","body":"Kuling","data":{"kind":"warning","alert_type":"warning","notification_id":"n-8","warning_area_id":"12"}}""".encodeToByteArray(),
         SEALED_WITHOUT_BODY.toList() to """{"title":"Gul varning","data":{"kind":"warning"}}""".encodeToByteArray(),
         SEALED_NONSENSE.toList() to "not json".encodeToByteArray(),
@@ -333,6 +315,7 @@ private val EVERYTHING_CHOSEN = PushAlertChoices(
     strongWind = true,
     slipperiness = true,
     aurora = true,
+    dailyForecast = null,
     isChosenPlaceNotified = true,
     notifiedFavoriteIds = emptySet()
 )
@@ -341,10 +324,11 @@ private val ALERT_TYPES = listOf("warning", "pollen", "warmer", "colder", "hard_
 
 private val WIND_MESSAGE = PushAlertMessage(
     title = "Hård vind i morgon",
-    body = "Upp till 16 m/s i medelvind, 24 m/s i byarna.",
+    body = "Upp till 16 m/s i medelvind runt kl. 14:00, 24 m/s i byarna.",
     kind = PushAlertKind.WIND,
     pushAlertType = null,
     notificationId = "n-4",
+    day = "2026-11-02",
     cell = null,
     warningReference = null
 )

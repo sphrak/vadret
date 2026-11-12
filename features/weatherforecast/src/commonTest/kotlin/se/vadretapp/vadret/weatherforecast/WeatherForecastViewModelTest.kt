@@ -556,13 +556,11 @@ class WeatherForecastViewModelTest {
                 expected = listOf(
                     firstHourAt.toTimeText(
                         hourFormat = HourFormat.TWENTY_FOUR_HOUR,
-                        timeZone = TimeZone.currentSystemDefault(),
-                        languageTag = "en"
+                        timeZone = TimeZone.currentSystemDefault()
                     ),
                     firstHourAt.toTimeText(
                         hourFormat = HourFormat.TWELVE_HOUR,
-                        timeZone = TimeZone.currentSystemDefault(),
-                        languageTag = "en"
+                        timeZone = TimeZone.currentSystemDefault()
                     )
                 ),
                 actual = listOf(onTheTwentyFourHourClock, onTheTwelveHourClock)

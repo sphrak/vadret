@@ -14,6 +14,7 @@ internal sealed interface PushAlertsEvent {
     data class OnStrongWindToggled(val isEnabled: Boolean) : PushAlertsEvent
     data class OnSlipperinessToggled(val isEnabled: Boolean) : PushAlertsEvent
     data class OnAuroraToggled(val isEnabled: Boolean) : PushAlertsEvent
+    data class OnDailyForecastToggled(val isEnabled: Boolean) : PushAlertsEvent
     data class OnPollenAlertsToggled(val isEnabled: Boolean) : PushAlertsEvent
     data object OnNoAllergensDialogDismissed : PushAlertsEvent
     data class OnPlaceToggled(

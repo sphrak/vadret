@@ -23,6 +23,7 @@ internal fun simulatedPushAlertMessages(now: Instant): ImmutableList<PushAlertMe
         kind = PushAlertKind.WARNING,
         pushAlertType = PushAlertType.WARNING,
         notificationId = "simulated-warning",
+        day = null,
         cell = null,
         warningReference = null
     ),
@@ -32,60 +33,67 @@ internal fun simulatedPushAlertMessages(now: Instant): ImmutableList<PushAlertMe
         kind = PushAlertKind.POLLEN,
         pushAlertType = PushAlertType.POLLEN,
         notificationId = "simulated-pollen",
+        day = null,
         cell = null,
         warningReference = null
     ),
     PushAlertMessage(
-        title = "Varmare i morgon",
+        title = "Varmare i morgon - Stockholm",
         body = "Högst 18° i morgon, mot 12° i dag.",
         kind = PushAlertKind.TEMPERATURE,
         pushAlertType = PushAlertType.WARMER,
         notificationId = "simulated-warmer",
+        day = null,
         cell = null,
         warningReference = null
     ),
     PushAlertMessage(
-        title = "Kallare i morgon",
+        title = "Kallare i morgon - Stockholm",
         body = "Högst 3° i morgon, mot 10° i dag.",
         kind = PushAlertKind.TEMPERATURE,
         pushAlertType = PushAlertType.COLDER,
         notificationId = "simulated-colder",
+        day = null,
         cell = null,
         warningReference = null
     ),
     PushAlertMessage(
-        title = "Hård vind i morgon",
-        body = "Upp till 16 m/s i medelvind runt kl. 14, 24 m/s i byarna.",
+        title = "Hård vind i morgon - Stockholm",
+        body = "Upp till 16 m/s i medelvind runt kl. 14:00, 24 m/s i byarna.",
         kind = PushAlertKind.WIND,
         pushAlertType = PushAlertType.HARD_WIND,
         notificationId = "simulated-hard-wind",
+        day = null,
         cell = null,
         warningReference = null
     ),
     PushAlertMessage(
-        title = "Storm i morgon",
-        body = "Upp till 27 m/s i medelvind runt kl. 3, 36 m/s i byarna.",
+        title = "Storm i morgon - Stockholm",
+        body = "Upp till 27 m/s i medelvind runt kl. 03:00, 36 m/s i byarna.",
         kind = PushAlertKind.WIND,
         pushAlertType = PushAlertType.STORM,
         notificationId = "simulated-storm",
+        day = null,
         cell = null,
         warningReference = null
     ),
     PushAlertMessage(
-        title = "Orkan i morgon",
-        body = "Upp till 34 m/s i medelvind runt kl. 5, 45 m/s i byarna.",
+        title = "Orkan i morgon - Stockholm",
+        body = "Upp till 34 m/s i medelvind runt kl. 05:00, 45 m/s i byarna.",
         kind = PushAlertKind.WIND,
         pushAlertType = PushAlertType.HURRICANE,
         notificationId = "simulated-hurricane",
+        day = null,
         cell = null,
         warningReference = null
     ),
     PushAlertMessage(
-        title = "Möjlig halka i natt",
-        body = "Rimfrost och återfrysning, ungefär kl. 23-06.",
+        title = "Risk för halka i natt - Stockholm",
+        body = "Frost och återfrysning i natt runt kl. 01:00.",
         kind = PushAlertKind.SLIPPERINESS,
         pushAlertType = PushAlertType.SLIPPERINESS,
         notificationId = "simulated-slipperiness",
+        day = null,
         cell = SIMULATED_SLIPPERINESS_CELL,
         warningReference = WarningReference.Slipperiness(
             geohash = Geohash(value = SIMULATED_SLIPPERINESS_CELL),
@@ -93,17 +101,68 @@ internal fun simulatedPushAlertMessages(now: Instant): ImmutableList<PushAlertMe
         )
     ),
     PushAlertMessage(
-        title = "Chans för norrsken i kväll",
-        body = "Som störst runt kl. 22, ungefär kl. 20-01.",
+        title = "Stor chans för norrsken i kväll - Stockholm",
+        body = "Norrsken kan förekomma mellan 20:00-01:00. Störst chans kl. 22:00.",
         kind = PushAlertKind.AURORA,
         pushAlertType = PushAlertType.AURORA,
         notificationId = "simulated-aurora",
+        day = null,
         cell = SIMULATED_AURORA_CELL,
         warningReference = WarningReference.Aurora(
             geohash = Geohash(value = SIMULATED_AURORA_CELL),
             auroraNight = now.swedishDayStartingAtNoon()
         )
+    ),
+    simulatedDailyMessage(
+        title = "Klart, 2° till 9° - Stockholm",
+        body = "Uppehåll hela dagen. Vindstyrka 4 m/s.",
+        pushAlertType = PushAlertType.DAILY_CLEAR
+    ),
+    simulatedDailyMessage(
+        title = "Halvklart, 3° till 8° - Stockholm",
+        body = "Uppehåll hela dagen. Vindstyrka 6 m/s.",
+        pushAlertType = PushAlertType.DAILY_PARTLY_CLOUDY
+    ),
+    simulatedDailyMessage(
+        title = "Molnigt, 4° till 6° - Stockholm",
+        body = "Uppehåll hela dagen. Vindstyrka 5 m/s.",
+        pushAlertType = PushAlertType.DAILY_CLOUDY
+    ),
+    simulatedDailyMessage(
+        title = "Molnigt, 2° till 7° - Stockholm",
+        body = "Regn från kl. 14:00, upp till 3 mm. Vindstyrka 8 m/s.",
+        pushAlertType = PushAlertType.DAILY_RAIN
+    ),
+    simulatedDailyMessage(
+        title = "Molnigt, -4° till -1° - Stockholm",
+        body = "Snöfall från kl. 09:00, upp till 5 mm. Vindstyrka 6 m/s.",
+        pushAlertType = PushAlertType.DAILY_SNOW
+    ),
+    simulatedDailyMessage(
+        title = "Molnigt, 0° till 2° - Stockholm",
+        body = "Snöblandat regn från kl. 11:00, upp till 4 mm. Vindstyrka 7 m/s.",
+        pushAlertType = PushAlertType.DAILY_SLEET
+    ),
+    simulatedDailyMessage(
+        title = "Halvklart, 14° till 24° - Stockholm",
+        body = "Åska från kl. 16:00, upp till 12 mm. Vindstyrka 9 m/s.",
+        pushAlertType = PushAlertType.DAILY_THUNDER
     )
+)
+
+private fun simulatedDailyMessage(
+    title: String,
+    body: String,
+    pushAlertType: PushAlertType
+): PushAlertMessage = PushAlertMessage(
+    title = title,
+    body = body,
+    kind = PushAlertKind.DAILY,
+    pushAlertType = pushAlertType,
+    notificationId = "simulated-${pushAlertType.name.lowercase()}",
+    day = null,
+    cell = null,
+    warningReference = null
 )
 
 private fun Instant.swedishDayStartingAtNoon(): String {

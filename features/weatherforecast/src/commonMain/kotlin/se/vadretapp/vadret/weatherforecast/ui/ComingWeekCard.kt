@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.paddingFromBaseline
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.TextAutoSize
@@ -28,6 +29,7 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -38,6 +40,7 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.collections.immutable.ImmutableList
@@ -57,6 +60,7 @@ import se.vadretapp.vadret.weatherforecast.model.TemperatureShade
 import se.vadretapp.vadret.weatherforecast.model.TemperatureShadeStop
 import se.vadretapp.vadret.weatherforecast.model.WeekDay
 import se.vadretapp.vadret.weatherforecast.ui.ComingWeekCardDefaults.OuterShape
+import kotlin.math.sqrt
 
 private const val SINGLE_LINE = 1
 private const val FIRST_INDEX = 0
@@ -66,6 +70,7 @@ private const val SMOOTHING_DIVISOR = 6f
 private const val BAND_ALPHA = 0.14f
 private const val LOW_LINE_ALPHA = 0.45f
 private const val DAY_WEIGHT = 1f
+private const val CAP_HEIGHT_RATIO = 0.71f
 
 private val headerMinHeight = 34.dp
 private val headerHorizontalPadding = 20.dp
@@ -94,9 +99,10 @@ private class WeekChartLines(
 )
 
 object ComingWeekCardDefaults {
-    val OuterPadding = 12.dp
-    private val InnerRadius = 16.dp
-    private val OuterRadius = OuterPadding + InnerRadius
+    private val OuterRadius = 28.dp
+    val Inset = 16.dp
+    private val InnerRadius = OuterRadius - Inset
+    val TitleInset = Inset + InnerRadius * (1f - 1f / sqrt(x = 2f))
 
     val OuterShape = RoundedCornerShape(OuterRadius)
     val InnerShape = RoundedCornerShape(InnerRadius)
@@ -113,15 +119,10 @@ internal fun ComingWeekCard(
         modifier = modifier,
         shape = OuterShape
     ) {
-        Column(
-            modifier = Modifier.padding(
-                ComingWeekCardDefaults.OuterPadding
-            )
-        ) {
-            Spacer(Modifier.height(10.dp))
+        Column(modifier = Modifier.padding(bottom = ComingWeekCardDefaults.Inset)) {
             ComingWeekHeader(comingWeek = comingWeek)
             Spacer(Modifier.height(10.dp))
-            Row {
+            Row(modifier = Modifier.padding(horizontal = ComingWeekCardDefaults.Inset)) {
                 comingWeek.days.forEachIndexed { index: Int, weekDay: WeekDay ->
                     key(weekDay.dayKey) {
                         WeekDayColumn(
@@ -145,21 +146,28 @@ private fun ComingWeekHeader(
     comingWeek: ComingWeek,
     modifier: Modifier = Modifier
 ) {
+    val titleStyle: TextStyle = VadretTheme.textStyles.value
+    val titleCapHeight: Dp = with(LocalDensity.current) { titleStyle.fontSize.toDp() } * CAP_HEIGHT_RATIO
     Row(
-        modifier = modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = ComingWeekCardDefaults.TitleInset)
+            .paddingFromBaseline(top = ComingWeekCardDefaults.TitleInset + titleCapHeight)
     ) {
         Text(
-            modifier = Modifier.weight(weight = DAY_WEIGHT),
+            modifier = Modifier
+                .weight(weight = DAY_WEIGHT)
+                .alignByBaseline(),
             text = stringResource(
                 resource = Res.string.week_number,
                 comingWeek.weekNumberText
             ),
-            style = VadretTheme.textStyles.value,
+            style = titleStyle,
             color = VadretTheme.colorScheme.onSurface,
             maxLines = SINGLE_LINE
         )
         Text(
+            modifier = Modifier.alignByBaseline(),
             text = comingWeek.dateRangeText,
             style = VadretTheme.textStyles.detailLabel,
             color = VadretTheme.colorScheme.onSurfaceVariant,

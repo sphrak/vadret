@@ -22,7 +22,7 @@ private val stockholm: TimeZone = TimeZone.of(zoneId = "Europe/Stockholm")
 class RadarTest {
 
     @Test
-    fun `frames follow the 12 hour clock in the language shown`() {
+    fun `frames follow the 12 hour clock with AM and PM whatever the language`() {
         val radar = Radar(
             images = listOf(
                 RadarImage(imageUrl = "https://smhi.se/2350.png", validAt = Instant.parse(input = "2026-10-24T21:50:00Z")),
@@ -32,7 +32,7 @@ class RadarTest {
         )
 
         assertEquals(
-            expected = listOf("11:50 PM", "2:05 PM") to listOf("11:50 em", "2:05 em"),
+            expected = listOf("11:50 PM", "2:05 PM") to listOf("11:50 PM", "2:05 PM"),
             actual = listOf("en", "sv-SE").map { languageTag: String ->
                 radar.toRadarFrames(
                     now = Instant.parse(input = "2026-10-24T23:10:00Z"),

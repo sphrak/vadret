@@ -24,6 +24,7 @@ import se.vadretapp.vadret.pushalert.extension.notifiedAllergenIds
 import se.vadretapp.vadret.pushalert.model.DeviceRegistration
 import se.vadretapp.vadret.pushalert.model.DeviceToken
 import se.vadretapp.vadret.pushalert.model.InstallationToken
+import se.vadretapp.vadret.pushalert.model.PlaceName
 import se.vadretapp.vadret.pushalert.model.PollenAlertLevel
 import se.vadretapp.vadret.pushalert.model.PollenChoice
 import se.vadretapp.vadret.pushalert.model.PushAlertChoices
@@ -45,7 +46,7 @@ internal class DefaultSyncPushAlertsTask(
     private val notificationPermissionSource: NotificationPermissionSource,
     private val sealedMessageKey: SealedMessageKey,
     private val getCurrentGeohashTask: GetCurrentGeohashTask,
-    private val getPushAlertGeohashesTask: GetPushAlertGeohashesTask,
+    private val getPushAlertPlaceNamesTask: GetPushAlertPlaceNamesTask,
     private val clock: Clock
 ) : SyncPushAlertsTask {
     private val syncMutex = Mutex()
@@ -131,11 +132,11 @@ internal class DefaultSyncPushAlertsTask(
         currentGeohash: Geohash,
         pushAlertChoices: PushAlertChoices
     ): Either<Failure, Unit> =
-        getPushAlertGeohashesTask(
+        getPushAlertPlaceNamesTask(
             currentGeohash = currentGeohash,
             pushAlertChoices = pushAlertChoices
-        ).flatMap { geohashes: List<Geohash> ->
-            if (geohashes.isEmpty()) {
+        ).flatMap { placeNames: Map<Geohash, PlaceName?> ->
+            if (placeNames.isEmpty()) {
                 logger.info { "No place is chosen for push alerts, so the server forgets this phone" }
                 forget()
             } else {
@@ -145,7 +146,13 @@ internal class DefaultSyncPushAlertsTask(
                             pushAlertRepository.replaceSubscription(
                                 installationToken = installationToken,
                                 pushAlertSubscription = PushAlertSubscription(
-                                    geohashes = geohashes,
+                                    geohashes = placeNames.keys.toList(),
+                                    placeNames = placeNames,
+                                    dailyGeohash = if (pushAlertChoices.isDailyForecastChosen() && currentGeohash in placeNames) {
+                                        currentGeohash
+                                    } else {
+                                        null
+                                    },
                                     warningLowestLevel = pushAlertChoices.warningLowestLevel,
                                     pollenChoices = pollenChoices,
                                     temperatureTrend = pushAlertChoices.temperatureTrend,

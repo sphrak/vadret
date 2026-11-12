@@ -216,6 +216,7 @@ dependencies {
         add("${pushFlavor}Implementation", project(':core:encryption'))
         add("${pushFlavor}Implementation", project(':data:pushalert'))
         add("${pushFlavor}Implementation", project(':features:pushalert'))
+        add("${pushFlavor}Implementation", project(':ui:icons'))
         addProvider("${pushFlavor}Implementation", libs.androidx.core.ktx)
         addProvider("${pushFlavor}Implementation", libs.firebase.messaging)
         add("test${pushFlavor.capitalize()}Implementation", project(':core:lifecycle'))

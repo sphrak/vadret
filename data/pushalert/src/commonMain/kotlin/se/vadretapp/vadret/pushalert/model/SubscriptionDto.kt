@@ -7,6 +7,10 @@ import kotlinx.serialization.Serializable
 internal data class SubscriptionDto(
     @SerialName(value = "geohashes")
     val geohashes: List<String>? = null,
+    @SerialName(value = "place_names")
+    val placeNames: Map<String, String?>? = null,
+    @SerialName(value = "daily_geohash")
+    val dailyGeohash: String? = null,
     @SerialName(value = "warning_lowest_level")
     val warningLowestLevel: String? = null,
     @SerialName(value = "pollen")

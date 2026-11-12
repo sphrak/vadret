@@ -97,6 +97,7 @@ private val EVERYTHING = PushAlertChoices(
     strongWind = true,
     slipperiness = true,
     aurora = true,
+    dailyForecast = null,
     isChosenPlaceNotified = true,
     notifiedFavoriteIds = emptySet()
 )

@@ -152,6 +152,7 @@
     <string name="aurora_hour_score">%1$d %</string>
     <string name="aurora_estimate_explanation">Vadret API regner ut sjansen fra magnetometeret i Kiruna, SMHIs skyvarsel og hvor mørkt det er. Det er ikke et varsel fra SMHI.</string>
     <string name="aurora_alerts">Nordlys</string>
+    <string name="daily_forecast_alerts">Dagens vær</string>
     <string name="labs_aurora_summary">Viser sjansen for nordlys ved stedene dine</string>
     <string name="pollen_alerts">Pollennivåer</string>
     <string name="pollen_alerts_summary">For pollen du har valgt under Pollen</string>

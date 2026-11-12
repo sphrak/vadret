@@ -21,14 +21,13 @@ import kotlin.io.encoding.Base64
 
 internal class DefaultOpenPushAlertTask(
     private val sealedMessageKey: SealedMessageKey,
-    private val pushAlertRepository: PushAlertRepository,
-    private val addPlaceNameTask: AddPlaceNameTask
+    private val pushAlertRepository: PushAlertRepository
 ) : OpenPushAlertTask {
     override suspend fun invoke(sealed: String): Either<Failure, PushAlertMessage> =
         open(sealed = sealed).flatMap { pushAlertMessage: PushAlertMessage ->
             pushAlertRepository.choices().flatMap { pushAlertChoices: PushAlertChoices ->
                 if (pushAlertChoices.isChosen(pushAlertKind = pushAlertMessage.kind)) {
-                    addPlaceNameTask(pushAlertMessage = pushAlertMessage).asRight()
+                    pushAlertMessage.asRight()
                 } else {
                     Failure(errorCode = ErrorCode.PUSH_ALERT_NOT_CHOSEN).asLeft()
                 }
@@ -75,6 +74,7 @@ private fun PushAlertChoices.isChosen(pushAlertKind: PushAlertKind): Boolean =
         PushAlertKind.WIND -> strongWind
         PushAlertKind.SLIPPERINESS -> slipperiness
         PushAlertKind.AURORA -> aurora
+        PushAlertKind.DAILY -> isDailyForecastChosen()
     }
 
 private val logger: Logger = LoggerFactory.getLogger(tag = "se.vadretapp.vadret.pushalert")

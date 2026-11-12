@@ -56,8 +56,7 @@ private class TemperatureScale(
 private class DayFormats(
     val weekdayFormatter: DateTextFormatter,
     val dateFormatter: DateTextFormatter,
-    val hourFormat: HourFormat,
-    val languageTag: String
+    val hourFormat: HourFormat
 )
 
 internal fun List<Forecast>.toComingDays(
@@ -92,8 +91,7 @@ internal fun List<Forecast>.toComingDays(
             languageTag = languageTag,
             timeZone = timeZone
         ),
-        hourFormat = hourFormat,
-        languageTag = languageTag
+        hourFormat = hourFormat
     )
     return summaries.map { daySummary: DaySummary ->
         daySummary.toComingDay(
@@ -293,8 +291,7 @@ private fun Forecast.toComingHour(
         isNow = isNow,
         timeText = validAt.toHourText(
             hourFormat = dayFormats.hourFormat,
-            timeZone = timeZone,
-            languageTag = dayFormats.languageTag
+            timeZone = timeZone
         ),
         icon = WeatherForecastUtil.getWeatherSymbolIcon(
             symbolCode = symbolCode,

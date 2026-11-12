@@ -91,23 +91,52 @@ fun VadretIcon(
                     } else {
                         NO_TIME
                     }
-                    scale(
-                        scale = size.minDimension / VIEWPORT_SIZE,
-                        pivot = Offset.Zero
-                    ) {
-                        icon.layers.forEach { iconLayer: IconLayer ->
-                            drawLayer(
-                                iconLayer = iconLayer,
-                                outlines = outlines,
-                                tint = tint,
-                                timeMilliseconds = timeMilliseconds,
-                                isMotionShown = isMotionShown
-                            )
-                        }
-                    }
+                    drawLayers(
+                        icon = icon,
+                        outlines = outlines,
+                        tint = tint,
+                        timeMilliseconds = timeMilliseconds,
+                        isMotionShown = isMotionShown
+                    )
                 }
             }
     )
+}
+
+fun DrawScope.drawVadretIcon(
+    icon: VadretIconGraphic,
+    tint: Color
+) {
+    drawLayers(
+        icon = icon,
+        outlines = icon.outlines(),
+        tint = tint,
+        timeMilliseconds = NO_TIME,
+        isMotionShown = false
+    )
+}
+
+private fun DrawScope.drawLayers(
+    icon: VadretIconGraphic,
+    outlines: Map<IconShape.Outline, Path>,
+    tint: Color,
+    timeMilliseconds: Long,
+    isMotionShown: Boolean
+) {
+    scale(
+        scale = size.minDimension / VIEWPORT_SIZE,
+        pivot = Offset.Zero
+    ) {
+        icon.layers.forEach { iconLayer: IconLayer ->
+            drawLayer(
+                iconLayer = iconLayer,
+                outlines = outlines,
+                tint = tint,
+                timeMilliseconds = timeMilliseconds,
+                isMotionShown = isMotionShown
+            )
+        }
+    }
 }
 
 @Composable

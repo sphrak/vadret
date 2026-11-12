@@ -22,8 +22,7 @@ fun Instant.toDayTimeText(
     val today: LocalDate = now.toLocalDateTime(timeZone = timeZone).date
     val timeText: String = toTimeText(
         hourFormat = hourFormat,
-        timeZone = timeZone,
-        languageTag = languageTag
+        timeZone = timeZone
     )
     val daysAway: Int = today.daysUntil(other = localDateTime.date)
     return when {

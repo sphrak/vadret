@@ -6,5 +6,6 @@ enum class PushAlertKind {
     TEMPERATURE,
     WIND,
     SLIPPERINESS,
-    AURORA
+    AURORA,
+    DAILY
 }

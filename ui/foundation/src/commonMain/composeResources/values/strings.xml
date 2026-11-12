@@ -340,7 +340,7 @@
     <string name="slipperiness_cause_refreeze_explanation">Wet ground can freeze as the temperature falls.</string>
     <string name="slipperiness_cause_snow_explanation">Snow or sleet can make roads and pavements slippery.</string>
     <string name="slipperiness_estimate_label">About this estimate</string>
-    <string name="slipperiness_estimate_explanation">Vadret API works out the risk from SMHI\'s forecast. It is not a warning from SMHI.</string>
+    <string name="slipperiness_estimate_explanation">Vadret API works out the risk from SMHI's forecast. It is not a warning from SMHI.</string>
     <string name="slipperiness_alerts">Slipperiness</string>
     <string name="aurora_possible">Chance of northern lights</string>
     <string name="aurora_high">Good chance of northern lights</string>
@@ -348,8 +348,9 @@
     <string name="aurora_peak_label">At its best</string>
     <string name="aurora_hours_label">Hour by hour</string>
     <string name="aurora_hour_score">%1$d%</string>
-    <string name="aurora_estimate_explanation">Vadret API works out the chance from the magnetometer in Kiruna, SMHI\'s cloud forecast and how dark the sky is. It is not a forecast from SMHI.</string>
+    <string name="aurora_estimate_explanation">Vadret API works out the chance from the magnetometer in Kiruna, SMHI's cloud forecast and how dark the sky is. It is not a forecast from SMHI.</string>
     <string name="aurora_alerts">Northern lights</string>
+    <string name="daily_forecast_alerts">Today's weather</string>
     <string name="labs_aurora_summary">Shows the chance of northern lights at your places</string>
     <string name="pollen_alerts">Pollen levels</string>
     <string name="pollen_alerts_summary">For the pollen picked under Pollen</string>

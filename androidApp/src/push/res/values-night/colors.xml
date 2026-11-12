@@ -7,4 +7,5 @@
     <color name="push_alert_wind">#FF8F9BF0</color>
     <color name="push_alert_slipperiness">#FFA3BCCF</color>
     <color name="push_alert_aurora">#FF7FD6C2</color>
+    <color name="push_alert_daily">#FFF2C94C</color>
 </resources>

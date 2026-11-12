@@ -45,11 +45,11 @@ class DayTimeTextTest {
     }
 
     @Test
-    fun `today and the coming week follow the 12 hour clock in the language shown`() {
+    fun `today and the coming week follow the 12 hour clock with AM and PM whatever the language`() {
         val now: Instant = mondayMorning
 
         assertEquals(
-            expected = listOf("1:00 PM", "Tue 12:30 AM", "tis 12:30 fm"),
+            expected = listOf("1:00 PM", "Tue 12:30 AM", "tis 12:30 AM"),
             actual = listOf(
                 (now + toOnePmLocal).text(
                     now = now,

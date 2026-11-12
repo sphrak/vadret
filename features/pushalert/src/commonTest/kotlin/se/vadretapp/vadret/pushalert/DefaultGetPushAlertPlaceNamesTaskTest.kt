@@ -10,9 +10,10 @@ import se.vadretapp.vadret.favorite.model.Favorite
 import se.vadretapp.vadret.geohash.model.Geohash
 import se.vadretapp.vadret.location.model.StoredLocation
 import se.vadretapp.vadret.pushalert.extension.toGeohashOrNull
+import se.vadretapp.vadret.pushalert.model.PlaceName
 import se.vadretapp.vadret.pushalert.model.PushAlertChoices
 import se.vadretapp.vadret.pushalert.model.WarningAlertLevel
-import se.vadretapp.vadret.pushalert.usecase.DefaultGetPushAlertGeohashesTask
+import se.vadretapp.vadret.pushalert.usecase.DefaultGetPushAlertPlaceNamesTask
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -29,15 +30,15 @@ private val swedishFavorites: List<Favorite> = listOf(
 
 private val WARNINGS_FROM_YELLOW: PushAlertChoices = PushAlertChoices.NOTHING_CHOSEN.copy(warningLowestLevel = WarningAlertLevel.YELLOW)
 
-class DefaultGetPushAlertGeohashesTaskTest {
+class DefaultGetPushAlertPlaceNamesTaskTest {
 
-    private suspend fun pushAlertGeohashes(
+    private suspend fun pushAlertPlaceNames(
         locationRepository: FakeLocationRepository,
         favorites: List<Favorite>,
         pushAlertChoices: PushAlertChoices,
         currentGeohash: Geohash = whereThePhoneIs
-    ): Either<Failure, List<Geohash>> =
-        DefaultGetPushAlertGeohashesTask(
+    ): Either<Failure, Map<Geohash, PlaceName?>> =
+        DefaultGetPushAlertPlaceNamesTask(
             favoriteRepository = FakeFavoriteRepository(favorites = favorites),
             locationRepository = locationRepository
         )(
@@ -45,16 +46,23 @@ class DefaultGetPushAlertGeohashesTaskTest {
             pushAlertChoices = pushAlertChoices
         )
 
-    private fun List<Favorite>.toGeohashes(): List<Geohash> = mapNotNull { favorite: Favorite -> favorite.toGeohashOrNull() }
+    private fun List<Favorite>.toPlaceNames(): Map<Geohash, PlaceName?> =
+        mapNotNull { favorite: Favorite ->
+            val geohash: Geohash = favorite.toGeohashOrNull() ?: return@mapNotNull null
+            Pair<Geohash, PlaceName?>(
+                first = geohash,
+                second = PlaceName(value = favorite.locality)
+            )
+        }.toMap()
 
     private fun List<Favorite>.favoriteIds(): Set<String> = map { favorite: Favorite -> favorite.favoriteId }.toSet()
 
     @Test
     fun `where the phone is comes first and the marked saved places follow up to five places`() =
         runTest {
-            assertEquals<Either<Failure, List<Geohash>>>(
-                expected = (listOf(whereThePhoneIs) + swedishFavorites.take(n = 4).toGeohashes()).asRight(),
-                actual = pushAlertGeohashes(
+            assertEquals<Either<Failure, Map<Geohash, PlaceName?>>>(
+                expected = (mapOf(whereThePhoneIs to null) + swedishFavorites.take(n = 4).toPlaceNames()).asRight(),
+                actual = pushAlertPlaceNames(
                     locationRepository = FakeLocationRepository(isAutomatic = true),
                     favorites = swedishFavorites,
                     pushAlertChoices = WARNINGS_FROM_YELLOW.copy(notifiedFavoriteIds = swedishFavorites.favoriteIds())
@@ -65,9 +73,9 @@ class DefaultGetPushAlertGeohashesTaskTest {
     @Test
     fun `saved places that are not marked are left out`() =
         runTest {
-            assertEquals<Either<Failure, List<Geohash>>>(
-                expected = (listOf(whereThePhoneIs) + listOf(UPPSALA_FAVORITE).toGeohashes()).asRight(),
-                actual = pushAlertGeohashes(
+            assertEquals<Either<Failure, Map<Geohash, PlaceName?>>>(
+                expected = (mapOf(whereThePhoneIs to null) + listOf(UPPSALA_FAVORITE).toPlaceNames()).asRight(),
+                actual = pushAlertPlaceNames(
                     locationRepository = FakeLocationRepository(isAutomatic = true),
                     favorites = swedishFavorites,
                     pushAlertChoices = WARNINGS_FROM_YELLOW.copy(notifiedFavoriteIds = setOf(UPPSALA_FAVORITE.favoriteId))
@@ -78,9 +86,9 @@ class DefaultGetPushAlertGeohashesTaskTest {
     @Test
     fun `the chosen place is left out when it is not marked`() =
         runTest {
-            assertEquals<Either<Failure, List<Geohash>>>(
-                expected = listOf(SOLNA_FAVORITE).toGeohashes().asRight(),
-                actual = pushAlertGeohashes(
+            assertEquals<Either<Failure, Map<Geohash, PlaceName?>>>(
+                expected = listOf(SOLNA_FAVORITE).toPlaceNames().asRight(),
+                actual = pushAlertPlaceNames(
                     locationRepository = FakeLocationRepository(isAutomatic = true),
                     favorites = swedishFavorites,
                     pushAlertChoices = WARNINGS_FROM_YELLOW.copy(
@@ -94,11 +102,11 @@ class DefaultGetPushAlertGeohashesTaskTest {
     @Test
     fun `a chosen saved place counts once even when it was saved last`() =
         runTest {
-            val chosenGeohash: List<Geohash> = listOf(VISBY_FAVORITE).toGeohashes()
+            val chosenPlaceName: Map<Geohash, PlaceName?> = listOf(VISBY_FAVORITE).toPlaceNames()
 
-            assertEquals<Either<Failure, List<Geohash>>>(
-                expected = (chosenGeohash + swedishFavorites.take(n = 4).toGeohashes()).asRight(),
-                actual = pushAlertGeohashes(
+            assertEquals<Either<Failure, Map<Geohash, PlaceName?>>>(
+                expected = (chosenPlaceName + swedishFavorites.take(n = 4).toPlaceNames()).asRight(),
+                actual = pushAlertPlaceNames(
                     locationRepository = FakeLocationRepository(
                         isAutomatic = false,
                         storedLocation = StoredLocation(
@@ -111,7 +119,7 @@ class DefaultGetPushAlertGeohashesTaskTest {
                     ),
                     favorites = swedishFavorites,
                     pushAlertChoices = WARNINGS_FROM_YELLOW.copy(notifiedFavoriteIds = swedishFavorites.favoriteIds()),
-                    currentGeohash = chosenGeohash.single()
+                    currentGeohash = chosenPlaceName.keys.single()
                 )
             )
         }
@@ -121,9 +129,9 @@ class DefaultGetPushAlertGeohashesTaskTest {
         runTest {
             val favorites: List<Favorite> = listOf(BERLIN_FAVORITE, SOLNA_FAVORITE)
 
-            assertEquals<Either<Failure, List<Geohash>>>(
-                expected = (listOf(whereThePhoneIs) + listOf(SOLNA_FAVORITE).toGeohashes()).asRight(),
-                actual = pushAlertGeohashes(
+            assertEquals<Either<Failure, Map<Geohash, PlaceName?>>>(
+                expected = (mapOf(whereThePhoneIs to null) + listOf(SOLNA_FAVORITE).toPlaceNames()).asRight(),
+                actual = pushAlertPlaceNames(
                     locationRepository = FakeLocationRepository(isAutomatic = true),
                     favorites = favorites,
                     pushAlertChoices = WARNINGS_FROM_YELLOW.copy(notifiedFavoriteIds = favorites.favoriteIds())
@@ -134,9 +142,9 @@ class DefaultGetPushAlertGeohashesTaskTest {
     @Test
     fun `no marked place sends no place`() =
         runTest {
-            assertEquals<Either<Failure, List<Geohash>>>(
-                expected = emptyList<Geohash>().asRight(),
-                actual = pushAlertGeohashes(
+            assertEquals<Either<Failure, Map<Geohash, PlaceName?>>>(
+                expected = emptyMap<Geohash, PlaceName?>().asRight(),
+                actual = pushAlertPlaceNames(
                     locationRepository = FakeLocationRepository(isAutomatic = true),
                     favorites = swedishFavorites,
                     pushAlertChoices = WARNINGS_FROM_YELLOW.copy(isChosenPlaceNotified = false)
@@ -149,9 +157,9 @@ class DefaultGetPushAlertGeohashesTaskTest {
         runTest {
             val failure = Failure(errorCode = ErrorCode.STORAGE_FAILED)
 
-            assertEquals<Either<Failure, List<Geohash>>>(
+            assertEquals<Either<Failure, Map<Geohash, PlaceName?>>>(
                 expected = failure.asLeft(),
-                actual = pushAlertGeohashes(
+                actual = pushAlertPlaceNames(
                     locationRepository = FakeLocationRepository(failure = failure),
                     favorites = swedishFavorites,
                     pushAlertChoices = WARNINGS_FROM_YELLOW

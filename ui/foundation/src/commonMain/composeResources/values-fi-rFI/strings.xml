@@ -156,6 +156,7 @@
     <string name="aurora_hour_score">%1$d %</string>
     <string name="aurora_estimate_explanation">Vadret API laskee mahdollisuuden Kiirunan magnetometristä, SMHI:n pilviennusteesta ja siitä, kuinka pimeää on. Se ei ole SMHI:n ennuste.</string>
     <string name="aurora_alerts">Revontulet</string>
+    <string name="daily_forecast_alerts">Päivän sää</string>
     <string name="labs_aurora_summary">Näyttää revontulten mahdollisuuden paikoissasi</string>
     <string name="pollen_alerts">Siitepölytasot</string>
     <string name="pollen_alerts_summary">Siitepöly-kohdassa valituille siitepölyille</string>

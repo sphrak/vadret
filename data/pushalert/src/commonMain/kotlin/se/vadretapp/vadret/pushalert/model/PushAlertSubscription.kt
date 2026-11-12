@@ -6,6 +6,8 @@ import se.vadretapp.vadret.setting.model.Language
 
 data class PushAlertSubscription(
     val geohashes: List<Geohash>,
+    val placeNames: Map<Geohash, PlaceName?>,
+    val dailyGeohash: Geohash?,
     val warningLowestLevel: WarningAlertLevel?,
     val pollenChoices: List<PollenChoice>,
     val temperatureTrend: Boolean,

@@ -18,7 +18,14 @@ class PushAlertLargeIconTest {
                 R.drawable.ic_push_alert_storm,
                 R.drawable.ic_push_alert_hurricane,
                 R.drawable.ic_push_alert_slipperiness,
-                R.drawable.ic_push_alert_aurora
+                R.drawable.ic_push_alert_aurora,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
             ),
             actual = PushAlertType.entries.map { pushAlertType: PushAlertType -> pushAlertType.largeIconResource() }
         )
@@ -36,7 +43,14 @@ class PushAlertLargeIconTest {
                 R.color.push_alert_wind,
                 R.color.push_alert_wind,
                 R.color.push_alert_slipperiness,
-                R.color.push_alert_aurora
+                R.color.push_alert_aurora,
+                R.color.push_alert_daily,
+                R.color.push_alert_daily,
+                R.color.push_alert_daily,
+                R.color.push_alert_daily,
+                R.color.push_alert_daily,
+                R.color.push_alert_daily,
+                R.color.push_alert_daily
             ),
             actual = PushAlertType.entries.map { pushAlertType: PushAlertType -> pushAlertType.largeIconColorResource() }
         )

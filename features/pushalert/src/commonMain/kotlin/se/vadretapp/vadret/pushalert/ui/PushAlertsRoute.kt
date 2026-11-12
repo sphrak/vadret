@@ -14,6 +14,7 @@ import org.jetbrains.compose.resources.stringResource
 import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.di.koinViewModel
 import se.vadretapp.vadret.icons.Aurora
+import se.vadretapp.vadret.icons.HalfClearSky
 import se.vadretapp.vadret.icons.HardWind
 import se.vadretapp.vadret.icons.Pollen
 import se.vadretapp.vadret.icons.Slipperiness
@@ -44,6 +45,7 @@ import se.vadretapp.vadret.ui.extension.messageResource
 import se.vadretapp.vadret.ui.resources.Res
 import se.vadretapp.vadret.ui.resources.attestation_refused
 import se.vadretapp.vadret.ui.resources.aurora_alerts
+import se.vadretapp.vadret.ui.resources.daily_forecast_alerts
 import se.vadretapp.vadret.ui.resources.followed_place_position
 import se.vadretapp.vadret.ui.resources.lowest_pollen_level
 import se.vadretapp.vadret.ui.resources.notifications_are_off
@@ -74,6 +76,7 @@ private const val WEATHER_HEADER_KEY = "weather-header"
 private const val WARNINGS_HEADER_KEY = "warnings-header"
 private const val WARNINGS_KEY = "warnings"
 private const val WARNING_LEVEL_KEY = "warning-level"
+private const val DAILY_FORECAST_KEY = "daily-forecast"
 private const val TEMPERATURE_KEY = "temperature"
 private const val STRONG_WIND_KEY = "strong-wind"
 private const val SLIPPERINESS_KEY = "slipperiness"
@@ -191,6 +194,14 @@ private fun LazyListScope.weatherAlerts(
 ) {
     item(key = WEATHER_HEADER_KEY, contentType = PushAlertsContentType.HEADER) {
         SettingsSectionHeader(text = stringResource(resource = Res.string.notifications_weather))
+    }
+    item(key = DAILY_FORECAST_KEY, contentType = PushAlertsContentType.ROW) {
+        SwitchRow(
+            title = stringResource(resource = Res.string.daily_forecast_alerts),
+            isChecked = state.choices.isDailyForecastChosen(),
+            onCheckedChange = { isChecked: Boolean -> onEvent(PushAlertsEvent.OnDailyForecastToggled(isEnabled = isChecked)) },
+            leadingContent = { SettingsRowIcon(icon = VadretIcons.Weather.HalfClearSky) }
+        )
     }
     item(key = TEMPERATURE_KEY, contentType = PushAlertsContentType.ROW) {
         SwitchRow(
