@@ -39,4 +39,5 @@ fun PushAlertType.icon(): VadretIconGraphic =
         PushAlertType.DAILY_SNOW -> VadretIcons.Weather.ModerateSnowfall
         PushAlertType.DAILY_SLEET -> VadretIcons.Weather.ModerateSleet
         PushAlertType.DAILY_THUNDER -> VadretIcons.Weather.Thunderstorm
+        PushAlertType.DAILY_STORM -> VadretIcons.Alert.Storm
     }

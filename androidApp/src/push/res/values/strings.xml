@@ -7,4 +7,5 @@
     <string name="push_alert_channel_slipperiness">Slipperiness</string>
     <string name="push_alert_channel_aurora">Northern lights</string>
     <string name="push_alert_channel_daily">Today\'s weather</string>
+    <string name="push_alert_channel_rough_daily">Today\'s weather with rain, snow, thunder or storm</string>
 </resources>

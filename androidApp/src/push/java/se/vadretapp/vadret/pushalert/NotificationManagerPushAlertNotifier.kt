@@ -56,7 +56,7 @@ internal class NotificationManagerPushAlertNotifier(
         }
         notificationManager.createNotificationChannelsCompat(notificationChannels())
         val notificationTag: String = pushAlertMessage.notificationTag()
-        val notification = NotificationCompat.Builder(context, pushAlertMessage.kind.channelId())
+        val notification = NotificationCompat.Builder(context, pushAlertMessage.channelId())
             .setSmallIcon(R.drawable.ic_push_alert)
             .setLargeIcon(largeIcon(pushAlertType = pushAlertMessage.pushAlertType))
             .setColor(ContextCompat.getColor(context, R.color.push_alert_accent))
@@ -162,47 +162,52 @@ internal class NotificationManagerPushAlertNotifier(
 
     private fun notificationChannels(): List<NotificationChannelCompat> = listOf(
         notificationChannel(
-            pushAlertKind = PushAlertKind.WARNING,
+            channelId = WARNING_CHANNEL_ID,
             nameResource = R.string.push_alert_channel_warnings,
             importance = NotificationManagerCompat.IMPORTANCE_HIGH
         ),
         notificationChannel(
-            pushAlertKind = PushAlertKind.POLLEN,
+            channelId = POLLEN_CHANNEL_ID,
             nameResource = R.string.push_alert_channel_pollen,
             importance = NotificationManagerCompat.IMPORTANCE_DEFAULT
         ),
         notificationChannel(
-            pushAlertKind = PushAlertKind.TEMPERATURE,
+            channelId = TEMPERATURE_CHANNEL_ID,
             nameResource = R.string.push_alert_channel_temperature,
             importance = NotificationManagerCompat.IMPORTANCE_DEFAULT
         ),
         notificationChannel(
-            pushAlertKind = PushAlertKind.WIND,
+            channelId = WIND_CHANNEL_ID,
             nameResource = R.string.push_alert_channel_wind,
             importance = NotificationManagerCompat.IMPORTANCE_DEFAULT
         ),
         notificationChannel(
-            pushAlertKind = PushAlertKind.SLIPPERINESS,
+            channelId = SLIPPERINESS_CHANNEL_ID,
             nameResource = R.string.push_alert_channel_slipperiness,
             importance = NotificationManagerCompat.IMPORTANCE_DEFAULT
         ),
         notificationChannel(
-            pushAlertKind = PushAlertKind.AURORA,
+            channelId = AURORA_CHANNEL_ID,
             nameResource = R.string.push_alert_channel_aurora,
             importance = NotificationManagerCompat.IMPORTANCE_DEFAULT
         ),
         notificationChannel(
-            pushAlertKind = PushAlertKind.DAILY,
+            channelId = DAILY_CHANNEL_ID,
             nameResource = R.string.push_alert_channel_daily,
             importance = NotificationManagerCompat.IMPORTANCE_MIN
+        ),
+        notificationChannel(
+            channelId = ROUGH_DAILY_CHANNEL_ID,
+            nameResource = R.string.push_alert_channel_rough_daily,
+            importance = NotificationManagerCompat.IMPORTANCE_LOW
         )
     )
 
     private fun notificationChannel(
-        pushAlertKind: PushAlertKind,
+        channelId: String,
         nameResource: Int,
         importance: Int
-    ): NotificationChannelCompat = NotificationChannelCompat.Builder(pushAlertKind.channelId(), importance)
+    ): NotificationChannelCompat = NotificationChannelCompat.Builder(channelId, importance)
         .setName(context.getString(nameResource))
         .build()
 
@@ -224,6 +229,15 @@ internal class NotificationManagerPushAlertNotifier(
             intent.putWarningReference(warningReference = warningReference)
         }
     }
+}
+
+private fun PushAlertMessage.channelId(): String = when (pushAlertType) {
+    PushAlertType.DAILY_RAIN,
+    PushAlertType.DAILY_SNOW,
+    PushAlertType.DAILY_SLEET,
+    PushAlertType.DAILY_THUNDER,
+    PushAlertType.DAILY_STORM -> ROUGH_DAILY_CHANNEL_ID
+    else -> kind.channelId()
 }
 
 private fun PushAlertMessage.notificationTag(): String = when (kind) {
@@ -248,7 +262,8 @@ internal fun PushAlertType.largeIconResource(): Int? =
         PushAlertType.DAILY_RAIN,
         PushAlertType.DAILY_SNOW,
         PushAlertType.DAILY_SLEET,
-        PushAlertType.DAILY_THUNDER -> null
+        PushAlertType.DAILY_THUNDER,
+        PushAlertType.DAILY_STORM -> null
     }
 
 internal fun PushAlertType.largeIconColorResource(): Int =
@@ -268,7 +283,8 @@ internal fun PushAlertType.largeIconColorResource(): Int =
         PushAlertType.DAILY_RAIN,
         PushAlertType.DAILY_SNOW,
         PushAlertType.DAILY_SLEET,
-        PushAlertType.DAILY_THUNDER -> R.color.push_alert_daily
+        PushAlertType.DAILY_THUNDER,
+        PushAlertType.DAILY_STORM -> R.color.push_alert_daily
     }
 
 private fun PushAlertKind.channelId(): String =
@@ -291,5 +307,6 @@ private const val WIND_CHANNEL_ID = "wind"
 private const val SLIPPERINESS_CHANNEL_ID = "slipperiness"
 private const val AURORA_CHANNEL_ID = "aurora"
 private const val DAILY_CHANNEL_ID = "daily"
+private const val ROUGH_DAILY_CHANNEL_ID = "daily_rough"
 private const val DAILY_FORECAST_PREFERENCES_NAME = "push_alert_daily"
 private const val SHOWN_DAILY_FORECAST_DAY_KEY = "shown_daily_day"

@@ -42,7 +42,8 @@ class PushAlertTypeIconTest {
                 VadretIcons.Weather.ModerateRain,
                 VadretIcons.Weather.ModerateSnowfall,
                 VadretIcons.Weather.ModerateSleet,
-                VadretIcons.Weather.Thunderstorm
+                VadretIcons.Weather.Thunderstorm,
+                VadretIcons.Alert.Storm
             ),
             actual = PushAlertType.entries.map { pushAlertType: PushAlertType -> pushAlertType.icon() }
         )

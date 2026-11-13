@@ -55,7 +55,8 @@ class PushAlertSimulationViewModelTest {
                 PushAlertType.DAILY_RAIN to PushAlertKind.DAILY,
                 PushAlertType.DAILY_SNOW to PushAlertKind.DAILY,
                 PushAlertType.DAILY_SLEET to PushAlertKind.DAILY,
-                PushAlertType.DAILY_THUNDER to PushAlertKind.DAILY
+                PushAlertType.DAILY_THUNDER to PushAlertKind.DAILY,
+                PushAlertType.DAILY_STORM to PushAlertKind.DAILY
             ),
             actual = viewModel.state.value.pushAlertMessages.map { pushAlertMessage: PushAlertMessage -> pushAlertMessage.pushAlertType to pushAlertMessage.kind }
         )

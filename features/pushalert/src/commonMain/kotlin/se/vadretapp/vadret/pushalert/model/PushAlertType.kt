@@ -16,5 +16,6 @@ enum class PushAlertType {
     DAILY_RAIN,
     DAILY_SNOW,
     DAILY_SLEET,
-    DAILY_THUNDER
+    DAILY_THUNDER,
+    DAILY_STORM
 }

@@ -53,6 +53,7 @@ private fun String.toPushAlertTypeOrNull(): PushAlertType? =
         DAILY_SNOW_TYPE -> PushAlertType.DAILY_SNOW
         DAILY_SLEET_TYPE -> PushAlertType.DAILY_SLEET
         DAILY_THUNDER_TYPE -> PushAlertType.DAILY_THUNDER
+        DAILY_STORM_TYPE -> PushAlertType.DAILY_STORM
         else -> null
     }
 
@@ -84,3 +85,4 @@ private const val DAILY_RAIN_TYPE = "daily_rain"
 private const val DAILY_SNOW_TYPE = "daily_snow"
 private const val DAILY_SLEET_TYPE = "daily_sleet"
 private const val DAILY_THUNDER_TYPE = "daily_thunder"
+private const val DAILY_STORM_TYPE = "daily_storm"

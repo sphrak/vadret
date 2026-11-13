@@ -147,6 +147,11 @@ internal fun simulatedPushAlertMessages(now: Instant): ImmutableList<PushAlertMe
         title = "19° i Stockholm",
         body = "Halvklart, 14° till 24°. Åska från kl. 16:00, upp till 12 mm. Vindstyrka 9 m/s.",
         pushAlertType = PushAlertType.DAILY_THUNDER
+    ),
+    simulatedDailyMessage(
+        title = "8° i Stockholm",
+        body = "Molnigt, 6° till 9°. Regn från kl. 10:00, upp till 14 mm. Vindstyrka 26 m/s.",
+        pushAlertType = PushAlertType.DAILY_STORM
     )
 )
 

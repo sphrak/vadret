@@ -25,6 +25,7 @@ class PushAlertLargeIconTest {
                 null,
                 null,
                 null,
+                null,
                 null
             ),
             actual = PushAlertType.entries.map { pushAlertType: PushAlertType -> pushAlertType.largeIconResource() }
@@ -44,6 +45,7 @@ class PushAlertLargeIconTest {
                 R.color.push_alert_wind,
                 R.color.push_alert_slipperiness,
                 R.color.push_alert_aurora,
+                R.color.push_alert_daily,
                 R.color.push_alert_daily,
                 R.color.push_alert_daily,
                 R.color.push_alert_daily,
