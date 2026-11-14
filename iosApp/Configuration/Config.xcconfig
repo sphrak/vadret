@@ -4,4 +4,4 @@ APP_NAME=Vädret
 // The app bundle and its executable keep an ASCII name. App Store Connect rejects the signature when the bundle path has an ä.
 BUNDLE_NAME=Vadret
 MARKETING_VERSION=3.3.0
-CURRENT_PROJECT_VERSION=31
+CURRENT_PROJECT_VERSION=32
