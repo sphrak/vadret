@@ -75,14 +75,17 @@ private const val CAP_HEIGHT_RATIO = 0.71f
 private val headerMinHeight = 34.dp
 private val headerHorizontalPadding = 20.dp
 private val headerSpacing = 13.dp
-private val dayTopPadding = 8.dp
+private val dayVerticalPadding = 8.dp
 private val dayContentSpacing = 5.dp
 private val dayIconSize = 22.dp
-private val chartHeight = 84.dp
 private val lineTop = 16.dp
 private val lineRange = 47.dp
 private val highLabelCenterAbovePoint = 11.dp
 private val lowLabelCenterBelowPoint = 12.dp
+private val lowLabelHalfHeight = 8.dp
+
+// Ends at the coldest day's low label, so the day's bottom padding sits under the label as its top padding sits above the weekday.
+private val chartHeight = lineTop + lineRange + lowLabelCenterBelowPoint + lowLabelHalfHeight
 private val highLineWidth = 2.5.dp
 private val lowLineWidth = 2.dp
 private val dotRadius = 3.dp
@@ -204,7 +207,7 @@ private fun WeekDayColumn(
                 role = Role.Button,
                 onClick = onClick
             )
-            .padding(top = 8.dp),
+            .padding(vertical = dayVerticalPadding),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(space = dayContentSpacing)
     ) {
