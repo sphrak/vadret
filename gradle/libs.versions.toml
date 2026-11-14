@@ -9,7 +9,7 @@ android-compileSdkMinor = "2"
 android-minSdk = "24"
 android-targetSdk = "37"
 
-androidxAnnotation = "1.9.1"
+androidxAnnotation = "1.11.0"
 activityCompose = "1.13.0"
 coil = "3.6.3"
 composeMultiplatform = "1.13.0-beta02"
