@@ -39,7 +39,6 @@ import se.vadretapp.vadret.place.model.Place
 import se.vadretapp.vadret.ui.resources.Res
 import se.vadretapp.vadret.ui.resources.wsymb2_overcast
 import se.vadretapp.vadret.warning.model.WarningPlace
-import se.vadretapp.vadret.warning.usecase.ObserveUnseenFollowedPlaceWarningsTask
 import se.vadretapp.vadret.warning.usecase.ObserveUnseenWarningsTask
 import se.vadretapp.vadret.weatherforecast.model.Analysis
 import se.vadretapp.vadret.weatherforecast.model.ComingDay
@@ -382,28 +381,21 @@ internal fun warning(
         aurora = null
     )
 
-// Answers for one place and for the followed places alike, and records which was asked: no place means the followed places.
 internal class FakeObserveUnseenWarningsTask(
     initial: Either<Failure, List<AggregatedFeed>> = listOf(
         warning(identifier = "smhi-1"),
         warning(identifier = "smhi-2")
     ).asRight()
-) : ObserveUnseenWarningsTask,
-    ObserveUnseenFollowedPlaceWarningsTask {
+) : ObserveUnseenWarningsTask {
 
     val unseenWarnings: MutableStateFlow<Either<Failure, List<AggregatedFeed>>> = MutableStateFlow(value = initial)
-    val requests = mutableListOf<Pair<WarningPlace?, Boolean>>()
+    val requests = mutableListOf<Pair<WarningPlace, Boolean>>()
 
     override fun invoke(
         warningPlace: WarningPlace,
         isRefresh: Boolean
     ): Flow<Either<Failure, List<AggregatedFeed>>> {
         requests.add(element = warningPlace to isRefresh)
-        return unseenWarnings
-    }
-
-    override fun invoke(isRefresh: Boolean): Flow<Either<Failure, List<AggregatedFeed>>> {
-        requests.add(element = null to isRefresh)
         return unseenWarnings
     }
 }

@@ -36,7 +36,6 @@ import se.vadretapp.vadret.ui.format.TextLocale
 import se.vadretapp.vadret.ui.format.currentLanguageTag
 import se.vadretapp.vadret.ui.format.toDayTimeText
 import se.vadretapp.vadret.warning.model.WarningPlace
-import se.vadretapp.vadret.warning.usecase.ObserveUnseenFollowedPlaceWarningsTask
 import se.vadretapp.vadret.warning.usecase.ObserveUnseenWarningsTask
 import se.vadretapp.vadret.weatherforecast.extension.isAt
 import se.vadretapp.vadret.weatherforecast.extension.localityFor
@@ -80,7 +79,6 @@ class WeatherForecastViewModel internal constructor(
     private val observePlaceForecastTask: ObservePlaceForecastTask,
     private val addFavoriteTask: AddFavoriteTask,
     private val observeUnseenWarningsTask: ObserveUnseenWarningsTask,
-    private val observeUnseenFollowedPlaceWarningsTask: ObserveUnseenFollowedPlaceWarningsTask,
     private val clock: Clock,
     private val coroutineDispatcher: CoroutineDispatcher
 ) : ViewModel() {
@@ -449,24 +447,20 @@ class WeatherForecastViewModel internal constructor(
         }
     }
 
-    // A dropped place shows its own warnings, the chosen location those of every followed place.
+    // Only the shown place's warnings: the pill names no place, so another followed place's warning would read as this one's.
     private fun unseenWarningsFor(
         placeForecast: PlaceForecast,
         isRefresh: Boolean
     ): Flow<Either<Failure, List<AggregatedFeed>>> =
-        if (droppedPlace.load() != null) {
-            observeUnseenWarningsTask(
-                warningPlace = WarningPlace(
-                    latitude = placeForecast.latitude,
-                    longitude = placeForecast.longitude,
-                    county = placeForecast.county,
-                    municipality = placeForecast.municipality
-                ),
-                isRefresh = isRefresh
-            )
-        } else {
-            observeUnseenFollowedPlaceWarningsTask(isRefresh = isRefresh)
-        }
+        observeUnseenWarningsTask(
+            warningPlace = WarningPlace(
+                latitude = placeForecast.latitude,
+                longitude = placeForecast.longitude,
+                county = placeForecast.county,
+                municipality = placeForecast.municipality
+            ),
+            isRefresh = isRefresh
+        )
 
     private fun displayLatestWarning() {
         val shownTextLocale: TextLocale = textLocale.load()

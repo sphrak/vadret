@@ -117,7 +117,6 @@ class WeatherForecastViewModelTest {
             locationRepository = locationRepository
         ),
         observeUnseenWarningsTask = observeUnseenWarningsTask,
-        observeUnseenFollowedPlaceWarningsTask = observeUnseenWarningsTask,
         clock = clock,
         coroutineDispatcher = testDispatcher
     )
@@ -301,7 +300,7 @@ class WeatherForecastViewModelTest {
         }
 
     @Test
-    fun `the latest unseen warning of the followed places is shown once the forecast is shown`() =
+    fun `the latest unseen warning of the shown place is shown once the forecast is shown`() =
         testScope.runTest {
             weatherForecastViewModel.onEvent(event = WeatherForecastEvent.OnShown)
             advanceUntilIdle()
@@ -320,8 +319,15 @@ class WeatherForecastViewModelTest {
                 ),
                 actual = weatherForecastViewModel.state.value.latestWarning
             )
-            assertEquals<List<Pair<WarningPlace?, Boolean>>>(
-                expected = listOf(null to false),
+            assertEquals<List<Pair<WarningPlace, Boolean>>>(
+                expected = listOf(
+                    WarningPlace(
+                        latitude = stockholm.latitude,
+                        longitude = stockholm.longitude,
+                        county = stockholm.county,
+                        municipality = stockholm.municipality
+                    ) to false
+                ),
                 actual = observeUnseenWarningsTask.requests
             )
         }
@@ -332,7 +338,7 @@ class WeatherForecastViewModelTest {
             showDroppedPlace()
             advanceUntilIdle()
 
-            assertEquals<List<Pair<WarningPlace?, Boolean>>>(
+            assertEquals<List<Pair<WarningPlace, Boolean>>>(
                 expected = listOf(
                     WarningPlace(
                         latitude = DROPPED_LATITUDE,
@@ -380,7 +386,7 @@ class WeatherForecastViewModelTest {
 
             assertEquals(
                 expected = listOf(false, true),
-                actual = observeUnseenWarningsTask.requests.map { request: Pair<WarningPlace?, Boolean> -> request.second }
+                actual = observeUnseenWarningsTask.requests.map { request: Pair<WarningPlace, Boolean> -> request.second }
             )
         }
 
