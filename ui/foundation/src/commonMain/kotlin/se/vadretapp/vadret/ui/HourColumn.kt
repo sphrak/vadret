@@ -16,7 +16,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.stringResource
 import se.vadretapp.vadret.ui.resources.Res
@@ -27,7 +26,7 @@ private val hourColumnWidth = 46.dp
 private val nowHourCornerRadius = 12.dp
 private val nowHourShape = RoundedCornerShape(size = nowHourCornerRadius)
 
-val hourColumnBottomPadding: Dp = nowHourCornerRadius
+private val hourColumnVerticalPadding = 8.dp
 
 @Composable
 fun HourColumn(
@@ -53,7 +52,7 @@ fun HourColumn(
                 color = highlightColor,
                 shape = shape
             )
-            .padding(bottom = hourColumnBottomPadding)
+            .padding(vertical = hourColumnVerticalPadding)
             .semantics(mergeDescendants = true) {},
         content = content
     )

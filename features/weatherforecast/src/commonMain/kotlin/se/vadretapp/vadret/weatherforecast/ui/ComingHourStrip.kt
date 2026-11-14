@@ -50,7 +50,7 @@ private const val FIRST_HOUR_INDEX = 0
 private const val HALF_DIVISOR = 2f
 private const val FULL_LEVEL = 1f
 private val hourCellContentSpacing = 5.dp
-private val hourCellVerticalPadding = 4.dp
+private val hourCellBottomPadding = 4.dp
 private val hourIconSize = 22.dp
 private val temperatureChartSpacing = 6.dp
 private val temperatureChartHeight = 64.dp
@@ -217,7 +217,7 @@ private fun ComingHourCell(
         verticalArrangement = Arrangement.spacedBy(space = hourCellContentSpacing),
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = hourCellVerticalPadding)
+            .padding(bottom = hourCellBottomPadding)
     ) {
         HourLabel(
             timeText = comingHour.timeText,

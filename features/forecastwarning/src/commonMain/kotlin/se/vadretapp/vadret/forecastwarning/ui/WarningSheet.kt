@@ -62,7 +62,7 @@ private val factLabelSpacing = 3.dp
 private val dividerWidth = 1.dp
 private val iconSpacing = 16.dp
 private val levelIconSize = 48.dp
-private val hourLabelVerticalPadding = 4.dp
+private val hourLabelBottomPadding = 4.dp
 private val auroraChartHeight = 64.dp
 private val auroraLineTop = 20.dp
 private val auroraLineRange = 36.dp
@@ -281,7 +281,7 @@ private fun AuroraHourColumn(
         HourLabel(
             timeText = auroraHourItem.hourText,
             isNow = auroraHourItem.isNow,
-            modifier = Modifier.padding(vertical = hourLabelVerticalPadding)
+            modifier = Modifier.padding(bottom = hourLabelBottomPadding)
         )
         HourChartSlice(
             hours = auroraHourItems,
