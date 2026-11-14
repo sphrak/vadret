@@ -12,6 +12,7 @@ import se.vadretapp.vadret.ui.VadretTheme
 @Composable
 internal fun AppEnvironment(
     mainViewModel: MainViewModel,
+    languageTagOverride: String?,
     systemBarsEffect: @Composable (theme: Theme) -> Unit,
     content: @Composable () -> Unit
 ) {
@@ -23,7 +24,7 @@ internal fun AppEnvironment(
     val currentHourFormat: HourFormat = hourFormat ?: return
     systemBarsEffect(currentTheme)
     LanguageEnvironment(
-        languageTag = currentLanguage.languageTag,
+        languageTag = languageTagOverride ?: currentLanguage.languageTag,
         hourFormat = currentHourFormat
     ) {
         VadretTheme(theme = currentTheme) {

@@ -447,7 +447,6 @@ class WeatherForecastViewModel internal constructor(
         }
     }
 
-    // Only the shown place's warnings: the pill names no place, so another followed place's warning would read as this one's.
     private fun unseenWarningsFor(
         placeForecast: PlaceForecast,
         isRefresh: Boolean

@@ -84,7 +84,6 @@ private val highLabelCenterAbovePoint = 11.dp
 private val lowLabelCenterBelowPoint = 12.dp
 private val lowLabelHalfHeight = 8.dp
 
-// Ends at the coldest day's low label, so the day's bottom padding sits under the label as its top padding sits above the weekday.
 private val chartHeight = lineTop + lineRange + lowLabelCenterBelowPoint + lowLabelHalfHeight
 private val highLineWidth = 2.5.dp
 private val lowLineWidth = 2.dp

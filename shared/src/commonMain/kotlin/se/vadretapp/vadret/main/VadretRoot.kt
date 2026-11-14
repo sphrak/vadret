@@ -14,6 +14,7 @@ import se.vadretapp.vadret.setting.model.Theme
 @Composable
 fun VadretRoot(
     radarTab: RadarTab?,
+    languageTagOverride: String?,
     systemBarsEffect: @Composable (theme: Theme) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -30,6 +31,7 @@ fun VadretRoot(
     }
     AppEnvironment(
         mainViewModel = viewModel,
+        languageTagOverride = languageTagOverride,
         systemBarsEffect = systemBarsEffect
     ) {
         VadretApp(

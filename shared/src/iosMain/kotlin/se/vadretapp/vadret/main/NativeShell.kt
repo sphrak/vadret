@@ -99,6 +99,7 @@ class NativeShell {
             CompositionLocalProvider(LocalKoin provides koinApplication.koin) {
                 AppEnvironment(
                     mainViewModel = mainViewModel,
+                    languageTagOverride = null,
                     systemBarsEffect = { _: Theme -> }
                 ) {
                     NativeScreen(

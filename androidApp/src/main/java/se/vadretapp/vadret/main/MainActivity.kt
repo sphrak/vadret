@@ -22,6 +22,7 @@ import se.vadretapp.vadret.setting.model.Theme
 import se.vadretapp.vadret.ui.isDark
 
 private const val RADAR_IMAGE_URL_EXTRA = "radar_image_url"
+private const val LANGUAGE_TAG_EXTRA = "language_tag"
 
 private fun radarTab(initialRadarImageUrl: String?): RadarTab =
     RadarTab(
@@ -34,9 +35,9 @@ private fun radarTab(initialRadarImageUrl: String?): RadarTab =
         }
     )
 
-private fun Intent.initialRadarImageUrl(): String? =
+private fun Intent.developerExtra(name: String): String? =
     if (BuildConfig.IS_DEVELOPER_BUILD) {
-        getStringExtra(RADAR_IMAGE_URL_EXTRA)
+        getStringExtra(name)
     } else {
         null
     }
@@ -50,11 +51,13 @@ class MainActivity : ComponentActivity() {
         if (savedInstanceState == null) {
             openWarningReference(intent = intent)
         }
-        val radarTab: RadarTab = radarTab(initialRadarImageUrl = intent.initialRadarImageUrl())
+        val radarTab: RadarTab = radarTab(initialRadarImageUrl = intent.developerExtra(name = RADAR_IMAGE_URL_EXTRA))
+        val languageTagOverride: String? = intent.developerExtra(name = LANGUAGE_TAG_EXTRA)
         setContent {
             CompositionLocalProvider(LocalKoin provides koin) {
                 VadretRoot(
                     radarTab = radarTab,
+                    languageTagOverride = languageTagOverride,
                     systemBarsEffect = { theme: Theme ->
                         SystemBarsEffect(isDark = theme.isDark(isSystemDark = isSystemInDarkTheme()))
                     }

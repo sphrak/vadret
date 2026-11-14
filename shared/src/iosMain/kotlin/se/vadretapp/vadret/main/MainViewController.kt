@@ -24,6 +24,7 @@ fun mainViewController(): UIViewController =
         CompositionLocalProvider(LocalKoin provides koinApplication.koin) {
             VadretRoot(
                 radarTab = radarTab,
+                languageTagOverride = null,
                 systemBarsEffect = { theme: Theme -> InterfaceStyleEffect(theme = theme) }
             )
         }

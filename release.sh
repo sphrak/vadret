@@ -9,6 +9,8 @@ readonly CHANGELOG_FILE="androidApp/src/main/res/raw/changelog.md"
 readonly SCREENSHOT_DIRECTORY="assets/screenshots"
 readonly MAIN_ACTIVITY="se.vadretapp.vadret/se.vadretapp.vadret.main.MainActivity"
 readonly RADAR_IMAGE_URL_EXTRA="radar_image_url"
+readonly LANGUAGE_TAG_EXTRA="language_tag"
+readonly SCREENSHOT_LANGUAGE_TAG="en"
 readonly DEVICE_UI_DUMP_FILE="/sdcard/vadret_release_ui.xml"
 readonly WEBP_QUALITY=80
 readonly WEBP_COMPRESSION_METHOD=6
@@ -23,7 +25,7 @@ readonly WEATHER_TAB_TEXT="Weather"
 readonly WARNINGS_TAB_TEXT="Warnings"
 readonly RADAR_TAB_TEXT="Radar"
 readonly SETTINGS_TAB_TEXT="Settings"
-readonly THEME_ROW_TEXT="Select a theme"
+readonly THEME_ROW_TEXT="Theme"
 readonly LIGHT_THEME_TEXT="Light"
 readonly DARK_THEME_TEXT="Dark"
 readonly LIGHT_SCREENSHOT_SUFFIX="light"
@@ -229,7 +231,7 @@ capture_screenshots_in_theme() {
 capture_screenshots() {
     step "Installing the local release build"
     ./gradlew --quiet :androidApp:installDevRelease
-    adb shell am start -S -W -n "${MAIN_ACTIVITY}" --es "${RADAR_IMAGE_URL_EXTRA}" "https://opendata-download-radar.smhi.se/api/version/latest/area/sweden/product/comp/2026/10/25/radar_2610251300.tif" > /dev/null
+    adb shell am start -S -W -n "${MAIN_ACTIVITY}" --es "${RADAR_IMAGE_URL_EXTRA}" "https://opendata-download-radar.smhi.se/api/version/latest/area/sweden/product/comp/2026/10/25/radar_2610251300.tif" --es "${LANGUAGE_TAG_EXTRA}" "${SCREENSHOT_LANGUAGE_TAG}" > /dev/null
     trap restore_phone EXIT
     enter_demo_mode
     local original_theme_text
