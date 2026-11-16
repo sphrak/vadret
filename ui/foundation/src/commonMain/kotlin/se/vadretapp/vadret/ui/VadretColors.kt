@@ -3,12 +3,16 @@ package se.vadretapp.vadret.ui
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 
+private const val LIGHT_HIGHLIGHT_ALPHA = 0.07f
+private const val DARK_HIGHLIGHT_ALPHA = 0.09f
+
 @Immutable
 data class VadretColors(
     val divider: Color,
     val icon: Color,
     val precipitation: Color,
     val accent: Color = lightAccent,
+    val highlight: Color = lightAccent.copy(alpha = LIGHT_HIGHLIGHT_ALPHA),
     val temperatureCold: Color = Color(color = 0xFF5AA9D6),
     val temperatureCool: Color = Color(color = 0xFF7F8EEE),
     val temperatureMild: Color = Color(color = 0xFFA58AD8),
@@ -42,6 +46,8 @@ data class VadretColors(
 private val darkWarningMessage = Color(color = 0xFF283154)
 private val onDarkWarningMessage = Color(color = 0xFFCDD5F5)
 
+private val darkHighlight = darkAccent.copy(alpha = DARK_HIGHLIGHT_ALPHA)
+
 private val darkTemperatureZero = Color(color = 0xFF8FC4EA)
 private val darkTemperatureMinusFive = Color(color = 0xFF74A8F0)
 private val darkTemperatureMinusTen = Color(color = 0xFF6F8FE6)
@@ -58,6 +64,7 @@ internal val darkVadretColors: VadretColors = VadretColors(
     divider = Color(color = 0xFF262933),
     icon = Color(color = 0xFFC4C8D4),
     precipitation = Color(color = 0xFF7FB0FF),
+    highlight = darkHighlight,
     temperatureZero = darkTemperatureZero,
     temperatureMinusFive = darkTemperatureMinusFive,
     temperatureMinusTen = darkTemperatureMinusTen,
@@ -71,6 +78,7 @@ internal val amoledVadretColors: VadretColors = VadretColors(
     divider = Color(color = 0xFF1E1E1E),
     icon = Color(color = 0xFFC4C8D4),
     precipitation = Color(color = 0xFF7FB0FF),
+    highlight = darkHighlight,
     temperatureZero = darkTemperatureZero,
     temperatureMinusFive = darkTemperatureMinusFive,
     temperatureMinusTen = darkTemperatureMinusTen,

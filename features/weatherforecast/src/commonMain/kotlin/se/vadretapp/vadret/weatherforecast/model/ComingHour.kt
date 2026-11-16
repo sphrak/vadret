@@ -11,9 +11,13 @@ data class ComingHour(
     val descriptionResource: StringResource,
     val temperatureText: String,
     val temperatureLevel: Float,
+    val feelsLikeTemperatureText: String,
+    val feelsLikeLevel: Float,
     val precipitationText: String?,
     val windSpeedText: String,
     val windLevel: Float,
+    val windGustSpeedText: String?,
+    val windGustLevel: Float,
     val windArrowRotation: Float,
     val windDirectionResource: StringResource
 )

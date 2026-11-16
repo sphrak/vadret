@@ -23,6 +23,9 @@ data class ComingDay(
     val temperatureRangeStart: Float,
     val temperatureRangeEnd: Float,
     val hours: ImmutableList<ComingHour>,
+    val hourShadeStops: ImmutableList<TemperatureShadeStop>,
+    val temperatureLegendShadeStops: ImmutableList<TemperatureShadeStop>,
+    val feelsLikeLegendShadeStops: ImmutableList<TemperatureShadeStop>,
     val firstShownHourIndex: Int,
     val isExpanded: Boolean
 )

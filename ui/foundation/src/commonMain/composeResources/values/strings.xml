@@ -238,6 +238,9 @@
     <string name="collapsed">Collapsed</string>
     <string name="temperature">Temperature</string>
     <string name="wind_in_meters_per_second">Wind (m/s)</string>
+    <string name="hour_chart_legend">What the lines show</string>
+    <string name="wind_gusts">Gusts</string>
+    <string name="average_wind">Average wind</string>
     <string name="millimeter" translatable="false">mm</string>
     <plurals name="coming_days_title">
         <item quantity="one">Next %1$d day</item>

@@ -7,12 +7,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.ClipOp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.translate
@@ -24,6 +28,7 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.collections.immutable.ImmutableList
+import se.vadretapp.vadret.ui.model.HourChartLinePlacement
 
 private const val FIRST_INDEX = 0
 private const val FULL_LEVEL = 1f
@@ -34,8 +39,8 @@ private const val NO_ROTATION = 0f
 private const val NO_WIDTH = 0f
 private const val SINGLE_LINE = 1
 
-private val lineWidth = 2.5.dp
 private val labelCenterAbovePoint = 11.dp
+private val labelCenterBelowPoint = 12.dp
 private val arrowSize = 12.dp
 private val arrowSpacing = 1.dp
 
@@ -62,6 +67,12 @@ private class SlicePoints<T>(
         )
 }
 
+object HourChartSliceDefaults {
+    const val SECONDARY_LINE_ALPHA = 0.45f
+    val LineWidth = 2.5.dp
+    val SecondaryLineWidth = 2.dp
+}
+
 @Composable
 fun <T> HourChartSlice(
     hours: ImmutableList<T>,
@@ -75,6 +86,12 @@ fun <T> HourChartSlice(
     labelColor: Color,
     textMeasurer: TextMeasurer,
     modifier: Modifier = Modifier,
+    lineBrush: Brush = SolidColor(value = lineColor),
+    secondaryLevel: ((T) -> Float)? = null,
+    secondaryPlacement: HourChartLinePlacement = HourChartLinePlacement.BELOW,
+    secondaryLabelText: String? = null,
+    secondaryLabelStyle: TextStyle = labelStyle,
+    secondaryLabelColor: Color = labelColor,
     arrow: Painter? = null,
     arrowRotation: Float = NO_ROTATION
 ) {
@@ -95,12 +112,69 @@ fun <T> HourChartSlice(
                     line = line,
                     bottom = size.height
                 )
-                val areaColor: Color = lineColor.copy(alpha = AREA_ALPHA)
                 val stroke = Stroke(
-                    width = lineWidth.toPx(),
+                    width = HourChartSliceDefaults.LineWidth.toPx(),
                     cap = StrokeCap.Round,
                     join = StrokeJoin.Round
                 )
+                val secondaryPoints: SlicePoints<T>? = if (secondaryLevel == null) {
+                    null
+                } else {
+                    SlicePoints(
+                        hours = hours,
+                        index = index,
+                        level = secondaryLevel,
+                        columnWidth = size.width,
+                        lineTop = lineTop.toPx(),
+                        lineRange = lineRange.toPx()
+                    )
+                }
+                val secondaryLine: Path? = secondaryPoints?.line()
+                val secondaryArea: Path? = if (secondaryLine == null) {
+                    null
+                } else {
+                    slicePoints.area(
+                        line = secondaryLine,
+                        bottom = size.height
+                    )
+                }
+                val isSecondaryAbove: Boolean = secondaryArea != null && secondaryPlacement == HourChartLinePlacement.ABOVE
+                val upperArea: Path = if (secondaryArea != null && isSecondaryAbove) {
+                    secondaryArea
+                } else {
+                    area
+                }
+                val lowerArea: Path? = if (isSecondaryAbove) {
+                    area
+                } else {
+                    secondaryArea
+                }
+                val secondaryStroke = Stroke(
+                    width = HourChartSliceDefaults.SecondaryLineWidth.toPx(),
+                    cap = StrokeCap.Round,
+                    join = StrokeJoin.Round
+                )
+                val secondaryLabelLayout: TextLayoutResult? = if (secondaryLabelText == null) {
+                    null
+                } else {
+                    textMeasurer.measure(
+                        text = secondaryLabelText,
+                        style = secondaryLabelStyle,
+                        maxLines = SINGLE_LINE
+                    )
+                }
+                val aboveOffset: Float = -labelCenterAbovePoint.toPx()
+                val belowOffset: Float = labelCenterBelowPoint.toPx()
+                val labelOffset: Float = if (isSecondaryAbove) {
+                    belowOffset
+                } else {
+                    aboveOffset
+                }
+                val secondaryLabelOffset: Float = if (isSecondaryAbove) {
+                    aboveOffset
+                } else {
+                    belowOffset
+                }
                 val labelLayout: TextLayoutResult = textMeasurer.measure(
                     text = labelText,
                     style = labelStyle,
@@ -113,17 +187,40 @@ fun <T> HourChartSlice(
                     arrowSizePx + arrowSpacing.toPx()
                 }
                 val labelLeft: Float = (size.width - arrowWidth - labelLayout.size.width) / HALF_DIVISOR
-                val labelCenterY: Float = slicePoints.y(pointIndex = index) - labelCenterAbovePoint.toPx()
+                val labelCenterY: Float = slicePoints.y(pointIndex = index) + labelOffset
                 val arrowColorFilter: ColorFilter = ColorFilter.tint(color = lineColor)
                 onDrawBehind {
                     clipRect {
-                        drawPath(
-                            path = area,
-                            color = areaColor
-                        )
+                        if (lowerArea == null) {
+                            drawPath(
+                                path = upperArea,
+                                brush = lineBrush,
+                                alpha = AREA_ALPHA
+                            )
+                        } else {
+                            clipPath(path = upperArea) {
+                                clipPath(
+                                    path = lowerArea,
+                                    clipOp = ClipOp.Difference
+                                ) {
+                                    drawRect(
+                                        brush = lineBrush,
+                                        alpha = AREA_ALPHA
+                                    )
+                                }
+                            }
+                        }
+                        if (secondaryLine != null) {
+                            drawPath(
+                                path = secondaryLine,
+                                brush = lineBrush,
+                                alpha = HourChartSliceDefaults.SECONDARY_LINE_ALPHA,
+                                style = secondaryStroke
+                            )
+                        }
                         drawPath(
                             path = line,
-                            color = lineColor,
+                            brush = lineBrush,
                             style = stroke
                         )
                     }
@@ -159,6 +256,16 @@ fun <T> HourChartSlice(
                             y = labelCenterY - labelLayout.size.height / HALF_DIVISOR
                         )
                     )
+                    if (secondaryPoints != null && secondaryLabelLayout != null) {
+                        drawText(
+                            textLayoutResult = secondaryLabelLayout,
+                            color = secondaryLabelColor,
+                            topLeft = Offset(
+                                x = (size.width - secondaryLabelLayout.size.width) / HALF_DIVISOR,
+                                y = secondaryPoints.y(pointIndex = index) + secondaryLabelOffset - secondaryLabelLayout.size.height / HALF_DIVISOR
+                            )
+                        )
+                    }
                 }
             }
     )

@@ -7,7 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- changed wind color to gray as to not confuse it with cold temperatures
+- Changed wind color to gray as to not confuse it with cold temperatures
+- Wind now consists of median and gust winds
+- Improved design for hourly forecasts (now uses a pager)
+- Forecast tooltip
 
 ## [3.3.0] -- 2026-11-14
 

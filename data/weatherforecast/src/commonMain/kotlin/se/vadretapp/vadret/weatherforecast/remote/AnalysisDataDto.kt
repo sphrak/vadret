@@ -11,6 +11,8 @@ internal data class AnalysisDataDto(
     val windFromDirection: Double,
     @SerialName(value = "wind_speed")
     val windSpeed: Double,
+    @SerialName(value = "wind_speed_of_gust")
+    val windGustSpeed: Double? = null,
     @SerialName(value = "relative_humidity")
     val relativeHumidity: Int,
     @SerialName(value = "predominant_precipitation_type_at_surface")

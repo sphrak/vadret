@@ -19,6 +19,7 @@ import se.vadretapp.vadret.weatherforecast.model.ComingDay
 import se.vadretapp.vadret.weatherforecast.model.ComingHour
 import se.vadretapp.vadret.weatherforecast.model.Forecast
 import se.vadretapp.vadret.weatherforecast.model.PlaceForecast
+import se.vadretapp.vadret.weatherforecast.model.TemperatureShadeStop
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.time.Duration.Companion.hours
@@ -51,6 +52,7 @@ private fun forecast(
     airTemperature: Double = 5.0,
     windFromDirection: Double = 180.0,
     windSpeed: Double = 3.0,
+    windGustSpeed: Double? = null,
     symbolCode: Int = 6,
     precipitationAmount: Double? = 0.0
 ): Forecast =
@@ -60,6 +62,7 @@ private fun forecast(
         airTemperature = airTemperature,
         windFromDirection = windFromDirection,
         windSpeed = windSpeed,
+        windGustSpeed = windGustSpeed,
         relativeHumidity = 80,
         precipitationType = 0,
         symbolCode = symbolCode,
@@ -77,6 +80,7 @@ private fun analysis(
         airTemperature = airTemperature,
         windFromDirection = 180.0,
         windSpeed = 3.0,
+        windGustSpeed = null,
         relativeHumidity = 80,
         precipitationType = 0,
         symbolCode = symbolCode,
@@ -408,14 +412,39 @@ class ForecastTest {
     fun `hour temperatures sit between the coldest and warmest hour of the day`() {
         val day: ComingDay = comingDays(
             forecasts = listOf(
-                forecast(validAt = localTime(day = 10, hour = 10), airTemperature = 2.0),
-                forecast(validAt = localTime(day = 10, hour = 11), airTemperature = 6.0),
-                forecast(validAt = localTime(day = 10, hour = 12), airTemperature = 10.0)
+                forecast(validAt = localTime(day = 10, hour = 10), airTemperature = 2.0, windSpeed = 0.0),
+                forecast(validAt = localTime(day = 10, hour = 11), airTemperature = 6.0, windSpeed = 0.0),
+                forecast(validAt = localTime(day = 10, hour = 12), airTemperature = 10.0, windSpeed = 0.0)
             )
         ).single()
 
         assertEquals(
             expected = listOf(0f, 0.5f, 1f),
+            actual = day.hours.map { comingHour: ComingHour -> comingHour.temperatureLevel }
+        )
+        listOf(day.hourShadeStops, day.temperatureLegendShadeStops, day.feelsLikeLegendShadeStops).forEach { shadeStops: List<TemperatureShadeStop> ->
+            assertEquals(
+                expected = listOf(-0.125f, -0.25f, -0.875f, -1.5f, -2.125f, -2.75f),
+                actual = shadeStops.map { shadeStop: TemperatureShadeStop -> shadeStop.level }
+            )
+        }
+    }
+
+    @Test
+    fun `a cold wind pulls feels like below the temperature`() {
+        val day: ComingDay = comingDays(
+            forecasts = listOf(
+                forecast(validAt = localTime(day = 10, hour = 10), airTemperature = -5.0, windSpeed = 0.0),
+                forecast(validAt = localTime(day = 10, hour = 11), airTemperature = -5.0, windSpeed = 10.0)
+            )
+        ).single()
+
+        assertEquals(
+            expected = listOf("-5" to 1f, "-14" to 0f),
+            actual = day.hours.map { comingHour: ComingHour -> comingHour.feelsLikeTemperatureText to comingHour.feelsLikeLevel }
+        )
+        assertEquals(
+            expected = listOf(1f, 1f),
             actual = day.hours.map { comingHour: ComingHour -> comingHour.temperatureLevel }
         )
     }
@@ -424,8 +453,8 @@ class ForecastTest {
     fun `a day with little temperature change is centred on four degrees`() {
         val day: ComingDay = comingDays(
             forecasts = listOf(
-                forecast(validAt = localTime(day = 10, hour = 10), airTemperature = 5.0),
-                forecast(validAt = localTime(day = 10, hour = 11), airTemperature = 6.0)
+                forecast(validAt = localTime(day = 10, hour = 10), airTemperature = 5.0, windSpeed = 0.0),
+                forecast(validAt = localTime(day = 10, hour = 11), airTemperature = 6.0, windSpeed = 0.0)
             )
         ).single()
 
@@ -438,7 +467,7 @@ class ForecastTest {
     @Test
     fun `wind reaches the top of its chart at twelve metres per second`() {
         val day: ComingDay = comingDays(
-            forecasts = listOf(0.0, 6.0, 12.0, 15.0).mapIndexed { index: Int, windSpeed: Double ->
+            forecasts = listOf(0.0, 6.0, 12.0).mapIndexed { index: Int, windSpeed: Double ->
                 forecast(
                     validAt = localTime(day = 10, hour = 10 + index),
                     windSpeed = windSpeed
@@ -447,12 +476,39 @@ class ForecastTest {
         ).single()
 
         assertEquals(
-            expected = listOf(0f, 0.5f, 1f, 1f),
+            expected = listOf(0f, 0.5f, 1f),
             actual = day.hours.map { comingHour: ComingHour -> comingHour.windLevel }
         )
         assertEquals(
-            expected = listOf("0.0", "6.0", "12.0", "15.0"),
+            expected = listOf("0.0", "6.0", "12.0"),
             actual = day.hours.map { comingHour: ComingHour -> comingHour.windSpeedText }
+        )
+    }
+
+    @Test
+    fun `the strongest gust of the day reaches the top of the wind chart`() {
+        val day: ComingDay = comingDays(
+            forecasts = listOf(
+                forecast(
+                    validAt = localTime(day = 10, hour = 10),
+                    windSpeed = 6.0,
+                    windGustSpeed = 12.0
+                ),
+                forecast(
+                    validAt = localTime(day = 10, hour = 11),
+                    windSpeed = 12.0,
+                    windGustSpeed = 24.0
+                )
+            )
+        ).single()
+
+        assertEquals(
+            expected = listOf(0.25f, 0.5f),
+            actual = day.hours.map { comingHour: ComingHour -> comingHour.windLevel }
+        )
+        assertEquals(
+            expected = listOf<Pair<String?, Float>>("12.0" to 0.5f, "24.0" to 1f),
+            actual = day.hours.map { comingHour: ComingHour -> comingHour.windGustSpeedText to comingHour.windGustLevel }
         )
     }
 

@@ -7,6 +7,7 @@ data class Analysis(
     val airTemperature: Double,
     val windFromDirection: Double,
     val windSpeed: Double,
+    val windGustSpeed: Double?,
     val relativeHumidity: Int,
     val precipitationType: Int,
     val symbolCode: Int,

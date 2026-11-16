@@ -14,6 +14,7 @@ internal fun Analysis.toForecast(): Forecast =
         airTemperature = airTemperature,
         windFromDirection = windFromDirection,
         windSpeed = windSpeed,
+        windGustSpeed = windGustSpeed,
         relativeHumidity = relativeHumidity,
         precipitationType = precipitationType,
         symbolCode = symbolCode,

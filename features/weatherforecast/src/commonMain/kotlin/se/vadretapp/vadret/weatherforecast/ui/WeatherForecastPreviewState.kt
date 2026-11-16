@@ -42,6 +42,7 @@ private const val COOLING_PER_HOUR = 0.03
 private const val MEAN_WIND_SPEED = 5.0
 private const val WIND_SWING = 3.0
 private const val WIND_PERIOD_HOURS = 30.0
+private const val GUST_FACTOR = 1.5
 private const val FIRST_WIND_DIRECTION = 200.0
 private const val WIND_TURN_PER_HOUR = 2.0
 private const val DEGREES_IN_CIRCLE = 360.0
@@ -121,6 +122,7 @@ private fun Forecast.toPreviewAnalysis(): Analysis =
         airTemperature = airTemperature,
         windFromDirection = windFromDirection,
         windSpeed = windSpeed,
+        windGustSpeed = windGustSpeed,
         relativeHumidity = relativeHumidity,
         precipitationType = precipitationType,
         symbolCode = symbolCode,
@@ -132,6 +134,7 @@ private fun previewHours(hourOffsets: IntRange): List<Forecast> =
         val validAt: Instant = previewNow + hourOffset.hours
         val symbolCode: Int = previewSymbolCodes[hourOffset.floorDiv(other = SYMBOL_PERIOD_HOURS).mod(other = previewSymbolCodes.size)]
         val isRaining: Boolean = symbolCode >= FIRST_PRECIPITATION_SYMBOL_CODE
+        val windSpeed: Double = MEAN_WIND_SPEED + WIND_SWING * sin(x = FULL_TURN * hourOffset / WIND_PERIOD_HOURS)
         Forecast(
             validAt = validAt,
             intervalStartedAt = validAt - INTERVAL_HOURS.hours,
@@ -141,7 +144,8 @@ private fun previewHours(hourOffsets: IntRange): List<Forecast> =
                     COOLING_PER_HOUR * hourOffset
             ),
             windFromDirection = (FIRST_WIND_DIRECTION + WIND_TURN_PER_HOUR * hourOffset) % DEGREES_IN_CIRCLE,
-            windSpeed = MEAN_WIND_SPEED + WIND_SWING * sin(x = FULL_TURN * hourOffset / WIND_PERIOD_HOURS),
+            windSpeed = windSpeed,
+            windGustSpeed = windSpeed * GUST_FACTOR,
             relativeHumidity = RELATIVE_HUMIDITY,
             precipitationType = if (isRaining) {
                 RAIN_PRECIPITATION_TYPE

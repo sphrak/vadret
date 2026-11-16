@@ -22,6 +22,7 @@ import se.vadretapp.vadret.ui.resources.Res
 import se.vadretapp.vadret.ui.resources.now
 
 private const val SINGLE_LINE = 1
+private const val NO_ALPHA = 0f
 private val hourColumnWidth = 46.dp
 private val nowHourCornerRadius = 12.dp
 private val nowHourShape = RoundedCornerShape(size = nowHourCornerRadius)
@@ -36,11 +37,12 @@ fun HourColumn(
     content: @Composable ColumnScope.() -> Unit
 ) {
     val isNowTransition = updateTransition(isNow)
+    val nowColor: Color = VadretTheme.colors.highlight
     val highlightColor: Color by isNowTransition.animateColor {
         if (it) {
-            VadretTheme.colorScheme.secondaryContainer
+            nowColor
         } else {
-            Color.Transparent
+            nowColor.copy(alpha = NO_ALPHA)
         }
     }
 

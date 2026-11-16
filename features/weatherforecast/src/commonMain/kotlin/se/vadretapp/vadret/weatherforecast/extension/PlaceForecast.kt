@@ -151,7 +151,7 @@ private fun Forecast.toCurrentWeather(isDaytime: Boolean): CurrentWeather =
         humidityPercent = relativeHumidity
     )
 
-private fun Forecast.windChill(): Double? =
+internal fun Forecast.windChill(): Double? =
     WindChill.calculate(
         temperatureCelcius = airTemperature,
         windSpeedMeterPerSecond = windSpeed

@@ -1,5 +1,6 @@
 package se.vadretapp.vadret.weatherforecast.extension
 
+import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
@@ -14,8 +15,11 @@ import se.vadretapp.vadret.ui.format.toOneDecimalText
 import se.vadretapp.vadret.weatherforecast.model.ComingDay
 import se.vadretapp.vadret.weatherforecast.model.ComingHour
 import se.vadretapp.vadret.weatherforecast.model.Forecast
+import se.vadretapp.vadret.weatherforecast.model.TemperatureShade
+import se.vadretapp.vadret.weatherforecast.model.TemperatureShadeStop
 import se.vadretapp.vadret.weatherforecast.util.SunsetUtil
 import se.vadretapp.vadret.weatherforecast.util.WeatherForecastUtil
+import kotlin.math.max
 import kotlin.math.roundToInt
 import kotlin.time.Duration
 import kotlin.time.Instant
@@ -33,6 +37,7 @@ private const val SHOWN_PRECIPITATION = 0.1
 private const val RANGE_START = 0f
 private const val RANGE_END = 1f
 private const val NO_SPAN = 0.0
+private const val MIDDLE_LEVEL = 0.5
 private const val MINIMUM_HOUR_TEMPERATURE_SPAN = 4.0
 private const val FULL_WIND_LEVEL_SPEED = 12.0
 private const val NO_LEVEL = 0.0
@@ -45,6 +50,9 @@ private class DaySummary(
     val forecasts: List<Forecast>,
     val lowTemperature: Double,
     val highTemperature: Double,
+    val lowFeelsLikeTemperature: Double,
+    val highFeelsLikeTemperature: Double,
+    val highWindGustSpeed: Double,
     val precipitationAmount: Double?
 )
 
@@ -120,6 +128,9 @@ private fun List<Forecast>.toDaySummaries(timeZone: TimeZone): List<DaySummary> 
                 forecasts = dayForecasts,
                 lowTemperature = dayForecasts.minOf { forecast: Forecast -> forecast.airTemperature },
                 highTemperature = dayForecasts.maxOf { forecast: Forecast -> forecast.airTemperature },
+                lowFeelsLikeTemperature = dayForecasts.minOf { forecast: Forecast -> forecast.feelsLikeOrAirTemperature() },
+                highFeelsLikeTemperature = dayForecasts.maxOf { forecast: Forecast -> forecast.feelsLikeOrAirTemperature() },
+                highWindGustSpeed = dayForecasts.maxOf { forecast: Forecast -> forecast.windGustOrWindSpeed() },
                 precipitationAmount = precipitationByDate[date]
             )
         }
@@ -166,6 +177,10 @@ private fun DaySummary.toComingDay(
         ).toInstant(timeZone = timeZone)
     val symbolCode: Int = representativeSymbolCode(timeZone = timeZone)
     val hourTemperatureScale: TemperatureScale = hourTemperatureScale()
+    val fullWindLevelSpeed: Double = max(
+        a = FULL_WIND_LEVEL_SPEED,
+        b = highWindGustSpeed
+    )
     val nowHourIndex: Int = forecasts.indexOfFirst { forecast: Forecast -> forecast.validAt == nowHourAt }
     val shownFrom: Instant? = if (isToday) {
         now
@@ -212,9 +227,19 @@ private fun DaySummary.toComingDay(
                     latitude = latitude,
                     longitude = longitude
                 ),
-                temperatureScale = hourTemperatureScale
+                temperatureScale = hourTemperatureScale,
+                fullWindLevelSpeed = fullWindLevelSpeed
             )
         }.toImmutableList(),
+        hourShadeStops = hourTemperatureScale.shadeStops(),
+        temperatureLegendShadeStops = TemperatureScale(
+            low = lowTemperature,
+            high = highTemperature
+        ).shadeStops(),
+        feelsLikeLegendShadeStops = TemperatureScale(
+            low = lowFeelsLikeTemperature,
+            high = highFeelsLikeTemperature
+        ).shadeStops(),
         firstShownHourIndex = firstShownHourIndex(
             nowHourIndex = nowHourIndex,
             shownFrom = shownFrom
@@ -250,14 +275,46 @@ private fun TemperatureScale.fractionOf(
     }
 }
 
+private fun TemperatureScale.shadeStops(): ImmutableList<TemperatureShadeStop> =
+    TemperatureShade.entries.map { shade: TemperatureShade ->
+        TemperatureShadeStop(
+            shade = shade,
+            level = shadeLevel(temperature = shade.temperature)
+        )
+    }.toImmutableList()
+
+private fun TemperatureScale.shadeLevel(temperature: Double): Float {
+    val span: Double = high - low
+    return if (span > NO_SPAN) {
+        ((temperature - low) / span).toFloat()
+    } else {
+        (MIDDLE_LEVEL + temperature - low).toFloat()
+    }
+}
+
+private fun Forecast.feelsLikeOrAirTemperature(): Double = windChill() ?: airTemperature
+
+private fun Forecast.windGustOrWindSpeed(): Double =
+    max(
+        a = windGustSpeed ?: windSpeed,
+        b = windSpeed
+    )
+
+private fun Double.windLevel(fullWindLevelSpeed: Double): Float =
+    (this / fullWindLevelSpeed)
+        .coerceIn(
+            minimumValue = NO_LEVEL,
+            maximumValue = FULL_LEVEL
+        ).toFloat()
+
 private fun DaySummary.hourTemperatureScale(): TemperatureScale {
-    if (highTemperature - lowTemperature >= MINIMUM_HOUR_TEMPERATURE_SPAN) {
+    if (highTemperature - lowFeelsLikeTemperature >= MINIMUM_HOUR_TEMPERATURE_SPAN) {
         return TemperatureScale(
-            low = lowTemperature,
+            low = lowFeelsLikeTemperature,
             high = highTemperature
         )
     }
-    val middle: Double = (lowTemperature + highTemperature) / MIDPOINT_DIVISOR
+    val middle: Double = (lowFeelsLikeTemperature + highTemperature) / MIDPOINT_DIVISOR
     return TemperatureScale(
         low = middle - MINIMUM_HOUR_TEMPERATURE_SPAN / MIDPOINT_DIVISOR,
         high = middle + MINIMUM_HOUR_TEMPERATURE_SPAN / MIDPOINT_DIVISOR
@@ -284,9 +341,11 @@ private fun Forecast.toComingHour(
     timeZone: TimeZone,
     dayFormats: DayFormats,
     isDaytime: Boolean,
-    temperatureScale: TemperatureScale
-): ComingHour =
-    ComingHour(
+    temperatureScale: TemperatureScale,
+    fullWindLevelSpeed: Double
+): ComingHour {
+    val feelsLikeTemperature: Double = feelsLikeOrAirTemperature()
+    return ComingHour(
         key = "$COMING_HOUR_KEY_PREFIX$validAt",
         isNow = isNow,
         timeText = validAt.toHourText(
@@ -303,16 +362,20 @@ private fun Forecast.toComingHour(
             temperature = airTemperature,
             fallback = RANGE_START
         ),
+        feelsLikeTemperatureText = feelsLikeTemperature.roundToInt().toString(),
+        feelsLikeLevel = temperatureScale.fractionOf(
+            temperature = feelsLikeTemperature,
+            fallback = RANGE_START
+        ),
         precipitationText = precipitationAmount.toPrecipitationText(),
         windSpeedText = windSpeed.toOneDecimalText(),
-        windLevel = (windSpeed / FULL_WIND_LEVEL_SPEED)
-            .coerceIn(
-                minimumValue = NO_LEVEL,
-                maximumValue = FULL_LEVEL
-            ).toFloat(),
+        windLevel = windSpeed.windLevel(fullWindLevelSpeed = fullWindLevelSpeed),
+        windGustSpeedText = windGustSpeed?.toOneDecimalText(),
+        windGustLevel = windGustOrWindSpeed().windLevel(fullWindLevelSpeed = fullWindLevelSpeed),
         windArrowRotation = windArrowRotation(),
         windDirectionResource = WeatherForecastUtil.handleWindDirection(degree = windFromDirection)
     )
+}
 
 internal fun Forecast.windArrowRotation(): Float = (windFromDirection.toFloat() + WIND_ARROW_ROTATION_OFFSET) % DEGREES_IN_CIRCLE
 

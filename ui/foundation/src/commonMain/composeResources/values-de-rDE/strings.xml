@@ -127,6 +127,9 @@
     <string name="collapsed">Zugeklappt</string>
     <string name="temperature">Temperatur</string>
     <string name="wind_in_meters_per_second">Wind (m/s)</string>
+    <string name="hour_chart_legend">Was die Linien zeigen</string>
+    <string name="wind_gusts">Böen</string>
+    <string name="average_wind">Mittelwind</string>
     <plurals name="coming_days_title">
         <item quantity="one">Nächster %1$d Tag</item>
         <item quantity="other">Nächste %1$d Tage</item>

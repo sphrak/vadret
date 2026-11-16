@@ -15,6 +15,8 @@ internal data class ForecastEntity(
     val windFromDirection: Double,
     @SerialName(value = "wind_speed")
     val windSpeed: Double,
+    @SerialName(value = "wind_gust_speed")
+    val windGustSpeed: Double? = null,
     @SerialName(value = "relative_humidity")
     val relativeHumidity: Int,
     @SerialName(value = "precipitation_type")

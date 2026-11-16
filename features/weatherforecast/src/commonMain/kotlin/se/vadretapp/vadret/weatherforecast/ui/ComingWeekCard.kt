@@ -56,7 +56,6 @@ import se.vadretapp.vadret.ui.resources.degree
 import se.vadretapp.vadret.ui.resources.today
 import se.vadretapp.vadret.ui.resources.week_number
 import se.vadretapp.vadret.weatherforecast.model.ComingWeek
-import se.vadretapp.vadret.weatherforecast.model.TemperatureShade
 import se.vadretapp.vadret.weatherforecast.model.TemperatureShadeStop
 import se.vadretapp.vadret.weatherforecast.model.WeekDay
 import se.vadretapp.vadret.weatherforecast.ui.ComingWeekCardDefaults.OuterShape
@@ -190,7 +189,7 @@ private fun WeekDayColumn(
 ) {
     val weekDay: WeekDay = days[index]
     val highlightColor: Color = if (weekDay.isToday) {
-        VadretTheme.colorScheme.secondaryContainer
+        VadretTheme.colors.highlight
     } else {
         Color.Transparent
     }
@@ -228,7 +227,7 @@ private fun WeekDayColumn(
             days = days,
             index = index,
             textMeasurer = textMeasurer,
-            ringColor = highlightColor
+            ringColor = VadretTheme.colorScheme.surface
         )
     }
 }
@@ -404,46 +403,6 @@ private fun lineY(
     lineTopPixels: Float,
     lineRangePixels: Float
 ): Float = lineTopPixels + (FULL_LEVEL - level) * lineRangePixels
-
-private fun ImmutableList<TemperatureShadeStop>.shading(
-    lineTopPixels: Float,
-    lineRangePixels: Float,
-    colors: VadretColors
-): Brush {
-    val warmestY: Float = lineY(
-        level = first().level,
-        lineTopPixels = lineTopPixels,
-        lineRangePixels = lineRangePixels
-    )
-    val coldestY: Float = lineY(
-        level = last().level,
-        lineTopPixels = lineTopPixels,
-        lineRangePixels = lineRangePixels
-    )
-    val colorStops: Array<Pair<Float, Color>> = map { shadeStop: TemperatureShadeStop ->
-        val shadeY: Float = lineY(
-            level = shadeStop.level,
-            lineTopPixels = lineTopPixels,
-            lineRangePixels = lineRangePixels
-        )
-        (shadeY - warmestY) / (coldestY - warmestY) to shadeStop.shade.color(colors = colors)
-    }.toTypedArray()
-    return Brush.verticalGradient(
-        colorStops = colorStops,
-        startY = warmestY,
-        endY = coldestY
-    )
-}
-
-private fun TemperatureShade.color(colors: VadretColors): Color =
-    when (this) {
-        TemperatureShade.WARM -> colors.temperatureWarm
-        TemperatureShade.ZERO -> colors.temperatureZero
-        TemperatureShade.MINUS_FIVE -> colors.temperatureMinusFive
-        TemperatureShade.MINUS_TEN -> colors.temperatureMinusTen
-        TemperatureShade.MINUS_FIFTEEN -> colors.temperatureMinusFifteen
-        TemperatureShade.MINUS_TWENTY -> colors.temperatureMinusTwenty
-    }
 
 private fun DrawScope.drawTodayDot(
     center: Offset,

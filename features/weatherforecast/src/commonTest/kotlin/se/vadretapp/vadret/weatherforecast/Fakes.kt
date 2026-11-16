@@ -89,6 +89,7 @@ internal val noon = Forecast(
     airTemperature = 4.0,
     windFromDirection = 270.0,
     windSpeed = 3.0,
+    windGustSpeed = 5.0,
     relativeHumidity = 70,
     precipitationType = 0,
     symbolCode = 1,
@@ -100,6 +101,7 @@ internal val morning = Analysis(
     airTemperature = 1.0,
     windFromDirection = 180.0,
     windSpeed = 2.0,
+    windGustSpeed = 4.0,
     relativeHumidity = 90,
     precipitationType = 0,
     symbolCode = 6,
@@ -131,6 +133,9 @@ internal fun comingDay(
         temperatureRangeStart = 0f,
         temperatureRangeEnd = 1f,
         hours = persistentListOf(),
+        hourShadeStops = persistentListOf(),
+        temperatureLegendShadeStops = persistentListOf(),
+        feelsLikeLegendShadeStops = persistentListOf(),
         firstShownHourIndex = 0,
         isExpanded = isExpanded
     )

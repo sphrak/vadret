@@ -178,6 +178,9 @@
     <string name="collapsed">Infälld</string>
     <string name="temperature">Temperatur</string>
     <string name="wind_in_meters_per_second">Vind (m/s)</string>
+    <string name="hour_chart_legend">Vad linjerna visar</string>
+    <string name="wind_gusts">Byvind</string>
+    <string name="average_wind">Snittvind</string>
     <plurals name="coming_days_title">
         <item quantity="one">Kommande %1$d dag</item>
         <item quantity="other">Kommande %1$d dagar</item>

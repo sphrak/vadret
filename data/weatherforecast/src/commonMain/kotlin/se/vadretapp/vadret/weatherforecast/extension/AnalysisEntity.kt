@@ -10,6 +10,7 @@ internal fun AnalysisEntity.toAnalysis(): Analysis =
         airTemperature = airTemperature,
         windFromDirection = windFromDirection,
         windSpeed = windSpeed,
+        windGustSpeed = windGustSpeed,
         relativeHumidity = relativeHumidity,
         precipitationType = precipitationType,
         symbolCode = symbolCode,

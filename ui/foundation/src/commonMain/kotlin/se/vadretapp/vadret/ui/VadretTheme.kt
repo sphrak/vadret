@@ -24,7 +24,7 @@ private val LocalVadretSpacing = staticCompositionLocalOf { VadretSpacing() }
 private val LocalVadretTextStyles = staticCompositionLocalOf { VadretTextStyles() }
 
 internal val lightAccent = Color(color = 0xFF3F51B5)
-private val darkAccent = Color(color = 0xFFA1B3E6)
+internal val darkAccent = Color(color = 0xFFA1B3E6)
 private val darkAccentContainer = Color(color = 0xFF1F2D52)
 private val darkSurface = Color(color = 0xFF1C1E25)
 private val lightText = Color(color = 0xFFE6E7EC)

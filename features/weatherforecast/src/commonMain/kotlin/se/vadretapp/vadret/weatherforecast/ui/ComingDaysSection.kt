@@ -352,10 +352,7 @@ private fun ComingDayItem(
             enter = expandVertically(expandFrom = Alignment.Top),
             exit = shrinkVertically(shrinkTowards = Alignment.Top)
         ) {
-            ComingHourStrip(
-                hours = comingDay.hours,
-                firstShownHourIndex = comingDay.firstShownHourIndex
-            )
+            ComingHourStrip(comingDay = comingDay)
         }
     }
     if (isSettled && dayToShow != null && dayToShow.dayKey == comingDay.key) {
