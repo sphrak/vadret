@@ -200,7 +200,7 @@
     <string name="warning_display_no_warnings_issued">No warnings issued at present</string>
     <string name="automatic_location">Automatic</string>
     <string name="choose_location">Choose location</string>
-    <string name="add_place">Add place…</string>
+    <string name="add_place">Add place</string>
     <string name="remove_favorite">Remove %1$s</string>
     <string name="selected">Selected</string>
     <string name="humidity">Humidity</string>

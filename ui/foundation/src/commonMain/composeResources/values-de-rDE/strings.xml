@@ -102,7 +102,7 @@
     <string name="issued">ausgegeben</string>
     <string name="automatic_location">Automatisch</string>
     <string name="choose_location">Ort wählen</string>
-    <string name="add_place">Ort hinzufügen…</string>
+    <string name="add_place">Ort hinzufügen</string>
     <string name="remove_favorite">%1$s entfernen</string>
     <string name="selected">Ausgewählt</string>
     <string name="humidity">Luftfeuchtigkeit</string>

@@ -1,5 +1,6 @@
 package se.vadretapp.vadret.weatherforecast.ui
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
@@ -35,7 +36,6 @@ import se.vadretapp.vadret.ui.resources.Res
 import se.vadretapp.vadret.ui.resources.add_place
 import se.vadretapp.vadret.ui.resources.automatic_location
 import se.vadretapp.vadret.ui.resources.choose_location
-import se.vadretapp.vadret.ui.resources.ic_add
 import se.vadretapp.vadret.ui.resources.ic_check
 import se.vadretapp.vadret.ui.resources.ic_close
 import se.vadretapp.vadret.ui.resources.ic_my_location
@@ -47,6 +47,7 @@ private val locationTextMaxWidth = 180.dp
 private val menuIconSize = 20.dp
 private val menuShape = RoundedCornerShape(size = 16.dp)
 private val menuMinWidth = 220.dp
+private val menuBorderWidth = 1.dp
 
 @Composable
 internal fun LocationPicker(
@@ -71,7 +72,7 @@ internal fun LocationPicker(
                     role = Role.Button,
                     onClick = { isExpanded = true }
                 )
-                .padding(all = VadretTheme.spacing.small)
+                .padding(all = VadretTheme.spacing.medium)
                 .widthIn(max = locationTextMaxWidth)
         )
         LocationMenu(
@@ -106,6 +107,10 @@ private fun LocationMenu(
         onDismissRequest = onDismiss,
         shape = menuShape,
         containerColor = VadretTheme.colorScheme.surface,
+        border = BorderStroke(
+            width = menuBorderWidth,
+            color = VadretTheme.colorScheme.outlineVariant
+        ),
         modifier = modifier.widthIn(min = menuMinWidth)
     ) {
         DropdownMenuItem(
@@ -143,7 +148,7 @@ private fun LocationMenu(
         HorizontalDivider(color = VadretTheme.colors.divider)
         DropdownMenuItem(
             text = { MenuText(text = stringResource(resource = Res.string.add_place)) },
-            leadingIcon = { MenuIcon(iconResource = Res.drawable.ic_add) },
+            leadingIcon = { Spacer(modifier = Modifier.size(size = menuIconSize)) },
             onClick = onAddPlaceClick
         )
     }

@@ -58,7 +58,7 @@
     <string name="alert_subject">Titre de l'alerte</string>
     <string name="automatic_location">Automatique</string>
     <string name="choose_location">Choisir un lieu</string>
-    <string name="add_place">Ajouter un lieu…</string>
+    <string name="add_place">Ajouter un lieu</string>
     <string name="remove_favorite">Supprimer %1$s</string>
     <string name="selected">Sélectionné</string>
     <string name="humidity">Humidité</string>

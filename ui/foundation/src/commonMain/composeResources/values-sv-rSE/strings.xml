@@ -148,7 +148,7 @@
     <string name="warning_display_no_warnings_issued">Inga varning utfärdade för närvarande</string>
     <string name="automatic_location">Automatisk</string>
     <string name="choose_location">Välj plats</string>
-    <string name="add_place">Lägg till plats…</string>
+    <string name="add_place">Lägg till plats</string>
     <string name="remove_favorite">Ta bort %1$s</string>
     <string name="selected">Vald</string>
     <string name="humidity">Luftfuktighet</string>

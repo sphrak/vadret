@@ -68,7 +68,7 @@
     <string name="alert_subject">Alert headline</string>
     <string name="automatic_location">Automaattinen</string>
     <string name="choose_location">Valitse paikka</string>
-    <string name="add_place">Lisää paikka…</string>
+    <string name="add_place">Lisää paikka</string>
     <string name="remove_favorite">Poista %1$s</string>
     <string name="selected">Valittu</string>
     <string name="humidity">Kosteus</string>

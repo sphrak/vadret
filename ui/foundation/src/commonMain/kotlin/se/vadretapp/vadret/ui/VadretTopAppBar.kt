@@ -18,7 +18,9 @@ import se.vadretapp.vadret.ui.model.iconResource
 import se.vadretapp.vadret.ui.resources.Res
 import se.vadretapp.vadret.ui.resources.app_name
 
-private val titleStartPadding = 5.dp
+object VadretTopAppBarDefaults {
+    val EdgeInset = 5.dp
+}
 
 @Composable
 fun VadretTopAppBar(
@@ -35,7 +37,7 @@ fun VadretTopAppBar(
         title = {
             Text(
                 modifier = if (onBack == null) {
-                    Modifier.padding(start = titleStartPadding)
+                    Modifier.padding(start = VadretTopAppBarDefaults.EdgeInset)
                 } else {
                     Modifier
                 },

@@ -64,7 +64,7 @@
     <string name="about_app">Handle om</string>
     <string name="automatic_location">Automatisk</string>
     <string name="choose_location">Velg sted</string>
-    <string name="add_place">Legg til sted…</string>
+    <string name="add_place">Legg til sted</string>
     <string name="remove_favorite">Fjern %1$s</string>
     <string name="selected">Valgt</string>
     <string name="humidity">Luftfuktighet</string>

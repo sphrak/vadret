@@ -53,7 +53,7 @@
     <string name="wsymb2_heavy_sleet_showers">Intensywny przelotny śnieg z deszczem</string>
     <string name="automatic_location">Automatycznie</string>
     <string name="choose_location">Wybierz miejsce</string>
-    <string name="add_place">Dodaj miejsce…</string>
+    <string name="add_place">Dodaj miejsce</string>
     <string name="remove_favorite">Usuń %1$s</string>
     <string name="selected">Wybrane</string>
     <string name="humidity">Wilgotność</string>

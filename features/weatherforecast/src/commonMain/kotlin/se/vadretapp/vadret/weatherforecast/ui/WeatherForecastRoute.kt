@@ -1,5 +1,6 @@
 package se.vadretapp.vadret.weatherforecast.ui
 
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -15,6 +16,7 @@ import se.vadretapp.vadret.ui.LocationPermissionEffect
 import se.vadretapp.vadret.ui.ThemePreviewParameterProvider
 import se.vadretapp.vadret.ui.VadretTheme
 import se.vadretapp.vadret.ui.VadretTopAppBar
+import se.vadretapp.vadret.ui.VadretTopAppBarDefaults
 import se.vadretapp.vadret.weatherforecast.WeatherForecastEvent
 import se.vadretapp.vadret.weatherforecast.WeatherForecastState
 import se.vadretapp.vadret.weatherforecast.WeatherForecastViewModel
@@ -67,6 +69,7 @@ internal fun WeatherForecastScreen(
             VadretTopAppBar(
                 actions = {
                     LocationPicker(
+                        modifier = Modifier.padding(end = VadretTopAppBarDefaults.EdgeInset),
                         localityName = state.localityName,
                         locationChoices = state.locationChoices,
                         onEvent = onEvent,

@@ -66,7 +66,7 @@
     <string name="alert_subject">Alert overskrift</string>
     <string name="automatic_location">Automatisk</string>
     <string name="choose_location">Vælg sted</string>
-    <string name="add_place">Tilføj sted…</string>
+    <string name="add_place">Tilføj sted</string>
     <string name="remove_favorite">Fjern %1$s</string>
     <string name="selected">Valgt</string>
     <string name="humidity">Luftfugtighed</string>
