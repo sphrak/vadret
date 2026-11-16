@@ -287,7 +287,7 @@ private fun AuroraHourColumn(
             hours = auroraHourItems,
             index = index,
             level = { shownHour: AuroraHourItem -> shownHour.level },
-            lineColor = VadretTheme.colorScheme.primary,
+            lineColor = VadretTheme.colorScheme.onSurfaceVariant,
             lineTop = auroraLineTop,
             lineRange = auroraLineRange,
             labelText = scoreText,

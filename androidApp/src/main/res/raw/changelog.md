@@ -5,6 +5,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- changed wind color to gray as to not confuse it with cold temperatures
+
 ## [3.3.0] -- 2026-11-14
 
 > [!IMPORTANT]

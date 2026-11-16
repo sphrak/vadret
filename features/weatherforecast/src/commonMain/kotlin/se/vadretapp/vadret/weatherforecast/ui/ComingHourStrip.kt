@@ -71,7 +71,7 @@ internal fun ComingHourStrip(
 ) {
     val textMeasurer: TextMeasurer = rememberTextMeasurer()
     val temperatureColor: Color = VadretTheme.colors.temperatureWarm
-    val windColor: Color = VadretTheme.colorScheme.primary
+    val windColor: Color = VadretTheme.colorScheme.onSurfaceVariant
     LazyRow(
         state = rememberLazyListState(initialFirstVisibleItemIndex = firstShownHourIndex),
         contentPadding = PaddingValues(vertical = ComingDayCard.Inset),
@@ -249,7 +249,7 @@ private fun ComingHourColumnPreview(
             index = nowHourIndexPreview(),
             textMeasurer = rememberTextMeasurer(),
             temperatureColor = VadretTheme.colors.temperatureWarm,
-            windColor = VadretTheme.colorScheme.primary,
+            windColor = VadretTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier
                 .background(color = VadretTheme.colorScheme.surface)
                 .padding(all = VadretTheme.spacing.medium)
