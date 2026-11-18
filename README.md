@@ -92,6 +92,8 @@ To upload a build to TestFlight, run the `Vädret iOS TestFlight` workflow under
 ./release.sh <version>
 ```
 
+A full release takes new screenshots into `assets/screenshots`. With a checkout of vadret-api next to this one it also copies them to `../vadret-api/website/screenshots` and prints the command that publishes the website.
+
 ## Contributor Guidelines
 If you would like to contribute code to the project fork the project and find an issue/feature you would like to work on. Ideally check with a maintainer so you dont work on something that might be in the workings already.
 

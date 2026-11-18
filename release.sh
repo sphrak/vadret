@@ -7,6 +7,8 @@ readonly ANDROID_BUILD_FILE="androidApp/build.gradle"
 readonly IOS_CONFIG_FILE="iosApp/Configuration/Config.xcconfig"
 readonly CHANGELOG_FILE="androidApp/src/main/res/raw/changelog.md"
 readonly SCREENSHOT_DIRECTORY="assets/screenshots"
+readonly WEBSITE_DIRECTORY="../vadret-api"
+readonly WEBSITE_SCREENSHOT_DIRECTORY="website/screenshots"
 readonly MAIN_ACTIVITY="se.vadretapp.vadret/se.vadretapp.vadret.main.MainActivity"
 readonly RADAR_IMAGE_URL_EXTRA="radar_image_url"
 readonly LANGUAGE_TAG_EXTRA="language_tag"
@@ -240,6 +242,28 @@ capture_screenshots() {
     capture_screenshots_in_theme "${original_theme_text}"
 }
 
+has_website() {
+    [[ -d "${WEBSITE_DIRECTORY}/${WEBSITE_SCREENSHOT_DIRECTORY}" ]]
+}
+
+copy_screenshots_to_website() {
+    if ! has_website; then
+        step "Skipping the website screenshots, ${WEBSITE_DIRECTORY}/${WEBSITE_SCREENSHOT_DIRECTORY} is missing"
+        return
+    fi
+    step "Copying the screenshots to the website"
+    cp "${SCREENSHOT_DIRECTORY}"/*.webp "${WEBSITE_DIRECTORY}/${WEBSITE_SCREENSHOT_DIRECTORY}/"
+}
+
+print_website_publish_command() {
+    local version="$1"
+    if ! has_website; then
+        return
+    fi
+    step "The website has the new screenshots. Commit and publish them with:"
+    echo "(cd ${WEBSITE_DIRECTORY} && git add ${WEBSITE_SCREENSHOT_DIRECTORY} && git commit -m \"fix: website screenshots for ${version}\" && ./deploy.sh prod site)"
+}
+
 replace_in_file() {
     local file="$1"
     local expression="$2"
@@ -297,11 +321,15 @@ main() {
         require_changelog_entry "${version}"
         require_phone
         capture_screenshots
+        copy_screenshots_to_website
         set_version_names "${version}"
         increment_version_codes
     fi
     stage_release_files
     print_commit_and_tag_command "${version}"
+    if ! is_pre_release "${version}"; then
+        print_website_publish_command "${version}"
+    fi
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
