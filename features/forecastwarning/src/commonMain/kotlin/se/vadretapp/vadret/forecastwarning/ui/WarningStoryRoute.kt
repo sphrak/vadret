@@ -110,8 +110,8 @@ internal fun WarningStoryScreen(
     ) {
         val warning: WarningItem? = state.warnings.getOrNull(index = state.currentIndex)
         if (warning != null) {
-            val progress: Animatable<Float, *> = remember(state.currentIndex) { Animatable(initialValue = previewProgress) }
-            LaunchedEffect(state.currentIndex) {
+            val progress: Animatable<Float, *> = remember(state.currentIndex, state.replayCount) { Animatable(initialValue = previewProgress) }
+            LaunchedEffect(state.currentIndex, state.replayCount) {
                 onEvent(WarningStoryEvent.OnStoryShown(index = state.currentIndex))
                 progress.animateTo(
                     targetValue = STORY_END,

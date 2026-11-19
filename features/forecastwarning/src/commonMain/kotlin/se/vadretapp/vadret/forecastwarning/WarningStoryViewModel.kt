@@ -67,7 +67,10 @@ class WarningStoryViewModel internal constructor(
                 if (state.currentIndex < state.warnings.lastIndex) {
                     state.copy(currentIndex = state.currentIndex + 1)
                 } else {
-                    state.copy(isFinished = true)
+                    state.copy(
+                        currentIndex = FIRST_INDEX,
+                        replayCount = state.replayCount + 1
+                    )
                 }
             }
             WarningStoryEvent.OnPrevious -> step { state: WarningStoryState ->

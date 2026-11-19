@@ -121,7 +121,7 @@ class WarningStoryViewModelTest {
         }
 
     @Test
-    fun `next moves on and finishes after the last story`() =
+    fun `next moves on and starts over after the last story`() =
         testScope.runTest {
             start()
             advanceUntilIdle()
@@ -132,10 +132,10 @@ class WarningStoryViewModelTest {
             assertEquals(expected = false, actual = warningStoryViewModel.state.value.isFinished)
 
             warningStoryViewModel.onEvent(event = WarningStoryEvent.OnNext)
-            warningStoryViewModel.onEvent(event = WarningStoryEvent.OnNext)
             advanceUntilIdle()
-            assertEquals(expected = 1, actual = warningStoryViewModel.state.value.currentIndex)
-            assertEquals(expected = true, actual = warningStoryViewModel.state.value.isFinished)
+            assertEquals(expected = 0, actual = warningStoryViewModel.state.value.currentIndex)
+            assertEquals(expected = 1, actual = warningStoryViewModel.state.value.replayCount)
+            assertEquals(expected = false, actual = warningStoryViewModel.state.value.isFinished)
         }
 
     @Test

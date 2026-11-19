@@ -9,6 +9,7 @@ import se.vadretapp.vadret.forecastwarning.model.WarningItem
 internal data class WarningStoryState(
     val warnings: ImmutableList<WarningItem> = persistentListOf(),
     val currentIndex: Int = 0,
+    val replayCount: Int = 0,
     val isLoading: Boolean = true,
     val isFinished: Boolean = false
 )

@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Wind now consists of median and gust winds
 - Improved design for hourly forecasts (now uses a pager)
 - Forecast tooltip
+- Story plays until dismissed and repeats on end reached
 
 ## [3.3.0] -- 2026-11-14
 
