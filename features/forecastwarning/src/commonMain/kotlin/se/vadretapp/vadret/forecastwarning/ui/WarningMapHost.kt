@@ -10,11 +10,7 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonPrimitive
 import org.maplibre.compose.camera.CameraPosition
 import org.maplibre.compose.expressions.dsl.Feature
 import org.maplibre.compose.expressions.dsl.const
@@ -25,12 +21,9 @@ import org.maplibre.compose.expressions.value.LineJoin
 import org.maplibre.compose.layers.Anchor
 import org.maplibre.compose.layers.CircleLayer
 import org.maplibre.compose.layers.FillLayer
-import org.maplibre.compose.layers.LayerHandle
 import org.maplibre.compose.layers.LayerSummary
 import org.maplibre.compose.layers.LineLayer
-import org.maplibre.compose.layers.MutableLayerHandle
 import org.maplibre.compose.map.MapState
-import org.maplibre.compose.map.MapStyleState
 import org.maplibre.compose.map.StyleLoadState
 import org.maplibre.compose.map.rememberMapState
 import org.maplibre.compose.sources.GeoJsonData
@@ -42,6 +35,8 @@ import org.maplibre.spatialk.geojson.Position
 import se.vadretapp.vadret.forecastwarning.ui.map.RetainedWarningMap
 import se.vadretapp.vadret.forecastwarning.ui.map.WarningMapHolder
 import se.vadretapp.vadret.forecastwarning.ui.map.WarningMapLayers
+import se.vadretapp.vadret.forecastwarning.ui.map.restyle
+import se.vadretapp.vadret.ui.LocalLanguageTag
 import se.vadretapp.vadret.ui.VadretTheme
 import se.vadretapp.vadret.ui.WarningColors
 
@@ -51,21 +46,7 @@ private const val BAND_LAYER_ID = "vadret-warning-band"
 private const val LINE_LAYER_ID = "vadret-warning-line"
 private const val MARKER_LAYER_ID = "vadret-warning-marker"
 private const val SYMBOL_LAYER_TYPE = "symbol"
-private const val TEXT_COLOR_PROPERTY = "text-color"
-private const val BACKGROUND_COLOR_PROPERTY = "background-color"
-private const val FILL_COLOR_PROPERTY = "fill-color"
-private const val LINE_COLOR_PROPERTY = "line-color"
-private const val BACKGROUND_LAYER_ID = "background"
-private const val WATER_LAYER_ID = "water"
-private const val WATERWAY_LAYER_ID = "waterway"
-private const val ICON_IMAGE_PROPERTY = "icon-image"
-private const val MISSING_SPRITE_ICON = "circle-11"
-private const val SPRITE_ICON = "circle_11"
-private const val HEX_COLOR_PREFIX = "#"
-private const val RGB_MASK = 0xFFFFFF
-private const val HEX_RADIX = 16
-private const val RGB_HEX_LENGTH = 6
-private const val HEX_PADDING = '0'
+private const val LANGUAGE_SEPARATOR = '-'
 private const val FILL_OPACITY = 0.75f
 private const val BAND_OPACITY = 0.9f
 private const val OVERVIEW_ZOOM_LEVEL = 3.5
@@ -96,6 +77,7 @@ fun WarningMapHost(content: @Composable () -> Unit) {
 @Composable
 private fun RetainWarningMap(warningMapHolder: WarningMapHolder) {
     val isDark: Boolean = VadretTheme.isDark
+    val language: String = LocalLanguageTag.current.substringBefore(delimiter = LANGUAGE_SEPARATOR)
     val baseStyle: BaseStyle = remember(isDark) {
         BaseStyle.Uri(
             uri = if (isDark) {
@@ -127,16 +109,12 @@ private fun RetainWarningMap(warningMapHolder: WarningMapHolder) {
             }
         }
     }
-    val darkLabelColor: String = VadretTheme.colorScheme.onSurface.toHexColor()
-    val darkLandColor: String = VadretTheme.colorScheme.surfaceContainerHighest.toHexColor()
-    val darkWaterColor: String = VadretTheme.colorScheme.background.toHexColor()
     val styleLoadState: StyleLoadState = mapState.style.loadState
-    LaunchedEffect(styleLoadState, isDark, darkLabelColor, darkLandColor, darkWaterColor) {
-        if (isDark && styleLoadState == StyleLoadState.Ready) {
-            mapState.style.restyleDarkLabels(color = darkLabelColor)
-            mapState.style.restyleDarkGround(
-                landColor = darkLandColor,
-                waterColor = darkWaterColor
+    LaunchedEffect(styleLoadState, language, isDark) {
+        if (styleLoadState == StyleLoadState.Ready) {
+            mapState.style.restyle(
+                language = language,
+                isDark = isDark
             )
         }
         isStyled.value = styleLoadState == StyleLoadState.Ready || styleLoadState is StyleLoadState.Failed
@@ -200,53 +178,3 @@ private fun WarningAreaLayers(
         )
     }
 }
-
-private suspend fun MapStyleState.restyleDarkLabels(color: String) {
-    layers
-        .filter { layerHandle: LayerHandle -> layerHandle.type == SYMBOL_LAYER_TYPE }
-        .forEach { layerHandle: LayerHandle ->
-            val mutableLayerHandle: MutableLayerHandle? = layerHandle.asMutable
-            if (mutableLayerHandle != null) {
-                mutableLayerHandle.setPaintProperty(
-                    name = TEXT_COLOR_PROPERTY,
-                    value = JsonPrimitive(value = color)
-                )
-                val iconImage: String? = layerHandle.getProperty(name = ICON_IMAGE_PROPERTY)?.toString()
-                if (iconImage != null && iconImage.contains(other = MISSING_SPRITE_ICON)) {
-                    mutableLayerHandle.setLayoutProperty(
-                        name = ICON_IMAGE_PROPERTY,
-                        value = Json.parseToJsonElement(
-                            string = iconImage.replace(
-                                oldValue = MISSING_SPRITE_ICON,
-                                newValue = SPRITE_ICON
-                            )
-                        )
-                    )
-                }
-            }
-        }
-}
-
-private suspend fun MapStyleState.restyleDarkGround(
-    landColor: String,
-    waterColor: String
-) {
-    layers[BACKGROUND_LAYER_ID]?.asMutable?.setPaintProperty(
-        name = BACKGROUND_COLOR_PROPERTY,
-        value = JsonPrimitive(value = landColor)
-    )
-    layers[WATER_LAYER_ID]?.asMutable?.setPaintProperty(
-        name = FILL_COLOR_PROPERTY,
-        value = JsonPrimitive(value = waterColor)
-    )
-    layers[WATERWAY_LAYER_ID]?.asMutable?.setPaintProperty(
-        name = LINE_COLOR_PROPERTY,
-        value = JsonPrimitive(value = waterColor)
-    )
-}
-
-private fun Color.toHexColor(): String =
-    HEX_COLOR_PREFIX + (toArgb() and RGB_MASK).toString(radix = HEX_RADIX).padStart(
-        length = RGB_HEX_LENGTH,
-        padChar = HEX_PADDING
-    )
