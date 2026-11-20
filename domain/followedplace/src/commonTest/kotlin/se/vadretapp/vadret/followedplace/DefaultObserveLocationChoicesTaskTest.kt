@@ -47,7 +47,8 @@ class DefaultObserveLocationChoicesTaskTest {
         favoriteRepository.favorites.value = listOf(bergaDanderyd, bergaLinkoping)
         locationRepository.locationPreference.value = LocationPreference(
             isAutomatic = isAutomatic,
-            storedLocation = favorite.toStoredLocation()
+            storedLocation = favorite.toStoredLocation(),
+            followedFavoriteIds = emptySet()
         )
     }
 
@@ -64,8 +65,8 @@ class DefaultObserveLocationChoicesTaskTest {
                     isAutomatic = true,
                     chosenPlaceName = null,
                     favorites = persistentListOf(
-                        FavoriteChoice(favorite = bergaDanderyd, isSelected = false, isFollowed = true),
-                        FavoriteChoice(favorite = bergaLinkoping, isSelected = false, isFollowed = true)
+                        FavoriteChoice(favorite = bergaDanderyd, isSelected = false, isFollowed = false),
+                        FavoriteChoice(favorite = bergaLinkoping, isSelected = false, isFollowed = false)
                     )
                 ).asRight(),
                 actual = observeLocationChoicesTask().first()
@@ -85,7 +86,7 @@ class DefaultObserveLocationChoicesTaskTest {
                     isAutomatic = false,
                     chosenPlaceName = "Berga",
                     favorites = persistentListOf(
-                        FavoriteChoice(favorite = bergaDanderyd, isSelected = false, isFollowed = true),
+                        FavoriteChoice(favorite = bergaDanderyd, isSelected = false, isFollowed = false),
                         FavoriteChoice(favorite = bergaLinkoping, isSelected = true, isFollowed = true)
                     )
                 ).asRight(),
@@ -122,7 +123,8 @@ class DefaultObserveLocationChoicesTaskTest {
             favoriteRepository.favorites.value = manyFavorites
             locationRepository.locationPreference.value = LocationPreference(
                 isAutomatic = false,
-                storedLocation = manyFavorites.last().toStoredLocation()
+                storedLocation = manyFavorites.last().toStoredLocation(),
+                followedFavoriteIds = manyFavorites.map { favorite: Favorite -> favorite.favoriteId }.toSet()
             )
 
             assertEquals(
@@ -137,12 +139,14 @@ class DefaultObserveLocationChoicesTaskTest {
     @Test
     fun `the position leaves room for four saved places`() =
         runTest {
-            favoriteRepository.favorites.value = (1..5).map { number: Int ->
+            val manyFavorites: List<Favorite> = (1..5).map { number: Int ->
                 bergaDanderyd.copy(
                     favoriteId = "favorite-$number",
                     locality = "Plats $number"
                 )
             }
+            favoriteRepository.favorites.value = manyFavorites
+            locationRepository.follow(favorites = manyFavorites)
 
             assertEquals(
                 expected = listOf(true, true, true, true, false),

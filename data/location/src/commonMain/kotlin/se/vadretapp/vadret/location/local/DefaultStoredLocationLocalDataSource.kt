@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
@@ -17,6 +18,7 @@ private val municipalityKey: Preferences.Key<String> = stringPreferencesKey(name
 private val countyKey: Preferences.Key<String> = stringPreferencesKey(name = "county")
 private val latitudeKey: Preferences.Key<Double> = doublePreferencesKey(name = "latitude")
 private val longitudeKey: Preferences.Key<Double> = doublePreferencesKey(name = "longitude")
+private val followedFavoriteIdsKey: Preferences.Key<Set<String>> = stringSetPreferencesKey(name = "followed_favorite_ids")
 
 private const val DEFAULT_IS_AUTOMATIC = true
 private const val DEFAULT_LOCALITY = "Stockholm"
@@ -42,7 +44,8 @@ internal class DefaultStoredLocationLocalDataSource(
             .map { preferences: Preferences ->
                 LocationPreferenceEntity(
                     isAutomatic = preferences[isAutomaticKey] ?: DEFAULT_IS_AUTOMATIC,
-                    storedLocationEntity = preferences.toStoredLocationEntity()
+                    storedLocationEntity = preferences.toStoredLocationEntity(),
+                    followedFavoriteIds = preferences[followedFavoriteIdsKey].orEmpty()
                 )
             }.distinctUntilChanged()
 
@@ -54,6 +57,20 @@ internal class DefaultStoredLocationLocalDataSource(
             preferences[countyKey] = storedLocationEntity.county
             preferences[latitudeKey] = storedLocationEntity.latitude
             preferences[longitudeKey] = storedLocationEntity.longitude
+        }
+    }
+
+    override suspend fun setFavoriteFollowed(
+        favoriteId: String,
+        isFollowed: Boolean
+    ) {
+        dataStore.edit { preferences ->
+            val followedFavoriteIds: Set<String> = preferences[followedFavoriteIdsKey].orEmpty()
+            preferences[followedFavoriteIdsKey] = if (isFollowed) {
+                followedFavoriteIds + favoriteId
+            } else {
+                followedFavoriteIds - favoriteId
+            }
         }
     }
 }

@@ -151,7 +151,8 @@ internal class FakeLocationRepository(
     val locationPreference: MutableStateFlow<LocationPreference> = MutableStateFlow(
         value = LocationPreference(
             isAutomatic = isAutomatic.successOrNull ?: false,
-            storedLocation = stockholm
+            storedLocation = stockholm,
+            followedFavoriteIds = emptySet()
         )
     )
 
@@ -186,6 +187,22 @@ internal class FakeLocationRepository(
             )
         }
         return selectStoredLocationResult
+    }
+
+    override suspend fun setFavoriteFollowed(
+        favoriteId: String,
+        isFollowed: Boolean
+    ): Either<Failure, Unit> {
+        locationPreference.update { preference: LocationPreference ->
+            preference.copy(
+                followedFavoriteIds = if (isFollowed) {
+                    preference.followedFavoriteIds + favoriteId
+                } else {
+                    preference.followedFavoriteIds - favoriteId
+                }
+            )
+        }
+        return Unit.asRight()
     }
 }
 

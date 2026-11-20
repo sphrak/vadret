@@ -13,5 +13,9 @@ internal sealed interface PlacesEvent {
     data class OnSuggestionClicked(val place: Place) : PlacesEvent
     data class OnPlaceChosen(val favorite: Favorite) : PlacesEvent
     data class OnPlaceRemoved(val favoriteId: String) : PlacesEvent
+    data class OnPlaceFollowToggled(
+        val favoriteId: String,
+        val isFollowed: Boolean
+    ) : PlacesEvent
     data object OnFailureDismissed : PlacesEvent
 }

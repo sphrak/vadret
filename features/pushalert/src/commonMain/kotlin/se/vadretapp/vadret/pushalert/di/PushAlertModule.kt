@@ -13,6 +13,7 @@ import se.vadretapp.vadret.pushalert.usecase.DefaultGetCurrentGeohashTask
 import se.vadretapp.vadret.pushalert.usecase.DefaultGetForecastWarningRequestTask
 import se.vadretapp.vadret.pushalert.usecase.DefaultGetPushAlertPlaceNamesTask
 import se.vadretapp.vadret.pushalert.usecase.DefaultIsOutsideSwedenTask
+import se.vadretapp.vadret.pushalert.usecase.DefaultMigrateNotifiedFavoritesTask
 import se.vadretapp.vadret.pushalert.usecase.DefaultObserveAuroraEnabledTask
 import se.vadretapp.vadret.pushalert.usecase.DefaultObservePollenAllergensTask
 import se.vadretapp.vadret.pushalert.usecase.DefaultObservePushAlertChoicesTask
@@ -24,6 +25,7 @@ import se.vadretapp.vadret.pushalert.usecase.DefaultSyncPushAlertsTask
 import se.vadretapp.vadret.pushalert.usecase.GetCurrentGeohashTask
 import se.vadretapp.vadret.pushalert.usecase.GetPushAlertPlaceNamesTask
 import se.vadretapp.vadret.pushalert.usecase.IsOutsideSwedenTask
+import se.vadretapp.vadret.pushalert.usecase.MigrateNotifiedFavoritesTask
 import se.vadretapp.vadret.pushalert.usecase.ObserveAuroraEnabledTask
 import se.vadretapp.vadret.pushalert.usecase.ObservePollenAllergensTask
 import se.vadretapp.vadret.pushalert.usecase.ObservePushAlertChoicesTask
@@ -55,6 +57,7 @@ val pushAlertModule: Module = module {
     factoryOf(::DefaultGetPushAlertPlaceNamesTask) { bind<GetPushAlertPlaceNamesTask>() }
     factoryOf(::DefaultGetForecastWarningRequestTask) { bind<GetForecastWarningRequestTask>() }
     factoryOf(::DefaultIsOutsideSwedenTask) { bind<IsOutsideSwedenTask>() }
+    factoryOf(::DefaultMigrateNotifiedFavoritesTask) { bind<MigrateNotifiedFavoritesTask>() }
     factoryOf(::DefaultObservePushAlertChoicesTask) { bind<ObservePushAlertChoicesTask>() }
     factoryOf(::DefaultObservePushAlertPlacesTask) { bind<ObservePushAlertPlacesTask>() }
     factoryOf(::DefaultObservePushAlertSyncPendingTask) { bind<ObservePushAlertSyncPendingTask>() }
@@ -68,6 +71,7 @@ val pushAlertModule: Module = module {
             observePushAlertPlacesTask = get(),
             observePushAlertSyncPendingTask = get(),
             savePushAlertChoicesTask = get(),
+            setFavoriteFollowedTask = get(),
             syncPushAlertsTask = get(),
             observePollenAllergensTask = get(),
             observeAuroraEnabledTask = get(),
@@ -78,6 +82,7 @@ val pushAlertModule: Module = module {
     single<SettingsSection>(qualifier = named(name = PUSH_ALERTS_QUALIFIER)) { PushAlertsSettingsSection() }
     single<AppStartHook>(qualifier = named(name = PUSH_ALERTS_QUALIFIER)) {
         PushAlertsAppStartHook(
+            migrateNotifiedFavoritesTask = get(),
             syncPushAlertsTask = get(),
             observeFollowedPlacesTask = get(),
             observePollenAllergensTask = get(),

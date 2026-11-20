@@ -25,31 +25,31 @@ class DefaultObservePushAlertPlacesTaskTest {
             favoriteRepository = FakeFavoriteRepository(favorites = favorites)
         )().first()
 
-    private fun List<Favorite>.toSavedPlaces(): List<PushAlertPlace> =
-        map { favorite: Favorite ->
-            PushAlertPlace.SavedPlace(
-                favoriteId = favorite.favoriteId,
-                name = favorite.locality
-            )
-        }
+    private fun Favorite.toSavedPlace(isNotified: Boolean): PushAlertPlace =
+        PushAlertPlace.SavedPlace(
+            favoriteId = favoriteId,
+            name = locality,
+            isNotified = isNotified
+        )
 
     @Test
-    fun `the position comes first and the followed saved places in Sweden follow`() =
+    fun `the position comes first and every saved place in Sweden follows with its choice`() =
         runTest {
             assertEquals<Either<Failure, List<PushAlertPlace>>>(
-                expected = (
-                    listOf(PushAlertPlace.ChosenPlace(name = null)) +
-                        listOf(SOLNA_FAVORITE, GOTEBORG_FAVORITE, UPPSALA_FAVORITE).toSavedPlaces()
-                    ).asRight(),
+                expected = listOf(
+                    PushAlertPlace.ChosenPlace(name = null),
+                    SOLNA_FAVORITE.toSavedPlace(isNotified = false),
+                    GOTEBORG_FAVORITE.toSavedPlace(isNotified = true)
+                ).asRight(),
                 actual = pushAlertPlaces(
-                    locationRepository = FakeLocationRepository(isAutomatic = true),
+                    locationRepository = FakeLocationRepository(
+                        isAutomatic = true,
+                        followedFavoriteIds = setOf(BERLIN_FAVORITE.favoriteId, GOTEBORG_FAVORITE.favoriteId)
+                    ),
                     favorites = listOf(
                         SOLNA_FAVORITE,
                         BERLIN_FAVORITE,
-                        GOTEBORG_FAVORITE,
-                        UPPSALA_FAVORITE,
-                        UMEA_FAVORITE,
-                        KIRUNA_FAVORITE
+                        GOTEBORG_FAVORITE
                     )
                 )
             )
@@ -59,10 +59,11 @@ class DefaultObservePushAlertPlacesTaskTest {
     fun `a chosen saved place comes first by its name and only once`() =
         runTest {
             assertEquals<Either<Failure, List<PushAlertPlace>>>(
-                expected = (
-                    listOf(PushAlertPlace.ChosenPlace(name = VISBY_FAVORITE.locality)) +
-                        listOf(SOLNA_FAVORITE, GOTEBORG_FAVORITE).toSavedPlaces()
-                    ).asRight(),
+                expected = listOf(
+                    PushAlertPlace.ChosenPlace(name = VISBY_FAVORITE.locality),
+                    SOLNA_FAVORITE.toSavedPlace(isNotified = true),
+                    GOTEBORG_FAVORITE.toSavedPlace(isNotified = true)
+                ).asRight(),
                 actual = pushAlertPlaces(
                     locationRepository = FakeLocationRepository(
                         isAutomatic = false,

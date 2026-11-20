@@ -27,6 +27,7 @@ import se.vadretapp.vadret.settings.model.RowSummary
 
 private const val PREVIEW_APP_VERSION = "3.1.0"
 private const val PREVIEW_PLACE_NAME = "Stockholm"
+private const val PREVIEW_LAST_FOLLOWED_INDEX = 1
 
 private val previewLibraries: List<Library> = listOf(
     Library(
@@ -112,7 +113,7 @@ internal fun placesPreviewState(): PlacesState =
                 FavoriteChoice(
                     favorite = favorite,
                     isSelected = index == 0,
-                    isFollowed = true
+                    isFollowed = index <= PREVIEW_LAST_FOLLOWED_INDEX
                 )
             }.toImmutableList()
     )

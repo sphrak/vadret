@@ -67,7 +67,8 @@ class DefaultStoredLocationLocalDataSourceTest {
             assertEquals(
                 expected = LocationPreferenceEntity(
                     isAutomatic = true,
-                    storedLocationEntity = umea
+                    storedLocationEntity = umea,
+                    followedFavoriteIds = emptySet()
                 ),
                 actual = storedLocationLocalDataSource.observeLocationPreference().first()
             )

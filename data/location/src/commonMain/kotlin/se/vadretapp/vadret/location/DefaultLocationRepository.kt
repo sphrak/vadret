@@ -25,17 +25,21 @@ internal class DefaultLocationRepository(
     private val storedLocationLocalDataSource: StoredLocationLocalDataSource
 ) : LocationRepository {
 
-    override suspend fun getDeviceLocation(): Either<Failure, Location> =
-        either { deviceLocationLocalDataSource.getLastKnownLocation().toLocation() }
-            .catch { exception: Exception -> exception.toFailure() }
+    override suspend fun getDeviceLocation(): Either<Failure, Location> = either {
+        deviceLocationLocalDataSource
+            .getLastKnownLocation()
+            .toLocation()
+    }.catch { exception: Exception -> exception.toFailure() }
 
-    override suspend fun isAutomatic(): Either<Failure, Boolean> =
-        either { storedLocationLocalDataSource.isAutomatic() }
-            .catch { exception: Exception -> exception.toFailure() }
+    override suspend fun isAutomatic(): Either<Failure, Boolean> = either {
+        storedLocationLocalDataSource.isAutomatic()
+    }.catch { exception: Exception -> exception.toFailure() }
 
-    override suspend fun setAutomatic(isAutomatic: Boolean): Either<Failure, Unit> =
-        either { storedLocationLocalDataSource.setAutomatic(isAutomatic = isAutomatic) }
-            .catch { exception: Exception -> exception.toFailure() }
+    override suspend fun setAutomatic(
+        isAutomatic: Boolean
+    ): Either<Failure, Unit> = either {
+        storedLocationLocalDataSource.setAutomatic(isAutomatic = isAutomatic)
+    }.catch { exception: Exception -> exception.toFailure() }
 
     override fun observeLocationPreference(): Flow<Either<Failure, LocationPreference>> =
         storedLocationLocalDataSource
@@ -50,7 +54,21 @@ internal class DefaultLocationRepository(
                 }
             }
 
-    override suspend fun selectStoredLocation(storedLocation: StoredLocation): Either<Failure, Unit> =
-        either { storedLocationLocalDataSource.selectStoredLocation(storedLocationEntity = storedLocation.toStoredLocationEntity()) }
-            .catch { exception: Exception -> exception.toFailure() }
+    override suspend fun selectStoredLocation(
+        storedLocation: StoredLocation
+    ): Either<Failure, Unit> = either {
+        storedLocationLocalDataSource.selectStoredLocation(
+            storedLocationEntity = storedLocation.toStoredLocationEntity()
+        )
+    }.catch { exception: Exception -> exception.toFailure() }
+
+    override suspend fun setFavoriteFollowed(
+        favoriteId: String,
+        isFollowed: Boolean
+    ): Either<Failure, Unit> = either {
+        storedLocationLocalDataSource.setFavoriteFollowed(
+            favoriteId = favoriteId,
+            isFollowed = isFollowed
+        )
+    }.catch { exception: Exception -> exception.toFailure() }
 }

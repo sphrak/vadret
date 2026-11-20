@@ -16,8 +16,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import se.vadretapp.vadret.common.ErrorCode
 import se.vadretapp.vadret.common.Failure
+import se.vadretapp.vadret.followedplace.SetFavoriteFollowedTask
 import se.vadretapp.vadret.pushalert.extension.isNotified
-import se.vadretapp.vadret.pushalert.extension.withNotified
 import se.vadretapp.vadret.pushalert.model.PollenAlertLevel
 import se.vadretapp.vadret.pushalert.model.PushAlertChoices
 import se.vadretapp.vadret.pushalert.model.PushAlertPlace
@@ -37,6 +37,7 @@ internal class PushAlertsViewModel(
     private val observePushAlertPlacesTask: ObservePushAlertPlacesTask,
     private val observePushAlertSyncPendingTask: ObservePushAlertSyncPendingTask,
     private val savePushAlertChoicesTask: SavePushAlertChoicesTask,
+    private val setFavoriteFollowedTask: SetFavoriteFollowedTask,
     private val syncPushAlertsTask: SyncPushAlertsTask,
     private val observePollenAllergensTask: ObservePollenAllergensTask,
     private val observeAuroraEnabledTask: ObserveAuroraEnabledTask,
@@ -201,14 +202,26 @@ internal class PushAlertsViewModel(
         isEnabled: Boolean
     ) {
         val currentState = state.value
-        val pushAlertChoices = currentState.choices.withNotified(
-            pushAlertPlace = pushAlertPlace,
-            isNotified = isEnabled
-        )
-        if (currentState.places.none { place: PushAlertPlace -> pushAlertChoices.isNotified(pushAlertPlace = place) }) {
+        val isAnyPlaceNotified: Boolean = currentState.places.any { place: PushAlertPlace ->
+            if (place == pushAlertPlace) {
+                isEnabled
+            } else {
+                currentState.choices.isNotified(pushAlertPlace = place)
+            }
+        }
+        if (!isAnyPlaceNotified) {
             state.update { state: PushAlertsState -> state.copy(isLastPlaceDialogVisible = true) }
         } else {
-            choose(pushAlertChoices = pushAlertChoices)
+            when (pushAlertPlace) {
+                is PushAlertPlace.ChosenPlace -> choose(pushAlertChoices = currentState.choices.copy(isChosenPlaceNotified = isEnabled))
+                is PushAlertPlace.SavedPlace -> setFavoriteFollowedTask(
+                    favoriteId = pushAlertPlace.favoriteId,
+                    isFollowed = isEnabled
+                ).onResult(
+                    onError = { failure: Failure -> state.update { state: PushAlertsState -> state.copy(failure = failure) } },
+                    onSuccess = {}
+                )
+            }
         }
     }
 

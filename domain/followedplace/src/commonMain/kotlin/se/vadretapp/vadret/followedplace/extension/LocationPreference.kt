@@ -36,13 +36,17 @@ fun LocationPreference.chosenFavorite(favorites: List<Favorite>): Favorite? =
         favorites.firstOrNull { favorite: Favorite -> favorite.isAt(storedLocation = storedLocation) }
     }
 
-// The chosen place is always followed, so the other saved places share the rest in the order they were saved.
+// The chosen place is always followed, and another saved place only once it is asked for.
 fun LocationPreference.followedFavorites(favorites: List<Favorite>): List<Favorite> {
     val chosenFavorite: Favorite? = chosenFavorite(favorites = favorites)
-    val otherFavorites: List<Favorite> = favorites
-        .filter { favorite: Favorite -> favorite != chosenFavorite }
+    return listOfNotNull(chosenFavorite) + otherFollowedFavorites(favorites = favorites)
+}
+
+internal fun LocationPreference.otherFollowedFavorites(favorites: List<Favorite>): List<Favorite> {
+    val chosenFavorite: Favorite? = chosenFavorite(favorites = favorites)
+    return favorites
+        .filter { favorite: Favorite -> favorite != chosenFavorite && favorite.favoriteId in followedFavoriteIds }
         .take(n = MAXIMUM_FOLLOWED_PLACES - 1)
-    return listOfNotNull(chosenFavorite) + otherFavorites
 }
 
 // A chosen place that is no saved place, like the position, takes the room of one. Saving the chosen place itself

@@ -18,6 +18,7 @@ import se.vadretapp.vadret.followedplace.ObserveLocationChoicesTask
 import se.vadretapp.vadret.followedplace.RemoveFavoriteTask
 import se.vadretapp.vadret.followedplace.SearchPlacesTask
 import se.vadretapp.vadret.followedplace.SelectFavoriteTask
+import se.vadretapp.vadret.followedplace.SetFavoriteFollowedTask
 import se.vadretapp.vadret.followedplace.SetLocationModeTask
 import se.vadretapp.vadret.followedplace.model.FavoriteChoice
 import se.vadretapp.vadret.place.model.Place
@@ -75,6 +76,10 @@ class PlacesViewModelTest {
             ),
             selectFavoriteTask = SelectFavoriteTask(locationRepository = locationRepository),
             removeFavoriteTask = RemoveFavoriteTask(favoriteRepository = favoriteRepository),
+            setFavoriteFollowedTask = SetFavoriteFollowedTask(
+                favoriteRepository = favoriteRepository,
+                locationRepository = locationRepository
+            ),
             searchPlacesTask = SearchPlacesTask(placeRepository = placeRepository),
             addFavoriteTask = AddFavoriteTask(
                 favoriteRepository = favoriteRepository,
@@ -335,14 +340,52 @@ class PlacesViewModelTest {
         }
 
     @Test
+    fun `asking for warnings follows a saved place until they are hidden again`() =
+        testScope.runTest {
+            val placesViewModel: PlacesViewModel = viewModel()
+            advanceUntilIdle()
+            val followedAtFirst: List<Boolean> = placesViewModel.state.value.favoriteChoices.map { favoriteChoice: FavoriteChoice -> favoriteChoice.isFollowed }
+
+            placesViewModel.onEvent(
+                event = PlacesEvent.OnPlaceFollowToggled(
+                    favoriteId = visby.favoriteId,
+                    isFollowed = true
+                )
+            )
+            advanceUntilIdle()
+            val followedOnceAsked: List<Boolean> = placesViewModel.state.value.favoriteChoices.map { favoriteChoice: FavoriteChoice -> favoriteChoice.isFollowed }
+
+            placesViewModel.onEvent(
+                event = PlacesEvent.OnPlaceFollowToggled(
+                    favoriteId = visby.favoriteId,
+                    isFollowed = false
+                )
+            )
+            advanceUntilIdle()
+
+            assertEquals(
+                expected = listOf(listOf(true, false), listOf(true, true), listOf(true, false)),
+                actual = listOf(
+                    followedAtFirst,
+                    followedOnceAsked,
+                    placesViewModel.state.value.favoriteChoices.map { favoriteChoice: FavoriteChoice -> favoriteChoice.isFollowed }
+                )
+            )
+        }
+
+    @Test
     fun `saved places past the limit are told apart`() =
         testScope.runTest {
-            favoriteRepository.favorites.value = (1..6).map { number: Int ->
+            val manyFavorites: List<Favorite> = (1..6).map { number: Int ->
                 umea.copy(
                     favoriteId = "favorite-$number",
                     locality = "Plats $number"
                 )
             }
+            favoriteRepository.favorites.value = manyFavorites
+            locationRepository.locationPreference.value = locationRepository.locationPreference.value.copy(
+                followedFavoriteIds = manyFavorites.map { favorite: Favorite -> favorite.favoriteId }.toSet()
+            )
             val placesViewModel: PlacesViewModel = viewModel()
             advanceUntilIdle()
 

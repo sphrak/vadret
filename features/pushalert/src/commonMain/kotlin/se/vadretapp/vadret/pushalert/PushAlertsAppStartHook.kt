@@ -12,6 +12,7 @@ import se.vadretapp.vadret.followedplace.model.FollowedPlace
 import se.vadretapp.vadret.lifecycle.AppStartHook
 import se.vadretapp.vadret.logging.Logger
 import se.vadretapp.vadret.logging.LoggerFactory
+import se.vadretapp.vadret.pushalert.usecase.MigrateNotifiedFavoritesTask
 import se.vadretapp.vadret.pushalert.usecase.ObserveAuroraEnabledTask
 import se.vadretapp.vadret.pushalert.usecase.ObservePollenAllergensTask
 import se.vadretapp.vadret.pushalert.usecase.SyncPushAlertsTask
@@ -21,6 +22,7 @@ import se.vadretapp.vadret.setting.usecase.ObserveHourFormatTask
 import se.vadretapp.vadret.setting.usecase.ObserveShownLanguageTask
 
 internal class PushAlertsAppStartHook(
+    private val migrateNotifiedFavoritesTask: MigrateNotifiedFavoritesTask,
     private val syncPushAlertsTask: SyncPushAlertsTask,
     private val observeFollowedPlacesTask: ObserveFollowedPlacesTask,
     private val observePollenAllergensTask: ObservePollenAllergensTask,
@@ -34,6 +36,10 @@ internal class PushAlertsAppStartHook(
     // it writes follow them. The first sync waits for all of them, so a change made while it runs is already followed
     // and syncs again.
     override suspend fun onAppStart() {
+        migrateNotifiedFavoritesTask().onResult(
+            onError = { failure: Failure -> logger.warn { "${failure.errorCode}: the saved places with push alerts were not moved" } },
+            onSuccess = {}
+        )
         combine(
             flow = observeFollowedPlacesTask()
                 .map { followedPlaces: Either<Failure, List<FollowedPlace>> ->

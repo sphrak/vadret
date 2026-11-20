@@ -14,6 +14,7 @@ import se.vadretapp.vadret.followedplace.DefaultRemoveFavoriteTask
 import se.vadretapp.vadret.followedplace.DefaultSearchPlacesTask
 import se.vadretapp.vadret.followedplace.DefaultSelectFavoriteTask
 import se.vadretapp.vadret.followedplace.DefaultSelectPlaceTask
+import se.vadretapp.vadret.followedplace.DefaultSetFavoriteFollowedTask
 import se.vadretapp.vadret.followedplace.DefaultSetLocationModeTask
 import se.vadretapp.vadret.followedplace.GetChosenPlaceTask
 import se.vadretapp.vadret.followedplace.ObserveFollowedPlacesTask
@@ -22,6 +23,7 @@ import se.vadretapp.vadret.followedplace.RemoveFavoriteTask
 import se.vadretapp.vadret.followedplace.SearchPlacesTask
 import se.vadretapp.vadret.followedplace.SelectFavoriteTask
 import se.vadretapp.vadret.followedplace.SelectPlaceTask
+import se.vadretapp.vadret.followedplace.SetFavoriteFollowedTask
 import se.vadretapp.vadret.followedplace.SetLocationModeTask
 
 val followedPlaceTaskModule: Module = module {
@@ -34,5 +36,6 @@ val followedPlaceTaskModule: Module = module {
     factoryOf(::DefaultSearchPlacesTask) { bind<SearchPlacesTask>() }
     factoryOf(::DefaultSelectFavoriteTask) { bind<SelectFavoriteTask>() }
     factoryOf(::DefaultSelectPlaceTask) { bind<SelectPlaceTask>() }
+    factoryOf(::DefaultSetFavoriteFollowedTask) { bind<SetFavoriteFollowedTask>() }
     factoryOf(::DefaultSetLocationModeTask) { bind<SetLocationModeTask>() }
 }

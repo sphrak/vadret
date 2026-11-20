@@ -7,14 +7,17 @@ import se.vadretapp.vadret.geohash.model.Geohash
 import se.vadretapp.vadret.location.model.LocationPreference
 import se.vadretapp.vadret.pushalert.model.PushAlertPlace
 
-internal fun LocationPreference.toPushAlertPlaces(favorites: List<Favorite>): List<PushAlertPlace> =
-    listOf(PushAlertPlace.ChosenPlace(name = chosenPlaceName())) +
-        notifiableFavorites(favorites = favorites).map { favorite: Favorite ->
+internal fun LocationPreference.toPushAlertPlaces(favorites: List<Favorite>): List<PushAlertPlace> {
+    val notifiableFavorites: List<Favorite> = notifiableFavorites(favorites = favorites)
+    return listOf(PushAlertPlace.ChosenPlace(name = chosenPlaceName())) +
+        otherSwedishFavorites(favorites = favorites).map { favorite: Favorite ->
             PushAlertPlace.SavedPlace(
                 favoriteId = favorite.favoriteId,
-                name = favorite.locality
+                name = favorite.locality,
+                isNotified = favorite in notifiableFavorites
             )
         }
+}
 
 internal fun LocationPreference.chosenPlaceName(): String? =
     if (isAutomatic) {
@@ -23,9 +26,12 @@ internal fun LocationPreference.chosenPlaceName(): String? =
         storedLocation.locality
     }
 
-internal fun LocationPreference.notifiableFavorites(favorites: List<Favorite>): List<Favorite> {
+internal fun LocationPreference.notifiableFavorites(favorites: List<Favorite>): List<Favorite> =
+    otherSwedishFavorites(favorites = followedFavorites(favorites = favorites))
+
+private fun LocationPreference.otherSwedishFavorites(favorites: List<Favorite>): List<Favorite> {
     val chosenFavorite: Favorite? = chosenFavorite(favorites = favorites)
-    return followedFavorites(favorites = favorites).filter { favorite: Favorite ->
+    return favorites.filter { favorite: Favorite ->
         val geohash: Geohash? = favorite.toGeohashOrNull()
         favorite != chosenFavorite && geohash != null && geohash.isInSwedishWaters()
     }

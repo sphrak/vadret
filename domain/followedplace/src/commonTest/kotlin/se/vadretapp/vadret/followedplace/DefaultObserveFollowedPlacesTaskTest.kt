@@ -54,9 +54,11 @@ class DefaultObserveFollowedPlacesTaskTest {
         }
 
     @Test
-    fun `the chosen place comes first and every saved place follows in its order`() =
+    fun `the chosen place comes first and only the saved places asked for follow in their order`() =
         runTest {
-            assertEquals(expected = listOf("Göteborg", "Umeå", "Visby", "Stugan"), actual = shownNames())
+            locationRepository.follow(favorites = listOf(cabin, umea))
+
+            assertEquals(expected = listOf("Göteborg", "Umeå", "Stugan"), actual = shownNames())
         }
 
     @Test
@@ -67,6 +69,7 @@ class DefaultObserveFollowedPlacesTaskTest {
                 isAutomatic = false,
                 storedLocation = umea.toStoredLocation()
             )
+            locationRepository.follow(favorites = listOf(visby))
 
             val followedPlaces: List<FollowedPlace> = (observeFollowedPlacesTask().first() as Either.Right).b
 
@@ -77,6 +80,8 @@ class DefaultObserveFollowedPlacesTaskTest {
     @Test
     fun `a removed favorite is no longer followed`() =
         runTest {
+            locationRepository.follow(favorites = listOf(umea, visby, cabin))
+
             favoriteRepository.removeFavorite(favoriteId = cabin.favoriteId)
 
             assertEquals(expected = listOf("Göteborg", "Umeå", "Visby"), actual = shownNames())
@@ -90,6 +95,7 @@ class DefaultObserveFollowedPlacesTaskTest {
                 isAutomatic = false,
                 storedLocation = cabin.toStoredLocation()
             )
+            locationRepository.follow(favorites = manyFavorites(count = 5))
 
             assertEquals(expected = listOf("Stugan", "Plats 1", "Plats 2", "Plats 3", "Plats 4"), actual = shownNames())
         }
@@ -103,6 +109,7 @@ class DefaultObserveFollowedPlacesTaskTest {
                 isAutomatic = false,
                 storedLocation = favorites.last().toStoredLocation()
             )
+            locationRepository.follow(favorites = favorites)
 
             assertEquals(expected = listOf("Plats 6", "Plats 1", "Plats 2", "Plats 3", "Plats 4"), actual = shownNames())
         }
@@ -120,6 +127,7 @@ class DefaultObserveFollowedPlacesTaskTest {
     fun `a chosen place that cannot be found leaves the saved places`() =
         runTest {
             favoriteRepository.favorites.value = listOf(visby)
+            locationRepository.follow(favorites = listOf(visby))
             locationRepository.deviceLocation = Failure(errorCode = ErrorCode.LOCATION_NOT_AVAILABLE).asLeft()
 
             assertEquals(expected = listOf("Visby"), actual = shownNames())
@@ -129,6 +137,7 @@ class DefaultObserveFollowedPlacesTaskTest {
     fun `at most five places are followed`() =
         runTest {
             favoriteRepository.favorites.value = manyFavorites(count = 6)
+            locationRepository.follow(favorites = manyFavorites(count = 6))
 
             assertEquals(expected = listOf("Göteborg", "Plats 1", "Plats 2", "Plats 3", "Plats 4"), actual = shownNames())
         }
@@ -144,14 +153,14 @@ class DefaultObserveFollowedPlacesTaskTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun `saving another place gives the places again`() =
+    fun `asking for another place gives the places again`() =
         runTest {
-            favoriteRepository.favorites.value = emptyList()
+            favoriteRepository.favorites.value = listOf(visby)
             val emissions: MutableList<Either<Failure, List<FollowedPlace>>> = mutableListOf()
             val collection = launch { observeFollowedPlacesTask().toList(destination = emissions) }
             advanceUntilIdle()
 
-            favoriteRepository.favorites.value = listOf(visby)
+            locationRepository.follow(favorites = listOf(visby))
             advanceUntilIdle()
             collection.cancel()
 

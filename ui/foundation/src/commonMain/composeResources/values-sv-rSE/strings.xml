@@ -245,10 +245,12 @@
     <string name="places_follow_position_summary">Vädret uppdateras när du flyttar dig</string>
     <string name="places_search">Sök och lägg till plats</string>
     <string name="places_mine">Mina platser</string>
-    <string name="places_make_default">Gör till standard</string>
+    <string name="places_use_as_default">Använd som standard</string>
     <string name="places_remove">Ta bort</string>
     <string name="places_options">Val för %1$s</string>
-    <string name="places_note">Varningar gäller alla dina platser. Platsen du väljer visas först. Du kan ha upp till 5.</string>
+    <string name="places_note">Du får notiser för platsen du har valt. Slå på fler i menyn på varje plats, upp till 5.</string>
+    <string name="places_turn_notifications_on">Slå på notiser</string>
+    <string name="places_turn_notifications_off">Stäng av notiser</string>
     <string name="pollen_on_map">Pollen på kartan</string>
     <string name="pollen_on_map_summary">Visas som ett lager i Radar</string>
     <string name="pollen_off_season">Inga pollenprognoser just nu. Naturhistoriska riksmuseet publicerar prognoser under pollensäsongen från februari till september.</string>
@@ -262,7 +264,6 @@
     <string name="notifications_weather">Väder</string>
     <string name="warning_alerts_summary">Från SMHI</string>
     <string name="warning_level">Nivå</string>
-    <string name="places_not_followed">Får inga varningar, högst 5 platser bevakas</string>
     <string name="allow_expand_once">En öppen dag i taget</string>
     <string name="expand_once_is_enabled">När du öppnar en dag stängs den som redan är öppen</string>
     <string name="expand_once_is_disabled">Flera dagar kan vara öppna samtidigt</string>

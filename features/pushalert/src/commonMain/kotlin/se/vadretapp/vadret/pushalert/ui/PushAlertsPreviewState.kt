@@ -17,18 +17,20 @@ internal fun pushAlertsPreviewState(): PushAlertsState = PushAlertsState(
         aurora = true,
         dailyForecast = true,
         isChosenPlaceNotified = true,
-        notifiedFavoriteIds = setOf(PREVIEW_UPPSALA_ID)
+        notifiedFavoriteIds = emptySet()
     ),
     hasPollenAllergens = true,
     places = listOf(
         PushAlertPlace.ChosenPlace(name = null),
         PushAlertPlace.SavedPlace(
             favoriteId = PREVIEW_UPPSALA_ID,
-            name = "Uppsala"
+            name = "Uppsala",
+            isNotified = true
         ),
         PushAlertPlace.SavedPlace(
             favoriteId = PREVIEW_KIRUNA_ID,
-            name = "Kiruna"
+            name = "Kiruna",
+            isNotified = false
         )
     ),
     isSyncPending = true

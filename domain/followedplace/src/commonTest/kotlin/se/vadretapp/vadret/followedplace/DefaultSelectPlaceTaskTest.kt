@@ -40,7 +40,8 @@ class DefaultSelectPlaceTaskTest {
             assertEquals(
                 expected = LocationPreference(
                     isAutomatic = false,
-                    storedLocation = kirunaStoredLocation
+                    storedLocation = kirunaStoredLocation,
+                    followedFavoriteIds = emptySet()
                 ),
                 actual = locationRepository.locationPreference.value
             )

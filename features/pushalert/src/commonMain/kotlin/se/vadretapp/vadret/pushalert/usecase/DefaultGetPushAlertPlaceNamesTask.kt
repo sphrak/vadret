@@ -38,7 +38,6 @@ internal class DefaultGetPushAlertPlaceNamesTask(
                     }
                     val savedPlaceNames: List<Pair<Geohash, PlaceName?>> = locationPreference
                         .notifiableFavorites(favorites = favorites)
-                        .filter { favorite: Favorite -> favorite.favoriteId in pushAlertChoices.notifiedFavoriteIds }
                         .mapNotNull { favorite: Favorite -> favorite.toNamedGeohashOrNull() }
                     (chosenPlaceNames + savedPlaceNames)
                         .distinctBy { (geohash: Geohash, _) -> geohash }

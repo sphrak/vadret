@@ -255,13 +255,11 @@ class PushAlertsViewModelTest {
     }
 
     @Test
-    fun markingASavedPlaceIsSavedAndSyncedAtOnceBothOnAndOff() = runTest(context = testDispatcher) {
-        val savePushAlertChoicesTask = FakeSavePushAlertChoicesTask()
-        val syncPushAlertsTask = FakeSyncPushAlertsTask()
+    fun markingASavedPlaceTurnsItsNotificationsOnAndOff() = runTest(context = testDispatcher) {
+        val setFavoriteFollowedTask = FakeSetFavoriteFollowedTask()
         val viewModel = startedViewModel(
             choices = STRONG_WIND_ONLY,
-            savePushAlertChoicesTask = savePushAlertChoicesTask,
-            syncPushAlertsTask = syncPushAlertsTask
+            setFavoriteFollowedTask = setFavoriteFollowedTask
         )
 
         listOf(true, false).forEach { isEnabled: Boolean ->
@@ -276,20 +274,25 @@ class PushAlertsViewModelTest {
 
         assertEquals(
             expected = listOf(
-                STRONG_WIND_ONLY.copy(notifiedFavoriteIds = setOf(UPPSALA.favoriteId)),
-                STRONG_WIND_ONLY
-            ) to 2,
-            actual = savePushAlertChoicesTask.saved to syncPushAlertsTask.syncs
+                UPPSALA.favoriteId to true,
+                UPPSALA.favoriteId to false
+            ),
+            actual = setFavoriteFollowedTask.followed
         )
     }
 
     @Test
     fun theChosenPlaceCanBeTurnedOffWhileAnotherPlaceIsMarked() = runTest(context = testDispatcher) {
         val savePushAlertChoicesTask = FakeSavePushAlertChoicesTask()
-        val markedUppsala = STRONG_WIND_ONLY.copy(notifiedFavoriteIds = setOf(UPPSALA.favoriteId))
         val viewModel = startedViewModel(
-            choices = markedUppsala,
-            savePushAlertChoicesTask = savePushAlertChoicesTask
+            choices = STRONG_WIND_ONLY,
+            savePushAlertChoicesTask = savePushAlertChoicesTask,
+            observePushAlertPlacesTask = FakeObservePushAlertPlacesTask(
+                places = listOf(
+                    PushAlertPlace.ChosenPlace(name = null),
+                    UPPSALA.copy(isNotified = true)
+                )
+            )
         )
 
         viewModel.onEvent(
@@ -301,7 +304,7 @@ class PushAlertsViewModelTest {
         advanceUntilIdle()
 
         assertEquals(
-            expected = listOf(markedUppsala.copy(isChosenPlaceNotified = false)) to false,
+            expected = listOf(STRONG_WIND_ONLY.copy(isChosenPlaceNotified = false)) to false,
             actual = savePushAlertChoicesTask.saved to viewModel.state.value.isLastPlaceDialogVisible
         )
     }
@@ -745,6 +748,7 @@ class PushAlertsViewModelTest {
     private fun TestScope.startedViewModel(
         choices: PushAlertChoices = PushAlertChoices.NOTHING_CHOSEN,
         savePushAlertChoicesTask: FakeSavePushAlertChoicesTask = FakeSavePushAlertChoicesTask(),
+        setFavoriteFollowedTask: FakeSetFavoriteFollowedTask = FakeSetFavoriteFollowedTask(),
         syncPushAlertsTask: FakeSyncPushAlertsTask = FakeSyncPushAlertsTask(),
         observePushAlertSyncPendingTask: FakeObservePushAlertSyncPendingTask = FakeObservePushAlertSyncPendingTask(),
         isOutsideSwedenTask: FakeIsOutsideSwedenTask = FakeIsOutsideSwedenTask(),
@@ -757,6 +761,7 @@ class PushAlertsViewModelTest {
             observePushAlertPlacesTask = observePushAlertPlacesTask,
             observePushAlertSyncPendingTask = observePushAlertSyncPendingTask,
             savePushAlertChoicesTask = savePushAlertChoicesTask,
+            setFavoriteFollowedTask = setFavoriteFollowedTask,
             syncPushAlertsTask = syncPushAlertsTask,
             observePollenAllergensTask = DefaultObservePollenAllergensTask(pollenPreferenceRepository = pollenPreferenceRepository),
             observeAuroraEnabledTask = DefaultObserveAuroraEnabledTask(forecastPreferenceRepository = forecastPreferenceRepository),
@@ -783,7 +788,8 @@ private val WARNINGS_FROM_YELLOW = PushAlertChoices(
 private val BIRCH_ALLERGY = NO_ALLERGENS.copy(allergenPollenIds = setOf("2a2a2a2a-2a2a-4a2a-aa2a-2a313a323236"))
 private val UPPSALA = PushAlertPlace.SavedPlace(
     favoriteId = "favorite-uppsala",
-    name = "Uppsala"
+    name = "Uppsala",
+    isNotified = false
 )
 private val PLACES: List<PushAlertPlace> = listOf(
     PushAlertPlace.ChosenPlace(name = null),

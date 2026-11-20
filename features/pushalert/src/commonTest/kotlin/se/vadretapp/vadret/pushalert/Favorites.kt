@@ -58,6 +58,20 @@ internal val BERLIN_FAVORITE = favorite(
     longitude = 13.405
 )
 
+internal val EVERY_FAVORITE_ID: Set<String> = listOf(
+    STOCKHOLM_NORRMALM_FAVORITE,
+    SOLNA_FAVORITE,
+    MALMO_FAVORITE,
+    MALMO_CENTRAL_FAVORITE,
+    LIMHAMN_FAVORITE,
+    GOTEBORG_FAVORITE,
+    UPPSALA_FAVORITE,
+    UMEA_FAVORITE,
+    KIRUNA_FAVORITE,
+    VISBY_FAVORITE,
+    BERLIN_FAVORITE
+).map { favorite: Favorite -> favorite.favoriteId }.toSet()
+
 private fun favorite(
     locality: String,
     latitude: Double,

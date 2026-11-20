@@ -79,7 +79,8 @@ internal class FakeLocationRepository(
     val locationPreference: MutableStateFlow<LocationPreference> = MutableStateFlow(
         value = LocationPreference(
             isAutomatic = isAutomatic,
-            storedLocation = umea.toStoredLocation()
+            storedLocation = umea.toStoredLocation(),
+            followedFavoriteIds = emptySet()
         )
     )
     val writes: MutableList<String> = mutableListOf()
@@ -108,12 +109,36 @@ internal class FakeLocationRepository(
     override suspend fun selectStoredLocation(storedLocation: StoredLocation): Either<Failure, Unit> {
         writes.add("selected=${storedLocation.locality}")
         if (selectStoredLocationResult.isRight) {
-            locationPreference.value = LocationPreference(
-                isAutomatic = false,
-                storedLocation = storedLocation
-            )
+            locationPreference.update { preference: LocationPreference ->
+                preference.copy(
+                    isAutomatic = false,
+                    storedLocation = storedLocation
+                )
+            }
         }
         return selectStoredLocationResult
+    }
+
+    override suspend fun setFavoriteFollowed(
+        favoriteId: String,
+        isFollowed: Boolean
+    ): Either<Failure, Unit> {
+        locationPreference.update { preference: LocationPreference ->
+            preference.copy(
+                followedFavoriteIds = if (isFollowed) {
+                    preference.followedFavoriteIds + favoriteId
+                } else {
+                    preference.followedFavoriteIds - favoriteId
+                }
+            )
+        }
+        return Unit.asRight()
+    }
+}
+
+internal fun FakeLocationRepository.follow(favorites: List<Favorite>) {
+    locationPreference.update { preference: LocationPreference ->
+        preference.copy(followedFavoriteIds = favorites.map { favorite: Favorite -> favorite.favoriteId }.toSet())
     }
 }
 

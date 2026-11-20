@@ -47,16 +47,18 @@ import se.vadretapp.vadret.ui.resources.Res
 import se.vadretapp.vadret.ui.resources.ic_check
 import se.vadretapp.vadret.ui.resources.ic_delete
 import se.vadretapp.vadret.ui.resources.ic_more_vert
+import se.vadretapp.vadret.ui.resources.ic_notifications
 import se.vadretapp.vadret.ui.resources.ic_star
 import se.vadretapp.vadret.ui.resources.places_follow_position
 import se.vadretapp.vadret.ui.resources.places_follow_position_summary
-import se.vadretapp.vadret.ui.resources.places_make_default
 import se.vadretapp.vadret.ui.resources.places_mine
-import se.vadretapp.vadret.ui.resources.places_not_followed
 import se.vadretapp.vadret.ui.resources.places_note
 import se.vadretapp.vadret.ui.resources.places_options
 import se.vadretapp.vadret.ui.resources.places_remove
 import se.vadretapp.vadret.ui.resources.places_search
+import se.vadretapp.vadret.ui.resources.places_turn_notifications_off
+import se.vadretapp.vadret.ui.resources.places_turn_notifications_on
+import se.vadretapp.vadret.ui.resources.places_use_as_default
 import se.vadretapp.vadret.ui.resources.selected
 import se.vadretapp.vadret.ui.resources.settings_places
 
@@ -183,12 +185,7 @@ private fun PlaceRow(
     var isMenuExpanded: Boolean by remember { mutableStateOf(value = false) }
     SettingsRow(
         title = favoriteChoice.favorite.locality,
-        summary = if (favoriteChoice.isFollowed) {
-            null
-        } else {
-            stringResource(resource = Res.string.places_not_followed)
-        },
-        onClick = { onEvent(PlacesEvent.OnPlaceChosen(favorite = favoriteChoice.favorite)) },
+        onClick = { isMenuExpanded = true },
         modifier = modifier
     ) {
         if (favoriteChoice.isSelected) {
@@ -214,11 +211,30 @@ private fun PlaceRow(
             ) {
                 if (!favoriteChoice.isSelected) {
                     PlaceMenuItem(
-                        text = stringResource(resource = Res.string.places_make_default),
+                        text = stringResource(resource = Res.string.places_use_as_default),
                         iconResource = Res.drawable.ic_star,
                         onClick = {
                             isMenuExpanded = false
                             onEvent(PlacesEvent.OnPlaceChosen(favorite = favoriteChoice.favorite))
+                        }
+                    )
+                    PlaceMenuItem(
+                        text = stringResource(
+                            resource = if (favoriteChoice.isFollowed) {
+                                Res.string.places_turn_notifications_off
+                            } else {
+                                Res.string.places_turn_notifications_on
+                            }
+                        ),
+                        iconResource = Res.drawable.ic_notifications,
+                        onClick = {
+                            isMenuExpanded = false
+                            onEvent(
+                                PlacesEvent.OnPlaceFollowToggled(
+                                    favoriteId = favoriteChoice.favorite.favoriteId,
+                                    isFollowed = !favoriteChoice.isFollowed
+                                )
+                            )
                         }
                     )
                 }

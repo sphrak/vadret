@@ -17,6 +17,10 @@ interface LocationRepository {
     suspend fun setAutomatic(isAutomatic: Boolean): Either<Failure, Unit>
     fun observeLocationPreference(): Flow<Either<Failure, LocationPreference>>
     suspend fun selectStoredLocation(storedLocation: StoredLocation): Either<Failure, Unit>
+    suspend fun setFavoriteFollowed(
+        favoriteId: String,
+        isFollowed: Boolean
+    ): Either<Failure, Unit>
 }
 
 internal fun LocationRepository(

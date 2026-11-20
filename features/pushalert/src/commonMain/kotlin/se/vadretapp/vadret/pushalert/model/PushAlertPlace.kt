@@ -5,6 +5,7 @@ internal sealed interface PushAlertPlace {
 
     data class SavedPlace(
         val favoriteId: String,
-        val name: String
+        val name: String,
+        val isNotified: Boolean
     ) : PushAlertPlace
 }

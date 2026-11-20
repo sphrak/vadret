@@ -7,4 +7,8 @@ internal interface StoredLocationLocalDataSource {
     suspend fun setAutomatic(isAutomatic: Boolean)
     fun observeLocationPreference(): Flow<LocationPreferenceEntity>
     suspend fun selectStoredLocation(storedLocationEntity: StoredLocationEntity)
+    suspend fun setFavoriteFollowed(
+        favoriteId: String,
+        isFollowed: Boolean
+    )
 }

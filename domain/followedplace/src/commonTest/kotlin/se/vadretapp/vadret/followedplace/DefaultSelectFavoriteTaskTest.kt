@@ -32,7 +32,8 @@ class DefaultSelectFavoriteTaskTest {
                         county = "Norrbotten",
                         latitude = 67.8558,
                         longitude = 20.2253
-                    )
+                    ),
+                    followedFavoriteIds = emptySet()
                 ),
                 actual = locationRepository.locationPreference.value
             )

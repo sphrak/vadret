@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved design for hourly forecasts (now uses a pager)
 - Forecast tooltip
 - Story plays until dismissed and repeats on end reached
+- shortcut to turn off notifications for a place
+- hide set place as default in filter view
 
 ## [3.3.0] -- 2026-11-14
 

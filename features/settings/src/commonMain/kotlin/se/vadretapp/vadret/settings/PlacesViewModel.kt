@@ -22,6 +22,7 @@ import se.vadretapp.vadret.followedplace.ObserveLocationChoicesTask
 import se.vadretapp.vadret.followedplace.RemoveFavoriteTask
 import se.vadretapp.vadret.followedplace.SearchPlacesTask
 import se.vadretapp.vadret.followedplace.SelectFavoriteTask
+import se.vadretapp.vadret.followedplace.SetFavoriteFollowedTask
 import se.vadretapp.vadret.followedplace.SetLocationModeTask
 import se.vadretapp.vadret.followedplace.model.LocationChoices
 import se.vadretapp.vadret.place.model.Place
@@ -40,6 +41,7 @@ class PlacesViewModel internal constructor(
     private val setLocationModeTask: SetLocationModeTask,
     private val selectFavoriteTask: SelectFavoriteTask,
     private val removeFavoriteTask: RemoveFavoriteTask,
+    private val setFavoriteFollowedTask: SetFavoriteFollowedTask,
     private val searchPlacesTask: SearchPlacesTask,
     private val addFavoriteTask: AddFavoriteTask,
     private val coroutineDispatcher: CoroutineDispatcher
@@ -62,6 +64,10 @@ class PlacesViewModel internal constructor(
             is PlacesEvent.OnSuggestionClicked -> onSuggestionClicked(place = event.place)
             is PlacesEvent.OnPlaceChosen -> onPlaceChosen(favorite = event.favorite)
             is PlacesEvent.OnPlaceRemoved -> onPlaceRemoved(favoriteId = event.favoriteId)
+            is PlacesEvent.OnPlaceFollowToggled -> onPlaceFollowToggled(
+                favoriteId = event.favoriteId,
+                isFollowed = event.isFollowed
+            )
             PlacesEvent.OnFailureDismissed -> state.update { state: PlacesState -> state.copy(failureDialog = null) }
         }
     }
@@ -202,6 +208,21 @@ class PlacesViewModel internal constructor(
     private fun onPlaceRemoved(favoriteId: String) {
         viewModelScope.launch(context = coroutineDispatcher) {
             removeFavoriteTask(favoriteId = favoriteId).onResult(
+                onError = { failure: Failure -> displayFailure(failure = failure) },
+                onSuccess = {}
+            )
+        }
+    }
+
+    private fun onPlaceFollowToggled(
+        favoriteId: String,
+        isFollowed: Boolean
+    ) {
+        viewModelScope.launch(context = coroutineDispatcher) {
+            setFavoriteFollowedTask(
+                favoriteId = favoriteId,
+                isFollowed = isFollowed
+            ).onResult(
                 onError = { failure: Failure -> displayFailure(failure = failure) },
                 onSuccess = {}
             )

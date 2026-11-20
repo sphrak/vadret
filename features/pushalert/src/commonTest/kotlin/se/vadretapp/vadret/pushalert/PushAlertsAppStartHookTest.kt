@@ -16,6 +16,8 @@ import se.vadretapp.vadret.common.Failure
 import se.vadretapp.vadret.followedplace.model.FollowedPlace
 import se.vadretapp.vadret.forecastpreference.model.ForecastPreferences
 import se.vadretapp.vadret.logging.LogLevel
+import se.vadretapp.vadret.pushalert.model.PushAlertChoices
+import se.vadretapp.vadret.pushalert.usecase.DefaultMigrateNotifiedFavoritesTask
 import se.vadretapp.vadret.pushalert.usecase.DefaultObserveAuroraEnabledTask
 import se.vadretapp.vadret.pushalert.usecase.DefaultObservePollenAllergensTask
 import se.vadretapp.vadret.setting.model.HourFormat
@@ -47,6 +49,28 @@ class PushAlertsAppStartHookTest {
                 actual = recordingLogSink.lines.map { line -> line.level }
             )
         }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun savedPlacesMarkedForPushBeforeKeepTheirNotifications() = runTest {
+        val pushAlertRepository = FakePushAlertRepository(
+            choices = PushAlertChoices.NOTHING_CHOSEN.copy(notifiedFavoriteIds = setOf(UPPSALA_FAVORITE.favoriteId))
+        )
+        val locationRepository = FakeLocationRepository()
+        val hook = launch {
+            pushAlertsAppStartHook(
+                pushAlertRepository = pushAlertRepository,
+                locationRepository = locationRepository
+            ).onAppStart()
+        }
+        advanceUntilIdle()
+        hook.cancel()
+
+        assertEquals(
+            expected = listOf(UPPSALA_FAVORITE.favoriteId) to emptySet(),
+            actual = locationRepository.followed.toList() to pushAlertRepository.savedChoices.value.notifiedFavoriteIds
+        )
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -196,9 +220,15 @@ private fun pushAlertsAppStartHook(
     pollenPreferenceRepository: FakePollenPreferenceRepository = FakePollenPreferenceRepository(),
     observeShownLanguageTask: FakeObserveShownLanguageTask = FakeObserveShownLanguageTask(),
     observeHourFormatTask: FakeObserveHourFormatTask = FakeObserveHourFormatTask(),
-    forecastPreferenceRepository: FakeForecastPreferenceRepository = FakeForecastPreferenceRepository()
+    forecastPreferenceRepository: FakeForecastPreferenceRepository = FakeForecastPreferenceRepository(),
+    pushAlertRepository: FakePushAlertRepository = FakePushAlertRepository(),
+    locationRepository: FakeLocationRepository = FakeLocationRepository()
 ): PushAlertsAppStartHook =
     PushAlertsAppStartHook(
+        migrateNotifiedFavoritesTask = DefaultMigrateNotifiedFavoritesTask(
+            pushAlertRepository = pushAlertRepository,
+            locationRepository = locationRepository
+        ),
         syncPushAlertsTask = syncPushAlertsTask,
         observeFollowedPlacesTask = observeFollowedPlacesTask,
         observePollenAllergensTask = DefaultObservePollenAllergensTask(pollenPreferenceRepository = pollenPreferenceRepository),

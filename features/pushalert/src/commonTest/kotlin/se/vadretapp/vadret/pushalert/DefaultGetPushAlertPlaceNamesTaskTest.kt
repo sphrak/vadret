@@ -55,30 +55,31 @@ class DefaultGetPushAlertPlaceNamesTaskTest {
             )
         }.toMap()
 
-    private fun List<Favorite>.favoriteIds(): Set<String> = map { favorite: Favorite -> favorite.favoriteId }.toSet()
-
     @Test
-    fun `where the phone is comes first and the marked saved places follow up to five places`() =
+    fun `where the phone is comes first and the saved places with notifications follow up to five places`() =
         runTest {
             assertEquals<Either<Failure, Map<Geohash, PlaceName?>>>(
                 expected = (mapOf(whereThePhoneIs to null) + swedishFavorites.take(n = 4).toPlaceNames()).asRight(),
                 actual = pushAlertPlaceNames(
                     locationRepository = FakeLocationRepository(isAutomatic = true),
                     favorites = swedishFavorites,
-                    pushAlertChoices = WARNINGS_FROM_YELLOW.copy(notifiedFavoriteIds = swedishFavorites.favoriteIds())
+                    pushAlertChoices = WARNINGS_FROM_YELLOW
                 )
             )
         }
 
     @Test
-    fun `saved places that are not marked are left out`() =
+    fun `saved places without notifications are left out`() =
         runTest {
             assertEquals<Either<Failure, Map<Geohash, PlaceName?>>>(
                 expected = (mapOf(whereThePhoneIs to null) + listOf(UPPSALA_FAVORITE).toPlaceNames()).asRight(),
                 actual = pushAlertPlaceNames(
-                    locationRepository = FakeLocationRepository(isAutomatic = true),
+                    locationRepository = FakeLocationRepository(
+                        isAutomatic = true,
+                        followedFavoriteIds = setOf(UPPSALA_FAVORITE.favoriteId)
+                    ),
                     favorites = swedishFavorites,
-                    pushAlertChoices = WARNINGS_FROM_YELLOW.copy(notifiedFavoriteIds = setOf(UPPSALA_FAVORITE.favoriteId))
+                    pushAlertChoices = WARNINGS_FROM_YELLOW
                 )
             )
         }
@@ -89,12 +90,12 @@ class DefaultGetPushAlertPlaceNamesTaskTest {
             assertEquals<Either<Failure, Map<Geohash, PlaceName?>>>(
                 expected = listOf(SOLNA_FAVORITE).toPlaceNames().asRight(),
                 actual = pushAlertPlaceNames(
-                    locationRepository = FakeLocationRepository(isAutomatic = true),
+                    locationRepository = FakeLocationRepository(
+                        isAutomatic = true,
+                        followedFavoriteIds = setOf(SOLNA_FAVORITE.favoriteId)
+                    ),
                     favorites = swedishFavorites,
-                    pushAlertChoices = WARNINGS_FROM_YELLOW.copy(
-                        isChosenPlaceNotified = false,
-                        notifiedFavoriteIds = setOf(SOLNA_FAVORITE.favoriteId)
-                    )
+                    pushAlertChoices = WARNINGS_FROM_YELLOW.copy(isChosenPlaceNotified = false)
                 )
             )
         }
@@ -118,14 +119,14 @@ class DefaultGetPushAlertPlaceNamesTaskTest {
                         )
                     ),
                     favorites = swedishFavorites,
-                    pushAlertChoices = WARNINGS_FROM_YELLOW.copy(notifiedFavoriteIds = swedishFavorites.favoriteIds()),
+                    pushAlertChoices = WARNINGS_FROM_YELLOW,
                     currentGeohash = chosenPlaceName.keys.single()
                 )
             )
         }
 
     @Test
-    fun `marked saved places outside Sweden get no push`() =
+    fun `saved places outside Sweden get no push`() =
         runTest {
             val favorites: List<Favorite> = listOf(BERLIN_FAVORITE, SOLNA_FAVORITE)
 
@@ -134,7 +135,7 @@ class DefaultGetPushAlertPlaceNamesTaskTest {
                 actual = pushAlertPlaceNames(
                     locationRepository = FakeLocationRepository(isAutomatic = true),
                     favorites = favorites,
-                    pushAlertChoices = WARNINGS_FROM_YELLOW.copy(notifiedFavoriteIds = favorites.favoriteIds())
+                    pushAlertChoices = WARNINGS_FROM_YELLOW
                 )
             )
         }
@@ -145,7 +146,10 @@ class DefaultGetPushAlertPlaceNamesTaskTest {
             assertEquals<Either<Failure, Map<Geohash, PlaceName?>>>(
                 expected = emptyMap<Geohash, PlaceName?>().asRight(),
                 actual = pushAlertPlaceNames(
-                    locationRepository = FakeLocationRepository(isAutomatic = true),
+                    locationRepository = FakeLocationRepository(
+                        isAutomatic = true,
+                        followedFavoriteIds = emptySet()
+                    ),
                     favorites = swedishFavorites,
                     pushAlertChoices = WARNINGS_FROM_YELLOW.copy(isChosenPlaceNotified = false)
                 )

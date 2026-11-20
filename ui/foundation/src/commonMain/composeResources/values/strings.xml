@@ -314,10 +314,12 @@
     <string name="places_follow_position_summary">Vädret updates as you move</string>
     <string name="places_search">Search and add a place</string>
     <string name="places_mine">My places</string>
-    <string name="places_make_default">Make default</string>
+    <string name="places_use_as_default">Use as default</string>
     <string name="places_remove">Remove</string>
     <string name="places_options">Options for %1$s</string>
-    <string name="places_note">Warnings cover all your places. The place you choose is shown first. You can have up to 5.</string>
+    <string name="places_note">You get notifications for the place you have chosen. Turn on more in the menu on each place, up to 5.</string>
+    <string name="places_turn_notifications_on">Turn on notifications</string>
+    <string name="places_turn_notifications_off">Turn off notifications</string>
     <string name="pollen_on_map">Pollen on the map</string>
     <string name="pollen_on_map_summary">Shown as a layer in Radar</string>
     <string name="pollen_off_season">No pollen forecasts right now. Naturhistoriska riksmuseet publishes forecasts during the pollen season, from February to September.</string>
@@ -331,7 +333,6 @@
     <string name="notifications_weather">Weather</string>
     <string name="warning_alerts_summary">From SMHI</string>
     <string name="warning_level">Level</string>
-    <string name="places_not_followed">No warnings, at most 5 places are followed</string>
     <string name="slipperiness_possible">Slippery roads possible</string>
     <string name="slipperiness_high">High risk of slippery roads</string>
     <string name="slipperiness_cause_frost">Frost</string>
