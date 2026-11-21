@@ -71,6 +71,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 
@@ -622,22 +623,42 @@ class RadarViewModelTest {
         }
 
     @Test
-    fun `opening the radar loads only the frame it shows`() =
+    fun `opening the radar downloads the day and loads only the frame it shows`() =
         testScope.runTest {
             viewModel()
             advanceUntilIdle()
 
             assertEquals(expected = listOf("https://smhi.se/2.png"), actual = radarImageLoader.loadedUrls)
-            assertEquals(expected = emptyList(), actual = downloadRadarDayTask.requestedImageUrls)
+            assertEquals(
+                expected = listOf(listOf("https://smhi.se/0.png", "https://smhi.se/1.png", "https://smhi.se/2.png")),
+                actual = downloadRadarDayTask.requestedImageUrls
+            )
         }
 
     @Test
-    fun `playing downloads the day before it loads the frames`() =
+    fun `a radar older than five minutes is loaded again while the screen is shown`() =
         testScope.runTest {
             val radarViewModel: RadarViewModel = viewModel()
-            radarViewModel.onEvent(event = RadarEvent.OnMapLoaded)
             advanceUntilIdle()
+
+            radarViewModel.onEvent(event = RadarEvent.OnFreshnessCheck)
+            advanceUntilIdle()
+            val requestsWhileFresh: Int = getRadarTask.requestedImageUrls.size
+            clock.now = FETCHED_AT + 5.minutes + 1.seconds
+            radarViewModel.onEvent(event = RadarEvent.OnFreshnessCheck)
+            advanceUntilIdle()
+
+            assertEquals(expected = 1, actual = requestsWhileFresh)
+            assertEquals(expected = 2, actual = getRadarTask.requestedImageUrls.size)
+        }
+
+    @Test
+    fun `playing waits for the day to download before it loads the frames`() =
+        testScope.runTest {
             downloadRadarDayTask.downloadDuration = 2.seconds
+            val radarViewModel: RadarViewModel = viewModel()
+            radarViewModel.onEvent(event = RadarEvent.OnMapLoaded)
+            runCurrent()
 
             radarViewModel.onEvent(event = RadarEvent.OnPlayButtonClicked)
             advanceTimeBy(delayTime = 1.seconds)

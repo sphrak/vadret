@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - hide set place as default in filter view
 - unify color scheme for map across app
 - press and hold on story pauses it
+- preload radar and refresh after five minutes
 
 ## [3.3.0] -- 2026-11-14
 

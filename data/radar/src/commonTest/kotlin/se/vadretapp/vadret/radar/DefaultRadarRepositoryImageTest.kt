@@ -183,17 +183,17 @@ class DefaultRadarRepositoryImageTest {
         testScope.runTest {
             radarRemoteDataSource.images[imageName(time = "1400")] = image(time = "1400")
             val imageUrls: List<String> = listOf("1400", "1405", "1410").map { time: String -> imageUrl(time = time) }
-            val missingBefore: Either<Failure, Int> = radarRepository.getMissingRadarImageCount(imageUrls = imageUrls)
+            val missingBefore: Either<Failure, List<String>> = radarRepository.getMissingRadarImageUrls(imageUrls = imageUrls)
 
             imagesAt(times = listOf("1400"))
 
             assertEquals(
-                expected = 3.asRight(),
+                expected = imageUrls.asRight(),
                 actual = missingBefore
             )
             assertEquals(
-                expected = 2.asRight(),
-                actual = radarRepository.getMissingRadarImageCount(imageUrls = imageUrls)
+                expected = imageUrls.drop(n = 1).asRight(),
+                actual = radarRepository.getMissingRadarImageUrls(imageUrls = imageUrls)
             )
         }
 
@@ -235,7 +235,7 @@ class DefaultRadarRepositoryImageTest {
                 )
                 assertEquals(
                     expected = Failure(errorCode = ErrorCode.RADAR_NOT_AVAILABLE).asLeft(),
-                    actual = radarRepository.getMissingRadarImageCount(imageUrls = imageUrls)
+                    actual = radarRepository.getMissingRadarImageUrls(imageUrls = imageUrls)
                 )
                 assertEquals(
                     expected = Failure(errorCode = ErrorCode.RADAR_NOT_AVAILABLE).asLeft(),

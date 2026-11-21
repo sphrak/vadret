@@ -56,7 +56,13 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import se.vadretapp.vadret.di.koinViewModel
@@ -85,6 +91,8 @@ import se.vadretapp.vadret.ui.resources.m_s
 import se.vadretapp.vadret.ui.resources.openstreetmap_copyright_notice
 import se.vadretapp.vadret.ui.resources.pegman_hint
 import kotlin.math.roundToInt
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 private val toolbarTopPadding = 16.dp
 private val toastDockSpacing = 64.dp
@@ -99,6 +107,8 @@ private const val COVER_FADE_MILLISECONDS = 250
 private const val DOCK_FADE_MILLISECONDS = 250
 private const val ATTRIBUTION_BACKGROUND_ALPHA = 0.85f
 private const val ATTRIBUTION_WEIGHT = 1f
+
+private val freshnessCheckInterval: Duration = 15.seconds
 
 private val bottomBarInsets: WindowInsets
     @Composable get() = WindowInsets.systemBars.only(sides = WindowInsetsSides.Bottom)
@@ -149,6 +159,15 @@ internal fun RadarScreen(
     }
     DisposableEffect(Unit) {
         onDispose { onEvent(RadarEvent.OnLeft) }
+    }
+    val lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(lifecycleOwner) {
+        lifecycleOwner.repeatOnLifecycle(state = Lifecycle.State.RESUMED) {
+            while (isActive) {
+                onEvent(RadarEvent.OnFreshnessCheck)
+                delay(duration = freshnessCheckInterval)
+            }
+        }
     }
     if (state.isPollenHibernationNoticeVisible) {
         PollenHibernationDialog(onDismiss = { onEvent(RadarEvent.OnPollenHibernationNoticeDismissed) })

@@ -74,11 +74,13 @@ import kotlin.concurrent.atomics.AtomicReference
 import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.minutes
 
 private const val PRELOADED_FRAME_DISTANCE = 3
 
 private val frameDuration: Duration = 128.milliseconds
 private val slowLoadDelay: Duration = 300.milliseconds
+private val radarLifetime: Duration = 5.minutes
 private const val WIND_STEPS_PER_FRAME = 4
 
 private class PreparedWindField(
@@ -108,6 +110,7 @@ class RadarViewModel internal constructor(
         field = MutableStateFlow(value = RadarState())
 
     private val isStarted: AtomicBoolean = AtomicBoolean(value = false)
+    private val isShowingToday: AtomicBoolean = AtomicBoolean(value = false)
     private val pollenPreferences: AtomicReference<PollenPreferences?> = AtomicReference(value = null)
     private val pollenSeasonStatus: AtomicReference<PollenSeasonStatus> = AtomicReference(value = PollenSeasonStatus.UNKNOWN)
     private val isHibernationNoticeDismissed: AtomicBoolean = AtomicBoolean(value = false)
@@ -124,6 +127,7 @@ class RadarViewModel internal constructor(
     private val textLocaleJob: AtomicReference<Job?> = AtomicReference(value = null)
     private val windPalette: AtomicReference<WindPalette> = AtomicReference(value = WindPalette.DAY)
     private val radar: AtomicReference<Radar?> = AtomicReference(value = null)
+    private val radarJob: AtomicReference<Job?> = AtomicReference(value = null)
     private val windForecast: AtomicReference<WindForecast?> = AtomicReference(value = null)
     private val playJob: AtomicReference<Job?> = AtomicReference(value = null)
     private val frameJob: AtomicReference<Job?> = AtomicReference(value = null)
@@ -134,6 +138,7 @@ class RadarViewModel internal constructor(
         when (event) {
             is RadarEvent.OnStart -> onStart(initialImageUrl = event.initialImageUrl)
             RadarEvent.OnLeft -> stopPlaying()
+            RadarEvent.OnFreshnessCheck -> reloadStaleRadar()
             is RadarEvent.OnLocaleChanged -> onLocaleChanged(
                 languageTag = event.languageTag,
                 hourFormat = event.hourFormat
@@ -162,6 +167,7 @@ class RadarViewModel internal constructor(
 
     private fun onStart(initialImageUrl: String?) {
         if (isStarted.compareAndSet(expectedValue = false, newValue = true)) {
+            isShowingToday.store(newValue = initialImageUrl == null)
             loadPrecipitation(initialImageUrl = initialImageUrl)
             loadDeviceLocation()
             observePollenPreferences()
@@ -254,8 +260,18 @@ class RadarViewModel internal constructor(
         }
     }
 
+    private fun reloadStaleRadar() {
+        val loadedRadar: Radar = radar.load() ?: return
+        if (isShowingToday.load() && clock.now() - loadedRadar.fetchedAt > radarLifetime) {
+            loadPrecipitation(initialImageUrl = null)
+        }
+    }
+
     private fun loadPrecipitation(initialImageUrl: String?) {
-        viewModelScope.launch(context = coroutineDispatcher) {
+        viewModelScope.launchReplacing(
+            currentJob = radarJob,
+            context = coroutineDispatcher
+        ) {
             observeRadarTask(imageUrl = initialImageUrl).collect { result: Either<Failure, Radar> ->
                 result.onResult(
                     onError = { failure: Failure -> displayPrecipitationError(failure = failure) },
@@ -290,6 +306,9 @@ class RadarViewModel internal constructor(
                 isLoading = state.isLoading && state.layer == RadarLayer.WIND && state.windField == null
             )
         }
+        if (updatedState.imageUrls() != shownState.imageUrls()) {
+            downloadRadarDayAfter(startedDownload = radarDayJob.load())
+        }
         val isShownFrameChanged: Boolean = updatedState.shownImageUrl() != shownState.shownImageUrl() || updatedState.precipitationOverlay == null
         if (updatedState.layer == RadarLayer.PRECIPITATION && !updatedState.isPlaying && isShownFrameChanged) {
             showFrame(
@@ -300,6 +319,8 @@ class RadarViewModel internal constructor(
     }
 
     private fun RadarState.shownImageUrl(): String? = precipitationFrames.getOrNull(index = precipitationIndex)?.imageUrl
+
+    private fun RadarState.imageUrls(): List<String> = precipitationFrames.map { frame: RadarFrame -> frame.imageUrl }
 
     private fun ImmutableList<RadarFrame>.indexAfterUpdate(
         shownFrames: List<RadarFrame>,
@@ -632,17 +653,22 @@ class RadarViewModel internal constructor(
         if (startedDownload != null || state.value.precipitationFrames.isEmpty()) {
             return startedDownload
         }
+        return downloadRadarDayAfter(startedDownload = null)
+    }
+
+    private fun downloadRadarDayAfter(startedDownload: Job?): Job? {
         val radarDayDownload: Job = viewModelScope.launch(
             context = coroutineDispatcher,
             start = CoroutineStart.LAZY
         ) {
+            startedDownload?.join()
             withSlowLoadProgress(
                 showProgress = { state: RadarState, isShown: Boolean -> state.copy(isDownloadingRadarDay = isShown) }
             ) {
-                downloadRadarDayTask(imageUrls = state.value.precipitationFrames.map { frame: RadarFrame -> frame.imageUrl })
+                downloadRadarDayTask(imageUrls = state.value.imageUrls())
             }
         }
-        if (radarDayJob.compareAndSet(expectedValue = null, newValue = radarDayDownload)) {
+        if (radarDayJob.compareAndSet(expectedValue = startedDownload, newValue = radarDayDownload)) {
             radarDayDownload.start()
             return radarDayDownload
         }

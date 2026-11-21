@@ -18,12 +18,15 @@ private val imageUrls: List<String> = listOf(
     "https://opendata-download-radar.smhi.se/api/version/latest/area/sweden/product/comp/2026/11/02/radar_2611021405.tif"
 )
 
+private fun missingImageUrls(count: Int): List<String> = (1..count).map { number: Int -> "https://smhi.se/$number.tif" }
+
 private class CountingRadarRepository(
-    val missingImageCount: Either<Failure, Int>,
+    val missingImageUrls: Either<Failure, List<String>>,
     val downloadResult: Either<Failure, Unit> = Unit.asRight()
 ) : RadarRepository {
 
     val downloadedImageUrls = mutableListOf<List<String>>()
+    val singleImageUrls = mutableListOf<String>()
 
     override fun observeRadar(date: LocalDate): Flow<Either<Failure, Radar?>> = error("Downloading a day never observes the radar")
 
@@ -31,9 +34,12 @@ private class CountingRadarRepository(
 
     override suspend fun getRadarContaining(imageUrl: String): Either<Failure, Radar> = error("Downloading a day never asks for a radar")
 
-    override suspend fun getRadarImage(imageUrl: String): Either<Failure, ByteArray> = ByteArray(size = 0).asRight()
+    override suspend fun getRadarImage(imageUrl: String): Either<Failure, ByteArray> {
+        singleImageUrls.add(imageUrl)
+        return ByteArray(size = 0).asRight()
+    }
 
-    override suspend fun getMissingRadarImageCount(imageUrls: List<String>): Either<Failure, Int> = missingImageCount
+    override suspend fun getMissingRadarImageUrls(imageUrls: List<String>): Either<Failure, List<String>> = missingImageUrls
 
     override suspend fun downloadRadarDays(imageUrls: List<String>): Either<Failure, Unit> {
         downloadedImageUrls.add(imageUrls)
@@ -46,7 +52,7 @@ class DefaultDownloadRadarDayTaskTest {
     @Test
     fun `more than ten missing images download the day`() =
         runTest {
-            val radarRepository = CountingRadarRepository(missingImageCount = 11.asRight())
+            val radarRepository = CountingRadarRepository(missingImageUrls = missingImageUrls(count = 11).asRight())
 
             assertEquals(
                 expected = Unit.asRight(),
@@ -59,9 +65,9 @@ class DefaultDownloadRadarDayTaskTest {
         }
 
     @Test
-    fun `ten missing images are left to download one by one`() =
+    fun `ten missing images are downloaded one by one`() =
         runTest {
-            val radarRepository = CountingRadarRepository(missingImageCount = 10.asRight())
+            val radarRepository = CountingRadarRepository(missingImageUrls = missingImageUrls(count = 10).asRight())
 
             assertEquals(
                 expected = Unit.asRight(),
@@ -71,12 +77,16 @@ class DefaultDownloadRadarDayTaskTest {
                 expected = emptyList(),
                 actual = radarRepository.downloadedImageUrls
             )
+            assertEquals(
+                expected = missingImageUrls(count = 10),
+                actual = radarRepository.singleImageUrls
+            )
         }
 
     @Test
     fun `images that cannot be counted download nothing`() =
         runTest {
-            val radarRepository = CountingRadarRepository(missingImageCount = Failure(errorCode = ErrorCode.RADAR_NOT_AVAILABLE).asLeft())
+            val radarRepository = CountingRadarRepository(missingImageUrls = Failure(errorCode = ErrorCode.RADAR_NOT_AVAILABLE).asLeft())
 
             assertEquals(
                 expected = Failure(errorCode = ErrorCode.RADAR_NOT_AVAILABLE).asLeft(),
@@ -92,7 +102,7 @@ class DefaultDownloadRadarDayTaskTest {
     fun `a day that fails to download is a failure`() =
         runTest {
             val radarRepository = CountingRadarRepository(
-                missingImageCount = 11.asRight(),
+                missingImageUrls = missingImageUrls(count = 11).asRight(),
                 downloadResult = Failure(errorCode = ErrorCode.NETWORK_FAILURE).asLeft()
             )
 

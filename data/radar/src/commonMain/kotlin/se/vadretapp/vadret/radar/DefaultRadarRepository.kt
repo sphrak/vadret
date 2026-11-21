@@ -89,16 +89,13 @@ internal class DefaultRadarRepository(
         }
     }.catch { exception: Exception -> exception.toFailure() }
 
-    override suspend fun getMissingRadarImageCount(imageUrls: List<String>): Either<Failure, Int> = either {
+    override suspend fun getMissingRadarImageUrls(imageUrls: List<String>): Either<Failure, List<String>> = either {
         imageUrls
-            .groupBy(
-                keySelector = { imageUrl: String -> imageUrl.toRadarDate() },
-                valueTransform = { imageUrl: String -> imageUrl.toRadarImageName() }
-            )
+            .groupBy { imageUrl: String -> imageUrl.toRadarDate() }
             .entries
-            .sumOf { day: Map.Entry<LocalDate, List<String>> ->
+            .flatMap { day: Map.Entry<LocalDate, List<String>> ->
                 val storedImageNames: Set<String> = radarImageLocalDataSource.getImageNames(date = day.key)
-                day.value.count { imageName: String -> imageName !in storedImageNames }
+                day.value.filter { imageUrl: String -> imageUrl.toRadarImageName() !in storedImageNames }
             }
     }.catch { exception: Exception -> exception.toFailure() }
 

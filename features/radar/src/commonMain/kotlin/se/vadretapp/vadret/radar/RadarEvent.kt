@@ -7,6 +7,7 @@ import se.vadretapp.vadret.setting.model.HourFormat
 internal sealed interface RadarEvent {
     data class OnStart(val initialImageUrl: String?) : RadarEvent
     data object OnLeft : RadarEvent
+    data object OnFreshnessCheck : RadarEvent
     data object OnMapLoaded : RadarEvent
     data class OnLocaleChanged(
         val languageTag: String,

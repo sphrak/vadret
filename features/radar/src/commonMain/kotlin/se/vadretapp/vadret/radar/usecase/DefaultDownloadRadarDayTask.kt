@@ -15,12 +15,22 @@ internal class DefaultDownloadRadarDayTask(
     // The archive costs as much data as the whole day, so it only replaces image requests when many are missing.
     override suspend fun invoke(imageUrls: List<String>): Either<Failure, Unit> =
         radarRepository
-            .getMissingRadarImageCount(imageUrls = imageUrls)
-            .flatMap { missingImageCount: Int ->
-                if (missingImageCount > MAXIMUM_SINGLE_IMAGE_DOWNLOADS) {
+            .getMissingRadarImageUrls(imageUrls = imageUrls)
+            .flatMap { missingImageUrls: List<String> ->
+                if (missingImageUrls.size > MAXIMUM_SINGLE_IMAGE_DOWNLOADS) {
                     radarRepository.downloadRadarDays(imageUrls = imageUrls)
                 } else {
-                    Unit.asRight()
+                    downloadImages(imageUrls = missingImageUrls)
                 }
             }
+
+    private suspend fun downloadImages(imageUrls: List<String>): Either<Failure, Unit> {
+        var downloaded: Either<Failure, Unit> = Unit.asRight()
+        for (imageUrl in imageUrls) {
+            if (downloaded is Either.Right) {
+                downloaded = radarRepository.getRadarImage(imageUrl = imageUrl).flatMap { Unit.asRight() }
+            }
+        }
+        return downloaded
+    }
 }

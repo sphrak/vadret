@@ -19,7 +19,7 @@ interface RadarRepository {
     suspend fun refreshRadar(date: LocalDate): Either<Failure, Radar>
     suspend fun getRadarContaining(imageUrl: String): Either<Failure, Radar>
     suspend fun getRadarImage(imageUrl: String): Either<Failure, ByteArray>
-    suspend fun getMissingRadarImageCount(imageUrls: List<String>): Either<Failure, Int>
+    suspend fun getMissingRadarImageUrls(imageUrls: List<String>): Either<Failure, List<String>>
     suspend fun downloadRadarDays(imageUrls: List<String>): Either<Failure, Unit>
 }
 
