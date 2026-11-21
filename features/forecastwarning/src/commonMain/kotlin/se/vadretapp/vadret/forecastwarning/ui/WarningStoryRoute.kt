@@ -21,8 +21,10 @@ import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
@@ -48,6 +50,7 @@ import se.vadretapp.vadret.ui.WarningColors
 import se.vadretapp.vadret.ui.resources.Res
 import se.vadretapp.vadret.ui.resources.close
 import se.vadretapp.vadret.ui.resources.ic_close
+import kotlin.math.roundToInt
 
 private const val STORY_DURATION_MILLISECONDS = 8_000
 private const val STORY_START = 0f
@@ -111,16 +114,21 @@ internal fun WarningStoryScreen(
         val warning: WarningItem? = state.warnings.getOrNull(index = state.currentIndex)
         if (warning != null) {
             val progress: Animatable<Float, *> = remember(state.currentIndex, state.replayCount) { Animatable(initialValue = previewProgress) }
+            var isHeld: Boolean by remember { mutableStateOf(value = false) }
             LaunchedEffect(state.currentIndex, state.replayCount) {
                 onEvent(WarningStoryEvent.OnStoryShown(index = state.currentIndex))
-                progress.animateTo(
-                    targetValue = STORY_END,
-                    animationSpec = tween(
-                        durationMillis = STORY_DURATION_MILLISECONDS,
-                        easing = LinearEasing
+            }
+            LaunchedEffect(state.currentIndex, state.replayCount, isHeld) {
+                if (!isHeld) {
+                    progress.animateTo(
+                        targetValue = STORY_END,
+                        animationSpec = tween(
+                            durationMillis = ((STORY_END - progress.value) * STORY_DURATION_MILLISECONDS).roundToInt(),
+                            easing = LinearEasing
+                        )
                     )
-                )
-                onEvent(WarningStoryEvent.OnNext)
+                    onEvent(WarningStoryEvent.OnNext)
+                }
             }
             WarningStory(
                 warning = warning,
@@ -128,6 +136,7 @@ internal fun WarningStoryScreen(
                 currentIndex = state.currentIndex,
                 currentProgress = { progress.value },
                 onEvent = onEvent,
+                onHeldChange = { isStoryHeld: Boolean -> isHeld = isStoryHeld },
                 onDismiss = onDismiss
             )
         }
@@ -141,6 +150,7 @@ private fun WarningStory(
     currentIndex: Int,
     currentProgress: () -> Float,
     onEvent: (WarningStoryEvent) -> Unit,
+    onHeldChange: (Boolean) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -196,13 +206,24 @@ private fun WarningStory(
             modifier = Modifier
                 .fillMaxSize()
                 .pointerInput(key1 = Unit) {
-                    detectTapGestures { offset: Offset ->
-                        if (offset.x < size.width * PREVIOUS_ZONE_FRACTION) {
-                            onEvent(WarningStoryEvent.OnPrevious)
-                        } else {
-                            onEvent(WarningStoryEvent.OnNext)
+                    detectTapGestures(
+                        onPress = {
+                            onHeldChange(true)
+                            try {
+                                tryAwaitRelease()
+                            } finally {
+                                onHeldChange(false)
+                            }
+                        },
+                        onLongPress = {},
+                        onTap = { offset: Offset ->
+                            if (offset.x < size.width * PREVIOUS_ZONE_FRACTION) {
+                                onEvent(WarningStoryEvent.OnPrevious)
+                            } else {
+                                onEvent(WarningStoryEvent.OnNext)
+                            }
                         }
-                    }
+                    )
                 }
         )
         Column(
