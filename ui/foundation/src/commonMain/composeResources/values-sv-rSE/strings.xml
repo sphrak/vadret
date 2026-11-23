@@ -272,8 +272,7 @@
     <string name="end_of_season_is_not_simulated">Radarn följer den riktiga säsongen</string>
     <string name="simulated_stories">Storys</string>
     <string name="play_all_stories">Spela alla</string>
-    <string name="slipperiness_possible">Risk för halka</string>
-    <string name="slipperiness_high">Stor risk för halka</string>
+    <string name="slipperiness_risk">Risk för halka</string>
     <string name="slipperiness_cause_frost">Frost</string>
     <string name="slipperiness_cause_freezing_rain">Underkylt regn</string>
     <string name="slipperiness_cause_refreeze">Återfrysning</string>

@@ -123,8 +123,7 @@
     <string name="notifications_are_off">Powiadomienia są wyłączone</string>
     <string name="notifications_are_off_text">Zezwól na powiadomienia z aplikacji Vädret w ustawieniach systemu, aby otrzymywać powiadomienia push.</string>
     <string name="weather">Pogoda</string>
-    <string name="slipperiness_possible">Możliwa śliskość</string>
-    <string name="slipperiness_high">Duże ryzyko śliskości</string>
+    <string name="slipperiness_risk">Ryzyko śliskości</string>
     <string name="slipperiness_cause_frost">Szron</string>
     <string name="slipperiness_cause_freezing_rain">Marznący deszcz</string>
     <string name="slipperiness_cause_refreeze">Ponowne zamarzanie</string>

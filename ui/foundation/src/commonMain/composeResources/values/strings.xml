@@ -333,8 +333,7 @@
     <string name="notifications_weather">Weather</string>
     <string name="warning_alerts_summary">From SMHI</string>
     <string name="warning_level">Level</string>
-    <string name="slipperiness_possible">Slippery roads possible</string>
-    <string name="slipperiness_high">High risk of slippery roads</string>
+    <string name="slipperiness_risk">Risk of slippery roads</string>
     <string name="slipperiness_cause_frost">Frost</string>
     <string name="slipperiness_cause_freezing_rain">Freezing rain</string>
     <string name="slipperiness_cause_refreeze">Refreezing</string>

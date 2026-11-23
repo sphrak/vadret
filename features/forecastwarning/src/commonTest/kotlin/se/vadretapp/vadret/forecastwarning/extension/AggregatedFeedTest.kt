@@ -37,7 +37,7 @@ import se.vadretapp.vadret.ui.resources.slipperiness_cause_frost
 import se.vadretapp.vadret.ui.resources.slipperiness_cause_frost_explanation
 import se.vadretapp.vadret.ui.resources.slipperiness_cause_refreeze
 import se.vadretapp.vadret.ui.resources.slipperiness_cause_refreeze_explanation
-import se.vadretapp.vadret.ui.resources.slipperiness_high
+import se.vadretapp.vadret.ui.resources.slipperiness_risk
 import se.vadretapp.vadret.ui.resources.warning_detail_advice
 import se.vadretapp.vadret.ui.resources.warning_detail_comment
 import se.vadretapp.vadret.ui.resources.warning_detail_description
@@ -339,7 +339,7 @@ class AggregatedFeedTest {
             hourFormat = HourFormat.TWENTY_FOUR_HOUR
         )
 
-        assertEquals(expected = Res.string.slipperiness_high, actual = warningItem.headlineResource)
+        assertEquals(expected = Res.string.slipperiness_risk, actual = warningItem.headlineResource)
     }
 
     @Test

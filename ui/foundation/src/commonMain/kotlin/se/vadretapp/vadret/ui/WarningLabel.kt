@@ -8,6 +8,8 @@ import se.vadretapp.vadret.aggregatedfeed.model.SlipperinessRisk
 import se.vadretapp.vadret.aggregatedfeed.model.WarningLevel
 import se.vadretapp.vadret.ui.extension.displayName
 import se.vadretapp.vadret.ui.extension.labelResource
+import se.vadretapp.vadret.ui.resources.Res
+import se.vadretapp.vadret.ui.resources.slipperiness_risk
 
 private const val PUBLIC_ALERT_LABEL = "VMA"
 
@@ -21,7 +23,7 @@ fun warningLabel(
 ): String =
     when {
         isPublicAlert -> PUBLIC_ALERT_LABEL
-        slipperinessRisk != null -> stringResource(resource = slipperinessRisk.labelResource())
+        slipperinessRisk != null -> stringResource(resource = Res.string.slipperiness_risk)
         auroraChance != null -> stringResource(resource = auroraChance.labelResource())
         warningLevel != null -> stringResource(resource = warningLevel.labelResource())
         else -> source.displayName()
@@ -36,7 +38,7 @@ fun warningTag(
 ): String? =
     when {
         isPublicAlert -> PUBLIC_ALERT_LABEL
-        slipperinessRisk != null -> stringResource(resource = slipperinessRisk.labelResource())
+        slipperinessRisk != null -> stringResource(resource = Res.string.slipperiness_risk)
         auroraChance != null -> stringResource(resource = auroraChance.labelResource())
         warningLevel == WarningLevel.YELLOW ||
             warningLevel == WarningLevel.ORANGE ||

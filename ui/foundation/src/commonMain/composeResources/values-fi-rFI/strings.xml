@@ -135,8 +135,7 @@
     <string name="settings_notifications">Ilmoitukset</string>
     <string name="notifications_are_off">Ilmoitukset on poistettu käytöstä</string>
     <string name="notifications_are_off_text">Salli Vädretin ilmoitukset järjestelmäasetuksista, niin saat push-ilmoituksia.</string>
-    <string name="slipperiness_possible">Liukkaus mahdollista</string>
-    <string name="slipperiness_high">Suuri liukkauden riski</string>
+    <string name="slipperiness_risk">Liukkauden riski</string>
     <string name="slipperiness_cause_frost">Kuura</string>
     <string name="slipperiness_cause_freezing_rain">Jäätävä sade</string>
     <string name="slipperiness_cause_refreeze">Uudelleenjäätyminen</string>

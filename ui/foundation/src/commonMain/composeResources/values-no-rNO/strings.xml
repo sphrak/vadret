@@ -131,8 +131,7 @@
     <string name="settings_notifications">Varsler</string>
     <string name="notifications_are_off">Varsler er slått av</string>
     <string name="notifications_are_off_text">Tillat varsler for Vädret i systeminnstillingene for å få push-varsler.</string>
-    <string name="slipperiness_possible">Mulig glatt føre</string>
-    <string name="slipperiness_high">Stor fare for glatt føre</string>
+    <string name="slipperiness_risk">Fare for glatt føre</string>
     <string name="slipperiness_cause_frost">Rimfrost</string>
     <string name="slipperiness_cause_freezing_rain">Underkjølt regn</string>
     <string name="slipperiness_cause_refreeze">Gjenfrysing</string>

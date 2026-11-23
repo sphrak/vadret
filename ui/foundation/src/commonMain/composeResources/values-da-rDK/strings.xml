@@ -133,8 +133,7 @@
     <string name="settings_notifications">Notifikationer</string>
     <string name="notifications_are_off">Notifikationer er slået fra</string>
     <string name="notifications_are_off_text">Tillad notifikationer for Vädret i systemindstillingerne for at få push-beskeder.</string>
-    <string name="slipperiness_possible">Mulig glat føre</string>
-    <string name="slipperiness_high">Stor risiko for glat føre</string>
+    <string name="slipperiness_risk">Risiko for glat føre</string>
     <string name="slipperiness_cause_frost">Rimfrost</string>
     <string name="slipperiness_cause_freezing_rain">Underafkølet regn</string>
     <string name="slipperiness_cause_refreeze">Genfrysning</string>

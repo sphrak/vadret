@@ -21,13 +21,13 @@ import se.vadretapp.vadret.icons.VadretIcons
 import se.vadretapp.vadret.setting.model.HourFormat
 import se.vadretapp.vadret.ui.extension.displayName
 import se.vadretapp.vadret.ui.extension.explanationResource
-import se.vadretapp.vadret.ui.extension.labelResource
 import se.vadretapp.vadret.ui.extension.nameResource
 import se.vadretapp.vadret.ui.extension.toElapsedTime
 import se.vadretapp.vadret.ui.format.toDayTimeText
 import se.vadretapp.vadret.ui.resources.Res
 import se.vadretapp.vadret.ui.resources.aurora_peak_label
 import se.vadretapp.vadret.ui.resources.aurora_score
+import se.vadretapp.vadret.ui.resources.slipperiness_risk
 import se.vadretapp.vadret.ui.resources.warning_detail_advice
 import se.vadretapp.vadret.ui.resources.warning_detail_comment
 import se.vadretapp.vadret.ui.resources.warning_detail_description
@@ -131,7 +131,7 @@ internal fun AggregatedFeed.toWarningItem(
     )
 }
 
-private fun Slipperiness.headlineResource(): StringResource = causes.firstOrNull()?.nameResource() ?: risk.labelResource()
+private fun Slipperiness.headlineResource(): StringResource = causes.firstOrNull()?.nameResource() ?: Res.string.slipperiness_risk
 
 private fun Slipperiness.toWarningDetails(): List<WarningDetail> =
     causes.map { slipperinessCause: SlipperinessCause ->

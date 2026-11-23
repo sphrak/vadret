@@ -171,8 +171,7 @@
     <string name="settings_notifications">Benachrichtigungen</string>
     <string name="notifications_are_off">Benachrichtigungen sind ausgeschaltet</string>
     <string name="notifications_are_off_text">Erlaube Benachrichtigungen für Vädret in den Systemeinstellungen, um Push-Benachrichtigungen zu erhalten.</string>
-    <string name="slipperiness_possible">Glätte möglich</string>
-    <string name="slipperiness_high">Hohe Glättegefahr</string>
+    <string name="slipperiness_risk">Glättegefahr</string>
     <string name="slipperiness_cause_frost">Reif</string>
     <string name="slipperiness_cause_freezing_rain">Gefrierender Regen</string>
     <string name="slipperiness_cause_refreeze">Überfrierende Nässe</string>

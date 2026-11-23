@@ -125,8 +125,7 @@
     <string name="settings_notifications">Notifications</string>
     <string name="notifications_are_off">Les notifications sont désactivées</string>
     <string name="notifications_are_off_text">Autorisez les notifications de Vädret dans les paramètres du système pour recevoir des alertes push.</string>
-    <string name="slipperiness_possible">Chaussée glissante possible</string>
-    <string name="slipperiness_high">Risque élevé de chaussée glissante</string>
+    <string name="slipperiness_risk">Risque de chaussée glissante</string>
     <string name="slipperiness_cause_frost">Gelée blanche</string>
     <string name="slipperiness_cause_freezing_rain">Pluie verglaçante</string>
     <string name="slipperiness_cause_refreeze">Regel</string>
